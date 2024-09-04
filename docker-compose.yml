@@ -13,6 +13,14 @@ services:
     ports:
       - '5432:5432'
 
+  redis:
+    image: redis:latest
+    restart: always
+    ports:
+      - '6000:6379'
+    volumes:
+      - redis_data:/data
+
   auth-microservice:
     build:
       context: ./Backend/authMicroservice
@@ -20,8 +28,11 @@ services:
       - '3000:3000'
     depends_on:
       - postgres
+      - redis
     environment:
       DATABASE_URL: ${DATABASE_URL}
+      REDIS_HOST: redis
+      REDIS_PORT: 6000
     command: >
       sh -c "npx prisma migrate deploy &&
              npm run start"
@@ -36,3 +47,4 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:

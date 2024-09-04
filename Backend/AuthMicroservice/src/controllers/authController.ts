@@ -1,7 +1,8 @@
-// src/controllers/AuthController.ts
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../services/authService';
 import { User } from '@prisma/client';
+import { BaseResponse } from '../types/baseResponse';
+import { LoginRequest } from '../models/requests/loginRequest';
 
 export class AuthController {
   private authService: AuthService;
@@ -33,7 +34,10 @@ export class AuthController {
     try {
       const { name, surname, email, password } = req.body;
       const user = await this.authService.createUser(email, password, name, surname);
-      res.status(201).json({ message: 'User registered successfully', user });
+      res.status(201).json({
+        success: true,
+        payload: user,
+      } as BaseResponse<User>);
     } catch (err) {
       next(err);
     }

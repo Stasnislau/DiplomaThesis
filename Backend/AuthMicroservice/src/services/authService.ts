@@ -1,6 +1,7 @@
 import { PrismaClient, User } from '@prisma/client';
 import bcrypt from 'bcrypt';
-import { v4 as uuid} from 'uuid';
+import { v4 as uuid } from 'uuid';
+import { UserDto } from '../models/dtos/userDto';
 
 export class AuthService {
   private prisma: PrismaClient;
@@ -25,9 +26,14 @@ export class AuthService {
     return await bcrypt.compare(password, user.password);
   }
 
-  async createUser( email: string, password: string, name: string, surname: string): Promise<User> {
+  async createUser(
+    email: string,
+    password: string,
+    name: string,
+    surname: string
+  ): Promise<UserDto> {
     const hashedPassword = await bcrypt.hash(password, 10);
-    return await this.prisma.user.create({
+    const newUser = await this.prisma.user.create({
       data: {
         id: uuid(),
         name,
@@ -37,5 +43,12 @@ export class AuthService {
         role: 'USER',
       },
     });
+    return {
+      id: newUser.id,
+      name: newUser.name,
+      surname: newUser.surname,
+      email: newUser.email,
+      role: newUser.role,
+    };
   }
 }
