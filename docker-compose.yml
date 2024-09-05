@@ -17,7 +17,7 @@ services:
     image: redis:latest
     restart: always
     ports:
-      - '6000:6379'
+      - '6000:6000'
     volumes:
       - redis_data:/data
 
@@ -25,23 +25,37 @@ services:
     build:
       context: ./Backend/authMicroservice
     ports:
-      - '3000:3000'
+      - '5000:5000'
     depends_on:
       - postgres
       - redis
     environment:
       DATABASE_URL: ${DATABASE_URL}
-      REDIS_HOST: redis
-      REDIS_PORT: 6000
+      REDIS_HOST: ${redis-host}
+      REDIS_PORT: ${redis-port}
     command: >
       sh -c "npx prisma migrate deploy &&
              npm run start"
+
+  gateway:
+    build:
+      context: ./Backend/Gateway
+    ports:
+      - '3001:3001' 
+    depends_on:
+      - auth-microservice
+      - redis
+    environment:
+      AUTH_MICROSERVICE_URL: ${AUTH_MICROSERVICE_URL}
+      GATEWAY_PORT: 3001
+    command: >
+      sh -c "npm run start"
 
   frontend:
     build:
       context: ./frontend
     ports:
-      - '80:80'
+      - '3000:80'
     depends_on:
       - auth-microservice
 
