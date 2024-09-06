@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "bridgemicroservice"
+version = "0.1.0"
+description = ""
+authors = ["Stanislau"] 
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.113.0"
+requests = "^2.32.3"
+python-dotenv = "^1.0.1"
+mistral = "^18.0.1"
+mistralai = "^1.0.3"
+uvicorn = "^0.30.6"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+start = "start_app:start_app"

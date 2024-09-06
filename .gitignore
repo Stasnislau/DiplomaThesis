@@ -1,2 +1,7 @@
 .env
 dist*
+.vscode
+venv 
+pycache
+__pycache__
+package-lock.json
