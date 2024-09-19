@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createTask, createTaskRequest } from '../createTask';
+import { createTask, createTaskRequest } from '../mutations/createTask';
 
 export function useCreateTask() {
   const queryClient = useQueryClient();
