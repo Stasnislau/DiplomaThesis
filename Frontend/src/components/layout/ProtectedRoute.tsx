@@ -1,38 +1,24 @@
-import { useEffect, useState } from 'react';
+import { Navigate, useLocation } from "react-router-dom";
+import { useAuthStore } from "../../store/useAuthStore";
+import LoadingPage from "./Loading";
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  // const { instance, accounts } = useMsal();
-  const [isValidToken, setIsValidToken] = useState(true);
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+}
 
-  // useEffect(() => {
-  //   const checkTokenValidity = async () => {
-  //     if (accounts.length > 0) {
-  //       try {
-  //         console.log('Checking token validity');
-  //         await instance.acquireTokenSilent({
-  //           scopes: loginRequest.scopes,
-  //           account: accounts[0],
-  //         });
-  //         console.log('Token is valid');
-  //         setIsValidToken(true);
-  //       } catch (error) {
-  //         if (error instanceof InteractionRequiredAuthError) {
-            // Token is expired or invalid, redirect to login
-  //           console.log('Token is expired or invalid');
-  //           instance.acquireTokenRedirect(loginRequest);
-  //         }
-  //       }
-  //     }
-  //   };
+function ProtectedRoute({ children }: ProtectedRouteProps) {
+  const { isAuthenticated, isLoading } = useAuthStore();
+  const location = useLocation();
 
-    // checkTokenValidity();
-  // }, [instance, accounts]);
-
-  if (!isValidToken) {
-    return null;
+  if (isLoading) {
+    return <LoadingPage />;
   }
 
-  return <>{children}</>;
+  return isAuthenticated ? (
+    <>{children}</>
+  ) : (
+    <Navigate to="/login" state={{ from: location }} replace />
+  );
 }
 
 export default ProtectedRoute;

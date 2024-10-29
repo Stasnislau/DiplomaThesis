@@ -1,0 +1,33 @@
+
+
+.loader {
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  display: block;
+  margin: 15px auto;
+  position: relative;
+  background: var(--color);
+  box-shadow: calc(var(--size) * -1.5) 0 var(--color),
+    calc(var(--size) * 1.5) 0 var(--color);
+  box-sizing: border-box;
+  animation: shadowPulse 2s linear infinite;
+}
+
+@keyframes shadowPulse {
+  33% {
+    background: var(--color);
+    box-shadow: calc(var(--size) * -1.5) 0 var(--shadow-color),
+      calc(var(--size) * 1.5) 0 var(--color);
+  }
+  66% {
+    background: var(--shadow-color);
+    box-shadow: calc(var(--size) * -1.5) 0 var(--color),
+      calc(var(--size) * 1.5) 0 var(--color);
+  }
+  100% {
+    background: var(--color);
+    box-shadow: calc(var(--size) * -1.5) 0 var(--color),
+      calc(var(--size) * 1.5) 0 var(--shadow-color);
+  }
+}

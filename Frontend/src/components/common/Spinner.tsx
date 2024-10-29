@@ -9,7 +9,7 @@ interface SpinnerProps {
 const Spinner: React.FC<SpinnerProps> = ({
   size = 16,
   color = '#FFF',
-  shadowColor = 'var(--tw-color-green-pale)',
+  shadowColor = 'var(--tw-color-blue-500)',
 }) => {
   return (
     <span

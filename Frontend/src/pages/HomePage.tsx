@@ -27,6 +27,7 @@ export const HomePage: React.FC = () => {
       createTask({ language, level });
       setUserAnswer("");
       setShowExplanation(false);
+      setIsCorrect(null);
     } else {
       alert("Please select both language and level.");
     }
@@ -45,6 +46,7 @@ export const HomePage: React.FC = () => {
 
   const handleExplainAnswer = () => {
     if (taskData && userAnswer) {
+      setShowExplanation(true);
       explainAnswer({
         language,
         level,
@@ -180,7 +182,7 @@ export const HomePage: React.FC = () => {
               </p>
             )}
 
-            {explanationData && (
+            {explanationData && showExplanation && (
               <div className="mt-4 p-4 border rounded-md bg-gray-50">
                 <p className="text-lg text-gray-800">
                   {explanationData.explanation}

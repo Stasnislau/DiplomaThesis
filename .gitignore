@@ -5,3 +5,5 @@ venv
 pycache
 __pycache__
 package-lock.json
+node_modules
+migrations

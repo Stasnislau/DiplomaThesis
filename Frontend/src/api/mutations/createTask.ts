@@ -1,10 +1,12 @@
+import { API_URL } from "../consts";
+
 export interface createTaskRequest {
   language: string;
   level: string;
 }
 
 export async function createTask(data: createTaskRequest): Promise<any> {
-  const response = await fetch(`http://localhost:3001/api/createtask`, {
+  const response = await fetch(`${API_URL}/api/bridge/createtask`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

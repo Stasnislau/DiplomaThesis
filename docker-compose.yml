@@ -13,14 +13,6 @@ services:
     ports:
       - '5432:5432'
 
-  redis:
-    image: redis:latest
-    restart: always
-    ports:
-      - '6000:6000'
-    volumes:
-      - redis_data:/data
-
   auth-microservice:
     build:
       context: ./Backend/authMicroservice

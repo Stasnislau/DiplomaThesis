@@ -1,25 +1,20 @@
-import { RouterProvider } from 'react-router-dom';
-import { useModeState } from './store/useUserConfigStore';
-import Spinner from './components/common/Spinner';
-import { router } from './router';
+import { RouterProvider } from "react-router-dom";
+import { router } from "./router";
+import { useEffect } from "react";
+import { useAuthStore } from "./store/useAuthStore";
+import LoadingPage from "./components/layout/Loading";
+import "./App.css";
 
 function App() {
-  const { mode } = useModeState();
+  const { refresh, isLoading } = useAuthStore();
 
-  if (mode === 'dark') {
-    document.body.classList.add('dark');
-  } else {
-    document.body.classList.remove('dark');
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  if (isLoading) {
+    return <LoadingPage />;
   }
-
-  // if (!instance || !isInitialized) {
-  //   return (
-  //     <div className="flex items-center justify-center h-screen dark:bg-black">
-  //       <Spinner size={32} />
-  //     </div>
-  //   );
-  // }
-
   return <RouterProvider router={router} />;
 }
 

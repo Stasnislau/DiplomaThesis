@@ -1,10 +1,12 @@
+from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from bridgemicroservice.service import explain_answer, get_openai_response, generate_task
 
+load_dotenv()
+
 app = FastAPI()
 
-# Allow all CORS requests
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -25,15 +27,17 @@ async def ask_ai(request: Request):
     return {"response": response}
 
 
-@app.post("/api/createtask")
+@app.post("/api/bridge/createtask")
 async def generate_task_endpoint(request: Request):
     data = await request.json()
     user_language = data.get("language")
     user_level = data.get("level")
-    task_response = generate_task(user_language, user_level)
+    
+    task_response = await generate_task(user_language, user_level)
+    
     return task_response
 
-@app.post("/api/explainanswer")
+@app.post("/api/bridge/explainanswer")
 async def explain_answer_endpoint(request: Request):
     data = await request.json()
     user_language = data.get("language")
