@@ -6,7 +6,7 @@ import { logout as apiLogout } from "../api/mutations/logout";
 interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (input: LoginUserRequest) => Promise<{ success: boolean; error?: string }>;
+  login: (input: LoginUserRequest) => Promise<{ success: boolean; message?: string, errors?: string[] }>;
   logout: () => void;
   refresh: () => Promise<void>;
 }
@@ -29,12 +29,12 @@ export const useAuthStore = create<AuthState>((set) => ({
         return { success: true };
       } else {
         set({ isLoading: false });
-        return { success: false, error: data.payload.message };
+        return { success: false, message: data.payload.message, errors: data.payload.errors };
       }
     } catch (error) {
       console.error("Login error:", error);
       set({ isLoading: false });
-      return { success: false, error: "Unknown error" };
+      return { success: false, message: "Unknown error" };
     }
   },
   logout: () => {

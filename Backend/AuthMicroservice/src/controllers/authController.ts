@@ -3,15 +3,15 @@ import { AuthService } from "../services/authService";
 import { LocalAuthGuard } from "../guards/localAuthGuard";
 import { JwtAuthGuard } from "../guards/jwtAuthGuard";
 import { UserDto } from "src/dtos/userDto";
+import { LoginDto } from "src/dtos/loginDto";
 
 @Controller("auth")
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  @UseGuards(LocalAuthGuard)
   @Post("login")
-  async login(@Request() req) {
-    const response = await this.authService.login(req.user);
+  async login(@Body() loginDto: LoginDto) {
+    const response = await this.authService.login(loginDto);
     return {
       success: true,
       payload: response,

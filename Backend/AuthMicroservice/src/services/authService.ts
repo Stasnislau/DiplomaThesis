@@ -5,11 +5,8 @@ import { User, RefreshToken } from "@prisma/client";
 import config from "../config/configuration";
 import { UserDto } from "src/dtos/userDto";
 import { v4 as uuidv4 } from "uuid";
-import { Injectable } from "@nestjs/common";
-import {
-  BadRequestException,
-  UnauthorizedException,
-} from "src/exceptions/customException";
+import { Injectable, BadRequestException, UnauthorizedException } from "@nestjs/common";
+import { LoginDto } from "src/dtos/loginDto";
 
 @Injectable()
 export class AuthService {
@@ -19,7 +16,9 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, password: string): Promise<User | null> {
+    console.log(email, password, 'HUI 1');
     const user = await this.prisma.user.findUnique({ where: { email } });
+    console.log(user, 'HUI 2');
     if (user) {
       const credentials = await this.prisma.credentials.findUnique({
         where: { userId: user.id },
@@ -37,7 +36,12 @@ export class AuthService {
     return null;
   }
 
-  async login(user: User) {
+
+  async login(loginDto: LoginDto) {
+    const user = await this.validateUser(loginDto.email, loginDto.password);
+    if (!user) {
+      throw new UnauthorizedException("Invalid credentials");
+    }
     const accessToken = this.generateAccessToken(user);
     const refreshToken = await this.createRefreshToken(user);
     return {
@@ -120,6 +124,9 @@ export class AuthService {
     const payload = this.jwtService.verify(refreshToken, {
       secret: config().refreshToken.secret,
     });
+    if (payload.exp < Date.now() / 1000) {
+      throw new BadRequestException("Refresh token expired");
+    }
 
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },

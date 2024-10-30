@@ -7,6 +7,7 @@ interface LoginResponse {
   accessToken: string;
   refreshToken: string;
   message?: string;
+  errors?: string[];
 }
 
 export const loginUserDtoSchema = z.object({

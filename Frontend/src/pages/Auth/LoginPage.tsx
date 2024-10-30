@@ -33,9 +33,8 @@ export const LoginPage: React.FC = () => {
     try {
       setLoading(true);
       const result = await login(input);
-      console.log(result);
       if (!result.success) {
-        setError(result.error || "Unknown error");
+        setError(result.errors ? result.errors[0] : "Unknown error");
         return;
       }
       navigate("/");
@@ -67,7 +66,8 @@ export const LoginPage: React.FC = () => {
                   <FormField
                     label="Email"
                     className="block text-sm font-medium text-gray-700"
-                    error={error}
+                    required={!loginUserDtoSchema.shape.email.isOptional}
+                    error={errors.email?.message}
                   >
                     <TextField
                       id="email"
@@ -78,17 +78,25 @@ export const LoginPage: React.FC = () => {
                   </FormField>
                 )}
               />
-              <FormField
-                label="Password"
-                className="block text-sm font-medium text-gray-700"
-                error={error}
-              >
-                <TextField
-                  id="password"
-                  type="password"
-                  autoComplete="current-password"
-                />
-              </FormField>
+              <Controller
+                control={control}
+                name="password"
+                render={({ field }) => (
+                  <FormField
+                    label="Password"
+                    className="block text-sm font-medium text-gray-700"
+                    error={errors.password?.message}
+                    required={!loginUserDtoSchema.shape.password.isOptional}
+                  >
+                    <TextField
+                      id="password"
+                      type="password"
+                      autoComplete="current-password"
+                      {...field}
+                    />
+                  </FormField>
+                )}
+              />
               <div>
                 <Button
                   isLoading={loading}
