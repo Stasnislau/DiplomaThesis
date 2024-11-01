@@ -3,18 +3,15 @@ import {
   Catch,
   ArgumentsHost,
   HttpException,
-  HttpStatus,
+  UnauthorizedException,
+  BadRequestException,
 } from "@nestjs/common";
 import { Response } from "express";
-import {
-  CustomException,
-  InternalServerErrorException,
-} from "../exceptions/customException";
 
 @Catch()
 export class ErrorHandlingMiddleware implements ExceptionFilter {
   catch(exception: Error, host: ArgumentsHost) {
-    if (exception instanceof CustomException) {
+    if (exception instanceof HttpException) {
       this.handleError(exception, host);
     } else {
       console.log(
@@ -22,29 +19,33 @@ export class ErrorHandlingMiddleware implements ExceptionFilter {
         exception.message,
         exception.stack
       );
-      this.handleError(new InternalServerErrorException(), host);
+      this.handleError(new UnauthorizedException(exception.message), host);
     }
   }
-  
 
-  handleError = (exception: Error, host: ArgumentsHost) => {
+  handleError = (exception: HttpException, host: ArgumentsHost) => {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
+    const status = exception.getStatus();
 
-    let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message = "Internal server error";
-
-    if (exception instanceof HttpException) {
-      status = exception.getStatus();
-      message = exception.message;
-    }
-
-    response.status(status).json({
+    let responseBody: any = {
       success: false,
       payload: {
-        message: message,
+        message: exception.message,
         timestamp: new Date().toISOString(),
       },
-    });
+    };
+
+    if (exception instanceof BadRequestException) {
+      const validationErrors = exception.getResponse();
+      if (typeof validationErrors === "object") {
+        responseBody.payload = {
+          ...responseBody.payload,
+          errors: validationErrors["message"] || validationErrors,
+        };
+      }
+    }
+
+    response.status(status).json(responseBody);
   };
 }

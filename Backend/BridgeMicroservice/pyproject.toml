@@ -19,6 +19,8 @@ torch = "^2.4.1"
 protobuf = "^5.28.2"
 sentencepiece = "^0.2.0"
 litellm = "^1.49.6"
+lancedb = "^0.15.0"
+langchain = "^0.3.6"
 
 
 [build-system]
