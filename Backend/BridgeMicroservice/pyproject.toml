@@ -21,6 +21,10 @@ sentencepiece = "^0.2.0"
 litellm = "^1.49.6"
 lancedb = "^0.15.0"
 langchain = "^0.3.6"
+langchain-community = "^0.3.5"
+langchain-mistralai = "^0.2.1"
+sentence-transformers = "^3.2.1"
+pandas = "^2.2.3"
 
 
 [build-system]

@@ -1,3 +1,4 @@
+import { BaseResponse } from "@/types/responses/BaseResponse";
 import { API_URL } from "../consts";
 
 export interface ExplainAnswerRequest {
@@ -17,7 +18,7 @@ export interface ExplainAnswerResponse {
 export async function explainAnswer(
   data: ExplainAnswerRequest
 ): Promise<ExplainAnswerResponse> {
-  const response = await fetch(`${API_URL}/api/bridge/explainanswer`, {
+  const response = await fetch(`${API_URL}/api/bridge/writing/explainanswer`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -30,8 +31,9 @@ export async function explainAnswer(
     throw new Error("An error occurred while explaining the answer");
   }
 
-  const responseData = await response.json();
+  const responseData =
+    (await response.json()) as BaseResponse<ExplainAnswerResponse>;
   console.log(responseData, "explain answer");
 
-  return responseData;
+  return responseData.payload;
 }

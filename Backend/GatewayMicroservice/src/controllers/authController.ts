@@ -6,7 +6,7 @@ import {
   Res,
   BadGatewayException,
 } from "@nestjs/common";
-import { firstValueFrom, TimeoutError } from "rxjs";
+import { firstValueFrom } from "rxjs";
 import { AUTH_MICROSERVICE_URL } from "src/consts";
 import { Request, Response } from "express";
 

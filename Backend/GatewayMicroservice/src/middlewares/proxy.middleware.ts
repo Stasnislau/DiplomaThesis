@@ -23,12 +23,10 @@ export class ProxyMiddleware implements NestMiddleware {
         })
       );
 
-      // Пробрасываем заголовки
       Object.entries(response.headers).forEach(([key, value]) => {
         res.setHeader(key, value);
       });
 
-      // Пробрасываем статус и тело ответа
       res.status(response.status).send(response.data);
     } catch (error) {
       console.error(`Error in proxy middleware:`, error);

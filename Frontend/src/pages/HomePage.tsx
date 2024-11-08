@@ -1,6 +1,9 @@
-import React, { useState } from "react";
-import { useCreateTask } from "../api/hooks/useCreateTask";
+import React, { useState, useEffect } from "react";
+import { useCreateMultipleChoiceTask } from "../api/hooks/useCreateMultipleChoiceTask";
+import { useCreateBlankSpaceTask } from "../api/hooks/useCreateBlankSpaceTask";
 import { useExplainAnswer } from "../api/hooks/useExplainAnswer";
+import { TaskData } from "@/types/responses/TaskResponse";
+import { TaskComponent } from "../components/task/TaskComponent";
 
 export const HomePage: React.FC = () => {
   const [language, setLanguage] = useState("");
@@ -8,23 +11,32 @@ export const HomePage: React.FC = () => {
   const [userAnswer, setUserAnswer] = useState("");
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
+  const [currentTaskData, setCurrentTaskData] = useState<TaskData | null>(null);
 
   const {
     createTask,
     isLoading: isCreating,
     error: createError,
     data: taskData,
-  } = useCreateTask();
+  } = useCreateMultipleChoiceTask();
+  const { createTask: createBlankSpaceTask, data: blankSpaceTaskData } =
+    useCreateBlankSpaceTask();
   const {
     explainAnswer,
     isLoading: isExplaining,
-    error: explainError,
     data: explanationData,
   } = useExplainAnswer();
 
   const handleCreateTask = () => {
     if (language && level) {
-      createTask({ language, level });
+      const taskType =
+        Math.random() < 0.5 ? "multiple_choice" : "fill_in_the_blank";
+      if (taskType === "multiple_choice") {
+        createTask({ language, level });
+      } else {
+        createBlankSpaceTask({ language, level });
+      }
+
       setUserAnswer("");
       setShowExplanation(false);
       setIsCorrect(null);
@@ -34,165 +46,175 @@ export const HomePage: React.FC = () => {
   };
 
   const handleCheckAnswer = () => {
-    if (taskData && userAnswer) {
-      if (userAnswer.toLowerCase() === taskData.correct_answer.toLowerCase()) {
-        setIsCorrect(true);
-        alert("Correct answer!");
-      } else {
-        setIsCorrect(false);
-      }
+    if (!currentTaskData || !userAnswer) return;
+
+    let isAnswerCorrect = false;
+
+    if (currentTaskData.type === "multiple_choice") {
+      const optionIndexes = ["A", "B", "C", "D"];
+      const correctOptionIndex = optionIndexes.indexOf(
+        currentTaskData.correct_answer
+      );
+      if (!correctOptionIndex || !currentTaskData.options) return false;
+      isAnswerCorrect =
+        currentTaskData.options[correctOptionIndex] === userAnswer;
+    } else {
+      isAnswerCorrect =
+        userAnswer.toLowerCase() ===
+        currentTaskData.correct_answer.toLowerCase();
+    }
+
+    setIsCorrect(isAnswerCorrect);
+    if (isAnswerCorrect) {
+      alert("Correct answer!");
     }
   };
 
+  useEffect(() => {
+    if (taskData) {
+      setCurrentTaskData(taskData);
+    } else if (blankSpaceTaskData) {
+      setCurrentTaskData(blankSpaceTaskData);
+    }
+  }, [taskData, blankSpaceTaskData]);
+
   const handleExplainAnswer = () => {
-    if (taskData && userAnswer) {
+    console.log(currentTaskData, userAnswer);
+    if (currentTaskData && userAnswer) {
       setShowExplanation(true);
       explainAnswer({
         language,
         level,
-        task: taskData.task,
-        correct_answer: taskData.correct_answer,
+        task: currentTaskData.task,
+        correct_answer: currentTaskData.correct_answer,
         user_answer: userAnswer,
       });
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-100 to-purple-100 py-6 flex flex-col justify-center sm:py-12">
-      <div className="relative py-3 sm:max-w-xl sm:mx-auto">
-        <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-light-blue-500 shadow-lg transform -skew-y-6 sm:skew-y-0 sm:-rotate-6 sm:rounded-3xl"></div>
-        <div className="relative px-4 py-10 bg-white shadow-lg sm:rounded-3xl sm:p-20">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 py-6 flex flex-col justify-center sm:py-12">
+      <div className="relative py-3 sm:max-w-2xl sm:mx-auto w-full px-4">
+        {/* Animated gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500 shadow-lg transform -skew-y-6 sm:skew-y-0 sm:-rotate-6 sm:rounded-3xl transition-all duration-300 hover:-rotate-3"></div>
+
+        <div className="relative px-4 py-10 bg-white shadow-xl sm:rounded-3xl sm:p-20 transition-all duration-300">
           <div className="max-w-md mx-auto">
-            <h1 className="text-3xl font-extrabold text-gray-900 mb-6 text-center">
-              Language Learning Task
-            </h1>
-
-            <div className="space-y-4">
-              <div>
-                <label
-                  htmlFor="language"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Language
-                </label>
-                <select
-                  id="language"
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                >
-                  <option value="">Select a language</option>
-                  <option value="Spanish">Spanish</option>
-                  <option value="French">French</option>
-                  <option value="German">German</option>
-                  <option value="Russian">Russian</option>
-                  <option value="Polish">Polish</option>
-                </select>
+            <div className="divide-y divide-gray-200">
+              <div className="pb-8 text-center">
+                <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 mb-2">
+                  Language Learning
+                </h1>
+                <p className="text-gray-500 text-sm">
+                  Select your preferences and start learning
+                </p>
               </div>
 
-              <div>
-                <label
-                  htmlFor="level"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Level
-                </label>
-                <select
-                  id="level"
-                  value={level}
-                  onChange={(e) => setLevel(e.target.value)}
-                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                >
-                  <option value="">Select a level</option>
-                  <option value="A1">A1</option>
-                  <option value="A2">A2</option>
-                  <option value="B1">B1</option>
-                  <option value="B2">B2</option>
-                  <option value="C1">C1</option>
-                  <option value="C2">C2</option>
-                </select>
-              </div>
+              <div className="py-8 space-y-6">
+                <div className="group">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 transition-colors group-hover:text-indigo-600">
+                    Choose Language
+                  </label>
+                  <select
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 bg-white hover:bg-gray-50"
+                  >
+                    <option value="">Select a language</option>
+                    {["Spanish", "French", "German", "Russian", "Polish"].map(
+                      (lang) => (
+                        <option key={lang} value={lang}>
+                          {lang}
+                        </option>
+                      )
+                    )}
+                  </select>
+                </div>
 
-              <button
-                onClick={handleCreateTask}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out"
-              >
-                Create Task
-              </button>
+                {/* Level Selector */}
+                <div className="group">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 transition-colors group-hover:text-indigo-600">
+                    Proficiency Level
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {["A1", "A2", "B1", "B2", "C1", "C2"].map((lvl) => (
+                      <button
+                        key={lvl}
+                        onClick={() => setLevel(lvl)}
+                        className={`py-2 px-4 rounded-lg transition-all duration-200 ${
+                          level === lvl
+                            ? "bg-indigo-600 text-white shadow-md"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        }`}
+                      >
+                        {lvl}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleCreateTask}
+                  disabled={!language || !level || isCreating}
+                  className={`w-full py-3 px-6 rounded-lg text-white font-medium transition-all duration-300 transform hover:scale-[1.02] 
+                    ${
+                      !language || !level
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl"
+                    }`}
+                >
+                  {isCreating ? (
+                    <span className="flex items-center justify-center">
+                      <svg
+                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Creating Task...
+                    </span>
+                  ) : (
+                    "Create New Task"
+                  )}
+                </button>
+              </div>
             </div>
 
-            {isCreating && (
-              <p className="mt-3 text-center text-sm text-indigo-600">
-                Creating task...
-              </p>
-            )}
             {createError && (
-              <p className="mt-3 text-center text-sm text-red-600">
-                Error: {createError.message}
-              </p>
-            )}
-
-            {taskData && (
-              <div className="mt-6 space-y-4">
-                <p className="text-lg font-medium text-gray-900">
-                  Task: {taskData.task}
+              <div className="mt-4 p-4 bg-red-50 rounded-lg border border-red-200">
+                <p className="text-sm text-red-600">
+                  Error: {createError.message}
                 </p>
-                <input
-                  type="text"
-                  value={userAnswer}
-                  onChange={(e) => setUserAnswer(e.target.value)}
-                  placeholder="Your answer"
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-                <button
-                  onClick={handleCheckAnswer}
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out"
-                >
-                  Check Answer
-                </button>
-                {isCorrect === false && (
-                  <>
-                    <p className="mt-3 text-center text-sm text-red-600">
-                      Incorrect answer.
-                    </p>
-                    <p className="mt-3 text-center text-sm text-red-600">
-                      Correct answer: {taskData.correct_answer}
-                    </p>
-                  </>
-                )}
-                {isCorrect === false && (
-                  <button
-                    onClick={handleExplainAnswer}
-                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition duration-150 ease-in-out"
-                  >
-                    Get Explanation
-                  </button>
-                )}
               </div>
             )}
 
-            {isExplaining && (
-              <p className="mt-3 text-center text-sm text-indigo-600">
-                Getting explanation...
-              </p>
-            )}
-            {explainError && (
-              <p className="mt-3 text-center text-sm text-red-600">
-                Error: {explainError.message}
-              </p>
-            )}
-
-            {explanationData && showExplanation && (
-              <div className="mt-4 p-4 border rounded-md bg-gray-50">
-                <p className="text-lg text-gray-800">
-                  {explanationData.explanation}
-                </p>
-                {explanationData.topics_to_review && (
-                  <p className="mt-2 text-sm text-gray-600">
-                    Topics to review:{" "}
-                    {explanationData.topics_to_review.join(", ")}
-                  </p>
-                )}
+            {currentTaskData && (
+              <div className="mt-8">
+                <TaskComponent
+                  taskData={currentTaskData}
+                  userAnswer={userAnswer}
+                  setUserAnswer={setUserAnswer}
+                  onCheckAnswer={handleCheckAnswer}
+                  onExplainAnswer={handleExplainAnswer}
+                  isCorrect={isCorrect}
+                  isExplaining={isExplaining}
+                  explanationData={explanationData}
+                  showExplanation={showExplanation}
+                />
               </div>
             )}
           </div>

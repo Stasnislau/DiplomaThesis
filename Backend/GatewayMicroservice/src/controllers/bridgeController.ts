@@ -1,36 +1,40 @@
 import { HttpService } from "@nestjs/axios";
-import { Controller, Post, Body, Logger } from "@nestjs/common";
-import { firstValueFrom, lastValueFrom } from "rxjs";
+import {
+  Controller,
+  Logger,
+  All,
+  Req,
+  Res,
+  BadGatewayException,
+} from "@nestjs/common";
+import { firstValueFrom } from "rxjs";
+import { Request, Response } from "express";
 
 @Controller("bridge")
 export class BridgeController {
   constructor(private httpService: HttpService) {}
   private readonly logger = new Logger(BridgeController.name);
 
-  @Post("askAi")
-  async askAi(@Body() data: any) {
-    const response = await firstValueFrom(
-      this.httpService.post("http://127.0.0.1:3003/api/bridge/askAi", data)
-    );
-    return response.data;
-  }
+  private readonly bridgeUrl = "http://127.0.0.1:3003";
 
-  @Post("createtask")
-  async createTask(@Body() data: any) {
-    const response = await lastValueFrom(
-      this.httpService.post("http://127.0.0.1:3003/api/bridge/createtask", data)
-    );
-    return response.data;
-  }
-
-  @Post("explainanswer")
-  async explainAnswer(@Body() data: any) {
-    const response = await firstValueFrom(
-      this.httpService.post(
-        "http://127.0.0.1:3003/api/bridge/explainanswer",
-        data
-      )
-    );
-    return response.data;
+  @All("*")
+  async handleBridgeRequests(@Req() req: Request, @Res() res: Response) {
+    const { method, url, headers, body } = req;
+    const targetUrl = `${this.bridgeUrl}${url.replace("/bridge", "")}`;
+    console.log(targetUrl);
+    try {
+      const response = await firstValueFrom(
+        this.httpService.request({
+          method,
+          url: targetUrl,
+          headers,
+          data: body,
+          validateStatus: () => true,
+        })
+      );
+      return res.status(response.status).json(response.data);
+    } catch (error) {
+      throw new BadGatewayException(error);
+    }
   }
 }

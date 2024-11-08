@@ -6,7 +6,6 @@ export const ResetPasswordPage: React.FC = () => {
 
   const handleResetPassword = (e: React.FormEvent) => {
     e.preventDefault();
-    // Implement password reset logic here
     console.log("Password reset attempt for:", email);
   };
 

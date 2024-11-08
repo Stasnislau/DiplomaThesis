@@ -1,10 +1,12 @@
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from bridgemicroservice.controllers.ai_controller import Ai_Controller
+from bridgemicroservice.controllers.writing_controller import Writing_Controller
+from bridgemicroservice.services.writing_task_service import Writing_Task_Service
 from bridgemicroservice.services.ai_service import AI_Service
 from bridgemicroservice.services.bielik_service import Bielik_Service
 from .middlewares.error_handling_middleware import ErrorHandlingMiddleware
+from bridgemicroservice.services.vector_db_service import VectorDBService
 
 load_dotenv()
 
@@ -19,4 +21,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(Ai_Controller(AI_Service(Bielik_Service())).get_router())
+app.include_router(
+    Writing_Controller(
+        Writing_Task_Service(VectorDBService(), AI_Service())
+    ).get_router()
+)

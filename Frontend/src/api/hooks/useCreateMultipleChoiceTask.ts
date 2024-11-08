@@ -1,12 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createTask, createTaskRequest } from '../mutations/createTask';
+import { createMultipleChoiceTask } from '../mutations/createMultipleChoiceTask';
+import { createTaskRequest } from '../mutations/createBlankSpaceTask';
 
-export function useCreateTask() {
+export function useCreateMultipleChoiceTask() {
   const queryClient = useQueryClient();
 
   const mutation = useMutation<any, Error, createTaskRequest>({
     mutationFn: async (input: createTaskRequest) => {
-      return createTask(input);
+      return createMultipleChoiceTask(input);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
