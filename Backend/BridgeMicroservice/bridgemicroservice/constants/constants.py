@@ -7,14 +7,14 @@ LEVEL_EMBEDDINGS: Dict[str, Dict[str, Any]] = {
         "Reading": "I can understand familiar names, words and very simple sentences, for example on notices and posters or in catalogues.",
         "Spoken Interaction": "I can interact in a simple way provided the other person is prepared to repeat or rephrase things at a slower rate of speech and help me formulate what I'm trying to say. I can ask and answer simple questions in areas of immediate need or on very familiar topics.",
         "Spoken Production": "I can use simple phrases and sentences to describe where I live and people I know.",
-        "Writing": "I can write a short, simple postcard, for example sending holiday greetings. I can fill in forms with personal details, for example entering my name, nationality and address on a hotel registration form.",
+        "Writing": "I can write a short, simple postcard, for example sending holiday greetings. I can fill in forms with personal details",
     },
     "A2": {
         "Listening": "I can understand phrases and the highest frequency vocabulary related to areas of most immediate personal relevance (e.g. very basic personal and family information, shopping, local area, employment). I can catch the main point in short, clear, simple messages and announcements.",
         "Reading": "I can read very short, simple texts. I can find specific, predictable information in simple everyday material such as advertisements, prospectuses, menus and timetables and I can understand short simple personal letters.",
         "Spoken Interaction": "I can communicate in simple and routine tasks requiring a simple and direct exchange of information on familiar topics and activities. I can handle very short social exchanges, even though I can't usually understand enough to keep the conversation going myself.",
         "Spoken Production": "I can use a series of phrases and sentences to describe in simple terms my family and other people, living conditions, my educational background and my present or most recent job.",
-        "Writing": "I can write short, simple notes and messages relating to matters in areas of immediate needs. I can write a very simple personal letter, for example thanking someone for something.",
+        "Writing": "I can write short, simple notes and messages relating to matters in areas of immediate needs. I can write a very simple personal letter.",
     },
     "B1": {
         "Listening": "I can understand the main points of clear standard speech on familiar matters regularly encountered in work, school, leisure, etc. I can understand the main point of many radio or TV programmes on current affairs or topics of personal or professional interest when the delivery is relatively slow and clear.",

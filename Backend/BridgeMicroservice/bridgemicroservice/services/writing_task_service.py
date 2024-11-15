@@ -19,21 +19,23 @@ class Writing_Task_Service:
             raise ValueError(f"Invalid level: {level}")
 
         prompt = f"""
-        Generate a language learning task in {language} at {level} level.
+        Generate a language learning task in {language} at {level} level. FOLLOW STRICTLY ALL THE GUIDELINES BELOW.
 
         Level proficiency description:
         {level_context}
-
+        *GUIDELINES:*
         Create a **multiple-choice task** that matches the level's requirements without using the example in the level context:
         1. The task must consist of a single sentence with one clear objective.
-        2. Try to first create the task in the targeted language and then translate the necessary parts to English.
-        3. Use a mix of familiar and level-appropriate contexts (e.g., daily life, work, or hobbies).
-        4. Pay a lot of attention to the context of the task and the forms of the words.
-        5. Provide **exactly four options**, with only one correct answer.
-        6. Avoid similar-sounding or overly ambiguous options. The answer should be **deterministic** and not allow for multiple correct interpretations.
-        7. Do not include any instructions for the task.
-        8. The example in the level context should be used as a reference for the task, but it should not be exactly the same.
-        9. Return the task in JSON format, including these fields:
+        2. Since this is a writing task, the question could be a grammar question or a vocabulary question.
+        3. First create the task in the targeted language and then translate the necessary parts to English.
+        4. Use a mix of familiar and level-appropriate contexts (e.g., daily life, work, or hobbies).
+        5. Pay a lot of attention to the context of the task and the forms of the words.
+        6. Provide **exactly four options**, with only one correct answer.
+        7. Do not translate any parts of the sentence in English.
+        8. Avoid similar-sounding or overly ambiguous options. The answer should be **deterministic** and not allow for multiple correct interpretations.
+        9. Do not include any instructions for the task.
+        10. The example in the level context should be used as a reference for the task, but it should not be exactly the same.
+        11. Return the task in JSON format, including these fields:
         
         {{
             "task": "The sentence and question for the user",
@@ -63,26 +65,27 @@ class Writing_Task_Service:
             raise ValueError(f"Invalid level: {level}")
 
         prompt = f"""
-        Generate a **fill-in-the-blank task** for language learners in {language} at {level} level without using the example in the level context:
+        Generate a **fill-in-the-blank task** for language learners in {language} at {level} level. FOLLOW STRICTLY ALL THE GUIDELINES BELOW.
 
         Level proficiency description:
         {level_context}
 
-        Guidelines for the task:
+        *GUIDELINES:*
         1. Create one sentence with a single blank, marked as ____.
-        2. Try to first create the task in the targeted language and then translate the necessary parts to English.
-        3. The sentence must test a key skill for the level, such as vocabulary, grammar, or sentence structure.
-        4. Avoid ambiguity: the missing word/phrase must have **only one correct answer**.
-        5. Pay a lot of attention to the context of the task and the forms of the words.
-        6. Avoid similar-sounding or overly ambiguous options. The answer should be **deterministic** and not allow for multiple correct interpretations.
-        7. Include the English translation of the missing word/phrase (in parentheses).
-        7. Use diverse contexts that reflect everyday use or topics relevant to the level (e.g., greetings, work, or daily routines)
-        8. The example in the level context should be used as a reference for the task, but it should not be exactly the same.
-        9. Do not include any instructions for the task.
-        10. Return the result in JSON format with these fields:
+        2. Since this is a writing task, the question could be a grammar question or a vocabulary question.
+        3. First create the task in the targeted language and then translate the necessary parts to English.
+        4. The sentence must test a key skill for the level, such as vocabulary, grammar, or sentence structure.
+        5. Avoid ambiguity: the missing word/phrase must have **only one correct answer**.
+        6. Pay a lot of attention to the context of the task and the forms of the words.
+        7. Avoid similar-sounding or overly ambiguous options. The answer should be **deterministic** and not allow for multiple correct interpretations.
+        8. Include *the English translation* of the missing word/phrase (in parentheses).
+        9. Use diverse contexts that reflect everyday use or topics relevant to the level (e.g., greetings, work, or daily routines)
+        10. The example in the level context should be used as a reference for the task, but it should not be exactly the same.
+        11. Do not include any instructions for the task.
+        12. Return the result in JSON format with these fields:
         
         {{
-            "task": "The sentence with ____",
+            "task": "The sentence with ____ (MISSING WORD/PHRASE IN ENGLISH)",
             "correct_answer": "The correct word/phrase"
         }}
 
@@ -107,13 +110,13 @@ class Writing_Task_Service:
         user_answer: str,
     ):
         prompt = f"""
-        Analyze the following task in {user_language} at {user_level} level:
+        Analyze the following task in {user_language} at {user_level} level. FOLLOW STRICTLY ALL THE GUIDELINES BELOW.
 
         Task: {task}
         Correct answer: {correct_answer}
         User's answer: {user_answer}
 
-        Instructions:
+        *GUIDELINES:*
         1. Determine if the user's answer is correct.
         2. If the answer is incorrect, provide a short explanation and suggest 1-2 topics to review.
         3. Keep explanations clear, specific, and tailored to the level.

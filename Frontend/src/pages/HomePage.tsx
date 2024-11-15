@@ -62,7 +62,6 @@ export const HomePage: React.FC = () => {
   };
 
   useEffect(() => {
-    console.log(data, "data");
     if (data && !currentTaskData && !isLoading) {
       setCurrentTaskData(data);
     }
