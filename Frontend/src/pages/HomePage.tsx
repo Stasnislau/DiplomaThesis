@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { useCreateMultipleChoiceTask } from "../api/hooks/useCreateMultipleChoiceTask";
-import { useCreateBlankSpaceTask } from "../api/hooks/useCreateBlankSpaceTask";
 import { useExplainAnswer } from "../api/hooks/useExplainAnswer";
 import { TaskData } from "@/types/responses/TaskResponse";
 import { TaskComponent } from "../components/task/TaskComponent";
+import Button from "@/components/common/Button";
+import { useCreateTask } from "../api/hooks/useCreateTask";
 
 export const HomePage: React.FC = () => {
   const [language, setLanguage] = useState("");
@@ -12,15 +12,7 @@ export const HomePage: React.FC = () => {
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
   const [currentTaskData, setCurrentTaskData] = useState<TaskData | null>(null);
-
-  const {
-    createTask,
-    isLoading: isCreating,
-    error: createError,
-    data: taskData,
-  } = useCreateMultipleChoiceTask();
-  const { createTask: createBlankSpaceTask, data: blankSpaceTaskData } =
-    useCreateBlankSpaceTask();
+  const { createTask, isLoading, error, data } = useCreateTask();
   const {
     explainAnswer,
     isLoading: isExplaining,
@@ -29,13 +21,12 @@ export const HomePage: React.FC = () => {
 
   const handleCreateTask = () => {
     if (language && level) {
+      setCurrentTaskData(null);
+
       const taskType =
         Math.random() < 0.5 ? "multiple_choice" : "fill_in_the_blank";
-      if (taskType === "multiple_choice") {
-        createTask({ language, level });
-      } else {
-        createBlankSpaceTask({ language, level });
-      }
+
+      createTask({ language, level, taskType });
 
       setUserAnswer("");
       setShowExplanation(false);
@@ -45,17 +36,21 @@ export const HomePage: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (language || level) {
+      setCurrentTaskData(null);
+    }
+  }, [language, level]);
+
   const handleCheckAnswer = () => {
     if (!currentTaskData || !userAnswer) return;
 
     let isAnswerCorrect = false;
-
     if (currentTaskData.type === "multiple_choice") {
-      const optionIndexes = ["A", "B", "C", "D"];
-      const correctOptionIndex = optionIndexes.indexOf(
+      const correctOptionIndex = currentTaskData?.options?.indexOf(
         currentTaskData.correct_answer
       );
-      if (!correctOptionIndex || !currentTaskData.options) return false;
+      if (correctOptionIndex === undefined || !currentTaskData.options) return;
       isAnswerCorrect =
         currentTaskData.options[correctOptionIndex] === userAnswer;
     } else {
@@ -63,23 +58,17 @@ export const HomePage: React.FC = () => {
         userAnswer.toLowerCase() ===
         currentTaskData.correct_answer.toLowerCase();
     }
-
     setIsCorrect(isAnswerCorrect);
-    if (isAnswerCorrect) {
-      alert("Correct answer!");
-    }
   };
 
   useEffect(() => {
-    if (taskData) {
-      setCurrentTaskData(taskData);
-    } else if (blankSpaceTaskData) {
-      setCurrentTaskData(blankSpaceTaskData);
+    console.log(data, "data");
+    if (data && !currentTaskData && !isLoading) {
+      setCurrentTaskData(data);
     }
-  }, [taskData, blankSpaceTaskData]);
+  }, [data, isLoading]);
 
   const handleExplainAnswer = () => {
-    console.log(currentTaskData, userAnswer);
     if (currentTaskData && userAnswer) {
       setShowExplanation(true);
       explainAnswer({
@@ -95,7 +84,6 @@ export const HomePage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 py-6 flex flex-col justify-center sm:py-12">
       <div className="relative py-3 sm:max-w-2xl sm:mx-auto w-full px-4">
-        {/* Animated gradient background */}
         <div className="absolute inset-0 bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500 shadow-lg transform -skew-y-6 sm:skew-y-0 sm:-rotate-6 sm:rounded-3xl transition-all duration-300 hover:-rotate-3"></div>
 
         <div className="relative px-4 py-10 bg-white shadow-xl sm:rounded-3xl sm:p-20 transition-all duration-300">
@@ -131,7 +119,6 @@ export const HomePage: React.FC = () => {
                   </select>
                 </div>
 
-                {/* Level Selector */}
                 <div className="group">
                   <label className="block text-sm font-semibold text-gray-700 mb-2 transition-colors group-hover:text-indigo-600">
                     Proficiency Level
@@ -153,51 +140,21 @@ export const HomePage: React.FC = () => {
                   </div>
                 </div>
 
-                <button
+                <Button
                   onClick={handleCreateTask}
-                  disabled={!language || !level || isCreating}
-                  className={`w-full py-3 px-6 rounded-lg text-white font-medium transition-all duration-300 transform hover:scale-[1.02] 
-                    ${
-                      !language || !level
-                        ? "bg-gray-400 cursor-not-allowed"
-                        : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl"
-                    }`}
+                  disabled={!language || !level || isLoading}
+                  variant="primary"
+                  isLoading={isLoading}
                 >
-                  {isCreating ? (
-                    <span className="flex items-center justify-center">
-                      <svg
-                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      Creating Task...
-                    </span>
-                  ) : (
-                    "Create New Task"
-                  )}
-                </button>
+                  Create New Task
+                </Button>
               </div>
             </div>
 
-            {createError && (
+            {error && (
               <div className="mt-4 p-4 bg-red-50 rounded-lg border border-red-200">
                 <p className="text-sm text-red-600">
-                  Error: {createError.message}
+                  Error: {error.message}
                 </p>
               </div>
             )}

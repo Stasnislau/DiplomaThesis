@@ -46,7 +46,7 @@ class Writing_Controller:
                 print(e, "here error writing controller")
                 raise HTTPException(
                     status_code=500,
-                    detail={"success": False, "payload": {"message": str(e)}},
+                    detail=str(e)
                 )
 
         @self.router.post("/writing/explainanswer")

@@ -1,5 +1,8 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createBlankSpaceTask, createTaskRequest } from '../mutations/createBlankSpaceTask';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  createBlankSpaceTask,
+  createTaskRequest,
+} from "../mutations/createBlankSpaceTask";
 
 export function useCreateBlankSpaceTask() {
   const queryClient = useQueryClient();
@@ -10,7 +13,7 @@ export function useCreateBlankSpaceTask() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        predicate: (query) => query.queryKey[0] === 'getTask',
+        predicate: (query) => query.queryKey[0] === "getTask",
       });
     },
   });
@@ -21,5 +24,6 @@ export function useCreateBlankSpaceTask() {
     error: mutation.error,
     isSuccess: mutation.isSuccess,
     data: mutation.data,
+    reset: mutation.reset,
   };
 }

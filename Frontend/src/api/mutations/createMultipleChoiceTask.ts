@@ -21,5 +21,7 @@ export async function createMultipleChoiceTask(
 
   const responseData = (await response.json()) as BaseResponse<TaskData>;
 
+  console.log(responseData.payload);
+
   return responseData.payload;
 }

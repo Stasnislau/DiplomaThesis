@@ -1,6 +1,6 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createMultipleChoiceTask } from '../mutations/createMultipleChoiceTask';
-import { createTaskRequest } from '../mutations/createBlankSpaceTask';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { createMultipleChoiceTask } from "../mutations/createMultipleChoiceTask";
+import { createTaskRequest } from "../mutations/createBlankSpaceTask";
 
 export function useCreateMultipleChoiceTask() {
   const queryClient = useQueryClient();
@@ -11,7 +11,7 @@ export function useCreateMultipleChoiceTask() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        predicate: (query) => query.queryKey[0] === 'getTask',
+        predicate: (query) => query.queryKey[0] === "getTask",
       });
     },
   });
@@ -22,5 +22,6 @@ export function useCreateMultipleChoiceTask() {
     error: mutation.error,
     isSuccess: mutation.isSuccess,
     data: mutation.data,
+    reset: mutation.reset,
   };
 }

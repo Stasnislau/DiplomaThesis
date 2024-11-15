@@ -1,5 +1,6 @@
 import React, { useCallback } from "react";
 import { TaskData } from "@/types/responses/TaskResponse";
+import Button from "../common/Button";
 
 interface TaskComponentProps {
   taskData: TaskData;
@@ -63,8 +64,18 @@ export const TaskComponent: React.FC<TaskComponentProps> = ({
             />
             <div className="absolute inset-y-0 right-0 flex items-center pr-3">
               {userAnswer && (
-                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                <svg
+                  className="h-5 w-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                  />
                 </svg>
               )}
             </div>
@@ -75,72 +86,95 @@ export const TaskComponent: React.FC<TaskComponentProps> = ({
 
   return (
     <div className="mt-6 space-y-6">
-      {/* Task Header */}
       <div className="bg-gray-50 p-6 rounded-xl border border-gray-200">
         <div className="flex items-center justify-between mb-4">
-          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-            taskData.type === "multiple_choice"
-              ? "bg-blue-100 text-blue-800"
-              : "bg-purple-100 text-purple-800"
-          }`}>
-            {taskData.type === "multiple_choice" ? "Multiple Choice" : "Fill in the Blank"}
+          <span
+            className={`px-3 py-1 rounded-full text-xs font-semibold ${
+              taskData.type === "multiple_choice"
+                ? "bg-blue-100 text-blue-800"
+                : "bg-purple-100 text-purple-800"
+            }`}
+          >
+            {taskData.type === "multiple_choice"
+              ? "Multiple Choice"
+              : "Fill in the Blank"}
           </span>
         </div>
         <p className="text-xl font-medium text-gray-900">{taskData.task}</p>
       </div>
 
-      {/* Answer Section */}
       <div className="space-y-4">
         {renderAnswerInput()}
 
-        <button
-          onClick={onCheckAnswer}
-          disabled={!userAnswer}
-          className={`w-full py-3 px-6 rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] ${
-            !userAnswer
-              ? "bg-gray-300 cursor-not-allowed"
-              : "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg hover:shadow-xl"
-          }`}
-        >
+        <Button onClick={onCheckAnswer} disabled={!userAnswer} variant="secondary">
           Check Answer
-        </button>
+        </Button>
       </div>
 
-      {/* Results Section */}
       {isCorrect !== null && (
-        <div className={`mt-6 p-6 rounded-xl border ${
-          isCorrect ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
-        }`}>
+        <div
+          className={`mt-6 p-6 rounded-xl border ${
+            isCorrect
+              ? "bg-green-50 border-green-200"
+              : "bg-red-50 border-red-200"
+          }`}
+        >
           <div className="flex items-center">
             {isCorrect ? (
-              <svg className="h-6 w-6 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              <svg
+                className="h-6 w-6 text-green-600 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             ) : (
-              <svg className="h-6 w-6 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="h-6 w-6 text-red-600 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             )}
-            <p className={`font-medium ${isCorrect ? "text-green-800" : "text-red-800"}`}>
+            <p
+              className={`font-medium ${
+                isCorrect ? "text-green-800" : "text-red-800"
+              }`}
+            >
               {isCorrect ? "Correct!" : "Incorrect"}
             </p>
           </div>
 
           {!isCorrect && (
             <div className="mt-4 space-y-4">
-              <p className="text-red-600">Correct answer: {taskData.correct_answer}</p>
-              <button
+              <p className="text-red-600">
+                Correct answer: {taskData.correct_answer}
+              </p>
+              <Button
+                isLoading={isExplaining}
                 onClick={onExplainAnswer}
-                className="w-full py-2 px-4 rounded-lg bg-yellow-100 text-yellow-800 hover:bg-yellow-200 transition-colors duration-200"
+                variant="tertiary"
               >
                 Get Explanation
-              </button>
+              </Button>
             </div>
           )}
         </div>
       )}
 
-      {/* Explanation Section */}
       {isExplaining && (
         <div className="animate-pulse flex space-x-4">
           <div className="flex-1 space-y-4 py-1">
@@ -155,14 +189,21 @@ export const TaskComponent: React.FC<TaskComponentProps> = ({
 
       {explanationData && showExplanation && (
         <div className="mt-6 p-6 bg-indigo-50 rounded-xl border border-indigo-100">
-          <h3 className="text-lg font-semibold text-indigo-900 mb-3">Explanation</h3>
+          <h3 className="text-lg font-semibold text-indigo-900 mb-3">
+            Explanation
+          </h3>
           <p className="text-indigo-800">{explanationData.explanation}</p>
           {explanationData.topics_to_review && (
             <div className="mt-4">
-              <h4 className="text-sm font-semibold text-indigo-900 mb-2">Topics to Review:</h4>
+              <h4 className="text-sm font-semibold text-indigo-900 mb-2">
+                Topics to Review:
+              </h4>
               <div className="flex flex-wrap gap-2">
                 {explanationData.topics_to_review.map((topic) => (
-                  <span key={topic} className="px-3 py-1 rounded-full bg-indigo-100 text-indigo-800 text-sm">
+                  <span
+                    key={topic}
+                    className="px-3 py-1 rounded-full bg-indigo-100 text-indigo-800 text-sm"
+                  >
                     {topic}
                   </span>
                 ))}

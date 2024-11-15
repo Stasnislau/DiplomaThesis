@@ -19,12 +19,13 @@ export async function createBlankSpaceTask(
   });
 
   if (!response.ok) {
-    console.log(response);
     throw new Error("An error occurred while creating the task");
   }
 
   const responseData = (await response.json()) as BaseResponse<TaskData>;
   console.log(responseData, "create task");
+
+  console.log(responseData.payload);
 
   return responseData.payload;
 }

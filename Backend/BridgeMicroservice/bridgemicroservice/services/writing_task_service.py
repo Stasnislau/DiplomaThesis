@@ -15,28 +15,40 @@ class Writing_Task_Service:
         level_context = self.vector_db_service.get_level_context(
             level.upper(), "writing"
         )
-        print(level_context, "here level context")
         if not level_context:
             raise ValueError(f"Invalid level: {level}")
 
-        prompt = (
-            f"Generate a JSON response for a language learning task. The task should be a 'multiple choice' writing task in {language} "
-            f"for learners at the {level} level. Create an engaging question that matches the {level} level in {language}. "
-            "Provide the following fields in the JSON format:\n\n"
-            "```json\n"
-            "{\n"
-            "  'task': 'The multiple choice writing task prompt, describing the question for the user',\n"
-            "  'options': ['Option A', 'Option B', 'Option C', 'Option D'],\n"
-            "  'correct_answer': 'The correct answer (e.g., 'A')'\n"
-            "}\n"
-            "```\n"
-            "The response must be strictly in JSON format."
-        )
+        prompt = f"""
+        Generate a language learning task in {language} at {level} level.
 
+        Level proficiency description:
+        {level_context}
+
+        Create a **multiple-choice task** that matches the level's requirements without using the example in the level context:
+        1. The task must consist of a single sentence with one clear objective.
+        2. Try to first create the task in the targeted language and then translate the necessary parts to English.
+        3. Use a mix of familiar and level-appropriate contexts (e.g., daily life, work, or hobbies).
+        4. Pay a lot of attention to the context of the task and the forms of the words.
+        5. Provide **exactly four options**, with only one correct answer.
+        6. Avoid similar-sounding or overly ambiguous options. The answer should be **deterministic** and not allow for multiple correct interpretations.
+        7. Do not include any instructions for the task.
+        8. The example in the level context should be used as a reference for the task, but it should not be exactly the same.
+        9. Return the task in JSON format, including these fields:
+        
+        {{
+            "task": "The sentence and question for the user",
+            "options": ["Option A", "Option B", "Option C", "Option D"],
+            "correct_answer": "The correct option"
+        }}
+
+        Examples of task contexts include:
+        - Choosing the correct verb or adjective in context.
+        - Identifying the most appropriate word for a blank.
+        - Selecting a sentence that best fits the grammar rules.
+
+        Ensure the task tests a specific, meaningful skill aligned with the level.
+        """
         response = await self.ai_service.get_ai_response(prompt)
-
-        # add type of the task to the response
-
         json_response = json.loads(response)
         json_response["type"] = "multiple_choice"
 
@@ -51,41 +63,40 @@ class Writing_Task_Service:
             raise ValueError(f"Invalid level: {level}")
 
         prompt = f"""
-        Generate a language learning task in {language} at {level} level.
-        
+        Generate a **fill-in-the-blank task** for language learners in {language} at {level} level without using the example in the level context:
+
         Level proficiency description:
         {level_context}
-        
-        Create a fill-in-the-blank sentence that matches this level's requirements.
-        The sentence should:
-        1. Have exactly one blank marked with ____
-        2. Test appropriate vocabulary or grammar for this level
-        3. Include the English translation of the missing word/phrase in parentheses
-        4. Be relevant to the skills described for this level
-        
-        Return the task and correct answer in JSON format:
-        {{
-            "task": "your sentence with ____",
-            "correct_answer": "the word that goes in the blank"
-        }}
-        """
 
+        Guidelines for the task:
+        1. Create one sentence with a single blank, marked as ____.
+        2. Try to first create the task in the targeted language and then translate the necessary parts to English.
+        3. The sentence must test a key skill for the level, such as vocabulary, grammar, or sentence structure.
+        4. Avoid ambiguity: the missing word/phrase must have **only one correct answer**.
+        5. Pay a lot of attention to the context of the task and the forms of the words.
+        6. Avoid similar-sounding or overly ambiguous options. The answer should be **deterministic** and not allow for multiple correct interpretations.
+        7. Include the English translation of the missing word/phrase (in parentheses).
+        7. Use diverse contexts that reflect everyday use or topics relevant to the level (e.g., greetings, work, or daily routines)
+        8. The example in the level context should be used as a reference for the task, but it should not be exactly the same.
+        9. Do not include any instructions for the task.
+        10. Return the result in JSON format with these fields:
+        
+        {{
+            "task": "The sentence with ____",
+            "correct_answer": "The correct word/phrase"
+        }}
+
+        Examples:
+        - For vocabulary: "I ____ to the park every morning. (go)"
+        - For grammar: "She has been ____ for three hours. (studying)"
+
+        Ensure the task is concise and matches the level's key skills.
+        """
         response = await self.ai_service.get_ai_response(prompt)
         json_response = json.loads(response)
         json_response["type"] = "fill_in_the_blank"
 
         return json_response
-
-    async def generate_find_the_error_task(self, language: str, level: str):
-        pass
-
-    async def generate_write_a_sentence_task(self, language: str, level: str):
-        pass
-
-    async def generate_custom_writing_task(
-        self, language: str, level: str, task_type: str
-    ):
-        pass
 
     async def explain_answer(
         self,
@@ -96,24 +107,26 @@ class Writing_Task_Service:
         user_answer: str,
     ):
         prompt = f"""
-        Analyze the following language task in {user_language}, at level {user_level}:
+        Analyze the following task in {user_language} at {user_level} level:
 
         Task: {task}
         Correct answer: {correct_answer}
         User's answer: {user_answer}
 
-        Provide a brief explanation of whether the user's answer is correct or not, and why. If incorrect, suggest what topics the user should review. Keep the explanation concise and precise.
+        Instructions:
+        1. Determine if the user's answer is correct.
+        2. If the answer is incorrect, provide a short explanation and suggest 1-2 topics to review.
+        3. Keep explanations clear, specific, and tailored to the level.
+        4. Avoid overloading the user with complex terminology.
+        5. The explanation should be in English.
 
-        Return the response in the following JSON format:
+        Return the response in JSON format:
         {{
-        "is_correct": boolean,
-        "explanation": "Brief explanation",
-        "topics_to_review": ["Topic 1", "Topic 2"] // Only if the answer is incorrect
+            "is_correct": boolean,
+            "explanation": "A brief explanation of the user's performance",
+            "topics_to_review": ["Topic 1", "Topic 2"] // Optional, only for incorrect answers
         }}
-
-        Do not include any additional wrapping or metadata.
         """
-
         response = await self.ai_service.get_ai_response(prompt)
 
         return json.loads(response)
