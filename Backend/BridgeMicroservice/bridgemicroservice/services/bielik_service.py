@@ -1,4 +1,6 @@
 import os
+from accelerate import init_empty_weights
+os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:512'
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 from dotenv import load_dotenv
@@ -7,23 +9,46 @@ import time
 import asyncio
 import transformers
 
+
 load_dotenv()
 
 os.environ["HF_HOME"] = os.path.join(os.path.expanduser("~"), "hf_cache")
 
-huggingface_token = os.getenv("HUGGINGFACE_TOKEN")
+# huggingface_token = os.getenv("HUGGINGFACE_TOKEN")
 
-model_name = "speakleash/Bielik-11B-v2"
-tokenizer = AutoTokenizer.from_pretrained(model_name, token=huggingface_token)
+
+model_name = "speakleash/Bielik-7B-v0.1"
+
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+# Check if CUDA is available
+device = "cpu"  # Force CPU usage
+print(f"Using device: {device}")
+
 model = AutoModelForCausalLM.from_pretrained(
-    model_name, torch_dtype=torch.bfloat16, token=huggingface_token
+    model_name,
+    torch_dtype=torch.bfloat16,
+    low_cpu_mem_usage=True,
+    device_map={"": device},  # Map everything to CPU
+    offload_folder="offload",
 )
-pipeline = transformers.pipeline("text-generation", model=model, tokenizer=tokenizer)
+
+tokenizer.pad_token = tokenizer.eos_token  # Set padding token
+model.config.pad_token_id = tokenizer.pad_token_id  # Configure model padding
 
 
 class Bielik_Service:
     def __init__(self):
-        pass
+        self.model = model
+        self.tokenizer = tokenizer
+        self.pipeline = transformers.pipeline(
+            "text-generation",
+            model=self.model,
+            tokenizer=self.tokenizer,
+            device_map={"": device},  # Ensure pipeline uses CPU
+            pad_token_id=self.tokenizer.pad_token_id,
+            eos_token_id=self.tokenizer.eos_token_id,
+        )
 
     def check_with_bielik(self, question: str, answer: str) -> dict:
         start_time = time.time()
@@ -44,21 +69,21 @@ class Bielik_Service:
         try:
             print("Setting up pipeline...")
             print("Generating output...")
-            outputs = pipeline(
-                prompt,
+            sequences = self.pipeline(
+                text_inputs=prompt,
                 max_new_tokens=100,
                 do_sample=True,
                 top_k=50,
                 num_return_sequences=1,
-                temperature=0.7,
-                no_repeat_ngram_size=2,
-                early_stopping=False,
+                pad_token_id=self.tokenizer.pad_token_id,  # Use the configured pad token
+                eos_token_id=self.tokenizer.eos_token_id,
+                return_full_text=False,  # Only return the generated text
             )
             print(f"Tokenization took {time.time() - start_time:.2f} seconds")
 
             print("Decoding output...")
 
-            response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+            response = tokenizer.decode(sequences[0], skip_special_tokens=True)
             print(f"Total processing time: {time.time() - start_time:.2f} seconds")
             print(f"Bielik response: {response}")
 
@@ -86,7 +111,8 @@ class Bielik_Service:
         print("CHECKING WITH BIELIK ASYNC", timeout)
         try:
             return await asyncio.wait_for(
-                asyncio.to_thread(self.check_with_bielik, question, answer), timeout=timeout
+                asyncio.to_thread(self.check_with_bielik, question, answer),
+                timeout=timeout,
             )
         except asyncio.TimeoutError:
             print("Bielik processing timed out")
@@ -95,3 +121,46 @@ class Bielik_Service:
                 "correctQuestion": question,
                 "correctAnswer": answer,
             }
+
+    async def test_generation(self) -> dict:
+        start_time = time.time()
+        prompt = f"""
+        Napisz 'test' po polsku, odpowiedź tylko w formacie JSON, nie dodawaj żadnych innych komentarzy:
+        {{
+            "answer": string
+        }}
+        """
+        print("PROMPTING BIELIK")
+        try:
+            print("Generating output...")
+            sequences = await asyncio.to_thread(
+                self.pipeline,
+                text_inputs=prompt,
+                max_new_tokens=50,
+                do_sample=True,
+                top_k=5,
+                temperature=0.1,  # Lower temperature for more focused output
+                num_return_sequences=1,
+                pad_token_id=self.tokenizer.pad_token_id,
+                eos_token_id=self.tokenizer.eos_token_id,
+                return_full_text=False,
+            )
+            print(f"Tokenization took {time.time() - start_time:.2f} seconds")
+
+            print("Decoding output...")
+            # Pipeline returns a list of dictionaries
+            response = sequences[0]['generated_text'] if sequences else ""
+            print(f"Total processing time: {time.time() - start_time:.2f} seconds")
+            print(f"Bielik response: {response}")
+            print(f"Bielik sequences response: {sequences[0]}")
+
+            try:
+                json_response = json.loads(response)
+                return json_response
+            except json.JSONDecodeError:
+                print(f"Failed to parse JSON from Bielik response: {response}")
+                return {"answer": ""}
+
+        except Exception as e:
+            print(f"ERROR in Bielik processing: {e}")
+            return {"answer": ""}

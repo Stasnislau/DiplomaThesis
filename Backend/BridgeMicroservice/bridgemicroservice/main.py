@@ -23,6 +23,7 @@ app.add_middleware(
 
 app.include_router(
     Writing_Controller(
-        Writing_Task_Service(VectorDBService(), AI_Service())
+        Writing_Task_Service(VectorDBService(), AI_Service()),
+        Bielik_Service(),
     ).get_router()
 )

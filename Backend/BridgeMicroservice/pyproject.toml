@@ -25,6 +25,7 @@ langchain-community = "^0.3.5"
 langchain-mistralai = "^0.2.1"
 sentence-transformers = "^3.2.1"
 pandas = "^2.2.3"
+accelerate = "^1.1.1"
 
 
 [build-system]

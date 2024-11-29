@@ -1,10 +1,14 @@
 from fastapi import APIRouter, HTTPException, Request
 from ..services.writing_task_service import Writing_Task_Service
+from ..services.bielik_service import Bielik_Service
 
 
 class Writing_Controller:
-    def __init__(self, writing_task_service: Writing_Task_Service):
+    def __init__(
+        self, writing_task_service: Writing_Task_Service, bielik_service: Bielik_Service
+    ):
         self.writing_task_service = writing_task_service
+        self.bielik_service = bielik_service
         self.router = APIRouter(prefix="/api")
 
     def get_router(self) -> APIRouter:
@@ -44,10 +48,7 @@ class Writing_Controller:
                 return {"success": True, "payload": result}
             except Exception as e:
                 print(e, "here error writing controller")
-                raise HTTPException(
-                    status_code=500,
-                    detail=str(e)
-                )
+                raise HTTPException(status_code=500, detail=str(e))
 
         @self.router.post("/writing/explainanswer")
         async def explain_answer(request: Request):
@@ -74,6 +75,14 @@ class Writing_Controller:
                     data["user_answer"],
                 )
                 return {"success": True, "payload": result}
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=str(e))
+
+        @self.router.post("/writing/bielik/test")
+        async def test_bielik(request: Request):
+            try:
+                test_result = await self.bielik_service.test_generation()
+                return {"success": True, "payload": test_result}
             except Exception as e:
                 raise HTTPException(status_code=500, detail=str(e))
 
