@@ -78,12 +78,5 @@ class Writing_Controller:
             except Exception as e:
                 raise HTTPException(status_code=500, detail=str(e))
 
-        @self.router.post("/writing/bielik/test")
-        async def test_bielik(request: Request):
-            try:
-                test_result = await self.bielik_service.test_generation()
-                return {"success": True, "payload": test_result}
-            except Exception as e:
-                raise HTTPException(status_code=500, detail=str(e))
-
         return self.router
+

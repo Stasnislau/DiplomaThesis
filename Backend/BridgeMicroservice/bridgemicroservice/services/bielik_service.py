@@ -1,166 +1,119 @@
 import os
-from accelerate import init_empty_weights
-os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:512'
-from transformers import AutoTokenizer, AutoModelForCausalLM
-import torch
-from dotenv import load_dotenv
-import json
-import time
+import aiohttp
 import asyncio
-import transformers
-
-
-load_dotenv()
-
-os.environ["HF_HOME"] = os.path.join(os.path.expanduser("~"), "hf_cache")
-
-# huggingface_token = os.getenv("HUGGINGFACE_TOKEN")
-
-
-model_name = "speakleash/Bielik-7B-v0.1"
-
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-
-# Check if CUDA is available
-device = "cpu"  # Force CPU usage
-print(f"Using device: {device}")
-
-model = AutoModelForCausalLM.from_pretrained(
-    model_name,
-    torch_dtype=torch.bfloat16,
-    low_cpu_mem_usage=True,
-    device_map={"": device},  # Map everything to CPU
-    offload_folder="offload",
-)
-
-tokenizer.pad_token = tokenizer.eos_token  # Set padding token
-model.config.pad_token_id = tokenizer.pad_token_id  # Configure model padding
+from typing import List, Dict, Optional
+import json
 
 
 class Bielik_Service:
     def __init__(self):
-        self.model = model
-        self.tokenizer = tokenizer
-        self.pipeline = transformers.pipeline(
-            "text-generation",
-            model=self.model,
-            tokenizer=self.tokenizer,
-            device_map={"": device},  # Ensure pipeline uses CPU
-            pad_token_id=self.tokenizer.pad_token_id,
-            eos_token_id=self.tokenizer.eos_token_id,
-        )
+        self.api_url = os.getenv("BIELIK_API_URL")
+        self.api_key = os.getenv("BIELIK_API_KEY")
+        self.headers = {"Content-Type": "application/json", "x-api-key": self.api_key}
 
-    def check_with_bielik(self, question: str, answer: str) -> dict:
-        start_time = time.time()
-        prompt = f"""Czy pytanie i odpowiedź są poprawne i pełne? Pytanie musi mieć jedną konkretną odpowiedź.
-        Oto pytanie: {question}
-        Oto odpowiedź: {answer}
-        Odpowiedź musi być w formie JSON:
+    async def ask_bielik(self, question: str) -> str:
+        messages = [
+            {"role": "system", "content": "Jesteś pomocnym asystentem Bielik."},
+            {"role": "user", "content": question},
+        ]
+
+        try:
+
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    f"{self.api_url}/api/text/predict",
+                    headers=self.headers,
+                    json={"prompt": messages},
+                ) as response:
+                    initial_result = await response.json()
+
+                    if initial_result["status"] == "failed":
+                        raise Exception("Initial request failed")
+                    print(initial_result, "INITIAL RESULT")
+                    task_id = initial_result["task_id"]
+                    return await self._wait_for_completion(session, task_id)
+
+        except Exception as e:
+            print(f"Error in ask_bielik: {e}")
+            return "Przepraszam, wystąpił błąd. Spróbuj ponownie później."
+
+    async def _wait_for_completion(
+        self,
+        session: aiohttp.ClientSession,
+        task_id: str,
+        max_retries: int = 3,
+        delay: float = 15.0,
+    ) -> str:
+
+        for attempt in range(max_retries):
+            async with session.get(
+                f"{self.api_url}/api/text/task_status/{task_id}", headers=self.headers
+            ) as response:
+                result = await response.json()
+
+                print(result, "RESULT")
+
+                match result["status"]:
+                    case "completed":
+                        return result["result"]
+                    case "failed":
+                        raise Exception(f"Task failed: {result.get('result')}")
+                    case "accepted" | "pending":
+                        print(
+                            f"Task still processing, attempt {attempt + 1}/{max_retries}"
+                        )
+                        await asyncio.sleep(delay)
+                    case _:
+                        raise Exception(f"Unknown status: {result['status']}")
+
+        raise TimeoutError(f"Task {task_id} timed out after {max_retries} attempts")
+
+    async def check_with_bielik(self, question: str, answer: str) -> dict:
+
+        prompt = f"""Czy pytanie i odpowiedź są poprawne i pełne? 
+        Pytanie: {question}
+        Odpowiedź: {answer}
+        
+        Odpowiedz w formacie JSON:
         {{
             "isCorrect": boolean,
-            "correctQuestion": string,
-            "correctAnswer": string
+            "explanation": string
         }}
-        Jeśli odpowiedź jest poprawna, to isCorrect musi być true, a correctQuestion i correctAnswer muszą być takie same jak odpowiedź i pytanie.
-        Jeśli odpowiedź jest niepoprawna, to isCorrect musi być false, a correctQuestion i correctAnswer muszą być takie same jak pytanie i odpowiedź.
-        Nie dodawaj żadnych innych komentarzy.
         """
-        print("PROMPTING BIELIK")
+
+        result = await self.ask_bielik(prompt)
         try:
-            print("Setting up pipeline...")
-            print("Generating output...")
-            sequences = self.pipeline(
-                text_inputs=prompt,
-                max_new_tokens=100,
-                do_sample=True,
-                top_k=50,
-                num_return_sequences=1,
-                pad_token_id=self.tokenizer.pad_token_id,  # Use the configured pad token
-                eos_token_id=self.tokenizer.eos_token_id,
-                return_full_text=False,  # Only return the generated text
-            )
-            print(f"Tokenization took {time.time() - start_time:.2f} seconds")
-
-            print("Decoding output...")
-
-            response = tokenizer.decode(sequences[0], skip_special_tokens=True)
-            print(f"Total processing time: {time.time() - start_time:.2f} seconds")
-            print(f"Bielik response: {response}")
-
-            try:
-                json_response = json.loads(response)
-                return json_response
-            except json.JSONDecodeError:
-                print(f"Failed to parse JSON from Bielik response: {response}")
-                return {
-                    "isCorrect": True,
-                    "correctQuestion": question,
-                    "correctAnswer": answer,
-                }
-
-        except Exception as e:
-            print(f"ERROR in Bielik processing: {e}")
+            return json.loads(result)
+        except json.JSONDecodeError:
             return {
                 "isCorrect": True,
-                "correctQuestion": question,
-                "correctAnswer": answer,
+                "explanation": "Nie mogłem przetworzyć odpowiedzi",
             }
 
-    async def check_with_bielik_async(self, question: str, answer: str) -> dict:
-        timeout = 1200
-        print("CHECKING WITH BIELIK ASYNC", timeout)
-        try:
-            return await asyncio.wait_for(
-                asyncio.to_thread(self.check_with_bielik, question, answer),
-                timeout=timeout,
-            )
-        except asyncio.TimeoutError:
-            print("Bielik processing timed out")
-            return {
-                "isCorrect": True,
-                "correctQuestion": question,
-                "correctAnswer": answer,
-            }
-
-    async def test_generation(self) -> dict:
-        start_time = time.time()
+    async def verify_polish_task(self, task: dict) -> dict:
         prompt = f"""
-        Napisz 'test' po polsku, odpowiedź tylko w formacie JSON, nie dodawaj żadnych innych komentarzy:
+        Sprawdź poprawność tego zadania językowego:
+        
+        Zadanie: {task['task']}
+        Opcje: {task['options']}
+        Poprawna odpowiedź: {task['correct_answer']}
+        
+        Odpowiedz w formacie JSON:
         {{
-            "answer": string
+            "is_valid": boolean,
+            "explanation": "Wyjaśnienie problemów jeśli są",
+            "suggestions": ["Sugestie poprawek jeśli potrzebne"]
         }}
         """
-        print("PROMPTING BIELIK")
+        
         try:
-            print("Generating output...")
-            sequences = await asyncio.to_thread(
-                self.pipeline,
-                text_inputs=prompt,
-                max_new_tokens=50,
-                do_sample=True,
-                top_k=5,
-                temperature=0.1,  # Lower temperature for more focused output
-                num_return_sequences=1,
-                pad_token_id=self.tokenizer.pad_token_id,
-                eos_token_id=self.tokenizer.eos_token_id,
-                return_full_text=False,
-            )
-            print(f"Tokenization took {time.time() - start_time:.2f} seconds")
+            result = await self.ask_bielik(prompt)
+            return json.loads(result)
+        except json.JSONDecodeError:
+            # Return safe default if parsing fails
+            return {
+                "is_valid": True,
+                "explanation": "Nie można przetworzyć odpowiedzi",
+                "suggestions": []
+            }
 
-            print("Decoding output...")
-            # Pipeline returns a list of dictionaries
-            response = sequences[0]['generated_text'] if sequences else ""
-            print(f"Total processing time: {time.time() - start_time:.2f} seconds")
-            print(f"Bielik response: {response}")
-            print(f"Bielik sequences response: {sequences[0]}")
-
-            try:
-                json_response = json.loads(response)
-                return json_response
-            except json.JSONDecodeError:
-                print(f"Failed to parse JSON from Bielik response: {response}")
-                return {"answer": ""}
-
-        except Exception as e:
-            print(f"ERROR in Bielik processing: {e}")
-            return {"answer": ""}

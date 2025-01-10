@@ -24,7 +24,8 @@ export const HomePage: React.FC = () => {
       setCurrentTaskData(null);
 
       const taskType =
-        Math.random() < 0.5 ? "multiple_choice" : "fill_in_the_blank";
+        // Math.random() < 0.5 ? "multiple_choice" : "fill_in_the_blank"; TODO: change it back later
+        "multiple_choice";
 
       createTask({ language, level, taskType });
 

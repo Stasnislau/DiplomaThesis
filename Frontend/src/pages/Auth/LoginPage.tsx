@@ -34,7 +34,7 @@ export const LoginPage: React.FC = () => {
       setLoading(true);
       const result = await login(input);
       if (!result.success) {
-        setError(result.errors ? result.errors[0] : "Unknown error");
+        setError(result.message ?? "Unknown error");
         return;
       }
       navigate("/");

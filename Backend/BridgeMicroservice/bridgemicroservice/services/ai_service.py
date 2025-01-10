@@ -19,3 +19,13 @@ class AI_Service:
             response_format={"type": "json_object"},
         )
         return chat_response.choices[0].message.content
+
+    async def get_mistral_response(self, input_data):
+        chat_response = completion(
+            model="mistral/open-mixtral-8x22b",
+            messages=[
+                {"role": "user", "content": input_data},
+            ],
+            response_format={"type": "json_object"},
+        )
+        return chat_response.choices[0].message.content
