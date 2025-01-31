@@ -19,7 +19,7 @@ export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
-    @Inject('EVENT_SERVICE') private readonly eventService: ClientProxy,
+    @Inject("EVENT_SERVICE") private readonly eventService: ClientProxy
   ) {}
 
   async onModuleInit() {
@@ -58,7 +58,7 @@ export class AuthService {
     };
   }
 
-  async register(userDto: UserDto) {
+  async register(userDto: UserDto): Promise<boolean> {
     const hashedPassword = await bcrypt.hash(userDto.password, 10);
     const user = await this.prisma.user.create({
       data: {
@@ -73,22 +73,19 @@ export class AuthService {
         },
       },
     });
-    const refreshToken = await this.createRefreshToken(user);
+    console.log("CREATED_USER");
+    await this.eventService
+      .emit("CREATED_USER", {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        surname: user.surname,
+        role: user.role,
+      })
+      .toPromise();
+    console.log("CREATED_USER_EMITTED");
 
-    const accessToken = this.generateAccessToken(user);
-
-    this.eventService.emit('user.created', {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      surname: user.surname,
-      role: user.role,
-    });
-
-    return {
-      accessToken,
-      refreshToken,
-    };
+    return true;
   }
 
   async createRefreshToken(user: User): Promise<string> {
@@ -184,7 +181,7 @@ export class AuthService {
       data: { password: hashedPassword },
     });
 
-    this.eventService.emit('password.reset', {
+    this.eventService.emit("password.reset", {
       id: user.id,
       email: user.email,
       newPassword: newPassword,

@@ -3,18 +3,26 @@ import { login as apiLogin, LoginUserRequest } from "../api/mutations/login";
 import { refresh as apiRefresh } from "../api/mutations/refresh";
 import Cookies from "js-cookie";
 import { logout as apiLogout } from "../api/mutations/logout";
+import { getAccessToken } from "@/utils/getAccessToken";
+
 interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (input: LoginUserRequest) => Promise<{ success: boolean; message?: string, errors?: string[] }>;
+  initialized: boolean;
+  login: (
+    input: LoginUserRequest
+  ) => Promise<{ success: boolean; message?: string; errors?: string[] }>;
   logout: () => void;
   refresh: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
-  isLoading: false,
+  isLoading: true,
+  initialized: false,
+  userRole: null,
   login: async (input: LoginUserRequest) => {
+    set({ isLoading: true });
     try {
       const data = await apiLogin(input);
       if (data.success) {
@@ -25,15 +33,23 @@ export const useAuthStore = create<AuthState>((set) => ({
         ) {
           Cookies.set("refreshToken", data.payload.refreshToken);
         }
-        set({ isAuthenticated: true, isLoading: false });
+        set({
+          isAuthenticated: true,
+          isLoading: false,
+          initialized: true,
+        });
         return { success: true };
       } else {
-        set({ isLoading: false });
-        return { success: false, message: data.payload.message, errors: data.payload.errors };
+        set({ isLoading: false, initialized: true });
+        return {
+          success: false,
+          message: data.payload.message,
+          errors: data.payload.errors,
+        };
       }
     } catch (error) {
       console.error("Login error:", error);
-      set({ isLoading: false });
+      set({ isLoading: false, initialized: true });
       return { success: false, message: "Unknown error" };
     }
   },
@@ -41,17 +57,33 @@ export const useAuthStore = create<AuthState>((set) => ({
     apiLogout();
     localStorage.removeItem("accessToken");
     Cookies.remove("refreshToken");
-    set({ isAuthenticated: false, isLoading: false });
+    set({
+      isAuthenticated: false,
+      isLoading: false,
+      initialized: true,
+    });
   },
   refresh: async () => {
+    if (getAccessToken() === null) {
+      set({ isLoading: false, initialized: true });
+      return;
+    }
     set({ isLoading: true });
     try {
       const newAccessToken = await apiRefresh();
       localStorage.setItem("accessToken", newAccessToken);
-      set({ isAuthenticated: true, isLoading: false });
+      set({
+        isAuthenticated: true,
+        initialized: true,
+      });
     } catch (error) {
       console.error("Refresh failed:", error);
-      set({ isAuthenticated: false, isLoading: false });
+      set({
+        isAuthenticated: false,
+        initialized: true,
+      });
+    } finally {
+      set({ isLoading: false });
     }
   },
 }));

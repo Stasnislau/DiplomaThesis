@@ -27,8 +27,10 @@ export const RegisterPage: React.FC = () => {
   });
 
   const onSubmit = async (data: RegisterUserRequest) => {
-    await register(data);
-    navigate("/login");
+    const response = await register(data);
+    if (response === true) {
+      navigate("/login");
+    }
   };
 
   return (

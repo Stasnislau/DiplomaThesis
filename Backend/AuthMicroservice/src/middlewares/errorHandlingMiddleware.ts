@@ -5,20 +5,21 @@ import {
   HttpException,
   UnauthorizedException,
   BadRequestException,
+  InternalServerErrorException,
 } from "@nestjs/common";
 import { Response } from "express";
-import { TokenExpiredError, JsonWebTokenError } from 'jsonwebtoken';
+import { TokenExpiredError, JsonWebTokenError } from "jsonwebtoken";
 
 @Catch()
 export class ErrorHandlingMiddleware implements ExceptionFilter {
   catch(exception: Error, host: ArgumentsHost) {
     if (exception instanceof TokenExpiredError) {
-      this.handleError(new UnauthorizedException('Token has expired'), host);
+      this.handleError(new UnauthorizedException("Token has expired"), host);
       return;
     }
-    
+
     if (exception instanceof JsonWebTokenError) {
-      this.handleError(new UnauthorizedException('Invalid token'), host);
+      this.handleError(new UnauthorizedException("Invalid token"), host);
       return;
     }
 
@@ -30,7 +31,10 @@ export class ErrorHandlingMiddleware implements ExceptionFilter {
         exception.message,
         exception.stack
       );
-      this.handleError(new UnauthorizedException(exception.message), host);
+      this.handleError(
+        new InternalServerErrorException(exception.message),
+        host
+      );
     }
   }
 
@@ -49,10 +53,10 @@ export class ErrorHandlingMiddleware implements ExceptionFilter {
 
     if (exception instanceof BadRequestException) {
       const validationErrors = exception.getResponse();
-      if (typeof validationErrors === 'object') {
+      if (typeof validationErrors === "object") {
         responseBody.payload = {
           ...responseBody.payload,
-          errors: validationErrors['message'] || validationErrors,
+          errors: validationErrors["message"] || validationErrors,
         };
       }
     }

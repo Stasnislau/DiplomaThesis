@@ -1,6 +1,6 @@
 import React, { useCallback } from "react";
 import { TaskData } from "@/types/responses/TaskResponse";
-import Button from "../common/Button";
+import Button from "@/components/common/Button";
 
 interface TaskComponentProps {
   taskData: TaskData;

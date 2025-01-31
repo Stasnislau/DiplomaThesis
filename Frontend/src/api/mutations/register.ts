@@ -21,7 +21,11 @@ export const register = async (input: RegisterUserRequest) => {
     body: JSON.stringify(input),
   });
 
-  const data = (await response.json()) as BaseResponse<User>;
+  const data = (await response.json()) as BaseResponse<boolean>;
 
-  return data;
+  if (!data.success) {
+    throw new Error("failed to register");
+  }
+
+  return data.payload;
 };

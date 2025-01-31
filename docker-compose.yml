@@ -1,56 +1,46 @@
+name: diploma-thesis
+
 version: '3.8'
 
 services:
-  postgres:
+
+  postgres-auth:
     image: postgres:15
     restart: always
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: authdb
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_auth_data:/var/lib/postgresql/data
     ports:
       - '5432:5432'
 
-  auth-microservice:
-    build:
-      context: ./Backend/authMicroservice
-    ports:
-      - '5000:5000'
-    depends_on:
-      - postgres
-      - redis
+  postgres-user:
+    image: postgres:15
+    restart: always
     environment:
-      DATABASE_URL: ${DATABASE_URL}
-      REDIS_HOST: ${redis-host}
-      REDIS_PORT: ${redis-port}
-    command: >
-      sh -c "npx prisma migrate deploy &&
-             npm run start"
-
-  gateway:
-    build:
-      context: ./Backend/Gateway
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: userdb
+    volumes:
+      - postgres_user_data:/var/lib/postgresql/data
     ports:
-      - '3001:3001' 
-    depends_on:
-      - auth-microservice
-      - redis
+      - '5433:5432'
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: always
+    ports:
+      - '5672:5672'  # AMQP protocol port
+      - '15672:15672'  # Management UI port
     environment:
-      AUTH_MICROSERVICE_URL: ${AUTH_MICROSERVICE_URL}
-      GATEWAY_PORT: 3001
-    command: >
-      sh -c "npm run start"
-
-  frontend:
-    build:
-      context: ./frontend
-    ports:
-      - '3000:80'
-    depends_on:
-      - auth-microservice
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
 
 volumes:
-  postgres_data:
-  redis_data:
+  postgres_auth_data:
+  postgres_user_data:
+  rabbitmq_data:

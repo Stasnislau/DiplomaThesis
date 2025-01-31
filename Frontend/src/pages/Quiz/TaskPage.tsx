@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useExplainAnswer } from "@/api/hooks/useExplainAnswer";
 import { TaskData } from "@/types/responses/TaskResponse";
-import { TaskComponent } from "@/components/task/TaskComponent";
+import { TaskComponent } from "./components/TaskComponent";
 import Button from "@/components/common/Button";
 import { useCreateTask } from "@/api/hooks/useCreateTask";
 

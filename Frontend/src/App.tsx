@@ -6,13 +6,13 @@ import LoadingPage from "./components/layout/Loading";
 import "./App.css";
 
 function App() {
-  const { refresh, isLoading } = useAuthStore();
+  const { refresh, isLoading, initialized } = useAuthStore();
 
   useEffect(() => {
     refresh();
   }, [refresh]);
-
-  if (isLoading) {
+  
+  if (isLoading || !initialized) {
     return <LoadingPage />;
   }
   return <RouterProvider router={router} />;
