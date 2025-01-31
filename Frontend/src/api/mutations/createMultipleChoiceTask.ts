@@ -1,4 +1,4 @@
-import { API_URL } from "../consts";
+import { BRIDGE_MICROSERVICE_URL } from "../consts";
 import { TaskData } from "@/types/responses/TaskResponse";
 import { createTaskRequest } from "./createBlankSpaceTask";
 import { BaseResponse } from "@/types/responses/BaseResponse";
@@ -6,13 +6,16 @@ import { BaseResponse } from "@/types/responses/BaseResponse";
 export async function createMultipleChoiceTask(
   data: createTaskRequest
 ): Promise<TaskData> {
-  const response = await fetch(`${API_URL}/api/bridge/writing/multiplechoice`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  });
+  const response = await fetch(
+    `${BRIDGE_MICROSERVICE_URL}/writing/multiplechoice`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    }
+  );
 
   if (!response.ok) {
     console.log(response);

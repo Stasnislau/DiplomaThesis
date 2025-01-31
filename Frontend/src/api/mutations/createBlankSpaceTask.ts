@@ -1,6 +1,6 @@
 import { BaseResponse } from "@/types/responses/BaseResponse";
-import { API_URL } from "../consts";
 import { TaskData } from "@/types/responses/TaskResponse";
+import { BRIDGE_MICROSERVICE_URL } from "../consts";
 
 export interface createTaskRequest {
   language: string;
@@ -10,7 +10,7 @@ export interface createTaskRequest {
 export async function createBlankSpaceTask(
   data: createTaskRequest
 ): Promise<TaskData> {
-  const response = await fetch(`${API_URL}/api/bridge/writing/blank`, {
+  const response = await fetch(`${BRIDGE_MICROSERVICE_URL}/writing/blank`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

@@ -9,7 +9,7 @@ class Writing_Controller:
     ):
         self.writing_task_service = writing_task_service
         self.bielik_service = bielik_service
-        self.router = APIRouter(prefix="/api")
+        self.router = APIRouter()
 
     def get_router(self) -> APIRouter:
         @self.router.post("/writing/multiplechoice")

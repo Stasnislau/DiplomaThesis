@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from "react-router-dom";
+import { createBrowserRouter } from "react-router-dom";
 import { HomePage } from "./pages/HomePage";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
 import UnprotectedRoute from "./components/layout/UnprotectedRoute";
@@ -7,7 +7,8 @@ import { LoginPage } from "./pages/Auth/LoginPage";
 import { RegisterPage } from "./pages/Auth/RegisterPage";
 import { ResetPasswordPage } from "./pages/Auth/ResetPasswordPage";
 import NotFoundPage from "./components/layout/NotFoundPage";
-
+import { TaskPage } from "./pages/Quiz/TaskPage";
+import { ProfilePage } from "./pages/User/Profile";
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -19,6 +20,28 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <HomePage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/profile",
+        element: (
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        ),
+      },
+    ],
+  },
+  {
+    path: "/quiz",
+    element: <WithTopBar />,
+    children: [
+      {
+        path: "",
+        element: (
+          <ProtectedRoute>
+            <TaskPage />
           </ProtectedRoute>
         ),
       },

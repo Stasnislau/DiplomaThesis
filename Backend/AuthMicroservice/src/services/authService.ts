@@ -5,15 +5,26 @@ import { User, RefreshToken } from "@prisma/client";
 import config from "../config/configuration";
 import { UserDto } from "src/dtos/userDto";
 import { v4 as uuidv4 } from "uuid";
-import { Injectable, BadRequestException, UnauthorizedException } from "@nestjs/common";
+import {
+  Injectable,
+  BadRequestException,
+  UnauthorizedException,
+} from "@nestjs/common";
 import { LoginDto } from "src/dtos/loginDto";
+import { Inject } from "@nestjs/common";
+import { ClientProxy } from "@nestjs/microservices";
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
-    private readonly prisma: PrismaService
+    private readonly prisma: PrismaService,
+    @Inject('EVENT_SERVICE') private readonly eventService: ClientProxy,
   ) {}
+
+  async onModuleInit() {
+    await this.eventService.connect();
+  }
 
   async validateUser(email: string, password: string): Promise<User | null> {
     const user = await this.prisma.user.findUnique({ where: { email } });
@@ -33,7 +44,6 @@ export class AuthService {
     }
     return null;
   }
-
 
   async login(loginDto: LoginDto) {
     const user = await this.validateUser(loginDto.email, loginDto.password);
@@ -66,6 +76,14 @@ export class AuthService {
     const refreshToken = await this.createRefreshToken(user);
 
     const accessToken = this.generateAccessToken(user);
+
+    this.eventService.emit('user.created', {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      surname: user.surname,
+      role: user.role,
+    });
 
     return {
       accessToken,
@@ -165,6 +183,13 @@ export class AuthService {
       where: { userId: user.id },
       data: { password: hashedPassword },
     });
+
+    this.eventService.emit('password.reset', {
+      id: user.id,
+      email: user.email,
+      newPassword: newPassword,
+    });
+
     return newPassword;
   }
 

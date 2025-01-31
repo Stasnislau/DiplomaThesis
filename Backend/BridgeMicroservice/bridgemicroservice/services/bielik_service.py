@@ -13,7 +13,7 @@ class Bielik_Service:
 
     async def ask_bielik(self, question: str) -> str:
         messages = [
-            {"role": "system", "content": "Jesteś pomocnym asystentem Bielik."},
+            {"role": "system", "content": "Jesteś pomocnym asystentem Bielik. Odpowiedz w formacie JSON."},
             {"role": "user", "content": question},
         ]
 
@@ -89,31 +89,3 @@ class Bielik_Service:
                 "isCorrect": True,
                 "explanation": "Nie mogłem przetworzyć odpowiedzi",
             }
-
-    async def verify_polish_task(self, task: dict) -> dict:
-        prompt = f"""
-        Sprawdź poprawność tego zadania językowego:
-        
-        Zadanie: {task['task']}
-        Opcje: {task['options']}
-        Poprawna odpowiedź: {task['correct_answer']}
-        
-        Odpowiedz w formacie JSON:
-        {{
-            "is_valid": boolean,
-            "explanation": "Wyjaśnienie problemów jeśli są",
-            "suggestions": ["Sugestie poprawek jeśli potrzebne"]
-        }}
-        """
-        
-        try:
-            result = await self.ask_bielik(prompt)
-            return json.loads(result)
-        except json.JSONDecodeError:
-            # Return safe default if parsing fails
-            return {
-                "is_valid": True,
-                "explanation": "Nie można przetworzyć odpowiedzi",
-                "suggestions": []
-            }
-

@@ -19,7 +19,7 @@ export class ProxyMiddleware implements NestMiddleware {
           url: targetUrl,
           headers,
           data: body,
-          validateStatus: () => true, // This allows to handle any status code
+          validateStatus: () => true, 
         })
       );
 

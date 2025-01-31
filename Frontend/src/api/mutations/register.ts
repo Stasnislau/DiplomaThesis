@@ -1,4 +1,4 @@
-import { API_URL } from "../consts";
+import { AUTH_MICROSERVICE_URL } from "../consts";
 import { BaseResponse } from "../../types/responses/BaseResponse";
 import { User } from "../../types/models/User";
 import { userSchema } from "../../types/models/User";
@@ -13,7 +13,7 @@ export const registerUserDtoSchema = userSchema
 export type RegisterUserRequest = z.infer<typeof registerUserDtoSchema>;
 
 export const register = async (input: RegisterUserRequest) => {
-  const response = await fetch(`${API_URL}/api/auth/register`, {
+  const response = await fetch(`${AUTH_MICROSERVICE_URL}/auth/register`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

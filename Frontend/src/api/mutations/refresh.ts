@@ -1,4 +1,4 @@
-import { API_URL } from "../consts";
+import { AUTH_MICROSERVICE_URL } from "../consts";
 import { BaseResponse } from "../../types/responses/BaseResponse";
 import Cookies from "js-cookie";
 import { getAccessToken } from "../../utils/getAccessToken";
@@ -13,7 +13,7 @@ export const refresh = async () => {
   const accessToken = getAccessToken();
   const refreshToken = getRefreshToken();
 
-  const response = await fetch(`${API_URL}/api/auth/refresh`, {
+  const response = await fetch(`${AUTH_MICROSERVICE_URL}/auth/refresh`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

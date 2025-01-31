@@ -65,14 +65,19 @@ class Writing_Task_Service:
                 verification_response = json.loads(verification_response)
             elif language == "Polish":
                 verification_response = await self.verify_generated_polish_task(json_response)
+                # Clean and parse the verification response
+                if isinstance(verification_response, str):
+                    # Find the first valid JSON object in the response
+                    import re
+                    json_str = re.search(r'\{.*\}', verification_response.replace('\n', ''), re.DOTALL)
+                    if json_str:
+                        verification_response = json.loads(json_str.group())
             
-            if verification_response["is_valid"]:
-                json_response["type"] = "multiple_choice"
-                return json_response
-            else:
+            if verification_response.get("is_valid") is False and verification_response.get("better_task"):
                 json_response = verification_response["better_task"]
-                json_response["type"] = "multiple_choice"
-                return json_response
+            
+            json_response["type"] = "multiple_choice"
+            return json_response
             
         except Exception as e:
             print(f"Verification error: {e}")
@@ -203,6 +208,8 @@ class Writing_Task_Service:
         Sprawdź dokładnie następujące zadanie językowe:
         {task}
 
+        Nie potrzeba tłumaczyć zadania, tylko sprawdzić czy jest poprawne. Nie zwracaj better_task jeśli zadanie jest poprawne.
+
         Kryteria weryfikacji:
         1. Poprawność językowa:
             - Sprawdź poprawność gramatyczną
@@ -229,8 +236,6 @@ class Writing_Task_Service:
         }}
         Kiedy zwracasz odpowiedź, zwróć tylko JSON, bez dodatkowych komentarzy i nie zwracaj better_task jeśli zadanie jest poprawne.
         """
-        
-        # Use Bielik service for verification
         bielik_service = Bielik_Service()
         response = await bielik_service.ask_bielik(prompt)
         return json.loads(response)

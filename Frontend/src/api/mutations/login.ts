@@ -1,4 +1,4 @@
-import { API_URL } from "../consts";
+import { AUTH_MICROSERVICE_URL } from "../consts";
 import { getAccessToken } from "../../utils/getAccessToken";
 import { BaseResponse } from "../../types/responses/BaseResponse";
 import { z } from "zod";
@@ -19,7 +19,7 @@ export type LoginUserRequest = z.infer<typeof loginUserDtoSchema>;
 
 export const login = async (input: LoginUserRequest) => {
   const accessToken = getAccessToken();
-  const response = await fetch(`${API_URL}/api/auth/login`, {
+  const response = await fetch(`${AUTH_MICROSERVICE_URL}/auth/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

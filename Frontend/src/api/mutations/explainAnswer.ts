@@ -1,5 +1,5 @@
 import { BaseResponse } from "@/types/responses/BaseResponse";
-import { API_URL } from "../consts";
+import { BRIDGE_MICROSERVICE_URL } from "../consts";
 
 export interface ExplainAnswerRequest {
   language: string;
@@ -18,7 +18,7 @@ export interface ExplainAnswerResponse {
 export async function explainAnswer(
   data: ExplainAnswerRequest
 ): Promise<ExplainAnswerResponse> {
-  const response = await fetch(`${API_URL}/api/bridge/writing/explainanswer`, {
+  const response = await fetch(`${BRIDGE_MICROSERVICE_URL}/writing/explainanswer`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

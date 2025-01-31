@@ -1,4 +1,4 @@
-import { API_URL } from "../consts";
+import { AUTH_MICROSERVICE_URL } from "../consts";
 import { BaseResponse } from "../../types/responses/BaseResponse";
 import { getAccessToken } from "../../utils/getAccessToken";
 import { getRefreshToken } from "@/utils/getRefreshToken";
@@ -6,7 +6,7 @@ import { getRefreshToken } from "@/utils/getRefreshToken";
 export const logout = async () => {
   const accessToken = getAccessToken();
   const refreshToken = getRefreshToken();
-  const response = await fetch(`${API_URL}/api/auth/logout`, {
+  const response = await fetch(`${AUTH_MICROSERVICE_URL}/auth/logout`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
