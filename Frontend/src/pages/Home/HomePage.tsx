@@ -6,15 +6,19 @@ import { StatCard } from "./components/StatCard";
 import { HeroSection } from "./components/HeroSection";
 import { LanguageCard } from "./components/LanguageCard";
 import {
-  BritishFlagIcon,
   FrenchFlagIcon,
   GermanFlagIcon,
   ItalianFlagIcon,
   PolishFlagIcon,
   SpanishFlagIcon,
+  RussianFlagIcon,
+  BritishFlagIcon,
 } from "@/assets/icons";
-import { Language, useAvailableLanguages } from "@/api/hooks/useAvailableLanguages";
-import LoadingSpinner from "@/components/common/LoadingSpinner";
+import {
+  Language,
+  useAvailableLanguages,
+} from "@/api/hooks/useAvailableLanguages";
+import { useMyLanguages } from "@/api/hooks/useUserLanguages";
 
 const features = [
   {
@@ -59,53 +63,48 @@ const flagIcons = {
   de: <GermanFlagIcon className="w-12 h-12" />,
   it: <ItalianFlagIcon className="w-12 h-12" />,
   pl: <PolishFlagIcon className="w-12 h-12" />,
+  en: <BritishFlagIcon className="w-12 h-12" />,
+  ru: <RussianFlagIcon className="w-12 h-12" />,
 };
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { languages, isLoading, error } = useAvailableLanguages();
 
-  const handleLanguageClick = (language: Language) => {
-    if (!language.isStarted) {
-      navigate(`/quiz/placement/${language.code}`);
-    } else {
-      navigate(`/quiz/${language.code}/${language.currentLevel}`);
-    }
-  };
+  const {
+    languages: userLanguages,
+    isLoading: isUserLanguagesLoading,
+    error: userLanguagesError,
+  } = useMyLanguages();
 
+  const handleLanguageClick = (language: Language) => {
+    navigate(`/quiz/placement/${language.code}`);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100">
       <HeroSection />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <h2 className="text-3xl font-bold text-gray-900 mb-8">
           Available Languages
         </h2>
-        {isLoading ? (
-          <div className="flex justify-center">
-            <LoadingSpinner />
-          </div>
-        ) : error ? (
-          <div className="text-center text-red-500">
-            Failed to load languages. Please try again later.
-          </div>
-        ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {languages?.map((language) => (
-              <div
-                key={language.code}
-                onClick={() => handleLanguageClick(language)}
-                className="cursor-pointer"
-              >
-                <LanguageCard
-                  {...language}
-                  flagIcon={flagIcons[language.code as keyof typeof flagIcons]}
-                />
-              </div>
-            ))}
-          </div>
-        )}
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {languages?.map((language) => (
+            <LanguageCard
+              key={language.code}
+              flagIcon={flagIcons[language.code as keyof typeof flagIcons]}
+              name={language.name}
+              code={language.code}
+              isStarted={
+                userLanguages?.some(
+                  (userLanguage) => userLanguage.languageId === language.id
+                ) ?? false
+              }
+            />
+          ))}
+        </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

@@ -26,11 +26,6 @@ export class ErrorHandlingMiddleware implements ExceptionFilter {
     if (exception instanceof HttpException) {
       this.handleError(exception, host);
     } else {
-      console.log(
-        "Error in error handling middleware:",
-        exception.message,
-        exception.stack
-      );
       this.handleError(
         new InternalServerErrorException(exception.message),
         host

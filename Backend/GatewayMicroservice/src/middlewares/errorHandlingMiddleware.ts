@@ -3,8 +3,8 @@ import {
   Catch,
   ArgumentsHost,
   HttpException,
-  UnauthorizedException,
   BadRequestException,
+  InternalServerErrorException,
 } from "@nestjs/common";
 import { Response } from "express";
 
@@ -14,12 +14,10 @@ export class ErrorHandlingMiddleware implements ExceptionFilter {
     if (exception instanceof HttpException) {
       this.handleError(exception, host);
     } else {
-      console.log(
-        "Error in error handling middleware:",
-        exception.message,
-        exception.stack
+      this.handleError(
+        new InternalServerErrorException(exception.message),
+        host
       );
-      this.handleError(new UnauthorizedException(exception.message), host);
     }
   }
 

@@ -1,7 +1,7 @@
 import { JwtService } from "@nestjs/jwt";
 import { PrismaService } from "../prisma/prismaService";
 import * as bcrypt from "bcrypt";
-import { User, RefreshToken } from "@prisma/client";
+import { User } from "@prisma/client";
 import config from "../config/configuration";
 import { UserDto } from "src/dtos/userDto";
 import { v4 as uuidv4 } from "uuid";
@@ -74,15 +74,13 @@ export class AuthService {
       },
     });
     console.log("CREATED_USER");
-    await this.eventService
-      .emit("CREATED_USER", {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        surname: user.surname,
-        role: user.role,
-      })
-      .toPromise();
+    await this.eventService.emit("user.created", {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      surname: user.surname,
+      role: user.role,
+    });
     console.log("CREATED_USER_EMITTED");
 
     return true;

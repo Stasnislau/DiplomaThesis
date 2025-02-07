@@ -8,6 +8,7 @@ export async function getAvailableLanguages(): Promise<Language[]> {
     method: "GET",
   });
 
+
   const data = (await response.json()) as BaseResponse<Language[]>;
   if (!data.success) {
     throw new Error("Failed to fetch available languages");

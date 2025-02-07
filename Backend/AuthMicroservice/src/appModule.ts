@@ -14,8 +14,8 @@ import { EventModule } from "./modules/eventModule";
     }),
     JwtModule.register({
       global: true,
-      secret: configuration().jwt.secret,
-      signOptions: { expiresIn: configuration().jwt.expiresIn },
+      secret: process.env.JWT_SECRET,
+      signOptions: { expiresIn: "1h" },
     }),
     AuthModule,
     EventModule,

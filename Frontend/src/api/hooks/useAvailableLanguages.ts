@@ -2,13 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { getAvailableLanguages } from "../queries/getAvailableLanguages";
 
 export interface Language {
+  id: string;
   name: string;
   code: string;
-  isStarted: boolean;
-  totalLessons: number;
-  completedLessons?: number;
-  levels: string[];
-  currentLevel?: string;
 }
 
 export function useAvailableLanguages() {
