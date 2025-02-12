@@ -1,5 +1,5 @@
 export default () => ({
-  port: process.env.PORT || 3001,
+  port: process.env.PORT || 3002,
   jwt: {
     secret: process.env.JWT_SECRET || "MYSECRET",
     expiresIn: process.env.JWT_EXPIRES_IN || "1h",

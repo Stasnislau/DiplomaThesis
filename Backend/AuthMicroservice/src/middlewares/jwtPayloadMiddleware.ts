@@ -1,4 +1,4 @@
-import { Injectable, NestMiddleware } from '@nestjs/common';
+import { Injectable, NestMiddleware, UnauthorizedException } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import config from '../config/configuration';
@@ -19,7 +19,8 @@ export class JwtPayloadMiddleware implements NestMiddleware {
           role: payload.role,
         }
       } catch (error) {
-        console.log('Token verification failed:', error.message);
+        console.log("Token verification failed:", error.message);
+        throw new UnauthorizedException("Authorization failed");
       }
     }
     next();

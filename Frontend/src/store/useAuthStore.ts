@@ -22,7 +22,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   initialized: false,
   userRole: null,
   login: async (input: LoginUserRequest) => {
-    set({ isLoading: true });
     try {
       const data = await apiLogin(input);
       if (data.success) {
@@ -35,12 +34,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
         set({
           isAuthenticated: true,
-          isLoading: false,
           initialized: true,
         });
         return { success: true };
       } else {
-        set({ isLoading: false, initialized: true });
+        set({ initialized: true });
         return {
           success: false,
           message: data.payload.message,
@@ -49,7 +47,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
     } catch (error) {
       console.error("Login error:", error);
-      set({ isLoading: false, initialized: true });
+      set({ initialized: true });
       return { success: false, message: "Unknown error" };
     }
   },

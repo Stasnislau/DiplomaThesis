@@ -63,8 +63,6 @@ export class AuthService {
     const user = await this.prisma.user.create({
       data: {
         email: userDto.email,
-        name: userDto.name,
-        surname: userDto.surname,
         role: "USER",
         credentials: {
           create: {
@@ -73,15 +71,14 @@ export class AuthService {
         },
       },
     });
-    console.log("CREATED_USER");
-    await this.eventService.emit("user.created", {
+    this.eventService.emit("user.created", {
       id: user.id,
       email: user.email,
-      name: user.name,
-      surname: user.surname,
+      name: userDto.name,
+      surname: userDto.surname,
       role: user.role,
+      createdAt: user.createdAt,
     });
-    console.log("CREATED_USER_EMITTED");
 
     return true;
   }
@@ -146,11 +143,7 @@ export class AuthService {
       throw new UnauthorizedException();
     }
 
-    const accessToken = this.jwtService.sign({
-      email: user.email,
-      sub: user.id,
-      role: user.role,
-    });
+    const accessToken = this.generateAccessToken(user);
 
     const shouldRefreshToken = await this.shouldRefreshToken(refreshToken);
     const newRefreshToken = shouldRefreshToken
@@ -165,6 +158,18 @@ export class AuthService {
 
   async removeRefreshToken(token: string) {
     await this.prisma.refreshToken.delete({ where: { token } });
+  }
+
+  async updateUserRole(userData: { id: string; role: string }) {
+    await this.prisma.user.update({
+      where: { id: userData.id },
+      data: { role: userData.role },
+    });
+
+    this.eventService.emit("user.updatedRole", {
+      id: userData.id,
+      role: userData.role,
+    });
   }
 
   async resetPassword(email: string) {
@@ -193,5 +198,13 @@ export class AuthService {
       secret: config().refreshToken.secret,
     });
     return payload.exp < Date.now() / 1000;
+  }
+
+  async deleteUser(userData: { id: string }) {
+    await this.prisma.user.delete({ where: { id: userData.id } });
+
+    this.eventService.emit("user.deleted", {
+      id: userData.id,
+    });
   }
 }

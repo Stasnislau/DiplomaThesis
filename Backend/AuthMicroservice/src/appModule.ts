@@ -1,4 +1,4 @@
-import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
+import { MiddlewareConsumer, Module, NestModule, RequestMethod } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
 import configuration from "./config/configuration";
@@ -25,6 +25,10 @@ import { EventModule } from "./modules/eventModule";
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(JwtPayloadMiddleware).forRoutes("*");
+    consumer.apply(JwtPayloadMiddleware).forRoutes(
+      { path: "api/auth/validate", method: RequestMethod.POST },
+      { path: "api/auth/logout", method: RequestMethod.POST },
+      { path: "api/auth/reset-password", method: RequestMethod.POST }
+    );
   }
 }

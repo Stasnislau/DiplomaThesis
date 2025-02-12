@@ -1,9 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import * as bcrypt from "bcrypt";
-import {
-  ClientProxyFactory,
-  Transport,
-} from "@nestjs/microservices";
+import { ClientProxyFactory, Transport } from "@nestjs/microservices";
 
 const prisma = new PrismaClient();
 
@@ -35,8 +32,6 @@ async function main() {
       const admin = await prisma.user.create({
         data: {
           email: "admin@admin.com",
-          name: "Admin",
-          surname: "User",
           role: "ADMIN",
           credentials: {
             create: {
@@ -48,11 +43,11 @@ async function main() {
 
       console.log("Admin user created:", admin);
 
-      await eventService.emit("user.created", {
+      eventService.emit("user.created", {
         id: admin.id,
         email: admin.email,
-        name: admin.name,
-        surname: admin.surname,
+        name: "Admin",
+        surname: "User",
         role: admin.role,
       });
 

@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { GatewayModule } from "./modules/gatewayModule";
+import { HttpModule } from "@nestjs/axios";
 
 @Module({
   imports: [
@@ -8,6 +9,9 @@ import { GatewayModule } from "./modules/gatewayModule";
       isGlobal: true,
     }),
     GatewayModule,
+    HttpModule,
   ],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}

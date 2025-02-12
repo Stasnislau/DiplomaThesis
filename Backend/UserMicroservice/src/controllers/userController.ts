@@ -22,7 +22,9 @@ export class UserController {
   }
 
   @Get("me")
-  async getUser(@Request() req: AuthenticatedRequest) : Promise<BaseResponse<User>> {
+  async getUser(
+    @Request() req: AuthenticatedRequest
+  ): Promise<BaseResponse<User>> {
     return this.userService.getUser(req.user.id);
   }
 
@@ -33,8 +35,19 @@ export class UserController {
     name: string;
     surname: string;
     role: string;
+    createdAt: Date;
   }) {
     console.log("User created event received", userData);
     await this.userService.createUser(userData);
+  }
+
+  @EventPattern("user.updatedRole")
+  async handleUserUpdatedRole(userData: { id: string; role: string }) {
+    await this.userService.updateUserRole(userData);
+  }
+
+  @EventPattern("user.deleted")
+  async handleUserDeleted(userData: { id: string }) {
+    await this.userService.deleteUser(userData);
   }
 }
