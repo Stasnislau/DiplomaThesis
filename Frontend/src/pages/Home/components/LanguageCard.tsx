@@ -10,6 +10,7 @@ interface LanguageCardProps {
   flagIcon: React.ReactNode;
   levels?: string[];
   currentLevel?: string;
+  onStartTest: () => void;
 }
 
 export const LanguageCard: React.FC<LanguageCardProps> = ({
@@ -19,6 +20,7 @@ export const LanguageCard: React.FC<LanguageCardProps> = ({
   completedLessons,
   flagIcon,
   currentLevel,
+  onStartTest,
 }) => {
   return (
     <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow">
@@ -45,7 +47,7 @@ export const LanguageCard: React.FC<LanguageCardProps> = ({
               {completedLessons} of {totalLessons} lessons completed
             </p>
           </div>
-          <Button variant="primary" className="w-full">
+          <Button variant="primary" className="w-full ">
             Continue Learning
           </Button>
         </div>
@@ -54,7 +56,7 @@ export const LanguageCard: React.FC<LanguageCardProps> = ({
           <p className="text-gray-600 mb-4">
             Take a placement test to start learning {name}
           </p>
-          <Button variant="secondary" className="w-full">
+          <Button variant="secondary" className="w-full " onClick={onStartTest}>
             Take Placement Test
           </Button>
         </div>

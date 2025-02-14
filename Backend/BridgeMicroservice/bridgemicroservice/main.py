@@ -8,6 +8,8 @@ from bridgemicroservice.services.ai_service import AI_Service
 from bridgemicroservice.services.bielik_service import Bielik_Service
 from .middlewares.error_handling_middleware import ErrorHandlingMiddleware
 from bridgemicroservice.services.vector_db_service import VectorDBService
+from bridgemicroservice.controllers.placement_controller import Placement_Controller
+from bridgemicroservice.services.placement_service import Placement_Service
 import logging
 
 load_dotenv()
@@ -31,6 +33,14 @@ app.include_router(
     prefix="/api"
 )
 
+app.include_router(
+    Placement_Controller(
+        Placement_Service(AI_Service(), VectorDBService()),
+        Bielik_Service(),
+    ).get_router(),
+    prefix="/api"
+)
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
@@ -42,7 +52,6 @@ async def log_requests(request: Request, call_next):
     print(f"Method: {request.method}")
     print(f"Headers: {request.headers}")
     
-    # Попробуем прочитать body
     try:
         body = await request.json()
         print(f"Body: {body}")
@@ -66,7 +75,7 @@ async def catch_all_undefined_endpoints(request: Request, call_next):
             content={
                 "success": False,
                 "payload": {
-                    "message": "Иди нахуй, такого эндпоинта нет",
+                    "message": "No such endpoint",
                     "path": str(request.url)
                 }
             }

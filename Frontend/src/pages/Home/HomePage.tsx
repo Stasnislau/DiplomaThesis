@@ -78,7 +78,7 @@ export const HomePage: React.FC = () => {
   } = useMyLanguages();
 
   const handleLanguageClick = (language: Language) => {
-    navigate(`/quiz/placement/${language.code}`);
+    navigate(`/placement/test/${language.code}`);
   };
 
   return (
@@ -102,6 +102,7 @@ export const HomePage: React.FC = () => {
                   (userLanguage) => userLanguage.languageId === language.id
                 ) ?? false
               }
+              onStartTest={() => handleLanguageClick(language)}
             />
           ))}
         </div>

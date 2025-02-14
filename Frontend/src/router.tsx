@@ -9,6 +9,8 @@ import { ResetPasswordPage } from "./pages/Auth/ResetPasswordPage";
 import NotFoundPage from "./components/layout/NotFoundPage";
 import { TaskPage } from "./pages/Quiz/TaskPage";
 import { ProfilePage } from "./pages/User/Profile";
+import { PlacementTestPage } from "./pages/PlacementTest/PlacementTestPage";
+import { PlacementResultPage } from "./pages/PlacementTest/PlacementResultPage";
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -44,6 +46,19 @@ export const router = createBrowserRouter([
             <TaskPage />
           </ProtectedRoute>
         ),
+      },
+    ],
+  },
+  {
+    path: "/placement",
+    children: [
+      {
+        path: "test/:languageCode",
+        element: <PlacementTestPage />,
+      },
+      {
+        path: "result/:languageCode",
+        element: <PlacementResultPage />,
       },
     ],
   },
