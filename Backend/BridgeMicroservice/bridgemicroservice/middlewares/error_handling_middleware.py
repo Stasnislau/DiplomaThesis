@@ -5,19 +5,23 @@ from datetime import datetime
 from typing import Union, Any
 from starlette.middleware.base import BaseHTTPMiddleware
 import traceback
+import json
 
 
 class ErrorHandlingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         try:
-            return await call_next(request)
-        except RequestValidationError as exc:
-            return self.handle_validation_error(exc)
-        except HTTPException as exc:
-            return self.handle_error(status_code=exc.status_code, message=exc.detail)
+            response = await call_next(request)
+
+            if response.status_code > 400 and response.status_code < 600:
+                raise HTTPException(
+                    status_code=response.status_code, detail=response.content
+                )
+
+            return response
+
         except Exception as exc:
             print(f"Unexpected error: {exc}")
-            print(traceback.format_exc())
             return self.handle_error(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, message=str(exc)
             )

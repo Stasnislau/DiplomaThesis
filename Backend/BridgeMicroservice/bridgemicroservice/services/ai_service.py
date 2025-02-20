@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 from litellm import completion
+import logging
 
 load_dotenv()
 
@@ -14,7 +15,10 @@ class AI_Service:
         chat_response = completion(
             model=model,
             messages=[
-                {"role": "user", "content": input_data},
+                {"role": "user", 
+                 "system": "You are a philologist with over 20 years of experience in language education.",
+                 "content": input_data
+                },
             ],
             response_format={"type": "json_object"},
         )

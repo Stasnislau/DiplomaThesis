@@ -25,7 +25,7 @@ export const TaskPage: React.FC = () => {
 
       const taskType =
         // Math.random() < 0.5 ? "multiple_choice" : "fill_in_the_blank";
-        "multiple_choice";
+        "fill_in_the_blank";
 
       createTask({ language, level, taskType });
 
@@ -49,15 +49,17 @@ export const TaskPage: React.FC = () => {
     let isAnswerCorrect = false;
     if (currentTaskData.type === "multiple_choice") {
       const correctOptionIndex = currentTaskData?.options?.indexOf(
-        currentTaskData.correct_answer
+        currentTaskData.correct_answer[0]
       );
       if (correctOptionIndex === undefined || !currentTaskData.options) return;
       isAnswerCorrect =
         currentTaskData.options[correctOptionIndex] === userAnswer;
     } else {
-      isAnswerCorrect =
-        userAnswer.toLowerCase() ===
-        currentTaskData.correct_answer.toLowerCase();
+      isAnswerCorrect = currentTaskData.correct_answer
+        .map((item) => {
+          return item.toLowerCase();
+        })
+        .includes(userAnswer.toLowerCase());
     }
     setIsCorrect(isAnswerCorrect);
   };
@@ -75,7 +77,7 @@ export const TaskPage: React.FC = () => {
         language,
         level,
         task: currentTaskData.task,
-        correct_answer: currentTaskData.correct_answer,
+        correct_answer: currentTaskData.correct_answer[0],
         user_answer: userAnswer,
       });
     }

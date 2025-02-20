@@ -1,6 +1,6 @@
 export interface TaskData {
   task: string;
-  correct_answer: string;
+  correct_answer: string[];
   type: "multiple_choice" | "fill_in_the_blank";
   options?: string[];
 }
@@ -11,5 +11,5 @@ export interface TaskData {
   question: string;
   description?: string;
   options?: string[];
-  correctAnswer: string;
+  correctAnswer: string[];
 }

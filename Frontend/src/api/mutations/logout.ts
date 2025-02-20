@@ -2,18 +2,17 @@ import { AUTH_MICROSERVICE_URL } from "../consts";
 import { BaseResponse } from "../../types/responses/BaseResponse";
 import { getAccessToken } from "../../utils/getAccessToken";
 import { getRefreshToken } from "@/utils/getRefreshToken";
-
+import { fetchWithAuth } from "../fetchWithAuth";
 export const logout = async () => {
   const accessToken = getAccessToken();
   const refreshToken = getRefreshToken();
-  const response = await fetch(`${AUTH_MICROSERVICE_URL}/auth/logout`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-    },
-    body: JSON.stringify({ refreshToken }),
-  });
+  const response = await fetchWithAuth(
+    `${AUTH_MICROSERVICE_URL}/auth/logout`,
+    {
+      method: "POST",
+      body: JSON.stringify({ refreshToken }),
+    }
+  );
 
   const data = (await response.json()) as BaseResponse<string>;
 

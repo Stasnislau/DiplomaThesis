@@ -11,6 +11,7 @@ from bridgemicroservice.services.vector_db_service import VectorDBService
 from bridgemicroservice.controllers.placement_controller import Placement_Controller
 from bridgemicroservice.services.placement_service import Placement_Service
 import logging
+import litellm
 
 load_dotenv()
 
@@ -41,16 +42,23 @@ app.include_router(
     prefix="/api"
 )
 
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.ERROR)
+
+logging.getLogger("litellm.llms").setLevel(logging.ERROR)
+logging.getLogger("litellm.utils").setLevel(logging.ERROR)
+logging.getLogger("openai").setLevel(logging.ERROR)
+logging.getLogger("httpx").setLevel(logging.ERROR)
+
+litellm.set_verbose = False
+litellm.suppress_debug_info = True
+litellm.success_callback = []
+litellm.failure_callback = []
+
+logging.getLogger("fastapi").setLevel(logging.WARNING)
+logging.getLogger("uvicorn").setLevel(logging.WARNING)
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
-    print("\n=== BRIDGE DEBUG START ===")
-    print(f"🚀 Incoming request to Bridge:")
-    print(f"URL: {request.url}")
-    print(f"Method: {request.method}")
-    print(f"Headers: {request.headers}")
     
     try:
         body = await request.json()
@@ -59,9 +67,8 @@ async def log_requests(request: Request, call_next):
         print(f"Failed to read body: {e}")
     
     response = await call_next(request)
-    
-    print(f"📤 Response status: {response.status_code}")
-    print("=== BRIDGE DEBUG END ===\n")
+
+    print(f"Response ✅: {response}")
     return response
 
 @app.middleware("http")

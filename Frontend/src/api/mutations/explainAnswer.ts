@@ -1,6 +1,6 @@
 import { BaseResponse } from "@/types/responses/BaseResponse";
 import { BRIDGE_MICROSERVICE_URL } from "../consts";
-
+import { fetchWithAuth } from "../fetchWithAuth";
 export interface ExplainAnswerRequest {
   language: string;
   level: string;
@@ -18,13 +18,13 @@ export interface ExplainAnswerResponse {
 export async function explainAnswer(
   data: ExplainAnswerRequest
 ): Promise<ExplainAnswerResponse> {
-  const response = await fetch(`${BRIDGE_MICROSERVICE_URL}/writing/explainanswer`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  });
+  const response = await fetchWithAuth(
+    `${BRIDGE_MICROSERVICE_URL}/writing/explainanswer`,
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    }
+  );
 
   if (!response.ok) {
     console.log(response);
