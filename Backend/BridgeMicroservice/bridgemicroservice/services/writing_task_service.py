@@ -24,6 +24,10 @@ class Writing_Task_Service:
         response = await self.ai_service.get_ai_response(prompt)
         json_response = json.loads(response)
         print(json_response, "INITIAL TASK")
+        
+        # Инициализируем verification_response значением по умолчанию
+        verification_response = {"is_valid": True}
+        
         try:
             if language == "French":
                 verification_response = await self.verify_generated_french_task(
@@ -109,7 +113,7 @@ class Writing_Task_Service:
         {{
             "is_valid": boolean,
             "better_task": {{
-                "task": "La question améliorée",
+                "question": "La question améliorée",
                 "options": ["Option A améliorée", "Option B améliorée", "Option C améliorée", "Option D améliorée"],
                 "correct_answer": "[La bonne réponse améliorée]", // array
             }} // Optionnel, seulement si la tâche n'est pas valide
@@ -148,7 +152,7 @@ class Writing_Task_Service:
         {{
             "is_valid": boolean,
             "better_task": {{
-                "task": "Ulepszone pytanie",
+                "question": "Ulepszone pytanie",
                 "options": ["Opcja A ulepszona", "Opcja B ulepszona", "Opcja C ulepszona", "Opcja D ulepszona"],
                 "correct_answer": "[Poprawna ulepszona odpowiedź]" // array
             }} // Opcjonalne, tylko jeśli zadanie nie jest poprawne

@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { usePlacementTestStore } from "@/store/usePlacementTestStore";
 import { useNavigate, useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect,  } from "react";
 import { useEvaluatePlacementTest } from "@/api/hooks/useEvaluatePlacementTest";
 import LoadingSpinner from "@/components/layout/Loading";
 
@@ -15,28 +15,30 @@ interface EvaluationResult {
 
 export function PlacementResultPage() {
   const { languageCode } = useParams<{ languageCode: string }>();
-  const { answers, resetTest } = usePlacementTestStore();
+  const { userAnswers, cachedTasks, resetTest } = usePlacementTestStore();
   const navigate = useNavigate();
   const { evaluateTest, isLoading, data: evaluation } = useEvaluatePlacementTest();
 
   useEffect(() => {
-    if (!languageCode || answers.length === 0) {
+    if (!languageCode || cachedTasks.length === 0) {
       navigate("/");
       return;
     }
 
-    evaluateTest({
-      answers,
-      language: languageCode,
-    });
-  }, [answers, navigate, languageCode]);
+    if (!evaluation && !isLoading) {
+      evaluateTest({
+        answers: userAnswers,
+        language: languageCode,
+      });
+    }
+  }, [userAnswers, cachedTasks, navigate, languageCode, evaluateTest, evaluation, isLoading]);
 
   if (isLoading) {
     return <LoadingSpinner />;
   }
 
-  const correctAnswers = answers.filter((a) => a.isCorrect).length;
-  const totalQuestions = answers.length;
+  const correctAnswers = userAnswers.filter((a) => a.isCorrect).length;
+  const totalQuestions = userAnswers.length;
   const percentage = Math.round((correctAnswers / totalQuestions) * 100);
 
   return (
@@ -103,7 +105,7 @@ export function PlacementResultPage() {
             <div className="border-t pt-6">
               <h3 className="text-xl font-semibold mb-4">Question Analysis</h3>
               <div className="space-y-4">
-                {answers.map((answer, index) => (
+                {userAnswers.map((answer, index) => (
                   <motion.div
                     key={index}
                     initial={{ opacity: 0, x: -20 }}
@@ -114,14 +116,14 @@ export function PlacementResultPage() {
                     }`}
                   >
                     <p className="font-medium mb-2">
-                      Question {index + 1}: {answer.question}
+                      Question {index + 1}: {cachedTasks[index].question}
                     </p>
                     <p className="text-sm text-gray-600">
                       Your answer: {answer.userAnswer}
                     </p>
                     {!answer.isCorrect && (
                       <p className="text-sm text-gray-600">
-                        Correct answer: {answer.correctAnswer}
+                        Correct answer: {cachedTasks[index].correctAnswer}
                       </p>
                     )}
                   </motion.div>
@@ -144,7 +146,7 @@ export function PlacementResultPage() {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => navigate("/dashboard")}
+                onClick={() => navigate("/")}
                 className="px-6 py-3 bg-gray-500 text-white rounded-lg font-medium hover:bg-gray-600 transition-colors"
               >
                 Go to Dashboard

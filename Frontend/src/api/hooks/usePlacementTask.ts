@@ -4,14 +4,13 @@ import { createPlacementTask, CreatePlacementTaskRequest } from "../mutations/cr
 export function usePlacementTask() {
   const mutation = useMutation({
     mutationFn: async (input: CreatePlacementTaskRequest) => {
-      return createPlacementTask(input);
+      return await createPlacementTask(input);
     },
   });
 
   return {
-    createTask: mutation.mutate,
+    createTask: mutation.mutateAsync,
     isLoading: mutation.isPending,
     error: mutation.error,
-    data: mutation.data,
   };
 } 

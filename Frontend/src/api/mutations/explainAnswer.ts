@@ -5,8 +5,8 @@ export interface ExplainAnswerRequest {
   language: string;
   level: string;
   task: string;
-  correct_answer: string;
-  user_answer: string;
+  correctAnswer: string;
+  userAnswer: string;
 }
 
 export interface ExplainAnswerResponse {

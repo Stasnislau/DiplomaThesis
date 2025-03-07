@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useExplainAnswer } from "@/api/hooks/useExplainAnswer";
-import { TaskData } from "@/types/responses/TaskResponse";
 import { TaskComponent } from "./components/TaskComponent";
 import Button from "@/components/common/Button";
 import { useCreateTask } from "@/api/hooks/useCreateTask";
+import { MultipleChoiceTask, FillInTheBlankTask } from "@/types/responses/TaskResponse";
+import { isMultipleChoice } from "@/types/typeGuards/isMultipleChoice";
 
 export const TaskPage: React.FC = () => {
   const [language, setLanguage] = useState("");
@@ -11,7 +12,7 @@ export const TaskPage: React.FC = () => {
   const [userAnswer, setUserAnswer] = useState("");
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
-  const [currentTaskData, setCurrentTaskData] = useState<TaskData | null>(null);
+  const [currentTaskData, setCurrentTaskData] = useState<MultipleChoiceTask | FillInTheBlankTask | null>(null);
   const { createTask, isLoading, error, data } = useCreateTask();
   const {
     explainAnswer,
@@ -24,9 +25,7 @@ export const TaskPage: React.FC = () => {
       setCurrentTaskData(null);
 
       const taskType =
-        // Math.random() < 0.5 ? "multiple_choice" : "fill_in_the_blank";
-        "fill_in_the_blank";
-
+        Math.random() < 0.5 ? "multiple_choice" : "fill_in_the_blank";
       createTask({ language, level, taskType });
 
       setUserAnswer("");
@@ -47,19 +46,17 @@ export const TaskPage: React.FC = () => {
     if (!currentTaskData || !userAnswer) return;
 
     let isAnswerCorrect = false;
-    if (currentTaskData.type === "multiple_choice") {
+    if (!currentTaskData) return;
+
+    if (isMultipleChoice(currentTaskData)) {
       const correctOptionIndex = currentTaskData?.options?.indexOf(
-        currentTaskData.correct_answer[0]
+        currentTaskData.correctAnswer[0]
       );
       if (correctOptionIndex === undefined || !currentTaskData.options) return;
       isAnswerCorrect =
         currentTaskData.options[correctOptionIndex] === userAnswer;
     } else {
-      isAnswerCorrect = currentTaskData.correct_answer
-        .map((item) => {
-          return item.toLowerCase();
-        })
-        .includes(userAnswer.toLowerCase());
+      isAnswerCorrect = currentTaskData.correctAnswer === userAnswer;
     }
     setIsCorrect(isAnswerCorrect);
   };
@@ -76,9 +73,9 @@ export const TaskPage: React.FC = () => {
       explainAnswer({
         language,
         level,
-        task: currentTaskData.task,
-        correct_answer: currentTaskData.correct_answer[0],
-        user_answer: userAnswer,
+        task: currentTaskData.question,
+        correctAnswer: currentTaskData.correctAnswer[0],
+        userAnswer: userAnswer,
       });
     }
   };

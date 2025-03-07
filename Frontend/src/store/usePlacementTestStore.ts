@@ -1,25 +1,31 @@
-import { create } from 'zustand';
+import {
+  FillInTheBlankTask,
+  MultipleChoiceTask,
+} from "@/types/responses/TaskResponse";
+import { create } from "zustand";
 
-interface Answer {
+export interface UserAnswer {
   questionNumber: number;
   isCorrect: boolean;
   userAnswer: string;
-  correctAnswer: string;
-  taskType: 'fill_in_the_blank' | 'multiple_choice';
-  question: string;
 }
 
 interface PlacementTestStore {
   currentQuestionNumber: number;
-  answers: Answer[];
   isTestComplete: boolean;
-  addAnswer: (answer: Omit<Answer, 'questionNumber'>) => void;
+  userAnswers: UserAnswer[];
+  cachedTasks: (MultipleChoiceTask | FillInTheBlankTask)[];
+  addAnswer: (answer: UserAnswer) => void;
   resetTest: () => void;
+  addTask: (task: MultipleChoiceTask | FillInTheBlankTask) => void;
+  getCurrentTask: () => MultipleChoiceTask | FillInTheBlankTask | undefined;
+  setCurrentQuestionNumber: (number: number) => void;
 }
 
-export const usePlacementTestStore = create<PlacementTestStore>((set) => ({
-  currentQuestionNumber: 1,
-  answers: [],
+export const usePlacementTestStore = create<PlacementTestStore>((set, get) => ({
+  currentQuestionNumber: 0,
+  userAnswers: [],
+  cachedTasks: [],
   isTestComplete: false,
   addAnswer: (answer) =>
     set((state) => {
@@ -27,9 +33,9 @@ export const usePlacementTestStore = create<PlacementTestStore>((set) => ({
         ...answer,
         questionNumber: state.currentQuestionNumber,
       };
-      
+
       return {
-        answers: [...state.answers, newAnswer],
+        userAnswers: [...state.userAnswers, newAnswer],
         currentQuestionNumber: state.currentQuestionNumber + 1,
         isTestComplete: state.currentQuestionNumber >= 10,
       };
@@ -37,7 +43,18 @@ export const usePlacementTestStore = create<PlacementTestStore>((set) => ({
   resetTest: () =>
     set({
       currentQuestionNumber: 1,
-      answers: [],
+      userAnswers: [],
+      cachedTasks: [],
       isTestComplete: false,
     }),
-})); 
+  addTask: (task: MultipleChoiceTask | FillInTheBlankTask) =>
+    set((state) => ({
+      cachedTasks: [...state.cachedTasks, task],
+    })),
+  getCurrentTask: () => {
+    const { currentQuestionNumber, cachedTasks } = get();
+    return cachedTasks[currentQuestionNumber - 1];
+  },
+  setCurrentQuestionNumber: (number: number) =>
+    set({ currentQuestionNumber: number }),
+}));

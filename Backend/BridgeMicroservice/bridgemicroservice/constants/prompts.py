@@ -24,8 +24,8 @@ def writing_fill_in_the_blank_task_prompt(
         12. Return the result in JSON format with these fields:
         
         {{
-            "task": "The sentence with ____ (MISSING WORD/PHRASE IN ENGLISH)",
-            "correct_answer": array of correct answers
+            "question": "The sentence with ____ (MISSING WORD/PHRASE IN ENGLISH)",
+            "correctAnswer": array of correct answers
         }}
 
         Examples:
@@ -59,9 +59,9 @@ def writing_multiple_choice_task_prompt(
         11. Return the task in JSON format, including these fields:
         
         {{
-            "task": "The sentence and question for the user",
+            "question": "The sentence and question for the user",
             "options": ["Option A", "Option B", "Option C", "Option D"],
-            "correct_answer": "The correct option in array"
+            "correctAnswer": "The correct option in array"
         }}
 
         Examples of task contexts include:
