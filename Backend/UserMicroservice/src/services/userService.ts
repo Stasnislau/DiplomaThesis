@@ -40,6 +40,25 @@ export class UserService {
     };
   }
 
+  async getUsers(): Promise<BaseResponse<User[]>> {
+    const users = await this.prisma.user.findMany({
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        surname: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    return {
+      success: true,
+      payload: users,
+    };
+  }
+
   async createUser(userData: {
     id: string;
     email: string;

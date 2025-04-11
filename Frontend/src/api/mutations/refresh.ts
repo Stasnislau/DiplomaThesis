@@ -1,7 +1,6 @@
 import { AUTH_MICROSERVICE_URL } from "../consts";
 import { BaseResponse } from "../../types/responses/BaseResponse";
 import Cookies from "js-cookie";
-import { getAccessToken } from "../../utils/getAccessToken";
 import { getRefreshToken } from "../../utils/getRefreshToken";
 import { fetchWithAuth } from "../fetchWithAuth";
 interface RefreshResponse {

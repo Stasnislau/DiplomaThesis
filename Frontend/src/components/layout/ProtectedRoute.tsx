@@ -4,17 +4,18 @@ import LoadingPage from "./Loading";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  accessLevel?: "admin" | "user";
 }
 
-function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading } = useAuthStore();
+function ProtectedRoute({ children, accessLevel }: ProtectedRouteProps) {
+  const { isAuthenticated, isLoading, userRole } = useAuthStore();
   const location = useLocation();
 
   if (isLoading) {
     return <LoadingPage />;
   }
 
-  return isAuthenticated ? (
+  return isAuthenticated && (accessLevel === "admin" ? userRole === "ADMIN" : true) ? (
     <>{children}</>
   ) : (
     <Navigate to="/login" state={{ from: location }} replace />

@@ -9,7 +9,7 @@ type FetchOptions = {
 
 export async function fetchWithAuth(url: URL | string, options: FetchOptions) {
   try {
-    const token = getAccessToken();
+    let token = getAccessToken();
     const headers = {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
@@ -21,8 +21,8 @@ export async function fetchWithAuth(url: URL | string, options: FetchOptions) {
       headers,
     });
     if (response.status === 401) {
-      try {
         await useAuthStore.getState().refresh();
+        token = getAccessToken();
         response = await fetch(url, {
           ...options,
           headers: {
@@ -30,12 +30,7 @@ export async function fetchWithAuth(url: URL | string, options: FetchOptions) {
             Authorization: `Bearer ${token}`,
           },
         });
-      } catch (refreshError) {
-        console.error("Token refresh failed:", refreshError);
-        throw refreshError;
-      }
     }
-
     return response;
   } catch (error) {
     throw error;

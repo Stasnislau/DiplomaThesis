@@ -4,12 +4,18 @@ import { ClientProxyFactory, Transport } from "@nestjs/microservices";
 
 const prisma = new PrismaClient();
 
-// Create RabbitMQ client
+// Create a proper config with default values
+const rabbitmqConfig = {
+  url: process.env.RABBITMQ_URL || "amqp://localhost:5672",
+  queue: process.env.RABBITMQ_QUEUE || "user_data"  // Match UserMicroservice queue name
+};
+
+// Create RabbitMQ client with explicit config values
 const eventService = ClientProxyFactory.create({
   transport: Transport.RMQ,
   options: {
-    urls: [process.env.RABBITMQ_URL || "amqp://localhost:5672"],
-    queue: process.env.RABBITMQ_QUEUE || "auth-queue",
+    urls: [rabbitmqConfig.url],
+    queue: rabbitmqConfig.queue,
     queueOptions: {
       durable: false,
     },
@@ -21,12 +27,14 @@ async function main() {
 
   const existingAdmin = await prisma.user.findUnique({
     where: {
-      email: "admin@yourdomain.com",
+      email: "admin@admin.com",
     },
   });
 
   if (!existingAdmin) {
-    const hashedPassword = await bcrypt.hash("adminPassword123", 10);
+    const hashedPassword = await bcrypt.hash("admin", 10);
+
+    console.log(rabbitmqConfig.url, rabbitmqConfig.queue, "sending event")
 
     try {
       const admin = await prisma.user.create({
@@ -43,14 +51,17 @@ async function main() {
 
       console.log("Admin user created:", admin);
 
-      eventService.emit("user.created", {
-        id: admin.id,
-        email: admin.email,
-        name: "Admin",
-        surname: "User",
-        role: admin.role,
-      });
-
+      const result = await eventService
+        .emit('user.created', {
+          id: admin.id,
+          email: admin.email,
+          name: "Admin",
+          surname: "User",
+          role: admin.role,
+          createdAt: admin.createdAt,
+        })
+        .toPromise(); // Wait for acknowledgment
+      
       console.log("Admin user event emitted successfully");
     } catch (error) {
       console.error("Error creating admin or emitting event:", error);

@@ -10,7 +10,6 @@ import { AuthService } from "../services/authService";
 import { JwtAuthGuard } from "../guards/jwtAuthGuard";
 import { UserDto } from "src/dtos/userDto";
 import { LoginDto } from "src/dtos/loginDto";
-import { EventPattern } from "@nestjs/microservices";
 import { AuthenticatedRequest } from "../types/AuthenticatedRequest";
 
 @Controller("auth")
@@ -64,21 +63,9 @@ export class AuthController {
     };
   }
 
-  @EventPattern("user.created")
-  async handleUserCreated(userData: {
-    id: string;
-    email: string;
-    name: string;
-    surname: string;
-    role: string;
-  }) {
-    console.log("User created event received", userData);
-  }
-
   @UseGuards(JwtAuthGuard)  
   @Post("validate")
   async validateToken(@Request() req: AuthenticatedRequest) {
-    console.log(req, "req.user");
     return {
       success: true,
       payload: {

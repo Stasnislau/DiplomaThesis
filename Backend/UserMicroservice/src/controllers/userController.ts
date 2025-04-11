@@ -1,8 +1,5 @@
 import {
   Controller,
-  Post,
-  Body,
-  UseGuards,
   Request,
   Get,
 } from "@nestjs/common";
@@ -26,6 +23,11 @@ export class UserController {
     @Request() req: AuthenticatedRequest
   ): Promise<BaseResponse<User>> {
     return this.userService.getUser(req.user.id);
+  }
+
+  @Get("users")
+  async getUsers(): Promise<BaseResponse<User[]>> {
+    return this.userService.getUsers();
   }
 
   @EventPattern("user.created")

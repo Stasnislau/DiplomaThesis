@@ -1,5 +1,5 @@
 import { JwtService } from "@nestjs/jwt";
-import { PrismaService } from "../prisma/prismaService";
+import { PrismaService } from "../../prisma/prismaService";
 import * as bcrypt from "bcrypt";
 import { User } from "@prisma/client";
 import config from "../config/configuration";

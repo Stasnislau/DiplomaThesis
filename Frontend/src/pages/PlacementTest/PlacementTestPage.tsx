@@ -6,8 +6,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import LoadingSpinner from "@/components/layout/Loading";
 import { useAvailableLanguages } from "@/api/hooks/useAvailableLanguages";
 import { PlacementTaskComponent } from "./components/PlacementTaskComponent";
+import { MultipleChoiceTask, FillInTheBlankTask } from "@/types/responses/TaskResponse";
+import { TOTAL_QUESTIONS } from "@/constants";
 
-const TOTAL_QUESTIONS = 10;
 
 export function PlacementTestPage() {
   const { languageCode } = useParams<{ languageCode: string }>();

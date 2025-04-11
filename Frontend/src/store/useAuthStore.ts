@@ -9,6 +9,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   initialized: boolean;
+  userRole: string | null;
   login: (
     input: LoginUserRequest
   ) => Promise<{ success: boolean; message?: string; errors?: string[] }>;
@@ -20,7 +21,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
   isLoading: true,
   initialized: false,
-  userRole: null,
+  userRole: "ADMIN",
   login: async (input: LoginUserRequest) => {
     try {
       const data = await apiLogin(input);
@@ -38,7 +39,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         });
         return { success: true };
       } else {
-        set({ initialized: true });
+        set({ initialized: true, isLoading: false });
         return {
           success: false,
           message: data.payload.message,
@@ -69,19 +70,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true });
     try {
       const newAccessToken = await apiRefresh();
+      if (!newAccessToken) {
+        set({
+          isAuthenticated: false,
+          initialized: true,
+          isLoading: false
+        });
+        return;
+      }
       localStorage.setItem("accessToken", newAccessToken);
       set({
         isAuthenticated: true,
         initialized: true,
+        isLoading: false
       });
     } catch (error) {
       console.error("Refresh failed:", error);
       set({
         isAuthenticated: false,
         initialized: true,
+        isLoading: false
       });
-    } finally {
-      set({ isLoading: false });
     }
   },
 }));

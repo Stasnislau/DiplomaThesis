@@ -4,7 +4,7 @@ import logging
 
 load_dotenv()
 
-model = "gpt-4o-mini"
+model = "mistral/mistral-small-latest"
 
 
 class AI_Service:

@@ -11,6 +11,8 @@ import { TaskPage } from "./pages/Quiz/TaskPage";
 import { ProfilePage } from "./pages/User/Profile";
 import { PlacementTestPage } from "./pages/PlacementTest/PlacementTestPage";
 import { PlacementResultPage } from "./pages/PlacementTest/PlacementResultPage";
+import { AdminDashboardPage } from "./pages/Admin/AdminDashboardPage";
+
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -44,6 +46,20 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <TaskPage />
+          </ProtectedRoute>
+        ),
+      },
+    ],
+  },
+  {
+    path: "/admin",
+    element: <WithTopBar />,
+    children: [
+      {
+        path: "",
+        element: (
+          <ProtectedRoute>
+            <AdminDashboardPage />
           </ProtectedRoute>
         ),
       },
