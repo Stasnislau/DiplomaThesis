@@ -17,7 +17,7 @@ async function main() {
   console.log("Starting language seeding...");
 
   for (const language of languages) {
-    const existingLanguage = await prisma.language.findUnique({
+    const existingLanguage = await prisma.language.findFirst({
       where: { code: language.code },
     });
 

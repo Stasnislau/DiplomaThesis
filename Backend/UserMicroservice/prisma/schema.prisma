@@ -7,14 +7,69 @@ datasource db {
     url      = env("PRISMA_DATABASE_USER_URL")
 }
 
-model UserProfile {
+enum LanguageLevel {
+    A0
+    A1
+    A2
+    B1
+    B2
+    C1
+    C2
+    NATIVE
+}
+
+model User {
     id        String   @id @default(uuid())
-    userId    String   @unique
-    firstName String
-    lastName  String
+    name      String
+    surname   String
     email     String   @unique
+    role      String
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
+    languages UserLanguage[]
+    achievements UserAchievement[]
+    tasks Task[]
+}
 
-    // Дополнительные поля
+model Language {
+    id   String @id @default(uuid())
+    name String
+    code String
+    users UserLanguage[]
+    tasks Task[]
+}
+
+model UserLanguage {
+    id         String @id @default(uuid())
+    currentLevel LanguageLevel
+    userId     String
+    languageId String
+    user       User   @relation(fields: [userId], references: [id])
+    language   Language @relation(fields: [languageId], references: [id])
+}
+
+model Task {
+    id         String   @id @default(uuid())
+    userId     String
+    languageId String
+    createdAt  DateTime @default(now())
+    user       User   @relation(fields: [userId], references: [id])
+    language   Language @relation(fields: [languageId], references: [id])
+}
+
+model Achievement {
+    id        String   @id @default(uuid())
+    name      String
+    description String
+    imageUrl  String
+    createdAt DateTime @default(now())
+    users UserAchievement[]
+}
+
+model UserAchievement {
+    id        String   @id @default(uuid())
+    userId    String
+    achievementId String
+    user       User   @relation(fields: [userId], references: [id])
+    achievement Achievement @relation(fields: [achievementId], references: [id])
 }

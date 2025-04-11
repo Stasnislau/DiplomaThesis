@@ -1,4 +1,3 @@
-import { Language, User } from "@prisma/client";
 import { PrismaService } from "../prisma/prismaService";
 
 import {
@@ -6,6 +5,7 @@ import {
   BadRequestException,
   NotFoundException,
 } from "@nestjs/common";
+import { Language, User } from "@prisma/client";
 import { BaseResponse } from "src/types/BaseResponse";
 
 @Injectable()
@@ -41,17 +41,8 @@ export class UserService {
   }
 
   async getUsers(): Promise<BaseResponse<User[]>> {
-    const users = await this.prisma.user.findMany({
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        surname: true,
-        role: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
+    const users = await this.prisma.user.findMany(
+    );
 
     return {
       success: true,
