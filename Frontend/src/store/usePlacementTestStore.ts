@@ -34,27 +34,41 @@ export const usePlacementTestStore = create<PlacementTestStore>((set, get) => ({
         questionNumber: state.currentQuestionNumber,
       };
 
+      const isComplete = state.currentQuestionNumber >= 9; // 0-based indexing
+
       return {
         userAnswers: [...state.userAnswers, newAnswer],
         currentQuestionNumber: state.currentQuestionNumber + 1,
-        isTestComplete: state.currentQuestionNumber >= 10,
+        isTestComplete: isComplete,
       };
     }),
   resetTest: () =>
     set({
-      currentQuestionNumber: 1,
+      currentQuestionNumber: 0,
       userAnswers: [],
       cachedTasks: [],
       isTestComplete: false,
     }),
-  addTask: (task: MultipleChoiceTask | FillInTheBlankTask) =>
-    set((state) => ({
-      cachedTasks: [...state.cachedTasks, task],
-    })),
+  addTask: (task) =>
+    set((state) => {
+      // Check for duplicates
+      if (state.cachedTasks.some((t) => t.id === task.id)) {
+        return state;
+      }
+
+      return {
+        cachedTasks: [...state.cachedTasks, task],
+      };
+    }),
   getCurrentTask: () => {
     const { currentQuestionNumber, cachedTasks } = get();
-    return cachedTasks[currentQuestionNumber - 1];
+    return cachedTasks[currentQuestionNumber];
   },
-  setCurrentQuestionNumber: (number: number) =>
-    set({ currentQuestionNumber: number }),
+  setCurrentQuestionNumber: (number) =>
+    set((state) => {
+      if (number < 0 || number >= state.cachedTasks.length) {
+        return state;
+      }
+      return { currentQuestionNumber: number };
+    }),
 }));

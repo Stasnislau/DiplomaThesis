@@ -1,6 +1,5 @@
 from dotenv import load_dotenv
 from litellm import completion
-import logging
 
 load_dotenv()
 

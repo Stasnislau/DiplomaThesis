@@ -1,7 +1,7 @@
 import lancedb
 from sentence_transformers import SentenceTransformer
 import pandas as pd
-from ..constants.constants import LEVEL_EMBEDDINGS
+from constants.constants import LEVEL_EMBEDDINGS
 
 
 class VectorDBService:

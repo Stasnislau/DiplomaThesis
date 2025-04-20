@@ -3,7 +3,7 @@ from .vector_db_service import VectorDBService
 from .ai_service import AI_Service
 from dotenv import load_dotenv
 from .bielik_service import Bielik_Service
-from ..constants.prompts import writing_multiple_choice_task_prompt, writing_fill_in_the_blank_task_prompt, explain_answer_prompt
+from constants.prompts import writing_multiple_choice_task_prompt, writing_fill_in_the_blank_task_prompt, explain_answer_prompt
 import os
 load_dotenv()
 

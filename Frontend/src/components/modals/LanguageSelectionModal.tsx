@@ -2,49 +2,48 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUserStore } from "@/store/useUserStore";
 import { useAvailableLanguages } from "@/api/hooks/useAvailableLanguages";
-
-interface LanguageOption {
-  id: string;
-  name: string;
-  code: string;
-}
+import { Language as StoreLanguage } from "@/types/models/Language";
+import { Language as ApiLanguage } from "@/api/hooks/useAvailableLanguages";
 
 export function LanguageSelectionModal() {
-  const { 
-    showLanguageModal, 
-    setShowLanguageModal, 
-    setNativeLanguage, 
-    setTargetLanguage, 
-    nativeLanguage, 
-    targetLanguage 
-  } = useUserStore();
-  
+  const { setNativeLanguageCode, setUserLanguages } = useUserStore();
   const [step, setStep] = useState<"native" | "target">("native");
+  const [showModal, setShowModal] = useState(true);
+  const [selectedNativeLanguage, setSelectedNativeLanguage] = useState<string | null>(null);
+  const [selectedTargetLanguage, setSelectedTargetLanguage] = useState<string | null>(null);
   const { languages, isLoading } = useAvailableLanguages();
   
-  const handleSelectLanguage = (language: LanguageOption) => {
+  const handleSelectLanguage = (language: ApiLanguage) => {
     if (step === "native") {
-      setNativeLanguage(language.code);
+      setSelectedNativeLanguage(language.code);
       setStep("target");
     } else {
-      setTargetLanguage(language.code);
-      setShowLanguageModal(false);
+      setSelectedTargetLanguage(language.code);
+      setShowModal(false);
+      // TODO: Implement API call to save both languages
+      const userLanguage: StoreLanguage = {
+        id: language.id,
+        name: language.name,
+        code: language.code,
+        currentLevel: "A1"
+      };
+      setUserLanguages([userLanguage]);
     }
   };
   
   // Prevent closing the modal if languages are not selected
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && showLanguageModal) {
+      if (e.key === "Escape" && showModal) {
         e.preventDefault();
       }
     };
     
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
-  }, [showLanguageModal]);
+  }, [showModal]);
   
-  if (!showLanguageModal) return null;
+  if (!showModal) return null;
   
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -79,8 +78,8 @@ export function LanguageSelectionModal() {
                     key={language.id}
                     onClick={() => handleSelectLanguage(language)}
                     className={`p-4 rounded-lg text-left transition-all w-full ${
-                      (step === "native" && nativeLanguage === language.code) ||
-                      (step === "target" && targetLanguage === language.code)
+                      (step === "native" && selectedNativeLanguage === language.code) ||
+                      (step === "target" && selectedTargetLanguage === language.code)
                         ? "bg-blue-500 text-white"
                         : "bg-gray-100 hover:bg-gray-200"
                     }`}
@@ -109,13 +108,13 @@ export function LanguageSelectionModal() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => setShowLanguageModal(false)}
+              onClick={() => setShowModal(false)}
               className={`px-4 py-2 rounded-lg ${
-                targetLanguage 
+                selectedTargetLanguage
                   ? "bg-blue-500 text-white" 
                   : "bg-gray-300 cursor-not-allowed"
               }`}
-              disabled={!targetLanguage}
+              disabled={!selectedTargetLanguage}
             >
               Finish
             </motion.button>

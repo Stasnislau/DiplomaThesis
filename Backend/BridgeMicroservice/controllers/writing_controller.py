@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Request
-from ..services.writing_task_service import Writing_Task_Service
-from ..services.bielik_service import Bielik_Service
+from services.writing_task_service import Writing_Task_Service
+from services.bielik_service import Bielik_Service
 
 
 class Writing_Controller:

@@ -2,10 +2,8 @@ from fastapi import Request, status
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import HTTPException, RequestValidationError
 from datetime import datetime
-from typing import Union, Any
+from typing import Union
 from starlette.middleware.base import BaseHTTPMiddleware
-import traceback
-import json
 
 
 class ErrorHandlingMiddleware(BaseHTTPMiddleware):

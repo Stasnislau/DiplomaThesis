@@ -28,6 +28,9 @@ export class UserService {
 
     const user = await this.prisma.user.findUnique({
       where: { id },
+      include: {
+        languages: true,
+      },
     });
 
     if (!user) {
@@ -47,6 +50,33 @@ export class UserService {
     return {
       success: true,
       payload: users,
+    };
+  }
+
+  async addLanguage(userId: string, languageId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+
+    const language = await this.prisma.language.findUnique({
+      where: { id: languageId },
+    });
+
+    if (!language) {  
+      throw new NotFoundException("Language not found");
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { languages: { connect: { id: languageId } } },
+    });
+    return {
+      success: true,
+      payload: true,
     };
   }
 

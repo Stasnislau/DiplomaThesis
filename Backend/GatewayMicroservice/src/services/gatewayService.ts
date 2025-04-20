@@ -105,7 +105,7 @@ export class GatewayService {
           },
           data: body,
           validateStatus: () => true,
-          timeout: 5000,
+          timeout: 15000,
           family: 4,
           lookup: (hostname, options, callback) => {
             callback(null, "127.0.0.1", 4);
@@ -118,6 +118,7 @@ export class GatewayService {
             data: error.response.data
           };
         } else if (error.request) {
+          console.log(error.request, "error.request");
           return {
             status: 503,
             data: {

@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { usePlacementTask } from "@/api/hooks/usePlacementTask";
 import { usePlacementTestStore } from "@/store/usePlacementTestStore";
 import { useParams, useNavigate } from "react-router-dom";
@@ -8,7 +8,6 @@ import { useAvailableLanguages } from "@/api/hooks/useAvailableLanguages";
 import { PlacementTaskComponent } from "./components/PlacementTaskComponent";
 import { MultipleChoiceTask, FillInTheBlankTask } from "@/types/responses/TaskResponse";
 import { TOTAL_QUESTIONS } from "@/constants";
-
 
 export function PlacementTestPage() {
   const { languageCode } = useParams<{ languageCode: string }>();
@@ -23,52 +22,59 @@ export function PlacementTestPage() {
     addTask,
     getCurrentTask,
     setCurrentQuestionNumber,
+    resetTest
   } = usePlacementTestStore();
   const { languages } = useAvailableLanguages();
   const [isInitialized, setIsInitialized] = useState(false);
 
-  const language = useMemo(
-    () => languages?.find((lang) => lang.code === languageCode),
-    [languages, languageCode]
-  );
+  const language = languages?.find((lang) => lang.code === languageCode);
+
+  // Reset test when language changes
   useEffect(() => {
-    if (
-      cachedTasks.length === 0 &&
-      currentQuestionNumber === 0 &&
-      !isInitialized
-    ) {
-      if (language) {
-        createNextTask(language.name);
-      }
-      setIsInitialized(true);
-      setCurrentQuestionNumber(1);
+    if (language) {
+      resetTest();
+      setIsInitialized(false);
     }
-  }, [cachedTasks, currentQuestionNumber, language, isInitialized]);
+  }, [language, resetTest]);
 
   const createNextTask = useCallback(
     async (languageName: string) => {
-      const lastAnswer =
-        userAnswers.length > 0
-          ? userAnswers[userAnswers.length - 1]
-          : undefined;
+      if (isLoading) return;
 
-      const task = await createTask({
-        language: languageName,
-        previousAnswer: lastAnswer
-          ? {
-              isCorrect: lastAnswer.isCorrect,
-              questionNumber: lastAnswer.questionNumber,
-            }
-          : undefined,
-      });
+      const lastAnswer = userAnswers.length > 0 
+        ? userAnswers[userAnswers.length - 1] 
+        : undefined;
 
-      if (task) {
-        addTask(task as MultipleChoiceTask | FillInTheBlankTask);
+      try {
+        const task = await createTask({
+          language: languageName,
+          previousAnswer: lastAnswer ? {
+            isCorrect: lastAnswer.isCorrect,
+            questionNumber: lastAnswer.questionNumber,
+          } : undefined,
+        });
+
+        if (task) {
+          addTask(task as MultipleChoiceTask | FillInTheBlankTask);
+        }
+      } catch (error) {
+        console.error("Failed to create task:", error);
       }
     },
-    [userAnswers, createTask, addTask]
+    [userAnswers, createTask, addTask, isLoading]
   );
 
+  // Initialize first task
+  useEffect(() => {
+    if (!language || isInitialized || isLoading) return;
+
+    if (cachedTasks.length === 0) {
+      createNextTask(language.name);
+      setIsInitialized(true);
+    }
+  }, [language, isInitialized, isLoading, cachedTasks.length, createNextTask]);
+
+  // Handle test completion and navigation
   useEffect(() => {
     if (!language) {
       navigate("/");
@@ -81,30 +87,21 @@ export function PlacementTestPage() {
     }
   }, [languageCode, language, isTestComplete, navigate]);
 
+  // Create next task when needed
   useEffect(() => {
-    if (!language) return;
+    if (!language || isLoading) return;
 
-    if (currentQuestionNumber <= TOTAL_QUESTIONS && !isInitialized) {
-      const needToCreateTask = cachedTasks.length < currentQuestionNumber + 1;
-      if (needToCreateTask && !isLoading) {
-        createNextTask(language.name);
-      }
+    const needNextTask = cachedTasks.length === currentQuestionNumber;
+    if (needNextTask && currentQuestionNumber < TOTAL_QUESTIONS) {
+      createNextTask(language.name);
     }
-  }, [
-    languages,
-    languageCode,
-    currentQuestionNumber,
-    cachedTasks,
-    isLoading,
-    createNextTask,
-    isInitialized,
-  ]);
+  }, [language, currentQuestionNumber, cachedTasks.length, isLoading, createNextTask]);
 
   const currentTask = getCurrentTask();
 
-  console.log(currentQuestionNumber, cachedTasks);
-
-  console.log(currentTask);
+  if (!language) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -112,17 +109,17 @@ export function PlacementTestPage() {
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-2xl font-bold text-gray-900">
-              Placement Test: {language?.name}
+              Placement Test: {language.name}
             </h1>
             <div className="text-sm font-medium text-gray-600">
-              Question {currentQuestionNumber} of {TOTAL_QUESTIONS}
+              Question {currentQuestionNumber + 1} of {TOTAL_QUESTIONS}
             </div>
           </div>
           
           <div className="w-full bg-gray-200 rounded-full h-2.5">
             <div 
               className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2.5 rounded-full" 
-              style={{ width: `${(currentQuestionNumber / TOTAL_QUESTIONS) * 100}%` }}
+              style={{ width: `${((currentQuestionNumber + 1) / TOTAL_QUESTIONS) * 100}%` }}
             ></div>
           </div>
         </div>
@@ -138,7 +135,7 @@ export function PlacementTestPage() {
             {currentTask ? (
               <PlacementTaskComponent
                 task={currentTask}
-                currentQuestion={currentQuestionNumber}
+                currentQuestion={currentQuestionNumber + 1}
                 onAnswer={(placementAnswer) => {
                   addAnswer({
                     ...placementAnswer,

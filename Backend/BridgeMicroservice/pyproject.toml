@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "bridgemicroservice"
 version = "0.1.0"
-description = ""
+description = "Bridge Microservice for working with AI models"
 authors = ["Stanislau"] 
 
 [tool.poetry.dependencies]
@@ -28,9 +28,23 @@ pandas = "^2.2.3"
 accelerate = "^1.1.1"
 
 
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.11.6"
+poethepoet = "^0.33.1"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.poetry.scripts]
-start = "start_app:start_app"
+
+[tool.ruff]
+select = ["E", "F", "W"]
+ignore = []
+line-length = 140
+
+[tool.poe.tasks]
+start = "uvicorn main:app --reload --port 3003"
+
+
+
+

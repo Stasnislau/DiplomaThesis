@@ -3,11 +3,10 @@ import { router } from "./router";
 import { useEffect, useState } from "react";
 import { useAuthStore } from "./store/useAuthStore";
 import LoadingPage from "./components/layout/Loading";
-import { LanguageSelectionModal } from "./components/modals/LanguageSelectionModal";
 import "./App.css";
 
 function App() {
-  const { refresh, isLoading: authLoading, initialized: authInitialized, isAuthenticated } = useAuthStore();
+  const { refresh, isLoading: authLoading, initialized: authInitialized } = useAuthStore();
   const [hasAttemptedRefresh, setHasAttemptedRefresh] = useState(false);
 
   useEffect(() => {
@@ -23,7 +22,6 @@ function App() {
   
   return (
     <>
-      {isAuthenticated && <LanguageSelectionModal />}
       <RouterProvider router={router} />
     </>
   );

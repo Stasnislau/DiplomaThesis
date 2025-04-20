@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Button from "@/components/common/Button";
 import { FeatureCard } from "./components/FeatureCard";
 import { StatCard } from "./components/StatCard";
 import { HeroSection } from "./components/HeroSection";
 import { LanguageCard } from "./components/LanguageCard";
+import { NoLanguagesModal } from "@/components/modals/NoLanguagesModal";
 import {
   FrenchFlagIcon,
   GermanFlagIcon,
@@ -18,7 +19,7 @@ import {
   Language,
   useAvailableLanguages,
 } from "@/api/hooks/useAvailableLanguages";
-import { useMyLanguages } from "@/api/hooks/useUserLanguages";
+import { useUserStore } from "@/store/useUserStore";
 
 const features = [
   {
@@ -69,20 +70,32 @@ const flagIcons = {
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
-  const { languages, isLoading, error } = useAvailableLanguages();
-
-  const {
-    languages: userLanguages,
-    isLoading: isUserLanguagesLoading,
-    error: userLanguagesError,
-  } = useMyLanguages();
+  const { languages } = useAvailableLanguages();
+  const [isNativeLanguageModalOpen, setIsNativeLanguageModalOpen] = useState(false);
+  const { userLanguages } = useUserStore();
 
   const handleLanguageClick = (language: Language) => {
     navigate(`/placement/test/${language.code}`);
   };
 
+  const handleLanguageSelect = (language: Language) => {
+    // TODO: Implement API call to save selected language
+    console.log("Selected language:", language);
+    setIsNativeLanguageModalOpen(false);
+  };
+
+  useEffect(() => {
+    if (userLanguages.length === 0) {
+      setIsNativeLanguageModalOpen(true);
+    }
+  }, [userLanguages]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100">
+      {isNativeLanguageModalOpen && (
+        <NoLanguagesModal onLanguageSelect={handleLanguageSelect} />
+      )}
+
       <HeroSection />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -99,7 +112,7 @@ export const HomePage: React.FC = () => {
               code={language.code}
               isStarted={
                 userLanguages?.some(
-                  (userLanguage) => userLanguage.languageId === language.id
+                  (userLanguage) => userLanguage.id === language.id
                 ) ?? false
               }
               onStartTest={() => handleLanguageClick(language)}

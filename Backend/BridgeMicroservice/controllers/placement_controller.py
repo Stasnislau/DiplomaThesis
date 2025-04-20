@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request
-from ..services.placement_service import Placement_Service
-from ..services.bielik_service import Bielik_Service
-from ..constants.constants import AVAILABLE_LANGUAGES
+from services.placement_service import Placement_Service
+from services.bielik_service import Bielik_Service
+from constants.constants import AVAILABLE_LANGUAGES
 
 
 class Placement_Controller:

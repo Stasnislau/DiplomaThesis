@@ -2,12 +2,15 @@ import {
   Controller,
   Request,
   Get,
+  Post,
+  Body,
 } from "@nestjs/common";
 import { UserService } from "../services/userService";
 import { AuthenticatedRequest } from "src/types/AuthenticatedRequest";
 import { EventPattern } from "@nestjs/microservices";
 import { BaseResponse } from "src/types/BaseResponse";
-import { User } from "@prisma/client";
+import { Language, User } from "@prisma/client";
+
 
 @Controller("")
 export class UserController {
@@ -18,6 +21,12 @@ export class UserController {
     return this.userService.getLanguages();
   }
 
+  @Post("addLanguage")
+  async addLanguage(@Body() languageId: string, @Request() req: AuthenticatedRequest  ) {
+    return this.userService.addLanguage(req.user.id, languageId);
+  }
+
+    
   @Get("me")
   async getUser(
     @Request() req: AuthenticatedRequest
