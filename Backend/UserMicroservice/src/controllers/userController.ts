@@ -26,6 +26,11 @@ export class UserController {
     return this.userService.addLanguage(req.user.id, languageId);
   }
 
+  @Post("addUserLanguage")
+  async addUserLanguage(@Body() {languageId, level}: {languageId: string, level: string}, @Request() req: AuthenticatedRequest  ) {
+    return this.userService.addUserLanguage(req.user.id, languageId, level);
+  }
+
     
   @Get("me")
   async getUser(
@@ -37,6 +42,11 @@ export class UserController {
   @Get("users")
   async getUsers(): Promise<BaseResponse<User[]>> {
     return this.userService.getUsers();
+  }
+
+  @Post("setNativeLanguage")
+  async setNativeLanguage(@Body() {languageId}: {languageId: string}, @Request() req: AuthenticatedRequest  ) {
+    return this.userService.setNativeLanguage(req.user.id, languageId);
   }
 
   @EventPattern("user.created")

@@ -13,7 +13,7 @@ export function useEvaluatePlacementTest() {
   });
 
   return {
-    evaluateTest: mutation.mutate,
+    evaluateTest: mutation.mutateAsync,
     isLoading: mutation.isPending,
     error: mutation.error,
     data: mutation.data,

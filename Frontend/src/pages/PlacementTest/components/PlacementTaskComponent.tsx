@@ -7,6 +7,7 @@ import Button from "@/components/common/Button";
 import { motion } from "framer-motion";
 import { UserAnswer } from "@/store/usePlacementTestStore";
 import { isMultipleChoice } from "@/types/typeGuards/isMultipleChoice";
+import { isArray } from "framer/utils/utils.js";
 interface PlacementTaskComponentProps {
   task: MultipleChoiceTask | FillInTheBlankTask;
   onAnswer: (answer: UserAnswer) => void;
@@ -24,7 +25,7 @@ export const PlacementTaskComponent: React.FC<PlacementTaskComponentProps> = ({
     if (!userAnswer) return;
 
     onAnswer({
-      isCorrect: task.correctAnswer.includes(userAnswer),
+      isCorrect: isArray(task.correctAnswer) ? task.correctAnswer.includes(userAnswer) : task.correctAnswer === userAnswer,
       userAnswer,
       questionNumber: currentQuestion,
     });

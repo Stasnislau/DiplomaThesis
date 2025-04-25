@@ -15,22 +15,22 @@ export interface CreatePlacementTaskRequest {
 }
 
 export async function createPlacementTask(
-  data: CreatePlacementTaskRequest
+  input: CreatePlacementTaskRequest
 ): Promise<MultipleChoiceTask | FillInTheBlankTask> {
   const response = await fetchWithAuth(
     `${BRIDGE_MICROSERVICE_URL}/placement/task`,
     {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify(input),
     }
   );
 
-  if (!response.ok) {
+  const data = (await response.json()) as BaseResponse<
+    MultipleChoiceTask | FillInTheBlankTask
+  >;
+  if (!data.success) {
     throw new Error("An error occurred while creating the placement task");
   }
 
-  const responseData = (await response.json()) as BaseResponse<
-    MultipleChoiceTask | FillInTheBlankTask
-  >;
-  return responseData.payload;
+  return data.payload;
 }

@@ -1,14 +1,11 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { useAvailableLanguages } from "@/api/hooks/useAvailableLanguages";
-import { Language } from "@/types/models/Language";
+import { useSetNativeLanguage } from "@/api/hooks/useSetNativeLanguage";
 
-interface NoLanguagesModalProps {
-  onLanguageSelect: (language: Language) => void;
-}
-
-export const NoLanguagesModal: React.FC<NoLanguagesModalProps> = ({ onLanguageSelect }) => {
+export const NoLanguagesModal: React.FC = () => {
   const { languages, isLoading } = useAvailableLanguages();
+  const { setNativeLanguage } = useSetNativeLanguage();
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -30,12 +27,9 @@ export const NoLanguagesModal: React.FC<NoLanguagesModalProps> = ({ onLanguageSe
             {languages?.map((language) => (
               <motion.button
                 key={language.id}
-                onClick={() => onLanguageSelect({
-                    id: language.id,
-                    name: language.name,
-                    code: language.code,
-                    currentLevel: "NATIVE"
-                })}
+                onClick={() => {
+                  setNativeLanguage(language.id);
+                }}
                 className="p-4 rounded-lg text-left transition-all w-full bg-gray-100 hover:bg-gray-200"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}

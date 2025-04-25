@@ -72,6 +72,7 @@ export class GatewayService {
           break;
         default:
           this.exhaustiveCheck(microservice);
+          break;
       }
       console.log(targetUrl);
       let shouldAuthenticate = true;
@@ -101,15 +102,11 @@ export class GatewayService {
               "X-User-Email": userData.email,
               "X-User-Role": userData.role,
             }),
-            Host: "127.0.0.1:3003",
           },
           data: body,
           validateStatus: () => true,
           timeout: 15000,
           family: 4,
-          lookup: (hostname, options, callback) => {
-            callback(null, "127.0.0.1", 4);
-          },
         })
       ).catch(error => {
         if (error.response) {

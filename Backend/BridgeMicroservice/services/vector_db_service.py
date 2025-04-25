@@ -2,16 +2,21 @@ import lancedb
 from sentence_transformers import SentenceTransformer
 import pandas as pd
 from constants.constants import LEVEL_EMBEDDINGS
+# Import new DTOs and typing helpers
+from models.dtos.vector_db_dtos import (
+    LevelData, SpecificSkillContext, FullLevelContext, SimilarLevel, LevelSkills
+)
+from typing import List, Union, Optional 
 
 
 class VectorDBService:
-    def __init__(self):
+    def __init__(self) -> None:
         self.db = lancedb.connect("language_levels.db")
         self.model = SentenceTransformer("all-MiniLM-L6-v2")
         self.table_name = "levels"
         self.initialize_db()
 
-    def initialize_db(self):
+    def initialize_db(self) -> None:
         try:
             if self.table_name not in self.db.table_names():
                 data = []
@@ -42,7 +47,7 @@ class VectorDBService:
         except Exception as e:
             raise e
 
-    def get_level_context(self, level: str, skill_type: str = None):
+    def get_level_context(self, level: str, skill_type: Optional[str] = None) -> Optional[Union[SpecificSkillContext, FullLevelContext]]:
         try:
             table = self.db.open_table(self.table_name)
             df = table.to_pandas()
@@ -54,28 +59,29 @@ class VectorDBService:
             level_data = result.to_dict("records")[0]
 
             if skill_type and skill_type.lower() in level_data:
-                return {
-                    "level": level,
-                    "skill_type": skill_type,
-                    "description": level_data[skill_type.lower()],
-                }
+                return SpecificSkillContext(
+                    level=level,
+                    skill_type=skill_type,
+                    description=level_data[skill_type.lower()],
+                )
             else:
-                return {
-                    "level": level,
-                    "full_description": level_data["full_description"],
-                    "skills": {
-                        "listening": level_data["listening"],
-                        "reading": level_data["reading"],
-                        "spoken_interaction": level_data["spoken_interaction"],
-                        "spoken_production": level_data["spoken_production"],
-                        "writing": level_data["writing"],
-                    },
-                }
+                level_skills = LevelSkills(
+                    listening=level_data["listening"],
+                    reading=level_data["reading"],
+                    spoken_interaction=level_data["spoken_interaction"],
+                    spoken_production=level_data["spoken_production"],
+                    writing=level_data["writing"],
+                )
+                return FullLevelContext(
+                    level=level,
+                    full_description=level_data["full_description"],
+                    skills=level_skills,
+                )
 
         except Exception as e:
             raise e
 
-    def find_similar_levels(self, query: str, limit: int = 3):
+    def find_similar_levels(self, query: str, limit: int = 3) -> List[SimilarLevel]:
         try:
             query_embedding = self.model.encode(query)
             table = self.db.open_table(self.table_name)
@@ -83,18 +89,19 @@ class VectorDBService:
 
             formatted_results = []
             for _, row in results.iterrows():
+                level_skills = LevelSkills(
+                    listening=row["listening"],
+                    reading=row["reading"],
+                    spoken_interaction=row["spoken_interaction"],
+                    spoken_production=row["spoken_production"],
+                    writing=row["writing"],
+                )
                 formatted_results.append(
-                    {
-                        "level": row["level"],
-                        "similarity_score": float(row["_distance"]),
-                        "skills": {
-                            "listening": row["listening"],
-                            "reading": row["reading"],
-                            "spoken_interaction": row["spoken_interaction"],
-                            "spoken_production": row["spoken_production"],
-                            "writing": row["writing"],
-                        },
-                    }
+                    SimilarLevel(
+                        level=row["level"],
+                        similarity_score=float(row["_distance"]),
+                        skills=level_skills,
+                    )
                 )
 
             return formatted_results

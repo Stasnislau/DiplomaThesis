@@ -5,7 +5,7 @@ import {
   BadRequestException,
   NotFoundException,
 } from "@nestjs/common";
-import { Language, User } from "@prisma/client";
+import { Language, LanguageLevel, User } from "@prisma/client";
 import { BaseResponse } from "src/types/BaseResponse";
 
 @Injectable()
@@ -32,6 +32,8 @@ export class UserService {
         languages: true,
       },
     });
+
+    console.log(user, "me");
 
     if (!user) {
       throw new NotFoundException("User not found");
@@ -74,6 +76,89 @@ export class UserService {
       where: { id: userId },
       data: { languages: { connect: { id: languageId } } },
     });
+    return {
+      success: true,
+      payload: true,
+    };
+  }
+
+  async setNativeLanguage(userId: string, languageId: string) {
+    console.log(userId + " " + languageId);
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        languages: true,
+      },
+    });
+    
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+
+    if (user.languages.find((language) => language.languageId === languageId)) {
+      throw new BadRequestException("Language already added");
+    }
+    const newLanguage = await this.prisma.userLanguage.create({
+      data: {
+        id: languageId,
+        currentLevel: LanguageLevel.NATIVE,
+        languageId: languageId,
+        userId: userId,
+      },
+    });
+    console.log(newLanguage);
+    return {
+      success: true,
+      payload: true,
+    };
+  }
+
+  async addUserLanguage(userId: string, languageId: string, level: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+
+    const language = await this.prisma.language.findUnique({
+      where: { id: languageId },
+    });
+
+    if (!language) {
+      throw new NotFoundException("Language not found");
+    }
+
+    let currentLevel: LanguageLevel;
+
+    switch (level) {
+      case "A1":
+        currentLevel = LanguageLevel.A1;
+        break;
+      case "A2":
+        currentLevel = LanguageLevel.A2;
+        break;
+      case "B1":
+        currentLevel = LanguageLevel.B1;
+        break;
+      case "B2":
+        currentLevel = LanguageLevel.B2;
+        break;
+      case "C1":
+        currentLevel = LanguageLevel.C1;
+        break;
+      case "C2":
+        currentLevel = LanguageLevel.C2;
+        break;
+      default:
+        throw new BadRequestException("Invalid level");
+    }
+
+    const newLanguage = await this.prisma.userLanguage.create({
+      data: { id: languageId, currentLevel: currentLevel, languageId: languageId, userId: userId },
+    });
+
     return {
       success: true,
       payload: true,

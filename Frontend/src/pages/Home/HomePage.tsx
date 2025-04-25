@@ -1,11 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Button from "@/components/common/Button";
 import { FeatureCard } from "./components/FeatureCard";
 import { StatCard } from "./components/StatCard";
 import { HeroSection } from "./components/HeroSection";
 import { LanguageCard } from "./components/LanguageCard";
-import { NoLanguagesModal } from "@/components/modals/NoLanguagesModal";
 import {
   FrenchFlagIcon,
   GermanFlagIcon,
@@ -20,6 +19,7 @@ import {
   useAvailableLanguages,
 } from "@/api/hooks/useAvailableLanguages";
 import { useUserStore } from "@/store/useUserStore";
+import { LanguageLevel } from "@/types/models/LanguageLevel";
 
 const features = [
   {
@@ -71,30 +71,17 @@ const flagIcons = {
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { languages } = useAvailableLanguages();
-  const [isNativeLanguageModalOpen, setIsNativeLanguageModalOpen] = useState(false);
-  const { userLanguages } = useUserStore();
 
   const handleLanguageClick = (language: Language) => {
     navigate(`/placement/test/${language.code}`);
   };
 
-  const handleLanguageSelect = (language: Language) => {
-    // TODO: Implement API call to save selected language
-    console.log("Selected language:", language);
-    setIsNativeLanguageModalOpen(false);
-  };
+  const userLanguages = useUserStore((state) => state.userLanguages);
 
-  useEffect(() => {
-    if (userLanguages.length === 0) {
-      setIsNativeLanguageModalOpen(true);
-    }
-  }, [userLanguages]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100">
-      {isNativeLanguageModalOpen && (
-        <NoLanguagesModal onLanguageSelect={handleLanguageSelect} />
-      )}
+
 
       <HeroSection />
 
@@ -104,20 +91,24 @@ export const HomePage: React.FC = () => {
         </h2>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {languages?.map((language) => (
-            <LanguageCard
-              key={language.code}
-              flagIcon={flagIcons[language.code as keyof typeof flagIcons]}
-              name={language.name}
-              code={language.code}
-              isStarted={
-                userLanguages?.some(
+          {languages?.map((language) => {
+            const isStarted = userLanguages?.some(
+              (userLanguage) => userLanguage.id === language.id
+            );
+            return (
+              <LanguageCard
+                key={language.code}
+                flagIcon={flagIcons[language.code as keyof typeof flagIcons]}
+                name={language.name}
+                code={language.code}
+                isStarted={isStarted}
+                currentLevel={userLanguages?.find(
                   (userLanguage) => userLanguage.id === language.id
-                ) ?? false
-              }
-              onStartTest={() => handleLanguageClick(language)}
-            />
-          ))}
+                )?.currentLevel || language.currentLevel}
+                onStartTest={() => handleLanguageClick(language)}
+              />
+            );
+          })}
         </div>
       </div>
 

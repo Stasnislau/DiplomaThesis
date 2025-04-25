@@ -21,7 +21,6 @@ export function PlacementTestPage() {
     cachedTasks,
     addTask,
     getCurrentTask,
-    setCurrentQuestionNumber,
     resetTest
   } = usePlacementTestStore();
   const { languages } = useAvailableLanguages();
@@ -64,14 +63,18 @@ export function PlacementTestPage() {
     [userAnswers, createTask, addTask, isLoading]
   );
 
-  // Initialize first task
   useEffect(() => {
-    if (!language || isInitialized || isLoading) return;
+    const initializeTask = async () => {
+      if (!language || isInitialized || isLoading) return;
 
     if (cachedTasks.length === 0) {
-      createNextTask(language.name);
+      await createNextTask(language.name);
       setIsInitialized(true);
-    }
+    } else {
+        setIsInitialized(true);
+      }
+    };
+    initializeTask();
   }, [language, isInitialized, isLoading, cachedTasks.length, createNextTask]);
 
   // Handle test completion and navigation

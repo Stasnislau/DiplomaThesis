@@ -2,10 +2,8 @@ import os
 import aiohttp
 import asyncio
 import json
-
-
 class Bielik_Service:
-    def __init__(self):
+    def __init__(self) -> None:
         self.api_url = os.getenv("BIELIK_API_URL")
         self.api_key = os.getenv("BIELIK_API_KEY")
         self.headers = {"Content-Type": "application/json", "x-api-key": self.api_key}
@@ -17,7 +15,6 @@ class Bielik_Service:
         ]
 
         try:
-
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                     f"{self.api_url}/api/text/predict",
@@ -43,11 +40,9 @@ class Bielik_Service:
         max_retries: int = 3,
         delay: float = 15.0,
     ) -> str:
-
+        raise Exception("Temporary disabled")
         for attempt in range(max_retries):
-            async with session.get(
-                f"{self.api_url}/api/text/task_status/{task_id}", headers=self.headers
-            ) as response:
+            async with session.get(f"{self.api_url}/api/text/task_status/{task_id}", headers=self.headers) as response:
                 result = await response.json()
 
                 print(result, "RESULT")
@@ -58,9 +53,7 @@ class Bielik_Service:
                     case "failed":
                         raise Exception(f"Task failed: {result.get('result')}")
                     case "accepted" | "pending":
-                        print(
-                            f"Task still processing, attempt {attempt + 1}/{max_retries}"
-                        )
+                        print(f"Task still processing, attempt {attempt + 1}/{max_retries}")
                         await asyncio.sleep(delay)
                     case _:
                         raise Exception(f"Unknown status: {result['status']}")
@@ -68,11 +61,10 @@ class Bielik_Service:
         raise TimeoutError(f"Task {task_id} timed out after {max_retries} attempts")
 
     async def check_with_bielik(self, question: str, answer: str) -> dict:
-
-        prompt = f"""Czy pytanie i odpowiedź są poprawne i pełne? 
+        raise Exception("Temporary disabled")
+        prompt = f"""Czy pytanie i odpowiedź są poprawne i pełne?
         Pytanie: {question}
         Odpowiedź: {answer}
-        
         Odpowiedz w formacie JSON:
         {{
             "isCorrect": boolean,

@@ -8,3 +8,4 @@ package-lock.json
 node_modules
 migrations
 language_levels.db*
+.mypy_cache

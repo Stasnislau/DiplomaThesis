@@ -1,21 +1,15 @@
 from fastapi import Request, status
 from fastapi.responses import JSONResponse
-from fastapi.exceptions import HTTPException, RequestValidationError
+from fastapi.exceptions import RequestValidationError
 from datetime import datetime
-from typing import Union
+from typing import Union, Callable, Dict
 from starlette.middleware.base import BaseHTTPMiddleware
 
 
 class ErrorHandlingMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next: Callable) -> JSONResponse:
         try:
-            response = await call_next(request)
-
-            if response.status_code > 400 and response.status_code < 600:
-                raise HTTPException(
-                    status_code=response.status_code, detail=response.content
-                )
-
+            response: JSONResponse = await call_next(request)
             return response
 
         except Exception as exc:
@@ -25,9 +19,9 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
             )
 
     def handle_error(
-        self, status_code: int, message: str, errors: Union[list, dict, None] = None
+        self, status_code: int, message: str, errors: Union[list, Dict, None] = None
     ) -> JSONResponse:
-        response_body = {
+        response_body: Dict = {
             "success": False,
             "payload": {"message": message, "timestamp": datetime.now().isoformat()},
         }

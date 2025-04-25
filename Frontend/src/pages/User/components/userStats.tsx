@@ -1,6 +1,6 @@
 interface UserStatsProps {
     title: string;
-    value: number;
+    value: number
     icon: string;
   }
   

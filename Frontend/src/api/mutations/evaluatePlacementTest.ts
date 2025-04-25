@@ -16,20 +16,20 @@ export interface EvaluatePlacementTestRequest {
 }
 
 export async function evaluatePlacementTest(
-  data: EvaluatePlacementTestRequest
+  input: EvaluatePlacementTestRequest
 ): Promise<EvaluationResult> {
   const response = await fetchWithAuth(
     `${BRIDGE_MICROSERVICE_URL}/placement/evaluate`,
     {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify(input),
     }
   );
 
-  if (!response.ok) {
+  const data = (await response.json()) as BaseResponse<EvaluationResult>;
+  if (!data.success) {
     throw new Error("Failed to evaluate placement test");
   }
 
-  const responseData = (await response.json()) as BaseResponse<EvaluationResult>;
-  return responseData.payload;
-} 
+  return data.payload;
+}

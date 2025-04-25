@@ -12,7 +12,7 @@ from controllers.placement_controller import Placement_Controller
 from services.placement_service import Placement_Service
 import logging
 import litellm
-
+from typing import Awaitable, Callable
 load_dotenv()
 
 app = FastAPI()
@@ -59,7 +59,7 @@ logging.getLogger("uvicorn").setLevel(logging.WARNING)
 
 
 @app.middleware("http")
-async def log_requests(request: Request, call_next):
+async def log_requests(request: Request, call_next: Callable[[Request], Awaitable[JSONResponse]]) -> JSONResponse:
     try:
         body = await request.json()
         print(f"Body: {body}")
@@ -72,7 +72,7 @@ async def log_requests(request: Request, call_next):
 
 
 @app.middleware("http")
-async def catch_all_undefined_endpoints(request: Request, call_next):
+async def catch_all_undefined_endpoints(request: Request, call_next: Callable[[Request], Awaitable[JSONResponse]]) -> JSONResponse:
     print(f"🔍 Checking endpoint: {request.url.path}")
     response = await call_next(request)
     if response.status_code == 404:
@@ -81,7 +81,7 @@ async def catch_all_undefined_endpoints(request: Request, call_next):
             status_code=404,
             content={
                 "success": False,
-                "payload": {"message": "No such endpoint", "path": str(request.url)},
+                "payload": {"message": "No such endpoint", },
             },
         )
     return response

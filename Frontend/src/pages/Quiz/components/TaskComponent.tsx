@@ -1,9 +1,9 @@
 import React, { useCallback } from "react";
-import { TaskData } from "@/types/responses/TaskResponse";
+import { MultipleChoiceTask, FillInTheBlankTask } from "@/types/responses/TaskResponse";
 import Button from "@/components/common/Button";
 
 interface TaskComponentProps {
-  taskData: TaskData;
+  taskData: MultipleChoiceTask | FillInTheBlankTask;
   userAnswer: string;
   setUserAnswer: (answer: string) => void;
   onCheckAnswer: () => void;
@@ -82,7 +82,7 @@ export const TaskComponent: React.FC<TaskComponentProps> = ({
           </div>
         );
     }
-  }, [taskData.type, userAnswer, setUserAnswer, taskData.options]);
+  }, [taskData.type, userAnswer, setUserAnswer, taskData.question]);
 
   return (
     <div className="mt-6 space-y-6">
@@ -100,7 +100,7 @@ export const TaskComponent: React.FC<TaskComponentProps> = ({
               : "Fill in the Blank"}
           </span>
         </div>
-        <p className="text-xl font-medium text-gray-900">{taskData.task}</p>
+        <p className="text-xl font-medium text-gray-900">{taskData.question}</p>
       </div>
 
       <div className="space-y-4">
@@ -161,7 +161,7 @@ export const TaskComponent: React.FC<TaskComponentProps> = ({
           {!isCorrect && (
             <div className="mt-4 space-y-4">
               <p className="text-red-600">
-                Correct answer: {taskData.correct_answer}
+                Correct answer: {taskData.correctAnswer}
               </p>
               <Button
                 isLoading={isExplaining}

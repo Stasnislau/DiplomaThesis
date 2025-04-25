@@ -27,6 +27,9 @@ export const login = async (input: LoginUserRequest) => {
   );
 
   const data = (await response.json()) as BaseResponse<LoginResponse>;
+  if (!data.success) {
+    throw new Error("Failed to login");
+  }
 
   return data;
 };

@@ -47,15 +47,16 @@ export const TaskPage: React.FC = () => {
 
     let isAnswerCorrect = false;
     if (!currentTaskData) return;
-
+    console.log(currentTaskData, userAnswer);
     if (isMultipleChoice(currentTaskData)) {
       const correctOptionIndex = currentTaskData?.options?.indexOf(
-        currentTaskData.correctAnswer[0]
+        Array.isArray(currentTaskData.correctAnswer) ? currentTaskData.correctAnswer[0] : currentTaskData.correctAnswer
       );
       if (correctOptionIndex === undefined || !currentTaskData.options) return;
       isAnswerCorrect =
         currentTaskData.options[correctOptionIndex] === userAnswer;
     } else {
+      console.log(currentTaskData.correctAnswer, userAnswer, currentTaskData.correctAnswer === userAnswer, "fill in the blank");
       isAnswerCorrect = currentTaskData.correctAnswer === userAnswer;
     }
     setIsCorrect(isAnswerCorrect);

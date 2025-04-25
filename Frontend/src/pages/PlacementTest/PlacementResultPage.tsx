@@ -1,9 +1,11 @@
 import { motion } from "framer-motion";
 import { usePlacementTestStore } from "@/store/usePlacementTestStore";
 import { useNavigate, useParams } from "react-router-dom";
-import { useEffect,  } from "react";
+import { useEffect, useState } from "react";
 import { useEvaluatePlacementTest } from "@/api/hooks/useEvaluatePlacementTest";
 import LoadingSpinner from "@/components/layout/Loading";
+import { useAddUserLanguage } from "@/api/hooks/useAddUserLanguage";
+import { useAvailableLanguages } from "@/api/hooks/useAvailableLanguages";
 
 interface EvaluationResult {
   level: string;
@@ -18,6 +20,9 @@ export function PlacementResultPage() {
   const { userAnswers, cachedTasks, resetTest } = usePlacementTestStore();
   const navigate = useNavigate();
   const { evaluateTest, isLoading, data: evaluation } = useEvaluatePlacementTest();
+  const [isInitializing, setIsInitializing] = useState(false);
+  const { languages, isLoading: isLoadingLanguages } = useAvailableLanguages();
+  const { addUserLanguage, isLoading: isLoadingAddUserLanguage } = useAddUserLanguage();
 
   useEffect(() => {
     if (!languageCode || cachedTasks.length === 0) {
@@ -25,15 +30,43 @@ export function PlacementResultPage() {
       return;
     }
 
-    if (!evaluation && !isLoading) {
-      evaluateTest({
-        answers: userAnswers,
-        language: languageCode,
-      });
+    if (!evaluation && !isLoading && !isInitializing) {
+      const evaluateTestAsync = async () => {
+        setIsInitializing(true);
+        await evaluateTest({
+          answers: userAnswers,
+          language: languageCode,
+        });
+        setIsInitializing(false);
+      };
+      evaluateTestAsync();
     }
   }, [userAnswers, cachedTasks, navigate, languageCode, evaluateTest, evaluation, isLoading]);
 
-  if (isLoading) {
+  const handleSaveLevel = async () => {
+    console.log(languages, languageCode, evaluation, "save level");
+
+    if (!languages || !languageCode || !evaluation) {
+      console.error("Unable to save language level: missing data"); 
+      return;
+    }
+
+    const language = languages.find(lang => lang.code.toLowerCase() === languageCode.toLowerCase());
+    
+    if (!language) {
+      console.error(`Language "${languageCode}" not found`);
+      return;
+    }
+
+    await addUserLanguage({
+      languageId: language.id,
+      level: evaluation.level,
+    });
+
+    navigate("/");
+  };
+
+  if (isLoading || isLoadingLanguages) {
     return <LoadingSpinner />;
   }
 
@@ -131,7 +164,7 @@ export function PlacementResultPage() {
               </div>
             </div>
 
-            <div className="flex justify-center space-x-4 mt-8">
+            <div className="flex flex-wrap justify-center gap-4 mt-8">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -143,6 +176,17 @@ export function PlacementResultPage() {
               >
                 Take Test Again
               </motion.button>
+              
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleSaveLevel}
+                disabled={isLoadingAddUserLanguage}
+                className="px-6 py-3 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors disabled:bg-gray-400"
+              >
+                {isLoadingAddUserLanguage ? "Saving..." : "Save Language Level"}
+              </motion.button>
+              
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}

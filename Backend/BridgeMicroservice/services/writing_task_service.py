@@ -1,10 +1,15 @@
 import json
+import uuid
+from typing import Union, Any
 from .vector_db_service import VectorDBService
 from .ai_service import AI_Service
 from dotenv import load_dotenv
 from .bielik_service import Bielik_Service
 from constants.prompts import writing_multiple_choice_task_prompt, writing_fill_in_the_blank_task_prompt, explain_answer_prompt
 import os
+from models.dtos.task_dto import MultipleChoiceTask, FillInTheBlankTask
+from models.dtos.vector_db_dtos import SpecificSkillContext, FullLevelContext
+from fastapi import HTTPException
 load_dotenv()
 
 
@@ -13,62 +18,97 @@ class Writing_Task_Service:
         self.vector_db_service = vector_db_service
         self.ai_service = ai_service
 
-    async def generate_writing_multiple_choice_task(self, language: str, level: str):
-        level_context = self.vector_db_service.get_level_context(
+    async def generate_writing_multiple_choice_task(self, language: str, level: str) -> MultipleChoiceTask:
+        level_context: Union[SpecificSkillContext, FullLevelContext, None] = self.vector_db_service.get_level_context(
             level.upper(), "writing"
         )
         if not level_context:
             raise ValueError(f"Invalid level: {level}")
 
-        prompt = writing_multiple_choice_task_prompt(language, level, level_context)
+        prompt = writing_multiple_choice_task_prompt(language, level, level_context.model_dump())
         response = await self.ai_service.get_ai_response(prompt)
         json_response = json.loads(response)
         print(json_response, "INITIAL TASK")
-        
-        # Инициализируем verification_response значением по умолчанию
         verification_response = {"is_valid": True}
-        
         try:
-            if language == "French":
-                verification_response = await self.verify_generated_french_task(
-                    json_response
-                )
-                verification_response = json.loads(verification_response)
-            elif language == "Polish" and os.getenv("CHECK_WITH_BIELIK") == "1":
-                verification_response = await self.verify_generated_polish_task(json_response)
-                # Clean and parse the verification response
-                if isinstance(verification_response, str):
-                    # Find the first valid JSON object in the response
-                    import re
-                    json_str = re.search(r'\{.*\}', verification_response.replace('\n', ''), re.DOTALL)
-                    if json_str:
-                        verification_response = json.loads(json_str.group())
-            
+            # if language == "French":
+            #     verification_response_str = await self.verify_generated_french_task(
+            #         json_response
+            #     )
+            #     verification_response = json.loads(verification_response_str)
+            # elif language == "Polish" and os.getenv("CHECK_WITH_BIELIK") == "1":
+            #     verification_response = await self.verify_generated_polish_task(json_response)
+            #     # Clean and parse the verification response
+            #     if isinstance(verification_response, str):
+            #         # Find the first valid JSON object in the response
+            #         import re
+            #         json_str = re.search(r'\{.*\}', verification_response.replace('\n', ''), re.DOTALL)
+            #         if json_str:
+            #             verification_response = json.loads(json_str.group())
             if verification_response.get("is_valid") is False and verification_response.get("better_task"):
                 json_response = verification_response["better_task"]
-            
-            json_response["type"] = "multiple_choice"
-            return json_response
-            
-        except Exception as e:
-            print(f"Verification error: {e}")
-            json_response["type"] = "multiple_choice"
-            return json_response
 
-    async def generate_writing_fill_in_the_blank_task(self, language: str, level: str):
-        level_context = self.vector_db_service.get_level_context(
+            # Add missing fields required by the Pydantic model
+            json_response["id"] = str(uuid.uuid4())
+            json_response["type"] = "multiple_choice"
+
+            # Validate and return the task
+            try:
+                return MultipleChoiceTask(**json_response)
+            except Exception as e:
+                print(f"Pydantic validation failed for MultipleChoiceTask. Data: {json_response}")
+                print(f"Validation Error: {e}")
+                # Re-raise or handle as appropriate
+                raise HTTPException(status_code=500, detail=f"Failed to create valid task after verification: {e}")
+
+        except Exception as e:
+            print(f"Error during task generation/verification: {e}")
+            # Even if verification fails, ensure ID and type are set if we attempt fallback
+            # Note: json_response might be the original AI response here
+            json_response["id"] = str(uuid.uuid4()) # Add ID here too for fallback
+            json_response["type"] = "multiple_choice"
+            # Attempt to return the original task if verification failed, but still validate
+            try:
+                print("Attempting to return original task after verification error...")
+                return MultipleChoiceTask(**json_response)
+            except Exception as e_fallback:
+                print(f"Pydantic validation failed for fallback MultipleChoiceTask. Data: {json_response}")
+                print(f"Validation Error: {e_fallback}")
+                # Re-raise or handle as appropriate
+                raise HTTPException(status_code=500, detail=f"Failed to create valid task even in fallback: {e_fallback}")
+
+    async def generate_writing_fill_in_the_blank_task(self, language: str, level: str) -> FillInTheBlankTask:
+        level_context: Union[SpecificSkillContext, FullLevelContext, None] = self.vector_db_service.get_level_context(
             level.upper(), "writing"
         )
 
         if not level_context:
             raise ValueError(f"Invalid level: {level}")
 
-        prompt = writing_fill_in_the_blank_task_prompt(language, level, level_context)
+        prompt = writing_fill_in_the_blank_task_prompt(language, level, level_context.model_dump())
         response = await self.ai_service.get_ai_response(prompt)
         json_response = json.loads(response)
-        json_response["type"] = "fill_in_the_blank"
 
-        return json_response
+        # Ensure 'correctAnswer' is a string if it's a list
+        if isinstance(json_response.get("correctAnswer"), list):
+            if len(json_response["correctAnswer"]) > 0:
+                json_response["correctAnswer"] = json_response["correctAnswer"][0]
+            else:
+                # Handle empty list case
+                json_response["correctAnswer"] = ""
+        
+        # Add missing fields required by the Pydantic model
+        json_response["id"] = str(uuid.uuid4())
+        json_response["type"] = "fill_in_the_blank"
+        
+        # Validate and return the task
+        try:
+            return FillInTheBlankTask(**json_response)
+        except Exception as e:
+            print(f"Pydantic validation failed for FillInTheBlankTask. Data: {json_response}")
+            print(f"Validation Error: {e}")
+            # Re-raise or handle as appropriate
+            raise HTTPException(status_code=500, detail=f"Failed to create valid task: {e}")
 
     async def explain_answer(
         self,
@@ -77,15 +117,15 @@ class Writing_Task_Service:
         task: str,
         correct_answer: str,
         user_answer: str,
-    ):
+    ) -> FillInTheBlankTask:
         prompt = explain_answer_prompt(user_language, user_level, task, correct_answer, user_answer)
         response = await self.ai_service.get_ai_response(prompt)
         json_response = json.loads(response)
         json_response["type"] = "fill_in_the_blank"
 
-        return json_response
+        return FillInTheBlankTask(**json_response)
 
-    async def verify_generated_french_task(self, task: str):
+    async def verify_generated_french_task(self, task: dict) -> str:
         prompt = f"""
         Vérifiez rigoureusement la tâche d'apprentissage suivante : 
         {task}
@@ -125,7 +165,8 @@ class Writing_Task_Service:
         print(response)
         return response
 
-    async def verify_generated_polish_task(self, task: dict) -> dict:
+    async def verify_generated_polish_task(self, task: dict) -> dict[str, Any]:
+        raise NotImplementedError("Polish task verification is yet to be verified")
         # Prepare verification prompt in Polish
         prompt = f"""
         Sprawdź dokładnie następujące zadanie językowe:
@@ -160,5 +201,5 @@ class Writing_Task_Service:
         Kiedy zwracasz odpowiedź, zwróć tylko JSON, bez dodatkowych komentarzy i nie zwracaj better_task jeśli zadanie jest poprawne.
         """
         bielik_service = Bielik_Service()
-        response = await bielik_service.ask_bielik(prompt)
-        return json.loads(response)
+        # response = await bielik_service.ask_bielik(prompt)
+        # return json.loads(response) # TODO: Change to FillInTheBlankTask

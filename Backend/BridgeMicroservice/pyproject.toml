@@ -31,6 +31,7 @@ accelerate = "^1.1.1"
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.11.6"
 poethepoet = "^0.33.1"
+mypy = "^1.15.0"
 
 [build-system]
 requires = ["poetry-core"]
@@ -38,12 +39,48 @@ build-backend = "poetry.core.masonry.api"
 
 
 [tool.ruff]
-select = ["E", "F", "W"]
+select = ["E", "F", "W", "ANN"]
 ignore = []
 line-length = 140
 
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "F",  # pyflakes
+    "W",  # pycodestyle warnings
+    "ANN", # flake8-annotations
+]
+
+
+[tool.ruff.lint.flake8-annotations]
+mypy-init-return = true
+allow-star-arg-any = true
+
 [tool.poe.tasks]
 start = "uvicorn main:app --reload --port 3003"
+
+[tool.mypy]
+python_version = "3.10"
+explicit_package_bases = true
+mypy_path = "."
+
+warn_return_any = true         # Complaint if a function returns Any (implicitly)
+warn_unused_configs = true     # Complaint on unused sections in the mypy config
+warn_redundant_casts = true    # Complaint on unnecessary explicit type casts (cast)
+warn_unused_ignores = true     # Complaint on unnecessary # type: ignore
+
+disallow_untyped_defs = true   # Prohibit functions without annotations (similar to ANN)
+disallow_incomplete_defs = true # Prohibit incomplete annotations (e.g., only arguments without return)
+check_untyped_defs = true      # Check the body of functions without annotations (may give false positives)
+disallow_untyped_calls = true  # Prohibit calling functions without annotations from annotated code
+no_implicit_optional = true    # Prohibit implicit Optional (None without Union[..., None])
+strict_equality = true         # More strict type checking
+
+# --- Ignoring import issues (often needed for third-party libraries) ---
+ignore_missing_imports = true
+pretty = true        
+show_error_codes = true
+exclude = ["migrations/"] 
 
 
 

@@ -1,8 +1,9 @@
-def writing_fill_in_the_blank_task_prompt(
-    language: str, level: str, level_context: str
-) -> str:
+from typing import Dict
+
+def writing_fill_in_the_blank_task_prompt(language: str, level: str, level_context: Dict[str, str]) -> str:
     return f"""
-        Generate a **fill-in-the-blank task** for language learners in {language} at {level} level. FOLLOW STRICTLY ALL THE GUIDELINES BELOW.
+        Generate a **fill-in-the-blank task** for language learners in {language} at {level} level.
+        FOLLOW STRICTLY ALL THE GUIDELINES BELOW.
 
         Level proficiency description:
         {level_context}
@@ -16,16 +17,16 @@ def writing_fill_in_the_blank_task_prompt(
         6. Remove the word/phrase from the sentence and leave a blank in its place like this: "I ____ to the park every morning."
         7. Avoid ambiguity: the missing word/phrase must have **only one correct answer**.
         8. Pay a lot of attention to the context of the task and the forms of the words.
-        9. Avoid similar-sounding or overly ambiguous options. The answer should be **deterministic**. If there are multiple correct answers, return them in an array.
-        8. Include *the English translation* of the missing word/phrase (in parentheses).
-        9. Use diverse contexts that reflect everyday use or topics relevant to the level (e.g., greetings, work, or daily routines)
-        10. The example in the level context should be used as a reference for the task, but it should not be exactly the same.
-        11. Do not include any instructions for the task.
-        12. Return the result in JSON format with these fields:
-        
+        9. Avoid similar-sounding or overly ambiguous options.
+        The answer should be **deterministic**. If there are multiple correct answers, return them in an array.
+        10. Include *the English translation* of the missing word/phrase (in parentheses).
+        11. Use diverse contexts that reflect everyday use or topics relevant to the level (e.g., greetings, work, or daily routines)
+        12. The example in the level context should be used as a reference for the task, but it should not be exactly the same.
+        13. Do not include any instructions for the task.
+        14. Return the result in JSON format with these fields:
         {{
-            "question": "The sentence with ____ (MISSING WORD/PHRASE IN ENGLISH)",
-            "correctAnswer": array of correct answers
+            "question": "The sentence with ____ (MISSING WORD/PHRASE IN ENGLISH) without any instructions or options",
+            "correctAnswer": array of correct answers as the missing word/phrase
         }}
 
         Examples:
@@ -36,9 +37,7 @@ def writing_fill_in_the_blank_task_prompt(
         """
 
 
-def writing_multiple_choice_task_prompt(
-    language: str, level: str, level_context: str
-) -> str:
+def writing_multiple_choice_task_prompt(language: str, level: str, level_context: Dict[str, str]) -> str:
     return f"""
         Generate a language learning task in {language} at {level} level. FOLLOW STRICTLY ALL THE GUIDELINES BELOW.
 
@@ -53,15 +52,15 @@ def writing_multiple_choice_task_prompt(
         5. Pay a lot of attention to the context of the task and the forms of the words.
         6. Provide **exactly four options**, with only one correct answer.
         7. Do not translate any parts of the sentence in English.
-        8. Avoid similar-sounding or overly ambiguous options. The answer should be **deterministic** and not allow for multiple correct interpretations.
+        8. Avoid similar-sounding or overly ambiguous options.
+        The answer should be **deterministic** and not allow for multiple correct interpretations.
         9. Do not include any instructions for the task.
         10. The example in the level context should be used as a reference for the task, but it should not be exactly the same.
         11. Return the task in JSON format, including these fields:
-        
         {{
-            "question": "The sentence and question for the user",
-            "options": ["Option A", "Option B", "Option C", "Option D"],
-            "correctAnswer": "The correct option in array"
+            "question": "The sentence and question for the user, without any instructions or options",
+            "options": ["Option A", "Option B", "Option C", "Option D"] as the missing word/phrase,
+            "correctAnswer": "The correct option in array" as the missing word/phrase
         }}
 
         Examples of task contexts include:
@@ -73,9 +72,7 @@ def writing_multiple_choice_task_prompt(
         """
 
 
-def explain_answer_prompt(
-    language: str, level: str, task: str, correct_answer: str, user_answer: str
-) -> str:
+def explain_answer_prompt(language: str, level: str, task: str, correct_answer: str, user_answer: str) -> str:
     return f"""
         Analyze the following task in {language} at {level} level. FOLLOW STRICTLY ALL THE GUIDELINES BELOW.
 
