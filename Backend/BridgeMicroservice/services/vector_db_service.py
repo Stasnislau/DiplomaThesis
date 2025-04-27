@@ -4,9 +4,9 @@ import pandas as pd
 from constants.constants import LEVEL_EMBEDDINGS
 # Import new DTOs and typing helpers
 from models.dtos.vector_db_dtos import (
-    LevelData, SpecificSkillContext, FullLevelContext, SimilarLevel, LevelSkills
+    SpecificSkillContext, FullLevelContext, SimilarLevel, LevelSkills
 )
-from typing import List, Union, Optional 
+from typing import List, Union, Optional
 
 
 class VectorDBService:

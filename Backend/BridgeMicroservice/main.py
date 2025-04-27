@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from controllers.writing_controller import Writing_Controller
@@ -16,6 +17,9 @@ from typing import Awaitable, Callable
 load_dotenv()
 
 app = FastAPI()
+
+error_handler_middleware_instance = ErrorHandlingMiddleware(app)
+
 app.add_middleware(ErrorHandlingMiddleware)
 
 app.add_middleware(
@@ -57,17 +61,19 @@ litellm.failure_callback = []
 logging.getLogger("fastapi").setLevel(logging.WARNING)
 logging.getLogger("uvicorn").setLevel(logging.WARNING)
 
+# Exception handler for validation errors
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    # Reuse the logic from our middleware
+    return error_handler_middleware_instance.handle_validation_error(exc)
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next: Callable[[Request], Awaitable[JSONResponse]]) -> JSONResponse:
-    try:
-        body = await request.json()
-        print(f"Body: {body}")
-    except Exception as e:
-        print(f"Failed to read body: {e}")
+    # Avoid reading request body here to prevent consuming the stream before validation
+    print(f"Request: {request.method} {request.url.path}")
     response = await call_next(request)
 
-    print(f"Response ✅: {response}")
+    print(f"Response ✅: {response.status_code}") # Log status code instead of the whole response object
     return response
 
 

@@ -6,10 +6,11 @@ from .ai_service import AI_Service
 from dotenv import load_dotenv
 from .bielik_service import Bielik_Service
 from constants.prompts import writing_multiple_choice_task_prompt, writing_fill_in_the_blank_task_prompt, explain_answer_prompt
-import os
 from models.dtos.task_dto import MultipleChoiceTask, FillInTheBlankTask
 from models.dtos.vector_db_dtos import SpecificSkillContext, FullLevelContext
+from models.request.explain_answer_request import ExplainAnswerRequest
 from fastapi import HTTPException
+from models.responses.explain_answer_response import ExplainAnswerResponse
 load_dotenv()
 
 
@@ -111,19 +112,19 @@ class Writing_Task_Service:
             raise HTTPException(status_code=500, detail=f"Failed to create valid task: {e}")
 
     async def explain_answer(
-        self,
-        user_language: str,
-        user_level: str,
-        task: str,
-        correct_answer: str,
-        user_answer: str,
-    ) -> FillInTheBlankTask:
-        prompt = explain_answer_prompt(user_language, user_level, task, correct_answer, user_answer)
+       self, explain_answer_request: ExplainAnswerRequest   
+    ) -> ExplainAnswerResponse:
+        language = explain_answer_request.language
+        level = explain_answer_request.level
+        task = explain_answer_request.task
+        correct_answer = explain_answer_request.correct_answer
+        user_answer = explain_answer_request.user_answer
+        prompt = explain_answer_prompt(language, level, task, correct_answer, user_answer)
         response = await self.ai_service.get_ai_response(prompt)
         json_response = json.loads(response)
         json_response["type"] = "fill_in_the_blank"
 
-        return FillInTheBlankTask(**json_response)
+        return ExplainAnswerResponse(**json_response)
 
     async def verify_generated_french_task(self, task: dict) -> str:
         prompt = f"""
@@ -161,7 +162,7 @@ class Writing_Task_Service:
 
         IMPORTANT : Si la tâche n'est pas valide, fournissez une version complètement améliorée qui corrige tous les problèmes identifiés. La structure de better_task doit correspondre exactement à la structure de la tâche originale, avec tous les champs nécessaires.
         """
-        response = await self.ai_service.get_mistral_response(prompt)
+        response = await self.ai_service.get_ai_response(prompt)
         print(response)
         return response
 
