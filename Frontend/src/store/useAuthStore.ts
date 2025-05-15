@@ -46,10 +46,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           errors: data.payload.errors,
         };
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error);
       set({ initialized: true });
-      return { success: false, message: "Unknown error" };
+      return { success: false, message: error.message };
     }
   },
   logout: () => {
@@ -86,6 +86,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
     } catch (error) {
       console.error("Refresh failed:", error);
+      localStorage.removeItem("accessToken");
+      Cookies.remove("refreshToken");
       set({
         isAuthenticated: false,
         initialized: true,
