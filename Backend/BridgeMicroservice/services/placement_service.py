@@ -6,7 +6,6 @@ import json
 from models.dtos.evaluate_test_dto import EvaluateTestDto
 from models.dtos.task_dto import MultipleChoiceTask, FillInTheBlankTask
 
-
 class Placement_Service:
     def __init__(self, ai_service: AI_Service, vector_db_service: VectorDBService):
         self.ai_service = ai_service

@@ -15,7 +15,6 @@ uvicorn = "^0.30.6"
 openai = "^1.46.1"
 fastapi-cors = "^0.0.6"
 transformers = "^4.45.1"
-torch = "^2.4.1"
 protobuf = "^5.28.2"
 sentencepiece = "^0.2.0"
 litellm = "^1.49.6"
@@ -26,6 +25,8 @@ langchain-mistralai = "^0.2.1"
 sentence-transformers = "^3.2.1"
 pandas = "^2.2.3"
 accelerate = "^1.1.1"
+python-multipart = "^0.0.20"
+pydub = "^0.25.1"
 
 
 [tool.poetry.group.dev.dependencies]

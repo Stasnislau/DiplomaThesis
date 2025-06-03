@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -11,6 +11,8 @@ from middlewares.error_handling_middleware import ErrorHandlingMiddleware
 from services.vector_db_service import VectorDBService
 from controllers.placement_controller import Placement_Controller
 from services.placement_service import Placement_Service
+from controllers.speaking_controller import Speaking_Controller
+from services.speaking_service import Speaking_Service
 import logging
 import litellm
 from typing import Awaitable, Callable
@@ -42,6 +44,13 @@ app.include_router(
     Placement_Controller(
         Placement_Service(AI_Service(), VectorDBService()),
         Bielik_Service(),
+    ).get_router(),
+    prefix="/api",
+)
+
+app.include_router(
+    Speaking_Controller(
+        Speaking_Service(AI_Service()),
     ).get_router(),
     prefix="/api",
 )

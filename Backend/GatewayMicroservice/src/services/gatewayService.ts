@@ -96,7 +96,6 @@ export class GatewayService {
           url: targetUrl,
           headers: {
             ...headers,
-            "Content-Type": "application/json",
             ...(userData && {
               "X-User-Id": userData.id,
               "X-User-Email": userData.email,
