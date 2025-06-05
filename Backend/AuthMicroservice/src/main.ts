@@ -30,7 +30,8 @@ async function bootstrap() {
   console.log(configService.get<string>("rabbitmq.url"), configService.get<string>("rabbitmq.queue"))
   await app.startAllMicroservices();
   const port = configService.get("PORT");
-  console.log("Auth Microservice is running on port:", port);
   await app.listen(port);
+  console.log("Auth Microservice is running on port:", port);
+
 }
 bootstrap();

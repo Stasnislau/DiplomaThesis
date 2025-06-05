@@ -6,6 +6,7 @@ import { LanguageProgress } from "@/pages/User/components/languageProgress";
 import { useMe } from "@/api/hooks/useMe";
 import Spinner from "@/components/common/Spinner";
 import { LanguageLevel } from "@/types/models/LanguageLevel";
+import Avatar from "@/components/common/Avatar";
 
 // Helper function to map LanguageLevel enum to readable string
 const mapLevelToString = (
@@ -105,11 +106,7 @@ export const ProfilePage: React.FC = () => {
         <div className="bg-white rounded-3xl shadow-lg p-8 mb-8">
           <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-8">
             <div className="relative flex-shrink-0">
-              <img
-                src={"/default-avatar.png"}
-                alt="Profile"
-                className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-indigo-500"
-              />
+              <Avatar name={me.name || ''} className="border-4 border-indigo-500" />
             </div>
             <div className="flex-1 text-center sm:text-left">
               <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-2 mb-2">

@@ -17,5 +17,6 @@ async function bootstrap() {
   });
   const port = configService.get("port");
   await app.listen(port);
+  console.log(`GatewayMicroservice is running on port ${port}`);
 }
 bootstrap();
