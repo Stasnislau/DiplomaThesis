@@ -10,3 +10,4 @@ migrations
 language_levels.db*
 .mypy_cache
 yarn.lock
+.DS_Store

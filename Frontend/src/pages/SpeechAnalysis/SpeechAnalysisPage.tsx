@@ -1,11 +1,15 @@
 import Button from "@/components/common/Button";
 import React, { useState, useRef } from "react";
 import { useAnalyzeAudioFile } from "@/api/hooks/useAnalyzeAudioFile";
+
+const LANGUAGES = ["English", "Spanish", "French", "German", "Russian", "Polish", "Italian"];
+
 export const SpeechAnalysisPage: React.FC = () => {
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [analysisResult, setAnalysisResult] = useState<string>("");
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [audioURL, setAudioURL] = useState<string>("");
+  const [language, setLanguage] = useState<string>(LANGUAGES[0]);
   const { analyzeAudioFile, isLoading: isAnalyzingAudioFile } =
     useAnalyzeAudioFile();
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -135,7 +139,7 @@ export const SpeechAnalysisPage: React.FC = () => {
     }
 
     setAnalysisResult("");
-    const result = await analyzeAudioFile({ audioFile }) as string;
+    const result = await analyzeAudioFile({ audioFile, filename: audioFile.name, language: language }) as string;
     setAnalysisResult(result);
   };
 
@@ -146,6 +150,24 @@ export const SpeechAnalysisPage: React.FC = () => {
       </h1>
 
       <div className="bg-white shadow-md rounded-lg p-6">
+        <div className="mb-4">
+          <label className="block text-lg font-medium text-gray-700 mb-2">
+            Choose Language
+          </label>
+          <select
+            value={language}
+            onChange={(e) => setLanguage(e.target.value)}
+            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 bg-white hover:bg-gray-50"
+          >
+            {LANGUAGES.map(
+              (lang) => (
+                <option key={lang} value={lang}>
+                  {lang}
+                </option>
+              )
+            )}
+          </select>
+        </div>
         <div className="mb-4">
           <label
             htmlFor="audioFile"

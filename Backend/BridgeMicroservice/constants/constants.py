@@ -67,3 +67,13 @@ AVAILABLE_MODELS = [
     {"name": "Mistral", "model": "mistral-7b-instruct"},
     {"name": "OpenAI", "model": "gpt-4o-mini"},
 ]
+
+AVAILABLE_LANGUAGES_CODES = {
+    "polish": "pl",
+    "english": "en",
+    "german": "de",
+    "french": "fr",
+    "spanish": "es",
+    "italian": "it",
+    "russian": "ru",
+}

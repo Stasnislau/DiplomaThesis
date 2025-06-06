@@ -17,16 +17,20 @@ export interface SpeechAnalysisResult {
 
 export interface AnalyzeSpeechRequest {
   audioFile: File;
+  filename?: string;
+  language: string;
 }
 
 export async function analyzeSpeech(
   input: AnalyzeSpeechRequest
 ): Promise<string> {
   const formData = new FormData();
-  formData.append("audio_file", input.audioFile, input.audioFile.name);
+  formData.append("audio_file", input.audioFile, input.filename);
+  const url = new URL(DIRECT_BRIDGE_MICROSERVICE_URL + "/speaking/analyze");
+  url.searchParams.set("language", input.language);
 
   const response = await fetchWithAuth(
-    `${DIRECT_BRIDGE_MICROSERVICE_URL}/speaking/analyze`,
+    url.toString(),
     {
       method: "POST",
       body: formData,

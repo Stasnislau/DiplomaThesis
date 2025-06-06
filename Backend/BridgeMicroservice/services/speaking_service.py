@@ -1,6 +1,5 @@
 import json
 import io
-import os
 
 import litellm
 from fastapi import HTTPException
@@ -8,6 +7,7 @@ from dotenv import load_dotenv
 
 from .ai_service import AI_Service
 from models.dtos.speaking_analysis_dtos import WhisperTranscriptionResult, AIFeedbackResult, WhisperSegment, WhisperWord
+from utils.convert_to_language_code import convert_to_language_code
 
 load_dotenv()
 
@@ -16,43 +16,31 @@ class Speaking_Service:
     def __init__(self, ai_service: AI_Service):
         self.ai_service = ai_service
 
-    async def _transcribe_audio_with_whisper(self, audio_file_bytes: bytes) -> WhisperTranscriptionResult:
-        # Determine the absolute path to obama.mp3
-        # __file__ is the path to the current script (speaking_service.py)
-        # os.path.dirname(__file__) gets the directory of the current script
-        # os.path.join then creates a path to obama.mp3 in that directory
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        obama_mp3_path = os.path.join(current_dir, "obama.mp3")
-        audio_file = open(obama_mp3_path, "rb")
-        try:
-            with open(obama_mp3_path, "rb") as f:
-                audio_to_transcribe_bytes = f.read()
-            print(f"DEBUG: Forcing transcription of '{obama_mp3_path}'. Length: {len(audio_to_transcribe_bytes)} bytes.")
-        except FileNotFoundError:
-            print(f"FATAL ERROR: 'obama.mp3' not found at '{obama_mp3_path}'. Make sure it's in the 'services' directory.")
-            raise HTTPException(status_code=500, detail="Internal server error: Debug audio file 'obama.mp3' not found.")
-
-        print(f"Received audio bytes (length: {len(audio_to_transcribe_bytes)}). Passing directly to Whisper, assuming compatible format (e.g., MP3 as per request).")
-        audio_file_object_for_whisper = io.BytesIO(audio_to_transcribe_bytes)
-
+    async def _transcribe_audio_with_whisper(self, audio_file_bytes: bytes, filename: str, language_code: str) -> WhisperTranscriptionResult:
+        # check the file type, it might be mp3, waw, webm, etc.
+        # if it is mp3, we need to convert it to wav
+        # if it is wav, we need to convert it to mp3
+        # if it is webm, we need to convert it to mp3
+        # if it is other, we need to raise an error
+        audio_file = io.BytesIO(audio_file_bytes)
+        audio_file.name = filename  # Set the filename to hint the format to the API
         try:
             response = await litellm.atranscription(
                 model="whisper-1",
                 file=audio_file,
                 response_format="verbose_json",
                 word_timestamps=True,
+                language=language_code,
             )
 
             print(response, "response --------------------------------------------------")
 
-            # 'response' is a TranscriptionResponse object from LiteLLM
-            # Accessing raw json_response if available (depends on LiteLLM version and provider)
             raw_json_response = (
                 response.get("json_response", None) if isinstance(response, dict) else getattr(response, "_json_response", None)
             )
             print(raw_json_response, "raw_json_response --------------------------------------------------")
             if not raw_json_response and hasattr(response, "model_dump"):
-                raw_json_response = response.model_dump()  # For pydantic based response objects in newer LiteLLM
+                raw_json_response = response.model_dump()
 
             transcribed_text = response.text
             language = raw_json_response.get("language") if raw_json_response else None
@@ -60,7 +48,6 @@ class Speaking_Service:
             segments_data = raw_json_response.get("segments") if raw_json_response else None
             words_data = raw_json_response.get("words") if raw_json_response else None  # OpenAI verbose_json includes words in segments
 
-            # If words_data is directly under raw_json_response (some Whisper APIs do this)
             parsed_words = None
             if words_data and isinstance(words_data, list):
                 parsed_words = [WhisperWord(**word) for word in words_data if isinstance(word, dict)]
@@ -94,7 +81,7 @@ class Speaking_Service:
 
         except Exception as e:
             # Ошибка будет более общей, так как мы не знаем точную причину без проверки формата
-            print(f"Error during Whisper transcription (direct byte passthrough): {e}")
+            print(f"Error during Whisper transcription (using filename {filename}): {e}")
             raise HTTPException(status_code=500, detail=f"Failed to transcribe audio. Possible format incompatibility or API error: {str(e)}")
 
     async def _get_ai_feedback_on_transcription(self, transcription_result: WhisperTranscriptionResult) -> AIFeedbackResult:
@@ -133,12 +120,16 @@ class Speaking_Service:
             print(f"Error getting AI feedback: {e}")
             raise HTTPException(status_code=500, detail=f"Failed to get AI feedback: {str(e)}")
 
-    async def analyze_user_audio(self, audio_file_bytes: bytes) -> str:
+    async def analyze_user_audio(self, audio_file_bytes: bytes, filename: str | None = None, language: str | None = None) -> str:
         print(f"Received audio file of size: {len(audio_file_bytes)} bytes for analysis.")
         if not audio_file_bytes:
             raise HTTPException(status_code=400, detail="No audio file provided.")
 
-        transcription_result = await self._transcribe_audio_with_whisper(audio_file_bytes)
+        # Use provided filename or default to 'recording.webm'
+        effective_filename = filename if filename else "recording.webm"
+        print(f"Analyzing with effective filename: {effective_filename}")
+        language_code = convert_to_language_code(language) if language else "en"
+        transcription_result = await self._transcribe_audio_with_whisper(audio_file_bytes, effective_filename, language_code)
         print(f"Transcription result: {transcription_result.text[:200]}...")  # Log snippet
         if not transcription_result.text.strip():
             return "Could not transcribe any speech from the audio. Please try again with a clearer audio."

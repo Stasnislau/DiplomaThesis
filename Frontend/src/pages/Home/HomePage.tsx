@@ -19,7 +19,6 @@ import {
   useAvailableLanguages,
 } from "@/api/hooks/useAvailableLanguages";
 import { useUserStore } from "@/store/useUserStore";
-import { LanguageLevel } from "@/types/models/LanguageLevel";
 
 const features = [
   {
