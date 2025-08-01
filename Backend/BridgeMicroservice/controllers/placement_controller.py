@@ -23,18 +23,15 @@ class Placement_Controller:
             language = data.get("language")
             previous_answer = data.get("previousAnswer")
 
-            if not language or not previous_answer:
+            if not language:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=[
-                        {"loc": ["body", "language"], "msg": "Language is required"},
-                        {"loc": ["body", "previousAnswer"], "msg": "Previous answer is required"}
-                    ]
+                    detail="Language is required"
                 )
             if language.lower() not in [lang.lower() for lang in AVAILABLE_LANGUAGES]:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=[{"loc": ["body", "language"], "msg": f"Language {language} is not supported. Available languages: {', '.join(AVAILABLE_LANGUAGES)}"}]
+                    detail=f"Language {language} is not supported. Available languages: {', '.join(AVAILABLE_LANGUAGES)}"
                 )
 
             task = await self.placement_service.generate_placement_task(language, previous_answer)

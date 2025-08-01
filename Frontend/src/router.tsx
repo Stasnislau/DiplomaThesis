@@ -3,14 +3,13 @@ import { HomePage } from "./pages/Home/HomePage";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
 import UnprotectedRoute from "./components/layout/UnprotectedRoute";
 import WithTopBar from "./components/layout/WithTopBar";
-import { LoginPage } from "./pages/Auth/LoginPage";
-import { RegisterPage } from "./pages/Auth/RegisterPage";
-import { ResetPasswordPage } from "./pages/Auth/ResetPasswordPage";
+import { LoginPage } from "./processes/Auth/Pages/LoginPage";
+import { RegisterPage } from "./processes/Auth/Pages/RegisterPage";
+import { ResetPasswordPage } from "./processes/Auth/Pages/ResetPasswordPage";
 import NotFoundPage from "./components/layout/NotFoundPage";
 import { TaskPage } from "./pages/Quiz/TaskPage";
 import { ProfilePage } from "./pages/User/Profile";
-import { PlacementTestPage } from "./pages/PlacementTest/PlacementTestPage";
-import { PlacementResultPage } from "./pages/PlacementTest/PlacementResultPage";
+import { PlacementTestPage } from "./processes/PlacementTest/pages/PlacementTestPage";
 import { AdminDashboardPage } from "./pages/Admin/AdminDashboardPage";
 import { SpeechAnalysisPage } from "./pages/SpeechAnalysis/SpeechAnalysisPage";
 
@@ -80,10 +79,6 @@ export const router = createBrowserRouter([
       {
         path: "test/:languageCode",
         element: <PlacementTestPage />,
-      },
-      {
-        path: "result/:languageCode",
-        element: <PlacementResultPage />,
       },
     ],
   },

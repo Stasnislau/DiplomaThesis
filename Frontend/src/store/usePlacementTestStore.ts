@@ -1,3 +1,4 @@
+import { Language } from "@/types/models/Language";
 import {
   FillInTheBlankTask,
   MultipleChoiceTask,
@@ -20,6 +21,8 @@ interface PlacementTestStore {
   addTask: (task: MultipleChoiceTask | FillInTheBlankTask) => void;
   getCurrentTask: () => MultipleChoiceTask | FillInTheBlankTask | undefined;
   setCurrentQuestionNumber: (number: number) => void;
+  language: Language;
+  setLanguage: (language: Language) => void;
 }
 
 export const usePlacementTestStore = create<PlacementTestStore>((set, get) => ({
@@ -27,6 +30,7 @@ export const usePlacementTestStore = create<PlacementTestStore>((set, get) => ({
   userAnswers: [],
   cachedTasks: [],
   isTestComplete: false,
+  language: {} as Language,
   addAnswer: (answer) =>
     set((state) => {
       const newAnswer = {
@@ -51,7 +55,6 @@ export const usePlacementTestStore = create<PlacementTestStore>((set, get) => ({
     }),
   addTask: (task) =>
     set((state) => {
-      // Check for duplicates
       if (state.cachedTasks.some((t) => t.id === task.id)) {
         return state;
       }
@@ -71,4 +74,5 @@ export const usePlacementTestStore = create<PlacementTestStore>((set, get) => ({
       }
       return { currentQuestionNumber: number };
     }),
+  setLanguage: (language: Language) => set({ language }),
 }));

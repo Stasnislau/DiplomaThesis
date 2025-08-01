@@ -2,13 +2,13 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import FormField from "../../components/common/FormField";
-import TextField from "../../components/common/TextField";
+import FormField from "../../../components/common/FormField";
+import TextField from "../../../components/common/TextField";
 import {
   register,
   registerUserDtoSchema,
   RegisterUserRequest,
-} from "../../api/mutations/register";
+} from "../../../api/mutations/register";
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();

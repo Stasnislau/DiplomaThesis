@@ -1,14 +1,8 @@
 import { BaseResponse } from "@/types/responses/BaseResponse";
-import { BRIDGE_MICROSERVICE_URL } from "../consts";
-import { fetchWithAuth } from "../fetchWithAuth";
+import { BRIDGE_MICROSERVICE_URL } from "../../../../api/consts";
+import { fetchWithAuth } from "../../../../api/fetchWithAuth";
 
-export interface EvaluationResult {
-  level: string;
-  confidence: number;
-  strengths: string[];
-  weaknesses: string[];
-  recommendation: string;
-}
+
 
 export interface EvaluatePlacementTestRequest {
   answers: any[];
