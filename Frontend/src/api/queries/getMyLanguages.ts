@@ -1,7 +1,7 @@
 import { BaseResponse } from "@/types/responses/BaseResponse";
 import { fetchWithAuth } from "../fetchWithAuth";
 import { USER_MICROSERVICE_URL } from "../consts";
-import { UserLanguage } from "../hooks/useUserLanguages";
+import { UserLanguage } from "@/types/models/Language";
 
 export async function getMyLanguages(): Promise<UserLanguage[]> {
   const url = new URL(`${USER_MICROSERVICE_URL}/languages`);

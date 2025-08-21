@@ -14,14 +14,15 @@ export function PlacementTestPage() {
 
   const currentLanguage = languages?.find((lang) => lang.code === languageCode);
 
-  const { resetTest, language, setLanguage, isTestComplete } = usePlacementTestStore();
-
-  console.log(currentLanguage);
+  const { resetTest, language, setLanguage, isTestComplete } =
+    usePlacementTestStore();
 
   useEffect(() => {
     if (currentLanguage && !isLoadingLanguages) {
       resetTest();
-      setLanguage(currentLanguage);
+      if (currentLanguage) {
+        setLanguage(currentLanguage);
+      }
     }
   }, [currentLanguage, resetTest, setLanguage, isLoadingLanguages]);
 

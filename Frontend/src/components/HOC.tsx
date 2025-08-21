@@ -48,7 +48,7 @@ export const HOC: React.FC<HOCProps> = ({ children }) => {
       setUser(userDataPayload);
       setUserLanguages(userDataPayload.languages || []);
       const hasNativeLanguage = userDataPayload.languages?.some(
-        (lang) => lang.currentLevel === "NATIVE"
+        (lang) => lang.level === "NATIVE"
       );
       setShowLanguageModal(!hasNativeLanguage);
     } else if (!isAuthenticated && authInitialized) {

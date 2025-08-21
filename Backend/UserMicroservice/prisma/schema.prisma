@@ -19,57 +19,71 @@ enum LanguageLevel {
 }
 
 model User {
-    id        String   @id @default(uuid())
-    name      String
-    surname   String
-    email     String   @unique
-    role      String
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-    languages UserLanguage[]
+    id      String @id @map("id")
+    email   String @unique @map("email")
+    name    String @map("name")
+    surname String @map("surname")
+    role    String @map("role")
+
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    languages    UserLanguage[]
     achievements UserAchievement[]
-    tasks Task[]
+
+    @@map("users")
 }
 
 model Language {
-    id   String @id @default(uuid())
-    name String
-    code String
-    users UserLanguage[]
-    tasks Task[]
+    id           String         @id @default(uuid()) @map("id")
+    name         String         @map("name")
+    code         String         @unique @map("code")
+    tasks        Task[]
+    UserLanguage UserLanguage[]
+
+    @@map("languages")
 }
 
 model UserLanguage {
-    id         String @id @default(uuid())
-    currentLevel LanguageLevel
-    userId     String
-    languageId String
-    user       User   @relation(fields: [userId], references: [id])
+    id         String   @id @default(uuid()) @map("id")
+    userId     String   @map("user_id")
+    languageId String   @map("language_id")
+    createdAt  DateTime @default(now()) @map("created_at")
+    updatedAt  DateTime @updatedAt @map("updated_at")
+    level      String   @map("level")
+    isStarted  Boolean  @map("is_started")
+    isNative   Boolean  @map("is_native")
+    user       User     @relation(fields: [userId], references: [id])
     language   Language @relation(fields: [languageId], references: [id])
+
+    @@map("user_languages")
 }
 
 model Task {
-    id         String   @id @default(uuid())
-    userId     String
-    languageId String
-    createdAt  DateTime @default(now())
-    user       User   @relation(fields: [userId], references: [id])
+    id         String   @id @default(uuid()) @map("id")
+    name       String   @map("name")
+    languageId String   @map("language_id")
     language   Language @relation(fields: [languageId], references: [id])
+
+    @@map("tasks")
 }
 
 model Achievement {
-    id        String   @id @default(uuid())
-    name      String
-    description String
-    imageUrl  String
-    createdAt DateTime @default(now())
-    users UserAchievement[]
+    id              String            @id @default(uuid()) @map("id")
+    name            String            @map("name")
+    description     String            @map("description")
+    imageUrl        String            @map("image_url")
+    UserAchievement UserAchievement[]
+
+    @@map("achievements")
 }
 
 model UserAchievement {
-    id        String   @id @default(uuid())
-    userId    String
-    achievementId String
-    user       User   @relation(fields: [userId], references: [id])
-    achievement Achievement @relation(fields: [achievementId], references: [id])
+    id            String      @id @default(uuid()) @map("id")
+    userId        String      @map("user_id")
+    achievementId String      @map("achievement_id")
+    user          User        @relation(fields: [userId], references: [id])
+    achievement   Achievement @relation(fields: [achievementId], references: [id])
+
+    @@map("user_achievements")
 }

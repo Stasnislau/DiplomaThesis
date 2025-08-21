@@ -1,9 +1,9 @@
-import { Language } from "@/types/models/Language";
 import {
   FillInTheBlankTask,
   MultipleChoiceTask,
 } from "@/types/responses/TaskResponse";
 import { create } from "zustand";
+import { Language } from "@/api/hooks/useAvailableLanguages";
 
 export interface UserAnswer {
   questionNumber: number;

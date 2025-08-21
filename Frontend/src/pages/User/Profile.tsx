@@ -2,11 +2,12 @@ import React from "react";
 import Button from "@/components/common/Button";
 import { UserStats } from "@/pages/User/components/userStats";
 import { AchievementCard } from "@/pages/User/components/achievementCard";
-import { LanguageProgress } from "@/pages/User/components/languageProgress";
+import { LanguageProgressItem } from "@/pages/User/components/languageProgressItem";
 import { useMe } from "@/api/hooks/useMe";
 import Spinner from "@/components/common/Spinner";
 import { LanguageLevel } from "@/types/models/LanguageLevel";
 import Avatar from "@/components/common/Avatar";
+import { useAvailableLanguages } from "@/api/hooks/useAvailableLanguages";
 
 // Helper function to map LanguageLevel enum to readable string
 const mapLevelToString = (
@@ -71,6 +72,14 @@ const mapLevelToString = (
 
 export const ProfilePage: React.FC = () => {
   const { me, isLoading, error } = useMe();
+  const { languages, isLoading: isLoadingLanguages } = useAvailableLanguages();
+
+  const userLanguages = languages?.filter((lang) => {
+    const userLanguage = me?.languages?.find(
+      (userLang) => userLang.languageId === lang.id
+    );
+    return userLanguage?.level !== LanguageLevel.NATIVE;
+  });
 
   if (isLoading) {
     return (
@@ -106,7 +115,10 @@ export const ProfilePage: React.FC = () => {
         <div className="bg-white rounded-3xl shadow-lg p-8 mb-8">
           <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-8">
             <div className="relative flex-shrink-0">
-              <Avatar name={me.name || ''} className="border-4 border-indigo-500" />
+              <Avatar
+                name={me.name || ""}
+                className="border-4 border-indigo-500"
+              />
             </div>
             <div className="flex-1 text-center sm:text-left">
               <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-2 mb-2">
@@ -167,12 +179,15 @@ export const ProfilePage: React.FC = () => {
             </h2>
             <div className="space-y-6">
               {me.languages.map((lang, index) => (
-                <LanguageProgress
+                <LanguageProgressItem
                   key={lang.id + index}
-                  language={lang.name}
-                  progress={mapLevelToString(lang.currentLevel).progress  }
-                  level={mapLevelToString(lang.currentLevel).level}
-                  color={mapLevelToString(lang.currentLevel).color}
+                  languageName={
+                    languages?.find((l) => l.id === lang.languageId)?.name || ""
+                  }
+                  progress={mapLevelToString(lang.level).progress}
+                  level={mapLevelToString(lang.level).level}
+                  color={mapLevelToString(lang.level).color}
+                  isLoading={isLoadingLanguages}
                 />
               ))}
             </div>

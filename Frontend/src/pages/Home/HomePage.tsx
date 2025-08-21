@@ -103,7 +103,7 @@ export const HomePage: React.FC = () => {
                 isStarted={isStarted}
                 currentLevel={userLanguages?.find(
                   (userLanguage) => userLanguage.id === language.id
-                )?.currentLevel || language.currentLevel}
+                )?.level || language.currentLevel}
                 onStartTest={() => handleLanguageClick(language)}
               />
             );

@@ -1,7 +1,7 @@
 import { usePlacementTestStore } from "@/store/usePlacementTestStore";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useAvailableLanguages } from "@/api/hooks/useAvailableLanguages";
 import { useAddUserLanguage } from "@/api/hooks/useAddUserLanguage";
 import { useEvaluatePlacementTest } from "../api/hooks/useEvaluatePlacementTest";
@@ -11,8 +11,11 @@ const TestResults = () => {
   const navigate = useNavigate();
   const { userAnswers, cachedTasks, resetTest } = usePlacementTestStore();
   const { languageCode } = useParams<{ languageCode: string }>();
-  const { evaluateTest, isLoading, data: evaluation } = useEvaluatePlacementTest();
-  const [isInitializing, setIsInitializing] = useState(false);
+  const {
+    evaluateTest,
+    isLoading,
+    data: evaluation,
+  } = useEvaluatePlacementTest();
   const { languages, isLoading: isLoadingLanguages } = useAvailableLanguages();
   const { addUserLanguage, isLoading: isLoadingAddUserLanguage } =
     useAddUserLanguage();
@@ -23,16 +26,11 @@ const TestResults = () => {
       return;
     }
 
-    if (!evaluation && !isLoading && !isInitializing) {
-      const evaluateTestAsync = async () => {
-        setIsInitializing(true);
-        await evaluateTest({
-          answers: userAnswers,
-          language: languageCode,
-        });
-        setIsInitializing(false);
-      };
-      evaluateTestAsync();
+    if (!evaluation && !isLoading) {
+      evaluateTest({
+        answers: userAnswers,
+        language: languageCode,
+      });
     }
   }, [
     userAnswers,
@@ -115,11 +113,13 @@ const TestResults = () => {
                       Strengths
                     </h3>
                     <ul className="space-y-2">
-                      {evaluation.strengths.map((strength: string, idx: number) => (
-                        <li key={idx} className="text-green-700">
-                          • {strength}
-                        </li>
-                      ))}
+                      {evaluation.strengths.map(
+                        (strength: string, idx: number) => (
+                          <li key={idx} className="text-green-700">
+                            • {strength}
+                          </li>
+                        )
+                      )}
                     </ul>
                   </div>
 
@@ -128,11 +128,13 @@ const TestResults = () => {
                       Areas to Improve
                     </h3>
                     <ul className="space-y-2">
-                      {evaluation.weaknesses.map((weakness: string, idx: number) => (
-                        <li key={idx} className="text-red-700">
-                          • {weakness}
-                        </li>
-                      ))}
+                      {evaluation.weaknesses.map(
+                        (weakness: string, idx: number) => (
+                          <li key={idx} className="text-red-700">
+                            • {weakness}
+                          </li>
+                        )
+                      )}
                     </ul>
                   </div>
                 </div>

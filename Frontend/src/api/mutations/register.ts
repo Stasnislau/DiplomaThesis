@@ -1,6 +1,5 @@
 import { AUTH_MICROSERVICE_URL } from "../consts";
 import { BaseResponse } from "../../types/responses/BaseResponse";
-import { User } from "../../types/models/User";
 import { userSchema } from "../../types/models/User";
 import { z } from "zod";
 import { fetchWithAuth } from "../fetchWithAuth";

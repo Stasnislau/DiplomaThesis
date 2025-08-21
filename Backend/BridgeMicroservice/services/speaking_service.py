@@ -16,12 +16,9 @@ class Speaking_Service:
     def __init__(self, ai_service: AI_Service):
         self.ai_service = ai_service
 
-    async def _transcribe_audio_with_whisper(self, audio_file_bytes: bytes, filename: str, language_code: str) -> WhisperTranscriptionResult:
-        # check the file type, it might be mp3, waw, webm, etc.
-        # if it is mp3, we need to convert it to wav
-        # if it is wav, we need to convert it to mp3
-        # if it is webm, we need to convert it to mp3
-        # if it is other, we need to raise an error
+    async def _transcribe_audio_with_whisper(
+        self, audio_file_bytes: bytes, filename: str, language_code: str
+    ) -> WhisperTranscriptionResult:
         audio_file = io.BytesIO(audio_file_bytes)
         audio_file.name = filename  # Set the filename to hint the format to the API
         try:
@@ -82,7 +79,9 @@ class Speaking_Service:
         except Exception as e:
             # Ошибка будет более общей, так как мы не знаем точную причину без проверки формата
             print(f"Error during Whisper transcription (using filename {filename}): {e}")
-            raise HTTPException(status_code=500, detail=f"Failed to transcribe audio. Possible format incompatibility or API error: {str(e)}")
+            raise HTTPException(
+                status_code=500, detail=f"Failed to transcribe audio. Possible format incompatibility or API error: {str(e)}"
+            )
 
     async def _get_ai_feedback_on_transcription(self, transcription_result: WhisperTranscriptionResult) -> AIFeedbackResult:
         prompt = f"""
@@ -108,9 +107,7 @@ class Speaking_Service:
         Ensure the output is a valid JSON object. If there are no errors, the "identified_errors" list should be empty.
         """
         try:
-            # The AI_Service is already configured to expect JSON output
             ai_response_str = await self.ai_service.get_ai_response(prompt=prompt)
-            # ai_response_str should be a JSON string based on AI_Service configuration
             ai_response_json = json.loads(ai_response_str)
             return AIFeedbackResult(**ai_response_json)
         except json.JSONDecodeError as e:
@@ -125,20 +122,23 @@ class Speaking_Service:
         if not audio_file_bytes:
             raise HTTPException(status_code=400, detail="No audio file provided.")
 
-        # Use provided filename or default to 'recording.webm'
         effective_filename = filename if filename else "recording.webm"
         print(f"Analyzing with effective filename: {effective_filename}")
         language_code = convert_to_language_code(language) if language else "en"
         transcription_result = await self._transcribe_audio_with_whisper(audio_file_bytes, effective_filename, language_code)
-        print(f"Transcription result: {transcription_result.text[:200]}...")  # Log snippet
+        print(f"Transcription result: {transcription_result.text[:200]}...")
         if not transcription_result.text.strip():
             return "Could not transcribe any speech from the audio. Please try again with a clearer audio."
 
-        ai_feedback = await self._get_ai_feedback_on_transcription(transcription_result)
+        ai_feedback = None
+        try:
+            ai_feedback = await self._get_ai_feedback_on_transcription(transcription_result)
+        except Exception as e:
+            print(f"Error getting AI feedback: {e}")
+            raise HTTPException(status_code=500, detail=f"Failed to get AI feedback: {str(e)}")
 
-        # For now, returning a string representation as requested for the controller.
-        # You might want to change this to return the structured AIFeedbackResult later.
-        # Here, we can format a user-friendly string from the structured feedback.
+        print(f"AI feedback: {ai_feedback}")
+
         feedback_summary = f"Overall: {ai_feedback.overall_assessment}\n"
         if ai_feedback.identified_errors:
             feedback_summary += "\nErrors Found:\n"

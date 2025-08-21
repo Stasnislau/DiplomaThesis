@@ -1,14 +1,14 @@
 import { create } from "zustand";
 import { User } from "@/types/models/User";
-import { Language } from "@/types/models/Language";
+import { UserLanguage } from "@/types/models/Language";
 interface UserState {
   user: User | null;
-  userLanguages: Language[];
+  userLanguages: UserLanguage[];
   isLoading: boolean;
   nativeLanguageCode: string | null;
   setNativeLanguageCode: (nativeLanguageCode: string) => void;
   setUser: (user: User | null) => void;
-  setUserLanguages: (userLanguages: Language[]) => void;
+  setUserLanguages: (userLanguages: UserLanguage[]) => void;
   setLoading: (isLoading: boolean) => void;
 }
 

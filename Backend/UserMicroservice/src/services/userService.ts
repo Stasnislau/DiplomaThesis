@@ -1,4 +1,4 @@
-import { PrismaService } from "../prisma/prismaService";
+import { PrismaService } from "../../prisma/prismaService";
 
 import {
   Injectable,
@@ -46,8 +46,7 @@ export class UserService {
   }
 
   async getUsers(): Promise<BaseResponse<User[]>> {
-    const users = await this.prisma.user.findMany(
-    );
+    const users = await this.prisma.user.findMany();
 
     return {
       success: true,
@@ -68,13 +67,16 @@ export class UserService {
       where: { id: languageId },
     });
 
-    if (!language) {  
+    if (!language) {
       throw new NotFoundException("Language not found");
     }
 
     await this.prisma.user.update({
       where: { id: userId },
       data: { languages: { connect: { id: languageId } } },
+      include: {
+        languages: true,
+      },
     });
     return {
       success: true,
@@ -90,7 +92,7 @@ export class UserService {
         languages: true,
       },
     });
-    
+
     if (!user) {
       throw new NotFoundException("User not found");
     }
@@ -101,9 +103,11 @@ export class UserService {
     const newLanguage = await this.prisma.userLanguage.create({
       data: {
         id: languageId,
-        currentLevel: LanguageLevel.NATIVE,
+        level: LanguageLevel.NATIVE,
         languageId: languageId,
         userId: userId,
+        isStarted: true,
+        isNative: true,
       },
     });
     console.log(newLanguage);
@@ -117,7 +121,7 @@ export class UserService {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
-    
+
     if (!user) {
       throw new NotFoundException("User not found");
     }
@@ -155,8 +159,15 @@ export class UserService {
         throw new BadRequestException("Invalid level");
     }
 
-    const newLanguage = await this.prisma.userLanguage.create({
-      data: { id: languageId, currentLevel: currentLevel, languageId: languageId, userId: userId },
+    await this.prisma.userLanguage.create({
+      data: {
+        id: languageId,
+        level: currentLevel,
+        languageId: languageId,
+        userId: userId,
+        isStarted: true,
+        isNative: false,
+      },
     });
 
     return {

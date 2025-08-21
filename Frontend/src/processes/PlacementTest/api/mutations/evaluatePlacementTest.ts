@@ -1,8 +1,7 @@
 import { BaseResponse } from "@/types/responses/BaseResponse";
 import { BRIDGE_MICROSERVICE_URL } from "../../../../api/consts";
 import { fetchWithAuth } from "../../../../api/fetchWithAuth";
-
-
+import { EvaluationResult } from "../../types/EvaluationResult";
 
 export interface EvaluatePlacementTestRequest {
   answers: any[];
