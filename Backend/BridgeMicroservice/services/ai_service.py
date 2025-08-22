@@ -1,6 +1,5 @@
 from dotenv import load_dotenv
-from litellm import completion
-from models.ai_responses import LiteLLMCompletionResponse
+from litellm import acompletion
 from typing import Optional
 
 load_dotenv()
@@ -10,14 +9,15 @@ class AI_Service:
     def __init__(self) -> None:
         pass
 
-    async def get_ai_response(self, prompt: str, model: str = "mistral/mistral-small-latest") -> str:
-        chat_response: LiteLLMCompletionResponse = completion(
+    async def get_ai_response(self, prompt: str, model: str = "gpt-5-nano") -> str:
+        chat_response = await acompletion(
             model=model,
             messages=[
                 {"role": "system", "content": "You are a philologist with over 20 years of experience in language education."},
                 {"role": "user", "content": prompt},
             ],
             response_format={"type": "json_object"},
+            timeout=45, # Set a 45-second timeout
         )
         content: Optional[str] = chat_response.choices[0].message.content
         assert content is not None, "Received None content from AI"

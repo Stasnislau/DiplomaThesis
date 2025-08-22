@@ -55,7 +55,9 @@ export class GatewayService {
   ): Promise<any> {
     try {
       let userData: AuthenticatedUser | undefined;
-      const microservice = url.split("/")[3] as (typeof AVAILABLE_MICROSERVICES)[number];
+      const microservice = url.split(
+        "/"
+      )[3] as (typeof AVAILABLE_MICROSERVICES)[number];
       let targetUrl = "";
       const pathArray = url.split("/");
       const path = pathArray.slice(4).join("/");
@@ -104,25 +106,25 @@ export class GatewayService {
           },
           data: body,
           validateStatus: () => true,
-          timeout: 15000,
+          timeout: 50000,
           family: 4,
         })
-      ).catch(error => {
+      ).catch((error) => {
         if (error.response) {
           return {
             status: error.response.status,
-            data: error.response.data
+            data: error.response.data,
           };
         } else if (error.request) {
-          console.log(error.request, "error.request");
+          console.log(error, "error.request");
           return {
             status: 503,
             data: {
               success: false,
               payload: {
-                message: "Service unavailable"
-              }
-            }
+                message: "Service unavailable",
+              },
+            },
           };
         } else {
           return {
@@ -130,9 +132,9 @@ export class GatewayService {
             data: {
               success: false,
               payload: {
-                message: "Internal gateway error"
-              }
-            }
+                message: "Internal gateway error",
+              },
+            },
           };
         }
       });
@@ -142,15 +144,15 @@ export class GatewayService {
         data: response.data,
       };
     } catch (error) {
-      console.error('Gateway error:', error);
+      console.error("Gateway error:", error);
       return {
         status: 500,
         data: {
           success: false,
           payload: {
-            message: "Internal gateway error"
-          }
-        }
+            message: "Internal gateway error",
+          },
+        },
       };
     }
   }

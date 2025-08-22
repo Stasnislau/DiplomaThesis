@@ -94,3 +94,81 @@ def explain_answer_prompt(language: str, level: str, task: str, correct_answer: 
             "topics_to_review": ["Topic 1", "Topic 2"] // Optional, only for incorrect answers
         }}
         """
+
+
+def verify_french_task_prompt(task: dict) -> str:
+    return f"""
+        Vérifiez rigoureusement la tâche d'apprentissage suivante :
+        {task}
+
+        CRITÈRES DE VÉRIFICATION :
+        1. Précision linguistique :
+            - Vérifiez l'exactitude grammaticale
+            - Confirmez que l'orthographe est correcte
+            - Assurez-vous que la conjugaison des verbes est appropriée
+
+        2. Clarté et logique :
+            - Confirmez que la tâche est claire et sans ambiguïté
+            - Vérifiez que le contexte est cohérent et logique
+            - Assurez-vous qu'il n'y a qu'UNE SEULE réponse possible
+
+        3. Niveau de difficulté :
+            - Vérifiez que le vocabulaire correspond au niveau ciblé
+            - Confirmez que la structure grammaticale est appropriée au niveau
+
+        4. Aspects culturels :
+            - Assurez-vous que le contenu est culturellement approprié
+            - Vérifiez que les références culturelles sont pertinentes
+
+        Répondez en JSON avec le format suivant :
+        {{
+            "is_valid": boolean,
+            "better_task": {{
+                "question": "La question améliorée",
+                "options": ["Option A améliorée", "Option B améliorée", "Option C améliorée", "Option D améliorée"],
+                "correct_answer": "[La bonne réponse améliorée]", // array
+            }} // Optionnel, seulement si la tâche n'est pas valide
+        }}
+
+        IMPORTANT : Si la tâche n'est pas valide, fournissez une version complètement
+        améliorée qui corrige tous les problèmes identifiés. La structure de better_task
+        doit correspondre exactement à la structure de la tâche originale, avec tous
+        les champs nécessaires.
+        """
+
+
+def verify_polish_task_prompt(task: dict) -> str:
+    return f"""
+        Sprawdź dokładnie następujące zadanie językowe:
+        {task}
+
+        Nie potrzeba tłumaczyć zadania, tylko sprawdzić czy jest poprawne.
+        Nie zwracaj better_task jeśli zadanie jest poprawne.
+
+        Kryteria weryfikacji:
+        1. Poprawność językowa:
+            - Sprawdź poprawność gramatyczną
+            - Potwierdź poprawność pisowni
+            - Upewnij się, że odmiana wyrazów jest prawidłowa
+
+        2. Jasność i logika:
+            - Potwierdź, że zadanie jest jasne i jednoznaczne
+            - Sprawdź, czy kontekst jest spójny i logiczny
+            - Upewnij się, że jest tylko JEDNA poprawna odpowiedź
+
+        3. Poziom trudności:
+            - Sprawdź, czy słownictwo odpowiada docelowemu poziomowi
+            - Potwierdź, że struktura gramatyczna jest odpowiednia
+
+        Odpowiedz w formacie JSON:
+        {{
+            "is_valid": boolean,
+            "better_task": {{
+                "question": "Ulepszone pytanie",
+                "options": ["Opcja A ulepszona", "Opcja B ulepszona", "Opcja C ulepszona", "Opcja D ulepszona"],
+                "correct_answer": "[Poprawna ulepszona odpowiedź]" // array
+            }} // Opcjonalne, tylko jeśli zadanie nie jest poprawne
+        }}
+        Kiedy zwracasz odpowiedź, zwróć tylko JSON, bez dodatkowych komentarzy
+        i nie zwracaj better_task jeśli zadanie jest poprawne.
+        """

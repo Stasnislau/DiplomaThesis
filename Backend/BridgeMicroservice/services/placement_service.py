@@ -3,8 +3,9 @@ from .vector_db_service import VectorDBService
 from .ai_service import AI_Service
 import random
 import json
-from models.dtos.evaluate_test_dto import EvaluateTestDto
+
 from models.dtos.task_dto import MultipleChoiceTask, FillInTheBlankTask
+from models.dtos.evaluate_test_dto import EvaluateTestDto
 
 class Placement_Service:
     def __init__(self, ai_service: AI_Service, vector_db_service: VectorDBService):
@@ -38,10 +39,9 @@ class Placement_Service:
             self.current_level = levels[current_index - 1]
 
     async def evaluate_test_results(self, answers: list, language: str) -> EvaluateTestDto:
+
+        print(f"Evaluating test results for {language} with answers: {answers}")
         try:
-            # Validate input parameters
-            if not isinstance(answers, list):
-                raise ValueError("The 'answers' parameter must be a list")
 
             if not answers:
                 raise ValueError("The 'answers' list cannot be empty")
@@ -86,6 +86,8 @@ class Placement_Service:
             result: str = await self.ai_service.get_ai_response(prompt)
             parsed_result = json.loads(result)
 
+            print(f"Parsed result: {parsed_result}")
+
             # Handle case where AI might return a list instead of a dict
             if isinstance(parsed_result, list) and len(parsed_result) > 0:
                 parsed_result = parsed_result[0]  # Take the first item if it's a list
@@ -127,6 +129,7 @@ class Placement_Service:
         except Exception as e:
             # Re-raise as ValueError if it's related to validation
             if isinstance(e, ValueError):
+                print(f"ValueError in evaluate_test_results: {e}")
                 raise
             # Log unexpected errors and raise a more generic exception
             print(f"Unexpected error in evaluate_test_results: {e}")

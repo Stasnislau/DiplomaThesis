@@ -4,6 +4,7 @@ import {
 } from "@/types/responses/TaskResponse";
 import { create } from "zustand";
 import { Language } from "@/api/hooks/useAvailableLanguages";
+import { TOTAL_QUESTIONS } from "@/constants";
 
 export interface UserAnswer {
   questionNumber: number;
@@ -11,37 +12,46 @@ export interface UserAnswer {
   userAnswer: string;
 }
 
+type Task = MultipleChoiceTask | FillInTheBlankTask;
+
 interface PlacementTestStore {
   currentQuestionNumber: number;
   isTestComplete: boolean;
   userAnswers: UserAnswer[];
-  cachedTasks: (MultipleChoiceTask | FillInTheBlankTask)[];
-  addAnswer: (answer: UserAnswer) => void;
+  cachedTasks: Task[]; // Add cachedTasks back
+  addAnswer: (answer: UserAnswer, task: Task) => void; // Pass task to addAnswer
   resetTest: () => void;
-  addTask: (task: MultipleChoiceTask | FillInTheBlankTask) => void;
-  getCurrentTask: () => MultipleChoiceTask | FillInTheBlankTask | undefined;
-  setCurrentQuestionNumber: (number: number) => void;
   language: Language;
   setLanguage: (language: Language) => void;
+  testTotalQuestions: number;
+  currentTask: Task | null;
+  nextTask: Task | null;
+  setTasks: (tasks: { current: Task | null; next: Task | null }) => void;
+  advanceTasks: () => void;
 }
 
-export const usePlacementTestStore = create<PlacementTestStore>((set, get) => ({
+export const usePlacementTestStore = create<PlacementTestStore>((set) => ({
   currentQuestionNumber: 0,
   userAnswers: [],
-  cachedTasks: [],
   isTestComplete: false,
   language: {} as Language,
-  addAnswer: (answer) =>
+  testTotalQuestions: TOTAL_QUESTIONS,
+  currentTask: null,
+  nextTask: null,
+  cachedTasks: [], // Add cachedTasks back
+  addAnswer: (answer, task) => // Pass task to addAnswer
     set((state) => {
       const newAnswer = {
         ...answer,
         questionNumber: state.currentQuestionNumber,
       };
 
-      const isComplete = state.currentQuestionNumber >= 9; // 0-based indexing
+      const isComplete =
+        state.currentQuestionNumber >= state.testTotalQuestions - 1;
 
       return {
         userAnswers: [...state.userAnswers, newAnswer],
+        cachedTasks: [...state.cachedTasks, task], // Cache the answered task
         currentQuestionNumber: state.currentQuestionNumber + 1,
         isTestComplete: isComplete,
       };
@@ -50,29 +60,16 @@ export const usePlacementTestStore = create<PlacementTestStore>((set, get) => ({
     set({
       currentQuestionNumber: 0,
       userAnswers: [],
-      cachedTasks: [],
       isTestComplete: false,
-    }),
-  addTask: (task) =>
-    set((state) => {
-      if (state.cachedTasks.some((t) => t.id === task.id)) {
-        return state;
-      }
-
-      return {
-        cachedTasks: [...state.cachedTasks, task],
-      };
-    }),
-  getCurrentTask: () => {
-    const { currentQuestionNumber, cachedTasks } = get();
-    return cachedTasks[currentQuestionNumber];
-  },
-  setCurrentQuestionNumber: (number) =>
-    set((state) => {
-      if (number < 0 || number >= state.cachedTasks.length) {
-        return state;
-      }
-      return { currentQuestionNumber: number };
+      currentTask: null,
+      nextTask: null,
+      cachedTasks: [], // Reset cachedTasks
     }),
   setLanguage: (language: Language) => set({ language }),
+  setTasks: (tasks) => set({ currentTask: tasks.current, nextTask: tasks.next }),
+  advanceTasks: () =>
+    set((state) => ({
+      currentTask: state.nextTask,
+      nextTask: null,
+    })),
 }));

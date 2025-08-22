@@ -4,30 +4,101 @@ import { PlacementTask } from "./PlacementTask";
 import LoadingSpinner from "@/components/layout/Loading";
 import { PlacementAnswer } from "../types/EvaluationResult";
 import { usePlacementTask } from "../api/hooks/usePlacementTask";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 export const PlacementTaskContainer = () => {
-  const { currentQuestionNumber, getCurrentTask, addAnswer } =
-    usePlacementTestStore();
-  const currentTask = getCurrentTask();
   const { createTask, isLoading } = usePlacementTask();
-  const { language, addTask, isTestComplete } = usePlacementTestStore();
+
+  const {
+    language,
+    currentQuestionNumber,
+    userAnswers,
+    isTestComplete,
+    testTotalQuestions,
+    currentTask,
+    nextTask,
+    addAnswer,
+    setTasks,
+    advanceTasks,
+  } = usePlacementTestStore();
+
+  const isFetching = useRef(false);
 
   useEffect(() => {
-    const fetchTask = async () => {
-      if (currentTask || isLoading || !language || language.name === "") {
+    const fetcher = async () => {
+      if (
+        !language.name ||
+        isTestComplete ||
+        isFetching.current ||
+        (currentTask && nextTask) ||
+        currentQuestionNumber >= testTotalQuestions
+      ) {
         return;
       }
-
-      const task = await createTask({
-        language: language.name,
-      });
-      if (task) {
-        addTask(task);
+  
+      isFetching.current = true;
+  
+      try {
+        if (!currentTask && !nextTask) {
+          // Initial load - run in parallel
+          const [task1, task2] = await Promise.all([
+            createTask({ language: language.name }),
+            testTotalQuestions > 1
+              ? createTask({
+                  language: language.name,
+                  previousAnswer: {
+                    isCorrect: true, // Dummy value
+                    questionNumber: 0,
+                  },
+                })
+              : Promise.resolve(null),
+          ]);
+          setTasks({ current: task1, next: task2 });
+        } else if (currentTask && !nextTask) {
+          // Fetch next task after an answer
+          const lastAnswer = userAnswers[userAnswers.length - 1];
+          if (currentQuestionNumber < testTotalQuestions) {
+            const task = await createTask({
+              language: language.name,
+              previousAnswer: lastAnswer
+                ? {
+                    isCorrect: lastAnswer.isCorrect,
+                    questionNumber: lastAnswer.questionNumber,
+                  }
+                : undefined,
+            });
+            setTasks({ current: currentTask, next: task });
+          }
+        }
+      } finally {
+        isFetching.current = false;
       }
     };
-    fetchTask();
-  }, [createTask, language, currentTask, isLoading, addTask]);
+  
+    fetcher();
+  }, [
+    language,
+    currentQuestionNumber,
+    currentTask,
+    nextTask,
+    isTestComplete,
+    createTask,
+    setTasks,
+    testTotalQuestions,
+    userAnswers,
+  ]);
+
+  const handleAnswer = (placementAnswer: PlacementAnswer) => {
+    if (!currentTask) return;
+    addAnswer(
+      {
+        ...placementAnswer,
+        questionNumber: currentQuestionNumber,
+      },
+      currentTask
+    );
+    advanceTasks();
+  };
 
   return (
     <AnimatePresence mode="wait">
@@ -38,29 +109,15 @@ export const PlacementTaskContainer = () => {
         exit={{ opacity: 0, x: -50 }}
         transition={{ duration: 0.3 }}
       >
-        {currentTask && !isLoading && (
+        {!currentTask && isLoading ? (
+          <LoadingSpinner />
+        ) : currentTask ? (
           <PlacementTask
             task={currentTask}
-            isLoading={isLoading}
-            onAnswer={(placementAnswer: PlacementAnswer) => {
-              addAnswer({
-                ...placementAnswer,
-                questionNumber: currentQuestionNumber,
-              });
-              if (!isTestComplete) {
-                createTask({
-                  language: language.name,
-                  previousAnswer: {
-                    isCorrect: placementAnswer.isCorrect,
-                    questionNumber: currentQuestionNumber,
-                  },
-                });
-              }
-            }}
-            currentQuestion={currentQuestionNumber}
+            onAnswer={handleAnswer}
+            currentQuestion={currentQuestionNumber} 
           />
-        )}
-        {isLoading && <LoadingSpinner />}
+        ) : null}
       </motion.div>
     </AnimatePresence>
   );

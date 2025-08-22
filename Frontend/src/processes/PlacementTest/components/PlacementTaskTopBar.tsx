@@ -19,7 +19,7 @@ export const PlacementTaskTopBar = () => {
         <div
           className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2.5 rounded-full"
           style={{
-            width: `${((currentQuestionNumber + 1) / TOTAL_QUESTIONS) * 100}%`,
+            width: `${((currentQuestionNumber) / TOTAL_QUESTIONS) * 100}%`,
           }}
         ></div>
       </div>

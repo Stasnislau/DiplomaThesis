@@ -74,13 +74,6 @@ export const ProfilePage: React.FC = () => {
   const { me, isLoading, error } = useMe();
   const { languages, isLoading: isLoadingLanguages } = useAvailableLanguages();
 
-  const userLanguages = languages?.filter((lang) => {
-    const userLanguage = me?.languages?.find(
-      (userLang) => userLang.languageId === lang.id
-    );
-    return userLanguage?.level !== LanguageLevel.NATIVE;
-  });
-
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">

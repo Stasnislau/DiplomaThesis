@@ -8,19 +8,16 @@ import { motion } from "framer-motion";
 import { UserAnswer } from "@/store/usePlacementTestStore";
 import { isMultipleChoice } from "@/types/typeGuards/isMultipleChoice";
 import { isArray } from "framer/utils/utils.js";
-import LoadingSpinner from "@/components/common/LoadingSpinner";
 interface PlacementTaskComponentProps {
   task: MultipleChoiceTask | FillInTheBlankTask;
   onAnswer: (answer: UserAnswer) => void;
   currentQuestion: number;
-  isLoading: boolean;
 }
 
 export const PlacementTask: React.FC<PlacementTaskComponentProps> = ({
   task,
   onAnswer,
   currentQuestion,
-  isLoading,
 }) => {
   const [userAnswer, setUserAnswer] = useState("");
 
@@ -28,16 +25,14 @@ export const PlacementTask: React.FC<PlacementTaskComponentProps> = ({
     if (!userAnswer) return;
 
     onAnswer({
-      isCorrect: isArray(task.correctAnswer) ? task.correctAnswer.includes(userAnswer) : task.correctAnswer === userAnswer,
+      isCorrect: isArray(task.correctAnswer)
+        ? task.correctAnswer.includes(userAnswer)
+        : task.correctAnswer === userAnswer,
       userAnswer,
       questionNumber: currentQuestion,
     });
     setUserAnswer("");
   };
-
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
 
   const renderAnswerInput = useCallback(() => {
     if (isMultipleChoice(task)) {

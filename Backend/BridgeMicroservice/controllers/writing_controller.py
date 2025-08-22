@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from services.writing_task_service import Writing_Task_Service
-from services.bielik_service import Bielik_Service
+# from services.bielik_service import Bielik_Service
 from models.dtos.task_dto import MultipleChoiceTask, FillInTheBlankTask
 from models.request.explain_answer_request import ExplainAnswerRequest
 from models.responses.explain_answer_response import ExplainAnswerResponse
@@ -9,9 +9,9 @@ from models.base_response import BaseResponse
 
 
 class Writing_Controller:
-    def __init__(self, writing_task_service: Writing_Task_Service, bielik_service: Bielik_Service):
+    def __init__(self, writing_task_service: Writing_Task_Service):
         self.writing_task_service = writing_task_service
-        self.bielik_service = bielik_service
+        # self.bielik_service = bielik_service
         self.router = APIRouter()
 
     def get_router(self) -> APIRouter:
@@ -24,6 +24,7 @@ class Writing_Controller:
                 task_request.language, task_request.level
             )
             response = BaseResponse[MultipleChoiceTask](success=True, payload=task)
+            print(response.model_dump_json())
             return response
 
         @self.router.post(
@@ -36,6 +37,7 @@ class Writing_Controller:
                 task_request.language, task_request.level
             )
             response = BaseResponse[FillInTheBlankTask](success=True, payload=task)
+            print(response.model_dump_json())
             return response
 
         @self.router.post(

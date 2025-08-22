@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request, status, HTTPException
 from services.placement_service import Placement_Service
-from services.bielik_service import Bielik_Service
+# from services.bielik_service import Bielik_Service
 from constants.constants import AVAILABLE_LANGUAGES
 from models.dtos.task_dto import MultipleChoiceTask, FillInTheBlankTask
 from models.base_response import BaseResponse
@@ -8,9 +8,8 @@ from models.dtos.evaluate_test_dto import EvaluateTestDto
 
 
 class Placement_Controller:
-    def __init__(self, placement_service: Placement_Service, bielik_service: Bielik_Service):
+    def __init__(self, placement_service: Placement_Service):
         self.placement_service = placement_service
-        self.bielik_service = bielik_service
         self.router = APIRouter()
 
     def get_router(self) -> APIRouter:

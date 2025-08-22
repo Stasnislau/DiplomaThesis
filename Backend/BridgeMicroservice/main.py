@@ -6,7 +6,8 @@ from fastapi.responses import JSONResponse
 from controllers.writing_controller import Writing_Controller
 from services.writing_task_service import Writing_Task_Service
 from services.ai_service import AI_Service
-from services.bielik_service import Bielik_Service
+
+# from services.bielik_service import Bielik_Service
 from middlewares.error_handling_middleware import ErrorHandlingMiddleware
 from services.vector_db_service import VectorDBService
 from controllers.placement_controller import Placement_Controller
@@ -16,6 +17,8 @@ from services.speaking_service import Speaking_Service
 import logging
 import litellm
 from typing import Awaitable, Callable
+import uvicorn
+
 load_dotenv()
 
 app = FastAPI()
@@ -35,7 +38,7 @@ app.add_middleware(
 app.include_router(
     Writing_Controller(
         Writing_Task_Service(VectorDBService(), AI_Service()),
-        Bielik_Service(),
+        # Bielik_Service(),
     ).get_router(),
     prefix="/api",
 )
@@ -43,7 +46,7 @@ app.include_router(
 app.include_router(
     Placement_Controller(
         Placement_Service(AI_Service(), VectorDBService()),
-        Bielik_Service(),
+        # Bielik_Service(),
     ).get_router(),
     prefix="/api",
 )
@@ -70,11 +73,13 @@ litellm.failure_callback = []
 logging.getLogger("fastapi").setLevel(logging.WARNING)
 logging.getLogger("uvicorn").setLevel(logging.WARNING)
 
+
 # Exception handler for validation errors
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
     # Reuse the logic from our middleware
     return error_handler_middleware_instance.handle_validation_error(exc)
+
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next: Callable[[Request], Awaitable[JSONResponse]]) -> JSONResponse:
@@ -82,7 +87,7 @@ async def log_requests(request: Request, call_next: Callable[[Request], Awaitabl
     print(f"Request: {request.method} {request.url.path}")
     response = await call_next(request)
 
-    print(f"Response ✅: {response.status_code}") # Log status code instead of the whole response object
+    print(f"Response ✅: {response.status_code}")  # Log status code instead of the whole response object
     return response
 
 
@@ -96,7 +101,12 @@ async def catch_all_undefined_endpoints(request: Request, call_next: Callable[[R
             status_code=404,
             content={
                 "success": False,
-                "payload": {"message": "No such endpoint", },
+                "payload": {
+                    "message": "No such endpoint",
+                },
             },
         )
     return response
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

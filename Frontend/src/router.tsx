@@ -75,10 +75,15 @@ export const router = createBrowserRouter([
   },
   {
     path: "/placement",
+    element: <WithTopBar />,
     children: [
       {
         path: "test/:languageCode",
-        element: <PlacementTestPage />,
+        element: (
+          <ProtectedRoute>
+            <PlacementTestPage />
+          </ProtectedRoute>
+        ),
       },
     ],
   },
