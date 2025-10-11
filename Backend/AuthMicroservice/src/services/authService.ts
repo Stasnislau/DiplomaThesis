@@ -1,7 +1,7 @@
 import { JwtService } from "@nestjs/jwt";
 import { PrismaService } from "../../prisma/prismaService";
 import * as bcrypt from "bcrypt";
-import { User } from "@prisma/client";
+import { Role, User } from "@prisma/client";
 import config from "../config/configuration";
 import { UserDto } from "src/dtos/userDto";
 import { v4 as uuidv4 } from "uuid";
@@ -60,6 +60,12 @@ export class AuthService {
 
   async register(userDto: UserDto): Promise<boolean> {
     const hashedPassword = await bcrypt.hash(userDto.password, 10);
+    const emailExists = await this.prisma.user.findUnique({
+      where: { email: userDto.email },
+    });
+    if (emailExists) {
+      throw new BadRequestException("User with this email already exists");
+    }
     const user = await this.prisma.user.create({
       data: {
         email: userDto.email,
@@ -160,7 +166,7 @@ export class AuthService {
     await this.prisma.refreshToken.delete({ where: { token } });
   }
 
-  async updateUserRole(userData: { id: string; role: string }) {
+  async updateUserRole(userData: { id: string; role: Role }) {
     await this.prisma.user.update({
       where: { id: userData.id },
       data: { role: userData.role },
@@ -206,5 +212,9 @@ export class AuthService {
     this.eventService.emit("user.deleted", {
       id: userData.id,
     });
+  }
+
+  async getAllUsers() {
+    return await this.prisma.user.findMany();
   }
 }

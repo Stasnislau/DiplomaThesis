@@ -7,26 +7,37 @@ datasource db {
     url      = env("PRISMA_DATABASE_AUTH_URL")
 }
 
+enum Role {
+    ADMIN
+    USER
+}
+
 model User {
-    id            String         @id @default(uuid())
-    email         String         @unique
-    role          String
-    tokens        RefreshToken[]
-    credentials   Credentials? 
-    createdAt     DateTime       @default(now())
+    id          String         @id @default(uuid()) @map("id")
+    email       String         @unique @map("email")
+    role        Role           @default(USER) @map("role")
+    tokens      RefreshToken[]
+    credentials Credentials?
+    createdAt   DateTime       @default(now()) @map("created_at")
+
+    @@map("users")
 }
 
 model RefreshToken {
-    id        String   @id @default(uuid())
-    token     String   @unique
-    expiresAt DateTime
-    userId    String
+    id        String   @id @default(uuid()) @map("id")
+    token     String   @unique @map("token")
+    expiresAt DateTime @map("expires_at")
+    userId    String   @map("user_id")
     user      User     @relation(fields: [userId], references: [id])
+
+    @@map("refresh_tokens")
 }
 
 model Credentials {
-    id       String @id @default(uuid())
-    password String
-    userId   String @unique
+    id       String @id @default(uuid()) @map("id")
+    password String @map("password")
+    userId   String @unique @map("user_id")
     user     User   @relation(fields: [userId], references: [id])
+
+    @@map("credentials")
 }

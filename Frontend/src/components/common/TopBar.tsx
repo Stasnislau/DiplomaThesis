@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { NavBar } from "./NavBar";
 import { UserMenu } from "./UserMenu";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export const TopBar: React.FC = () => {
   const navOptions = [
@@ -14,6 +15,10 @@ export const TopBar: React.FC = () => {
     { label: "Quiz", value: "quiz", path: "/quiz" },
   ];
 
+  const { userRole } = useAuthStore();
+
+  const isAdmin = userRole === "ADMIN";
+
   return (
     <div className="bg-gradient-to-r from-cyan-400 to-blue-500 shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -24,6 +29,14 @@ export const TopBar: React.FC = () => {
             </Link>
           </div>
           <nav className="flex space-x-4 items-center">
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className="text-white hover:bg-cyan-600 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition duration-150 ease-in-out"
+              >
+                Admin
+              </Link>
+            )}
             <NavBar
               options={navOptions}
               defaultLabel="Go to"

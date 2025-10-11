@@ -3,6 +3,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from controllers.writing_controller import Writing_Controller
 from services.writing_task_service import Writing_Task_Service
 from services.ai_service import AI_Service
@@ -14,6 +15,8 @@ from controllers.placement_controller import Placement_Controller
 from services.placement_service import Placement_Service
 from controllers.speaking_controller import Speaking_Controller
 from services.speaking_service import Speaking_Service
+from controllers.listening_controller import Listening_Controller
+from services.listening_task_service import Listening_Task_Service
 import logging
 import litellm
 from typing import Awaitable, Callable
@@ -22,6 +25,8 @@ import uvicorn
 load_dotenv()
 
 app = FastAPI()
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 error_handler_middleware_instance = ErrorHandlingMiddleware(app)
 
@@ -54,6 +59,13 @@ app.include_router(
 app.include_router(
     Speaking_Controller(
         Speaking_Service(AI_Service()),
+    ).get_router(),
+    prefix="/api",
+)
+
+app.include_router(
+    Listening_Controller(
+        Listening_Task_Service(),
     ).get_router(),
     prefix="/api",
 )

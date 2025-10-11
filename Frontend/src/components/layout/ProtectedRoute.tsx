@@ -7,7 +7,7 @@ import { useMe } from "@/api/hooks/useMe";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  accessLevel?: "admin" | "user";
+  accessLevel?: "ADMIN" | "USER";
 }
 
 function ProtectedRoute({ children, accessLevel }: ProtectedRouteProps) {
@@ -32,7 +32,6 @@ function ProtectedRoute({ children, accessLevel }: ProtectedRouteProps) {
       if (me?.languages?.length === 0) {
         userStore.setUserLanguages(me.languages);
       }
-      
     }
   }, [isAuthenticated, me]);
 
@@ -41,7 +40,7 @@ function ProtectedRoute({ children, accessLevel }: ProtectedRouteProps) {
   }
 
   return isAuthenticated &&
-    (accessLevel === "admin" ? userRole === "ADMIN" : true) ? (
+    (accessLevel === "ADMIN" ? userRole === "ADMIN" : true) ? (
     <>{children}</>
   ) : (
     <Navigate to="/login" state={{ from: location }} replace />

@@ -8,6 +8,7 @@ import { LocalStrategy } from "../strategies/localStrategy";
 import { JwtStrategy } from "../strategies/jwtStrategy";
 import { EventModule } from "./eventModule";
 import config from "../config/configuration";
+import { Reflector } from "@nestjs/core";
 
 @Module({
   imports: [
@@ -18,7 +19,7 @@ import config from "../config/configuration";
     }),
     EventModule,
   ],
-  providers: [AuthService, PrismaService, LocalStrategy, JwtStrategy],
+  providers: [AuthService, PrismaService, LocalStrategy, JwtStrategy, Reflector],
   controllers: [AuthController],
   exports: [AuthService],
 })

@@ -11,9 +11,10 @@ import { JwtAuthGuard } from "../guards/jwtAuthGuard";
 import { UserDto } from "src/dtos/userDto";
 import { LoginDto } from "src/dtos/loginDto";
 import { AuthenticatedRequest } from "../types/AuthenticatedRequest";
+import { RolesGuard } from "../guards/rolesGuard";
+import { Roles } from "../guards/roles.decorator";
 
 @Controller("auth")
-
 export class AuthController {
   constructor(private authService: AuthService) {}
 
@@ -47,6 +48,7 @@ export class AuthController {
 
   @Post("register")
   async register(@Body() user: UserDto) {
+    console.log("Registering user", user);
     const response = await this.authService.register(user);
     return {
       success: true,
@@ -63,7 +65,7 @@ export class AuthController {
     };
   }
 
-  @UseGuards(JwtAuthGuard)  
+  @UseGuards(JwtAuthGuard)
   @Post("validate")
   async validateToken(@Request() req: AuthenticatedRequest) {
     return {
@@ -73,6 +75,17 @@ export class AuthController {
         email: req.user.email,
         role: req.user.role,
       },
+    };
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("admin")
+  @Get("allUsers")
+  async getAllUsers() {
+    const response = await this.authService.getAllUsers();
+    return {
+      success: true,
+      payload: response,
     };
   }
 }
