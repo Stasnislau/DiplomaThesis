@@ -12,6 +12,7 @@ import { ProfilePage } from "./pages/User/Profile";
 import { PlacementTestPage } from "./processes/PlacementTest/pages/PlacementTestPage";
 import { AdminDashboardPage } from "./pages/Admin/AdminDashboardPage";
 import { SpeechAnalysisPage } from "./pages/SpeechAnalysis/SpeechAnalysisPage";
+import TasksPage from "./pages/Tasks/TasksPage";
 
 export const router = createBrowserRouter([
   {
@@ -40,6 +41,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <SpeechAnalysisPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/tasks",
+        element: (
+          <ProtectedRoute>
+            <TasksPage />
           </ProtectedRoute>
         ),
       },

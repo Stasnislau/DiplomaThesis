@@ -73,11 +73,10 @@ class Speaking_Service:
                 language=language,
                 segments=parsed_segments,
                 words=parsed_words,
-                raw_response=raw_json_response,  # Store the raw response for debugging
+                raw_response=raw_json_response,
             )
 
         except Exception as e:
-            # Ошибка будет более общей, так как мы не знаем точную причину без проверки формата
             print(f"Error during Whisper transcription (using filename {filename}): {e}")
             raise HTTPException(
                 status_code=500, detail=f"Failed to transcribe audio. Possible format incompatibility or API error: {str(e)}"

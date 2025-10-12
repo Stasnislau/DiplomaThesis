@@ -12,7 +12,9 @@ export const TopBar: React.FC = () => {
       value: "speech-analysis",
       path: "/speech-analysis",
     },
+    { label: "Tasks", value: "tasks", path: "/tasks" },
     { label: "Quiz", value: "quiz", path: "/quiz" },
+    { label: "Leaderboard", value: "leaderboard", path: "/leaderboard" },
   ];
 
   const { userRole } = useAuthStore();
@@ -42,12 +44,6 @@ export const TopBar: React.FC = () => {
               defaultLabel="Go to"
               className="text-white"
             />
-            <Link
-              to="/leaderboard"
-              className="text-white hover:bg-cyan-600 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition duration-150 ease-in-out"
-            >
-              Leaderboard
-            </Link>
             <UserMenu />
           </nav>
         </div>

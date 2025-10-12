@@ -9,7 +9,7 @@ class AI_Service:
     def __init__(self) -> None:
         pass
 
-    async def get_ai_response(self, prompt: str, model: str = "gemini-flash-latest") -> str:
+    async def get_ai_response(self, prompt: str, model: str = "gemini/gemini-flash-latest") -> str:
         chat_response = await acompletion(
             model=model,
             messages=[

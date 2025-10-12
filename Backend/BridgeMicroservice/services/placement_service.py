@@ -7,6 +7,7 @@ import json
 from models.dtos.task_dto import MultipleChoiceTask, FillInTheBlankTask
 from models.dtos.evaluate_test_dto import EvaluateTestDto
 
+
 class Placement_Service:
     def __init__(self, ai_service: AI_Service, vector_db_service: VectorDBService):
         self.ai_service = ai_service
@@ -39,18 +40,15 @@ class Placement_Service:
             self.current_level = levels[current_index - 1]
 
     async def evaluate_test_results(self, answers: list, language: str) -> EvaluateTestDto:
-
         print(f"Evaluating test results for {language} with answers: {answers}")
         try:
-
             if not answers:
-                raise ValueError("The 'answers' list cannot be empty")
+                raise ValueError("The 'answers' list cannot be empty!")
 
             for i, answer in enumerate(answers):
                 if not isinstance(answer, dict):
                     raise ValueError(f"Answer at index {i} must be a dictionary")
 
-                # Check for required fields in each answer
                 if "isCorrect" not in answer:
                     raise ValueError(f"Answer at index {i} missing 'isCorrect' field")
 
@@ -60,7 +58,6 @@ class Placement_Service:
             if not language or not isinstance(language, str):
                 raise ValueError("A valid language string is required")
 
-            # Proceed with the evaluation
             correct_answers = len([a for a in answers if a["isCorrect"]])
             total_questions = len(answers)
             percentage = (correct_answers / total_questions) * 100
@@ -75,7 +72,8 @@ class Placement_Service:
 
             Provide a detailed evaluation in JSON format:
             {{
-                "level": string,  // Recommended CEFR level (A1-C2)
+                "level": string,  // Recommended CEFR level (A1-C2), the response should contain only the level as a letter and number,
+                  no other text or comments. Example: "B1"
                 "confidence": number,  // Confidence score 0-100
                 "strengths": string[],  // List of strong areas
                 "weaknesses": string[],  // List of areas to improve
@@ -88,13 +86,10 @@ class Placement_Service:
 
             print(f"Parsed result: {parsed_result}")
 
-            # Handle case where AI might return a list instead of a dict
             if isinstance(parsed_result, list) and len(parsed_result) > 0:
-                parsed_result = parsed_result[0]  # Take the first item if it's a list
+                parsed_result = parsed_result[0]
 
-            # Ensure we have all required fields with fallbacks
             if not isinstance(parsed_result, dict):
-                # Create fallback evaluation if response format is completely wrong
                 parsed_result = {
                     "level": "A1",
                     "confidence": 70,
@@ -103,7 +98,6 @@ class Placement_Service:
                     "recommendation": "Start with fundamentals",
                 }
 
-            # Make sure all required fields exist
             for field in ["level", "confidence", "strengths", "weaknesses", "recommendation"]:
                 if field not in parsed_result:
                     if field in ["strengths", "weaknesses"]:
@@ -115,7 +109,6 @@ class Placement_Service:
                     else:
                         parsed_result[field] = "Start with fundamentals"
 
-            # Ensure lists are actually lists
             if not isinstance(parsed_result["strengths"], list):
                 parsed_result["strengths"] = [parsed_result["strengths"]]
             if not isinstance(parsed_result["weaknesses"], list):
@@ -124,13 +117,10 @@ class Placement_Service:
             return EvaluateTestDto(**parsed_result)
 
         except json.JSONDecodeError as e:
-            # Handle AI response parsing errors
             raise ValueError(f"Failed to parse AI response: {e}")
         except Exception as e:
-            # Re-raise as ValueError if it's related to validation
             if isinstance(e, ValueError):
                 print(f"ValueError in evaluate_test_results: {e}")
                 raise
-            # Log unexpected errors and raise a more generic exception
             print(f"Unexpected error in evaluate_test_results: {e}")
             raise
