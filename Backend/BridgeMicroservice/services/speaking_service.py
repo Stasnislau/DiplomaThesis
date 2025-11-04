@@ -1,7 +1,10 @@
 import json
 import io
+import whisper
+import asyncio
+import numpy as np
+from pydub import AudioSegment
 
-import litellm
 from fastapi import HTTPException
 from dotenv import load_dotenv
 
@@ -11,6 +14,14 @@ from utils.convert_to_language_code import convert_to_language_code
 
 load_dotenv()
 
+# Load the Whisper model globally. This can take time and memory.
+# Using "large-v3" model for best accuracy on capable hardware.
+try:
+    model = whisper.load_model("large-v3")
+except Exception as e:
+    print(f"Error loading Whisper model: {e}")
+    model = None
+
 
 class Speaking_Service:
     def __init__(self, ai_service: AI_Service):
@@ -19,53 +30,50 @@ class Speaking_Service:
     async def _transcribe_audio_with_whisper(
         self, audio_file_bytes: bytes, filename: str, language_code: str
     ) -> WhisperTranscriptionResult:
-        audio_file = io.BytesIO(audio_file_bytes)
-        audio_file.name = filename  # Set the filename to hint the format to the API
+        if not model:
+            raise HTTPException(status_code=500, detail="Whisper model is not loaded.")
+
         try:
-            response = await litellm.atranscription(
-                model="whisper-1",
-                file=audio_file,
-                response_format="verbose_json",
-                word_timestamps=True,
-                language=language_code,
+            # Convert audio to a format Whisper can process (numpy array)
+            # pydub can handle various formats based on filename extension
+            audio = AudioSegment.from_file(io.BytesIO(audio_file_bytes))
+            # Convert to mono and set frame rate
+            audio = audio.set_channels(1).set_frame_rate(16000)
+            # Convert to numpy array
+            samples = np.array(audio.get_array_of_samples()).astype(np.float32) / 32768.0
+
+            # Since whisper.transcribe is synchronous, run it in a separate thread
+            loop = asyncio.get_running_loop()
+            response = await loop.run_in_executor(
+                None,  # Use the default thread pool executor
+                lambda: model.transcribe(
+                    samples,
+                    language=language_code,
+                    fp16=True,  # Set to True for better performance on GPU/MPS
+                    word_timestamps=True,
+                ),
             )
 
             print(response, "response --------------------------------------------------")
 
-            raw_json_response = (
-                response.get("json_response", None) if isinstance(response, dict) else getattr(response, "_json_response", None)
-            )
-            print(raw_json_response, "raw_json_response --------------------------------------------------")
-            if not raw_json_response and hasattr(response, "model_dump"):
-                raw_json_response = response.model_dump()
+            transcribed_text = response.get("text", "")
+            language = response.get("language")
 
-            transcribed_text = response.text
-            language = raw_json_response.get("language") if raw_json_response else None
+            segments_data = response.get("segments", [])
 
-            segments_data = raw_json_response.get("segments") if raw_json_response else None
-            words_data = raw_json_response.get("words") if raw_json_response else None  # OpenAI verbose_json includes words in segments
+            parsed_words = []
+            parsed_segments = []
 
-            parsed_words = None
-            if words_data and isinstance(words_data, list):
-                parsed_words = [WhisperWord(**word) for word in words_data if isinstance(word, dict)]
-
-            parsed_segments = None
             if segments_data and isinstance(segments_data, list):
-                parsed_segments = []
                 for seg_data in segments_data:
                     if isinstance(seg_data, dict):
-                        # If word-level details are nested within segments (common for verbose_json)
-                        segment_words_data = seg_data.get("words")
-                        current_segment_words = None
+                        # Whisper library nests 'words' inside 'segments' when word_timestamps=True
+                        segment_words_data = seg_data.get("words", [])
                         if segment_words_data and isinstance(segment_words_data, list):
-                            current_segment_words = [WhisperWord(**word) for word in segment_words_data if isinstance(word, dict)]
+                            parsed_words.extend([WhisperWord(**word) for word in segment_words_data if isinstance(word, dict)])
 
-                        # If parsed_words is None, and current_segment_words exists, populate parsed_words
-                        if parsed_words is None and current_segment_words:
-                            if parsed_words is None:
-                                parsed_words = []
-                            parsed_words.extend(current_segment_words)
-
+                        # The segment itself doesn't contain the words list in the final parsed model
+                        seg_data.pop("words", None)
                         parsed_segments.append(WhisperSegment(**seg_data))
 
             return WhisperTranscriptionResult(
@@ -73,14 +81,12 @@ class Speaking_Service:
                 language=language,
                 segments=parsed_segments,
                 words=parsed_words,
-                raw_response=raw_json_response,
+                raw_response=response,
             )
 
         except Exception as e:
-            print(f"Error during Whisper transcription (using filename {filename}): {e}")
-            raise HTTPException(
-                status_code=500, detail=f"Failed to transcribe audio. Possible format incompatibility or API error: {str(e)}"
-            )
+            print(f"Error during local Whisper transcription (using filename {filename}): {e}")
+            raise HTTPException(status_code=500, detail=f"Failed to transcribe audio locally. Error: {str(e)}")
 
     async def _get_ai_feedback_on_transcription(self, transcription_result: WhisperTranscriptionResult) -> AIFeedbackResult:
         prompt = f"""

@@ -8,6 +8,7 @@ import Spinner from "@/components/common/Spinner";
 import { LanguageLevel } from "@/types/models/LanguageLevel";
 import Avatar from "@/components/common/Avatar";
 import { useAvailableLanguages } from "@/api/hooks/useAvailableLanguages";
+import { Link } from "react-router-dom";
 
 // Helper function to map LanguageLevel enum to readable string
 const mapLevelToString = (
@@ -231,6 +232,14 @@ export const ProfilePage: React.FC = () => {
               />
             </div>
           )}
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-end">
+          <Button variant="primary">
+            <Link to="/settings/ai-tokens">Manage AI Tokens</Link>
+          </Button>
         </div>
       </div>
     </div>

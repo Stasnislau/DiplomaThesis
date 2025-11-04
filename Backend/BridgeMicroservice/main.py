@@ -65,7 +65,7 @@ app.include_router(
 
 app.include_router(
     Listening_Controller(
-        Listening_Task_Service(),
+        Listening_Task_Service(AI_Service()),
     ).get_router(),
     prefix="/api",
 )
@@ -119,6 +119,7 @@ async def catch_all_undefined_endpoints(request: Request, call_next: Callable[[R
             },
         )
     return response
+
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

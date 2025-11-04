@@ -13,6 +13,7 @@ import { PlacementTestPage } from "./processes/PlacementTest/pages/PlacementTest
 import { AdminDashboardPage } from "./pages/Admin/AdminDashboardPage";
 import { SpeechAnalysisPage } from "./pages/SpeechAnalysis/SpeechAnalysisPage";
 import TasksPage from "./pages/Tasks/TasksPage";
+import AITokensPage from './pages/User/AITokens';
 
 export const router = createBrowserRouter([
   {
@@ -49,6 +50,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <TasksPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/settings/ai-tokens",
+        element: (
+          <ProtectedRoute>
+            <AITokensPage />
           </ProtectedRoute>
         ),
       },

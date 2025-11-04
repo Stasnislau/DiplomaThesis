@@ -1,29 +1,28 @@
 import json
 import os
 import uuid
-from openai import AsyncOpenAI
-import aiofiles
 from models.dtos.listening_task_dto import ListeningTaskRequest
 from models.responses.listening_task_response import ListeningTaskResponse
+from services.ai_service import AI_Service
+from elevenlabs.client import ElevenLabs
+from elevenlabs.types import Voice
+import aiofiles
 
-# It's better to manage the client centrally, but for simplicity, we initialize it here.
-# Ensure OPENAI_API_KEY is set in your environment variables.
-client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Ensure ELEVENLABS_API_KEY is set in your environment variables.
+elevenlabs_client = ElevenLabs(api_key=os.getenv("ELEVENLABS_API_KEY"))
 
-# This should be in a config file, but for now, we'll define it here.
-BASE_URL = os.getenv("API_BASE_URL", "http://localhost:3003")
+BASE_URL = "http://localhost:3003"
 
 
 class Listening_Task_Service:
-    def __init__(self) -> None:
-        # In a real app, you might inject dependencies like a config service.
-        pass
+    def __init__(self, ai_service: AI_Service) -> None:
+        self.ai_service = ai_service
 
     async def create_listening_task(self, request: ListeningTaskRequest) -> ListeningTaskResponse:
         language = request.language
         level = request.level
 
-        # Step 1: Generate story and questions with GPT-4
+        # Step 1: Generate story and questions with AI_Service (using gemini-flash-latest by default)
         prompt = f"""
         You are an expert in language education. Your task is to create a listening exercise for a student learning {language} at the {level} level.
 
@@ -58,24 +57,19 @@ class Listening_Task_Service:
         }}
         """
 
-        response = await client.chat.completions.create(
-            model="gpt-4-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"},
-        )
+        response = await self.ai_service.get_ai_response(prompt)
 
-        content_json = json.loads(response.choices[0].message.content)
+        content_json = json.loads(response)
         transcript = content_json["transcript"]
         questions = content_json["questions"]
 
-        # Step 2: Generate audio from the transcript using OpenAI TTS
-        tts_response = await client.audio.speech.create(
-            model="tts-1",
-            voice="alloy",
-            input=transcript,
+        audio = elevenlabs_client.text_to_speech.convert(
+            text=transcript,
+            voice_id="hIssydxXZ1WuDorjx6Ic", # <-- Передаем voice_id напрямую, ты, мудила!
+            model_id='eleven_flash_v2_5'
+            # model="eleven_multilingual_v2",  # Убираем этот аргумент нахуй!
         )
 
-        # Step 3: Save the audio file locally
         audio_dir = "static/audio"
         os.makedirs(audio_dir, exist_ok=True)
         file_name = f"{uuid.uuid4()}.mp3"
@@ -83,7 +77,8 @@ class Listening_Task_Service:
 
         # Use aiofiles for async file writing
         async with aiofiles.open(file_path, "wb") as f:
-            await f.write(tts_response.content)
+            for chunk in audio:  # Теперь обычный for, ты, тупица!
+                await f.write(chunk)  # Write each chunk
 
         # Step 4: Construct the response object
         audio_url = f"{BASE_URL}/static/audio/{file_name}"

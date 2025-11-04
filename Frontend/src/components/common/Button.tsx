@@ -5,7 +5,7 @@ import Spinner from "./Spinner";
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   className?: string;
   isLoading?: boolean;
-  variant?: "primary" | "secondary" | "tertiary" | "danger";
+  variant?: "primary" | "secondary" | "tertiary" | "danger" | "destructive";
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -25,6 +25,9 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
               variant === "tertiary",
           },
           { "bg-red-500 hover:bg-red-600 text-white": variant === "danger" },
+          {
+            "bg-red-500 hover:bg-red-600 text-white": variant === "destructive",
+          },
           { "opacity-50 cursor-not-allowed": isLoading || props.disabled },
           className
         )}

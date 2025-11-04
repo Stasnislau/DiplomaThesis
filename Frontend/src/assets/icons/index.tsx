@@ -6,7 +6,7 @@ import { ReactComponent as FranceSvg } from "./flags/france.svg";
 import { ReactComponent as GermanySvg } from "./flags/germany.svg";
 import { ReactComponent as ItalySvg } from "./flags/italy.svg";
 import { ReactComponent as RussiaSvg } from "./flags/russia.svg";
-
+import { ReactComponent as TrashSvg } from "./trash.svg";
 import { ReactComponent as PolandSvg } from "./flags/poland.svg";
 import { ReactComponent as BritainSvg } from "./flags/britain.svg";
 import Icon from "../../components/common/Icon";
@@ -46,4 +46,8 @@ export const PolishFlagIcon = (props: IconProps) => (
 
 export const BritishFlagIcon = (props: IconProps) => (
   <Icon src={BritainSvg} {...props} />
+);
+
+export const TrashIcon = (props: IconProps) => (
+  <Icon src={TrashSvg} {...props} />
 );

@@ -12,6 +12,7 @@ const ListeningTask = () => {
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [userAnswers, setUserAnswers] = useState<string[]>([]);
     const [isCorrect, setIsCorrect] = useState<(boolean | null)[]>([]);
+    const [showTranscript, setShowTranscript] = useState<boolean>(false);
 
     const { createListeningTask, isLoading, error, data, reset } = useCreateListeningTask();
 
@@ -21,6 +22,7 @@ const ListeningTask = () => {
             setCurrentQuestionIndex(0);
             setUserAnswers(new Array(data.questions.length).fill(""));
             setIsCorrect(new Array(data.questions.length).fill(null));
+            setShowTranscript(false);
         }
     }, [data]);
 
@@ -111,7 +113,7 @@ const ListeningTask = () => {
                 </Button>
             </div>
 
-            {error && (
+            {error && error.message && (
                 <div className="mt-4 p-4 bg-red-50 rounded-lg border border-red-200">
                     <p className="text-sm text-red-600">{error.message}</p>
                 </div>
@@ -122,13 +124,27 @@ const ListeningTask = () => {
                     <h2 className="text-2xl font-semibold mb-4">Listening Task</h2>
                     <audio src={currentTaskData.audioUrl} controls className="w-full mb-4" />
 
+                    <Button
+                        onClick={() => setShowTranscript(!showTranscript)}
+                        variant="tertiary"
+                        className="mb-4"
+                    >
+                        {showTranscript ? "Hide Transcript" : "Show Transcript"}
+                    </Button>
+
+                    {showTranscript && (
+                        <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                            <p className="text-gray-700 whitespace-pre-wrap">{currentTaskData.transcript}</p>
+                        </div>
+                    )}
+
                     {currentQuestion && (
                         <TaskComponent
                             taskData={currentQuestion}
                             userAnswer={userAnswers[currentQuestionIndex]}
                             setUserAnswer={handleUserAnswerChange}
                             onCheckAnswer={() => handleCheckAnswer(currentQuestionIndex)}
-                            onExplainAnswer={() => { /* TODO */ }}
+                            onExplainAnswer={() => { /* TODO: Implement explanation for listening questions */ }}
                             isCorrect={isCorrect[currentQuestionIndex]}
                             isExplaining={false}
                             explanationData={undefined}

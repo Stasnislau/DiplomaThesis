@@ -53,14 +53,28 @@ export class GatewayService {
     headers: IncomingHttpHeaders,
     body: any
   ): Promise<any> {
+    console.log(`[Gateway] Received request: ${method} ${url}`);
     try {
       let userData: AuthenticatedUser | undefined;
-      const microservice = url.split(
-        "/"
-      )[3] as (typeof AVAILABLE_MICROSERVICES)[number];
+
+      const apiGatewayPattern = /^\/api\/gateway\/([a-zA-Z0-9_-]+)\/(.*)$/;
+      const match = url.match(apiGatewayPattern);
+
+      if (!match) {
+        console.error(`[Gateway] Route pattern not matched for URL: ${url}`);
+        return {
+          status: 404,
+          data: {
+            success: false,
+            payload: { message: `Route not found on gateway: ${url}` },
+          },
+        };
+      }
+
+      const [, microservice, path] = match;
       let targetUrl = "";
-      const pathArray = url.split("/");
-      const path = pathArray.slice(4).join("/");
+
+      console.log(`[Gateway] Parsed microservice: '${microservice}', path: '${path}'`);
 
       switch (microservice) {
         case "auth":
@@ -73,10 +87,18 @@ export class GatewayService {
           targetUrl = `${USER_MICROSERVICE_URL}/api/${path}`;
           break;
         default:
-          this.exhaustiveCheck(microservice);
-          break;
+          console.error(`[Gateway] Unknown microservice requested: '${microservice}'`);
+          return {
+            status: 404,
+            data: {
+              success: false,
+              payload: { message: `Microservice '${microservice}' not found` },
+            },
+          };
       }
-      console.log(targetUrl);
+
+      console.log(`[Gateway] Forwarding request to target URL: ${targetUrl}`);
+
       let shouldAuthenticate = true;
       this.PUBLIC_ROUTES.forEach((route) => {
         if (targetUrl.includes(route)) {
@@ -92,37 +114,47 @@ export class GatewayService {
 
       console.log(userData, "userData");
 
-      const response = await firstValueFrom(
-        this.httpService.request({
-          method,
-          url: targetUrl,
-          headers: {
-            ...headers,
-            ...(userData && {
-              "X-User-Id": userData.id,
-              "X-User-Email": userData.email,
-              "X-User-Role": userData.role,
-            }),
-          },
-          data: body,
-          validateStatus: () => true,
-          timeout: 50000,
-          family: 4,
-        })
-      ).catch((error) => {
+      try {
+        const response = await firstValueFrom(
+          this.httpService.request({
+            method,
+            url: targetUrl,
+            headers: {
+              ...headers,
+              ...(userData && {
+                "X-User-Id": userData.id,
+                "X-User-Email": userData.email,
+                "X-User-Role": userData.role,
+              }),
+            },
+            data: body,
+            validateStatus: () => true,
+            timeout: 50000,
+            family: 4,
+          }),
+        );
+
+        console.log(`[Gateway] Response from ${microservice} microservice: Status ${response.status}`);
+
+        return {
+          status: response.status,
+          data: response.data,
+        };
+      } catch (error) {
+        console.error(`[Gateway] Error forwarding request to ${targetUrl}:`, error.message);
         if (error.response) {
           return {
             status: error.response.status,
             data: error.response.data,
           };
         } else if (error.request) {
-          console.log(error, "error.request");
+          console.error(`[Gateway] Service unavailable or no response from ${targetUrl}`);
           return {
-            status: 503,
+            status: 503, // Service Unavailable
             data: {
               success: false,
               payload: {
-                message: "Service unavailable",
+                message: `Service '${microservice}' unavailable. No response.`,
               },
             },
           };
@@ -132,19 +164,14 @@ export class GatewayService {
             data: {
               success: false,
               payload: {
-                message: "Internal gateway error",
+                message: "Internal gateway error during request forwarding",
               },
             },
           };
         }
-      });
-
-      return {
-        status: response.status,
-        data: response.data,
-      };
+      }
     } catch (error) {
-      console.error("Gateway error:", error);
+      console.error(`[Gateway] Unhandled error in gatewayService:`, error.message);
       return {
         status: 500,
         data: {

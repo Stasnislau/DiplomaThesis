@@ -1,4 +1,3 @@
-import { BaseResponse } from "@/types/responses/BaseResponse";
 import { DIRECT_BRIDGE_MICROSERVICE_URL } from "../consts";
 import { fetchWithAuth } from "../fetchWithAuth";
 import { ListeningTaskResponse } from "@/types/responses/TaskResponse";
@@ -19,12 +18,10 @@ export async function createListeningTask(
     }
   );
 
-  const data = (await response.json()) as BaseResponse<ListeningTaskResponse>;
-  if (!data.success) {
-    throw new Error(
-      (data.payload as unknown as Error).message || "Failed to create listening task"
-    );
+  const data = (await response.json()) as ListeningTaskResponse;
+  if (!data) {
+    throw new Error("Failed to create listening task");
   }
 
-  return data.payload;
+  return data;
 }

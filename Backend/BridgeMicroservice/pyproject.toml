@@ -29,6 +29,9 @@ accelerate = "^1.1.1"
 python-multipart = "^0.0.20"
 pydub = "^0.25.1"
 aiofiles = "^23.2.1"
+openai-whisper = "^20250625"
+elevenlabs = "^2.17.0"
+types-aiofiles = "^25.1.0.20251011"
 
 
 [tool.poetry.group.dev.dependencies]

@@ -2,7 +2,7 @@ import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import configuration from "./config/configuration";
 import { UserModule } from "./modules/userModule";
-import { EventModule } from "./modules/eventModule";
+import { UserAITokensModule } from "./modules/user-ai-tokens.module";
 import { UserDataMiddleware } from "./middlewares/userDataMiddleware";
 
 @Module({
@@ -13,7 +13,7 @@ import { UserDataMiddleware } from "./middlewares/userDataMiddleware";
       isGlobal: true,
     }),
     UserModule,
-    EventModule,
+    UserAITokensModule,
   ],
 
   controllers: [],
