@@ -1,6 +1,6 @@
 import { Navigate } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
-import LoadingPage from "./Loading";
+import LoadingPage from "../layout/Loading";
 
 interface UnprotectedRouteProps {
   children: React.ReactNode;

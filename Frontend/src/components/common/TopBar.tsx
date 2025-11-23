@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { NavBar } from "./NavBar";
 import { UserMenu } from "./UserMenu";
@@ -17,9 +17,14 @@ export const TopBar: React.FC = () => {
     { label: "Leaderboard", value: "leaderboard", path: "/leaderboard" },
   ];
 
-  const { userRole } = useAuthStore();
+  const { userRole, isAuthenticated } = useAuthStore();
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  const isAdmin = userRole === "ADMIN";
+  useEffect(() => {
+    if (isAuthenticated) {
+      setIsAdmin(userRole === "ADMIN");
+    }
+  }, [isAuthenticated, userRole]);
 
   return (
     <div className="bg-gradient-to-r from-cyan-400 to-blue-500 shadow-md">
@@ -31,7 +36,7 @@ export const TopBar: React.FC = () => {
             </Link>
           </div>
           <nav className="flex space-x-4 items-center">
-            {isAdmin && (
+            {isAdmin && isAuthenticated && (
               <Link
                 to="/admin"
                 className="text-white hover:bg-cyan-600 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition duration-150 ease-in-out"
@@ -39,12 +44,23 @@ export const TopBar: React.FC = () => {
                 Admin
               </Link>
             )}
-            <NavBar
-              options={navOptions}
-              defaultLabel="Go to"
-              className="text-white"
-            />
-            <UserMenu />
+            {isAuthenticated && (
+              <NavBar
+                options={navOptions}
+                defaultLabel="Go to"
+                className="text-white"
+              />
+            )}
+            {isAuthenticated ? (
+              <UserMenu />
+            ) : (
+              <Link
+                to="/login"
+                className="text-white hover:bg-cyan-600 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition duration-150 ease-in-out"
+              >
+                Login
+              </Link>
+            )}
           </nav>
         </div>
       </div>

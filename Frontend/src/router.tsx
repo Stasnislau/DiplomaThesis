@@ -1,7 +1,8 @@
 import { createBrowserRouter } from "react-router-dom";
-import { HomePage } from "./pages/Home/HomePage";
+import { RootPage } from "./pages/Home/RootPage";
+import { LandingPage } from "./pages/Home/LandingPage";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
-import UnprotectedRoute from "./components/layout/UnprotectedRoute";
+import UnprotectedRoute from "./components/modals/UnprotectedRoute";
 import WithTopBar from "./components/layout/WithTopBar";
 import { LoginPage } from "./processes/Auth/Pages/LoginPage";
 import { RegisterPage } from "./processes/Auth/Pages/RegisterPage";
@@ -13,7 +14,7 @@ import { PlacementTestPage } from "./processes/PlacementTest/pages/PlacementTest
 import { AdminDashboardPage } from "./pages/Admin/AdminDashboardPage";
 import { SpeechAnalysisPage } from "./pages/SpeechAnalysis/SpeechAnalysisPage";
 import TasksPage from "./pages/Tasks/TasksPage";
-import AITokensPage from './pages/User/AITokens';
+import AITokensPage from "./pages/User/AITokens";
 
 export const router = createBrowserRouter([
   {
@@ -23,10 +24,14 @@ export const router = createBrowserRouter([
       {
         path: "/",
         index: true,
+        element: <RootPage />,
+      },
+      {
+        path: "/welcome",
         element: (
-          <ProtectedRoute>
-            <HomePage />
-          </ProtectedRoute>
+          <UnprotectedRoute>
+            <LandingPage />
+          </UnprotectedRoute>
         ),
       },
       {

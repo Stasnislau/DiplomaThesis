@@ -1,37 +1,35 @@
-import {
-  Controller,
-  Request,
-  Get,
-  Post,
-  Body,
-} from "@nestjs/common";
+import { Controller, Request, Get, Post, Body, Put } from "@nestjs/common";
 import { UserService } from "../services/userService";
 import { AuthenticatedRequest } from "src/types/AuthenticatedRequest";
 import { EventPattern } from "@nestjs/microservices";
 import { BaseResponse } from "src/types/BaseResponse";
 import { Language, User } from "@prisma/client";
 
-
 @Controller("")
 export class UserController {
   constructor(private userService: UserService) {}
 
   @Get("languages")
-  async getLanguages() {
+  async getLanguages(): Promise<BaseResponse<Language[]>> {
     return this.userService.getLanguages();
   }
 
   @Post("addLanguage")
-  async addLanguage(@Body() languageId: string, @Request() req: AuthenticatedRequest  ) {
+  async addLanguage(
+    @Body() languageId: string,
+    @Request() req: AuthenticatedRequest
+  ): Promise<BaseResponse<boolean>> {
     return this.userService.addLanguage(req.user.id, languageId);
   }
 
   @Post("addUserLanguage")
-  async addUserLanguage(@Body() {languageId, level}: {languageId: string, level: string}, @Request() req: AuthenticatedRequest  ) {
+  async addUserLanguage(
+    @Body() { languageId, level }: { languageId: string; level: string },
+    @Request() req: AuthenticatedRequest
+  ): Promise<BaseResponse<boolean>> {
     return this.userService.addUserLanguage(req.user.id, languageId, level);
   }
 
-    
   @Get("me")
   async getUser(
     @Request() req: AuthenticatedRequest
@@ -45,8 +43,29 @@ export class UserController {
   }
 
   @Post("setNativeLanguage")
-  async setNativeLanguage(@Body() {languageId}: {languageId: string}, @Request() req: AuthenticatedRequest  ) {
+  async setNativeLanguage(
+    @Body() { languageId }: { languageId: string },
+    @Request() req: AuthenticatedRequest
+  ): Promise<BaseResponse<boolean>> {
     return this.userService.setNativeLanguage(req.user.id, languageId);
+  }
+
+  @Put("updateUser")
+  async updateUser(
+    @Body()
+    { name, surname, email }: { name: string; surname: string; email?: string },
+    @Request() req: AuthenticatedRequest
+  ): Promise<BaseResponse<boolean>> {
+    const result = await this.userService.updateUser({
+      id: req.user.id,
+      name,
+      surname,
+      email,
+    });
+    return {
+      success: true,
+      payload: result,
+    };
   }
 
   @EventPattern("user.created")

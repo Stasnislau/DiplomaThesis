@@ -9,6 +9,8 @@ import {
   Injectable,
   BadRequestException,
   UnauthorizedException,
+  ForbiddenException,
+  NotFoundException,
 } from "@nestjs/common";
 import { LoginDto } from "src/dtos/loginDto";
 import { Inject } from "@nestjs/common";
@@ -216,5 +218,35 @@ export class AuthService {
 
   async getAllUsers() {
     return await this.prisma.user.findMany();
+  }
+
+  async updatePassword(
+    userId: string,
+    oldPassword: string,
+    newPassword: string
+  ) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+    if (userId !== user.id || user.role !== "ADMIN") {
+      throw new ForbiddenException(
+        "You are not allowed to update this password"
+      );
+    }
+    const credentials = await this.prisma.credentials.findUnique({
+      where: { userId: userId },
+    });
+    if (
+      !credentials ||
+      !(await bcrypt.compare(oldPassword, credentials.password))
+    ) {
+      throw new BadRequestException("Invalid old password");
+    }
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    await this.prisma.credentials.update({
+      where: { userId: userId },
+      data: { password: hashedNewPassword },
+    });
   }
 }

@@ -203,22 +203,21 @@ export class UserService {
 
   async updateUser(userData: {
     id: string;
-    email: string;
     name: string;
     surname: string;
-  }) {
+    email?: string;
+  }): Promise<boolean> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userData.id },
+    });
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
     await this.prisma.user.update({
       where: { id: userData.id },
-      data: {
-        name: userData.name,
-        surname: userData.surname,
-      },
+      data: userData,
     });
-
-    return {
-      success: true,
-      payload: true,
-    };
+    return true;
   }
 
   async updateUserRole(userData: { id: string; role: string }) {

@@ -4,6 +4,15 @@ import { refresh as apiRefresh } from "../api/mutations/refresh";
 import Cookies from "js-cookie";
 import { logout as apiLogout } from "../api/mutations/logout";
 import { getAccessToken } from "@/utils/getAccessToken";
+import { jwtDecode } from "jwt-decode";
+
+interface DecodedToken {
+  role: string;
+  sub: string;
+  email: string;
+  exp: number;
+  iat: number;
+}
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -21,21 +30,35 @@ export const useAuthStore = create<AuthState>((set, _get) => ({
   isAuthenticated: false,
   isLoading: true,
   initialized: false,
-  userRole: "ADMIN",
+  userRole: null,
+
   login: async (input: LoginUserRequest) => {
     try {
       const data = await apiLogin(input);
       if (data.success) {
-        localStorage.setItem("accessToken", data.payload.accessToken);
+        const accessToken = data.payload.accessToken;
+        localStorage.setItem("accessToken", accessToken);
+        
         if (
           data.payload.refreshToken !== undefined &&
           data.payload.refreshToken !== ""
         ) {
           Cookies.set("refreshToken", data.payload.refreshToken);
         }
+
+        // Decode token to get role
+        let userRole = null;
+        try {
+          const decoded = jwtDecode<DecodedToken>(accessToken);
+          userRole = decoded.role;
+        } catch (e) {
+          console.error("Failed to decode token during login", e);
+        }
+
         set({
           isAuthenticated: true,
           initialized: true,
+          userRole: userRole,
         });
         return { success: true };
       } else {
@@ -60,11 +83,13 @@ export const useAuthStore = create<AuthState>((set, _get) => ({
       isAuthenticated: false,
       isLoading: false,
       initialized: true,
+      userRole: null,
     });
   },
   refresh: async () => {
-    if (getAccessToken() === null) {
-      set({ isLoading: false, initialized: true });
+    const token = getAccessToken();
+    if (token === null) {
+      set({ isLoading: false, initialized: true, userRole: null });
       return;
     }
     set({ isLoading: true });
@@ -74,15 +99,27 @@ export const useAuthStore = create<AuthState>((set, _get) => ({
         set({
           isAuthenticated: false,
           initialized: true,
-          isLoading: false
+          isLoading: false,
+          userRole: null,
         });
         return;
       }
       localStorage.setItem("accessToken", newAccessToken);
+      
+      // Decode new token
+      let userRole = null;
+      try {
+        const decoded = jwtDecode<DecodedToken>(newAccessToken);
+        userRole = decoded.role;
+      } catch (e) {
+        console.error("Failed to decode token during refresh", e);
+      }
+
       set({
         isAuthenticated: true,
         initialized: true,
-        isLoading: false
+        isLoading: false,
+        userRole: userRole,
       });
     } catch (error) {
       console.error("Refresh failed:", error);
@@ -91,7 +128,8 @@ export const useAuthStore = create<AuthState>((set, _get) => ({
       set({
         isAuthenticated: false,
         initialized: true,
-        isLoading: false
+        isLoading: false,
+        userRole: null,
       });
     }
   },

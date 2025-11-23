@@ -1,5 +1,4 @@
-import React from "react";
-import Button from "@/components/common/Button";
+import React, { useState } from "react";
 import { UserStats } from "@/pages/User/components/userStats";
 import { AchievementCard } from "@/pages/User/components/achievementCard";
 import { LanguageProgressItem } from "@/pages/User/components/languageProgressItem";
@@ -9,6 +8,15 @@ import { LanguageLevel } from "@/types/models/LanguageLevel";
 import Avatar from "@/components/common/Avatar";
 import { useAvailableLanguages } from "@/api/hooks/useAvailableLanguages";
 import { Link } from "react-router-dom";
+import { EditProfileModal } from "./components/modals/EditProfileModal";
+import { ChangePasswordModal } from "./components/modals/ChangePasswordModal";
+
+import { DropdownMenu } from "@/components/common/DropdownMenu";
+import { GearIcon } from "@radix-ui/react-icons";
+
+const SettingsIcon = ({ className }: { className?: string }) => (
+  <GearIcon className={className} />
+);
 
 // Helper function to map LanguageLevel enum to readable string
 const mapLevelToString = (
@@ -75,6 +83,9 @@ export const ProfilePage: React.FC = () => {
   const { me, isLoading, error } = useMe();
   const { languages, isLoading: isLoadingLanguages } = useAvailableLanguages();
 
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -106,7 +117,35 @@ export const ProfilePage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 py-10">
       {/* Profile Header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-3xl shadow-lg p-8 mb-8">
+        <div className="bg-white rounded-3xl shadow-lg p-8 mb-8 relative">
+          <div className="absolute top-8 right-8">
+            <DropdownMenu>
+              <DropdownMenu.Trigger asChild>
+                <button className="p-2 text-gray-400 hover:text-indigo-600 transition-colors rounded-full hover:bg-indigo-50 outline-none">
+                  <SettingsIcon className="h-6 w-6" />
+                </button>
+              </DropdownMenu.Trigger>
+
+              <DropdownMenu.Content align="end" className="w-56">
+                <DropdownMenu.Item
+                  onSelect={() => setIsEditProfileOpen(true)}
+                  className="cursor-pointer"
+                >
+                  Edit Profile
+                </DropdownMenu.Item>
+                <DropdownMenu.Item
+                  onSelect={() => setIsChangePasswordOpen(true)}
+                  className="cursor-pointer"
+                >
+                  Change Password
+                </DropdownMenu.Item>
+                <DropdownMenu.Separator />
+                <DropdownMenu.Item asChild className="cursor-pointer">
+                  <Link to="/settings/ai-tokens">Manage AI Providers</Link>
+                </DropdownMenu.Item>
+              </DropdownMenu.Content>
+            </DropdownMenu>
+          </div>
           <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-8">
             <div className="relative flex-shrink-0">
               <Avatar
@@ -137,20 +176,11 @@ export const ProfilePage: React.FC = () => {
               <p className="text-gray-600 mb-4 text-sm sm:text-base">
                 {isLoading ? <Spinner size={12} color="#6B7280" /> : me?.email}
               </p>
-              <div className="flex justify-center sm:justify-start space-x-4">
-                <Button variant="primary" disabled={isLoading}>
-                  Edit Profile
-                </Button>
-                <Button variant="secondary" disabled={isLoading}>
-                  Change Password
-                </Button>
-              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Stats Grid - Updated */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
           <UserStats title="Languages" value={languagesCount} icon="🌍" />
@@ -164,7 +194,6 @@ export const ProfilePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Language Progress - Updated */}
       {!isLoading && me?.languages && me.languages.length > 0 && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
           <div className="bg-white rounded-3xl shadow-lg p-8">
@@ -235,13 +264,14 @@ export const ProfilePage: React.FC = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-end">
-          <Button variant="primary">
-            <Link to="/settings/ai-tokens">Manage AI Tokens</Link>
-          </Button>
-        </div>
-      </div>
+      <EditProfileModal
+        isOpen={isEditProfileOpen}
+        onClose={() => setIsEditProfileOpen(false)}
+      />
+      <ChangePasswordModal
+        isOpen={isChangePasswordOpen}
+        onClose={() => setIsChangePasswordOpen(false)}
+      />
     </div>
   );
 };

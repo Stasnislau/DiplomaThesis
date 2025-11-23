@@ -5,14 +5,15 @@ import {
   UseGuards,
   Request,
   Get,
+  Put,
 } from "@nestjs/common";
 import { AuthService } from "../services/authService";
 import { JwtAuthGuard } from "../guards/jwtAuthGuard";
-import { UserDto } from "src/dtos/userDto";
 import { LoginDto } from "src/dtos/loginDto";
 import { AuthenticatedRequest } from "../types/AuthenticatedRequest";
 import { RolesGuard } from "../guards/rolesGuard";
 import { Roles } from "../guards/roles.decorator";
+import { UserDto } from "src/dtos/userDto";
 
 @Controller("auth")
 export class AuthController {
@@ -48,7 +49,6 @@ export class AuthController {
 
   @Post("register")
   async register(@Body() user: UserDto) {
-    console.log("Registering user", user);
     const response = await this.authService.register(user);
     return {
       success: true,
@@ -87,5 +87,20 @@ export class AuthController {
       success: true,
       payload: response,
     };
+  }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("CHECK_USER_IN_SERVICE", "ADMIN")
+  @Put("updatePassword")
+  async updatePassword(
+    @Request() req: AuthenticatedRequest,
+    @Body() password: { oldPassword: string; newPassword: string }
+  ) {
+    await this.authService.updatePassword(
+      req.user.id,
+      password.oldPassword,
+      password.newPassword
+      
+    );
+    return { success: true, payload: "Password updated successfully" };
   }
 }

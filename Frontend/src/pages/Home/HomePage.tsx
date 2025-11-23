@@ -1,9 +1,5 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
-import Button from "@/components/common/Button";
-import { FeatureCard } from "./components/FeatureCard";
-import { StatCard } from "./components/StatCard";
-import { HeroSection } from "./components/HeroSection";
+import { useNavigate } from "react-router-dom";
 import { LanguageCard } from "./components/LanguageCard";
 import {
   FrenchFlagIcon,
@@ -19,43 +15,12 @@ import {
   useAvailableLanguages,
 } from "@/api/hooks/useAvailableLanguages";
 import { useUserStore } from "@/store/useUserStore";
-
-const features = [
-  {
-    title: "Language Quiz",
-    description:
-      "Test your knowledge with interactive quizzes in multiple languages",
-    linkTo: "/quiz",
-    buttonText: "Start Quiz",
-    buttonVariant: "primary" as const,
-    gradientFrom: "cyan-400",
-    gradientTo: "light-blue-500",
-  },
-  {
-    title: "Practice Area",
-    description: "Improve your skills with targeted practice exercises",
-    linkTo: "/practice",
-    buttonText: "Start Practice",
-    buttonVariant: "secondary" as const,
-    gradientFrom: "purple-400",
-    gradientTo: "indigo-500",
-  },
-  {
-    title: "Your Progress",
-    description: "Track your learning journey and achievements",
-    linkTo: "/profile",
-    buttonText: "View Profile",
-    buttonVariant: "tertiary" as const,
-    gradientFrom: "pink-400",
-    gradientTo: "rose-500",
-  },
-];
-
-const stats = [
-  { value: "6", label: "Languages Available" },
-  { value: "1000+", label: "Practice Questions" },
-  { value: "24/7", label: "Learning Support" },
-];
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/common/Card";
 
 const flagIcons = {
   es: <SpanishFlagIcon className="w-12 h-12" />,
@@ -70,76 +35,113 @@ const flagIcons = {
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { languages } = useAvailableLanguages();
+  const { user, userLanguages } = useUserStore((state) => ({
+    user: state.user,
+    userLanguages: state.userLanguages,
+  }));
 
   const handleLanguageClick = (language: Language) => {
     navigate(`/placement/test/${language.code}`);
   };
 
-  const userLanguages = useUserStore((state) => state.userLanguages);
-
+  const shortcuts = [
+    {
+      title: "AI Settings",
+      description: "Configure your AI tokens",
+      path: "/settings/ai-tokens",
+      icon: "⚙️",
+      color: "bg-blue-50 text-blue-600",
+    },
+    {
+      title: "Tasks",
+      description: "Practice writing and speaking",
+      path: "/tasks",
+      icon: "📝",
+      color: "bg-purple-50 text-purple-600",
+    },
+    {
+      title: "Quiz",
+      description: "Test your knowledge",
+      path: "/quiz",
+      icon: "🧩",
+      color: "bg-green-50 text-green-600",
+    },
+    {
+      title: "Speech Analysis",
+      description: "Analyze your pronunciation",
+      path: "/speech-analysis",
+      icon: "🎙️",
+      color: "bg-orange-50 text-orange-600",
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100">
-
-
-      <HeroSection />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <h2 className="text-3xl font-bold text-gray-900 mb-8">
-          Available Languages
-        </h2>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {languages?.map((language) => {
-            const isStarted = userLanguages?.some(
-              (userLanguage) => userLanguage.id === language.id
-            );
-            return (
-              <LanguageCard
-                key={language.code}
-                flagIcon={flagIcons[language.code as keyof typeof flagIcons]}
-                name={language.name}
-                code={language.code}
-                isStarted={isStarted}
-                currentLevel={userLanguages?.find(
-                  (userLanguage) => userLanguage.id === language.id
-                )?.level || language.currentLevel}
-                onStartTest={() => handleLanguageClick(language)}
-              />
-            );
-          })}
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">
+            Welcome back, {user?.name || "Student"}! 👋
+          </h1>
+          <p className="mt-2 text-gray-600">
+            Ready to continue your language learning journey?
+          </p>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h2 className="text-3xl font-bold text-gray-900 mb-8">Features</h2>
-        <div className="grid md:grid-cols-3 gap-8">
-          {features.map((feature, index) => (
-            <FeatureCard key={index} {...feature} />
-          ))}
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="bg-white rounded-3xl shadow-xl p-8">
-          <div className="grid grid-cols-3 gap-8 text-center">
-            {stats.map((stat, index) => (
-              <StatCard key={index} {...stat} />
+        <div className="mb-12">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            Quick Actions
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {shortcuts.map((shortcut) => (
+              <Card
+                key={shortcut.path}
+                className="hover:shadow-md transition-shadow cursor-pointer border-none shadow-sm"
+                onClick={() => navigate(shortcut.path)}
+              >
+                <CardHeader className="flex flex-row items-center space-y-0 pb-2">
+                  <div className={`p-3 rounded-lg ${shortcut.color} mr-4`}>
+                    <span className="text-2xl">{shortcut.icon}</span>
+                  </div>
+                  <CardTitle className="text-lg font-semibold">
+                    {shortcut.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-500">
+                    {shortcut.description}
+                  </p>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Ready to start learning?
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">
+            Your Languages
           </h2>
-          <Link to="/quiz">
-            <Button variant="primary" className="max-w-xs mx-auto">
-              Take Your First Quiz
-            </Button>
-          </Link>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {languages?.map((language) => {
+              const isStarted = userLanguages?.some(
+                (userLanguage) => userLanguage.id === language.id
+              );
+              return (
+                <LanguageCard
+                  key={language.code}
+                  flagIcon={flagIcons[language.code as keyof typeof flagIcons]}
+                  name={language.name}
+                  code={language.code}
+                  isStarted={isStarted}
+                  currentLevel={
+                    userLanguages?.find(
+                      (userLanguage) => userLanguage.id === language.id
+                    )?.level || language.currentLevel
+                  }
+                  onStartTest={() => handleLanguageClick(language)}
+                />
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
