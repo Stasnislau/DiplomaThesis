@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateUserAITokenDto {
   @IsString()
@@ -7,5 +7,9 @@ export class CreateUserAITokenDto {
 
   @IsString()
   @IsNotEmpty()
-  model: string;
+  aiProviderId: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isDefault?: boolean;
 }

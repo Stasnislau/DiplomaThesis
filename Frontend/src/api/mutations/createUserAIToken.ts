@@ -4,7 +4,7 @@ import { USER_MICROSERVICE_URL } from '../consts';
 
 export interface CreateUserAITokenRequest {
   token: string;
-  model: string;
+  aiProviderId: string;
 }
 
 export const createUserAIToken = async (
@@ -22,5 +22,6 @@ export const createUserAIToken = async (
     throw new Error('Failed to create AI token');
   }
 
-  return response.json();
+  const data = await response.json();
+  return data.payload;
 };

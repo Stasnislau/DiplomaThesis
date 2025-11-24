@@ -24,7 +24,7 @@ import IconButton from "@/components/common/IconButton";
 import { Link } from "react-router-dom";
 
 interface IFormInput {
-  model: string;
+  aiProviderId: string;
   token: string;
 }
 
@@ -64,7 +64,7 @@ const AITokensPage: React.FC = () => {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <Controller
-                  name="model"
+                  name="aiProviderId"
                   control={control}
                   rules={{ required: true }}
                   render={({ field }) => (
@@ -107,14 +107,20 @@ const AITokensPage: React.FC = () => {
                 </div>
               )}
               {aiTokens?.map((token) => {
-                const providerLabel = AI_PROVIDERS.find(p => p.value === token.model)?.label || token.model;
+                // Prefer the name from the relation (token.aiProvider?.name) if available,
+                // otherwise fallback to the local constant map for better UX.
+                const providerLabel = 
+                    token.aiProvider?.name || 
+                    AI_PROVIDERS.find(p => p.value === token.aiProviderId)?.label || 
+                    token.aiProviderId;
+
                 return (
                   <div
                     key={token.id}
                     className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm border border-gray-200 hover:border-indigo-200 hover:shadow-md transition-all duration-200"
                   >
                     <div className="flex items-center space-x-4">
-                      <div className="h-12 w-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-lg border border-indigo-100">
+                      <div className="h-12 w-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-lg border border-indigo-100 uppercase">
                          {providerLabel.charAt(0)}
                       </div>
                       <div>

@@ -7,11 +7,27 @@ export class UserAITokensService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(userId: string, createUserAITokenDto: CreateUserAITokenDto) {
-    return this.prisma.userAIToken.create({
-      data: {
-        userId,
-        ...createUserAITokenDto,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      // If the new token is set as default, unset other defaults for this user
+      if (createUserAITokenDto.isDefault) {
+        await tx.userAIToken.updateMany({
+          where: { userId, isDefault: true },
+          data: { isDefault: false },
+        });
+      }
+
+      // If this is the FIRST token for the user, make it default automatically
+      const count = await tx.userAIToken.count({ where: { userId } });
+      const isDefault = createUserAITokenDto.isDefault || count === 0;
+
+      return tx.userAIToken.create({
+        data: {
+          userId,
+          token: createUserAITokenDto.token,
+          aiProviderId: createUserAITokenDto.aiProviderId,
+          isDefault: isDefault,
+        },
+      });
     });
   }
 
@@ -20,6 +36,13 @@ export class UserAITokensService {
       where: {
         userId,
       },
+      include: {
+        aiProvider: true,
+      },
+      orderBy: [
+        { isDefault: 'desc' }, // Defaults first
+        { createdAt: 'desc' },
+      ],
     });
   }
 
@@ -28,6 +51,9 @@ export class UserAITokensService {
       where: {
         id,
         userId,
+      },
+      include: {
+        aiProvider: true,
       },
     });
   }

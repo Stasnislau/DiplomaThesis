@@ -3,6 +3,7 @@ import { ConfigModule } from "@nestjs/config";
 import configuration from "./config/configuration";
 import { UserModule } from "./modules/userModule";
 import { UserAITokensModule } from "./modules/user-ai-tokens.module";
+import { AiProvidersModule } from "./modules/ai-providers.module";
 import { UserDataMiddleware } from "./middlewares/userDataMiddleware";
 
 @Module({
@@ -14,6 +15,7 @@ import { UserDataMiddleware } from "./middlewares/userDataMiddleware";
     }),
     UserModule,
     UserAITokensModule,
+    AiProvidersModule,
   ],
 
   controllers: [],
