@@ -90,16 +90,16 @@ async function main() {
   ) {
     for (const aiProvider of SeedAIProviders) {
       console.log("Creating ai provider:", aiProvider);
-      if (aiProviders.find((a) => a.id === aiProvider.id)) {
-        console.log("Ai provider already exists:", aiProvider);
-        continue;
-      }
-      await prisma.aIProvider.create({
-        data: {
-          id: aiProvider.id,
-          name: aiProvider.name,
-        },
-      });
+        if (aiProviders.find((a) => a.id === aiProvider.id)) {
+          console.log("Ai provider already exists:", aiProvider);
+          continue;
+        }
+        await prisma.aIProvider.create({
+          data: {
+            id: aiProvider.id,
+            name: aiProvider.name,
+          },
+        });
     }
   }
 }

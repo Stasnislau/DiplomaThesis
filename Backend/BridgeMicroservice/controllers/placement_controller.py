@@ -5,6 +5,7 @@ from constants.constants import AVAILABLE_LANGUAGES
 from models.dtos.task_dto import MultipleChoiceTask, FillInTheBlankTask
 from models.base_response import BaseResponse
 from models.dtos.evaluate_test_dto import EvaluateTestDto
+from utils.user_context import extract_user_context
 
 
 class Placement_Controller:
@@ -33,7 +34,10 @@ class Placement_Controller:
                     detail=f"Language {language} is not supported. Available languages: {', '.join(AVAILABLE_LANGUAGES)}"
                 )
 
-            task = await self.placement_service.generate_placement_task(language, previous_answer)
+            user_context = extract_user_context(request)
+            task = await self.placement_service.generate_placement_task(
+                language, previous_answer, user_context=user_context
+            )
             print(task, "TASK")
             response = BaseResponse[MultipleChoiceTask | FillInTheBlankTask](success=True, payload=task)
             return response
@@ -56,7 +60,10 @@ class Placement_Controller:
                     ]
                 )
 
-            result = await self.placement_service.evaluate_test_results(answers, language)
+            user_context = extract_user_context(request)
+            result = await self.placement_service.evaluate_test_results(
+                answers, language, user_context=user_context
+            )
             response = BaseResponse[EvaluateTestDto](success=True, payload=result)
             return response
 

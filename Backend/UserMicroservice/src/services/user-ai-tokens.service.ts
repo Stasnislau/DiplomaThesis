@@ -21,12 +21,12 @@ export class UserAITokensService {
       const isDefault = createUserAITokenDto.isDefault || count === 0;
 
       return tx.userAIToken.create({
-        data: {
-          userId,
+      data: {
+        userId,
           token: createUserAITokenDto.token,
           aiProviderId: createUserAITokenDto.aiProviderId,
           isDefault: isDefault,
-        },
+      },
       });
     });
   }

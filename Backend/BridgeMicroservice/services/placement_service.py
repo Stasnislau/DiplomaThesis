@@ -1,6 +1,7 @@
 from .writing_task_service import Writing_Task_Service
 from .vector_db_service import VectorDBService
 from .ai_service import AI_Service
+from utils.user_context import UserContext
 import random
 import json
 
@@ -15,7 +16,12 @@ class Placement_Service:
         self.writing_task_service = Writing_Task_Service(vector_db_service, ai_service)
         self.current_level = "B1"
 
-    async def generate_placement_task(self, language: str, previous_answer: dict | None = None) -> MultipleChoiceTask | FillInTheBlankTask:
+    async def generate_placement_task(
+        self,
+        language: str,
+        previous_answer: dict | None = None,
+        user_context: UserContext | None = None,
+    ) -> MultipleChoiceTask | FillInTheBlankTask:
         if previous_answer:
             self.adjust_difficulty(previous_answer["isCorrect"])
 
@@ -23,9 +29,13 @@ class Placement_Service:
         task: MultipleChoiceTask | FillInTheBlankTask
         try:
             if task_type == "multiple_choice":
-                task = await self.writing_task_service.generate_writing_multiple_choice_task(language, self.current_level)
+                task = await self.writing_task_service.generate_writing_multiple_choice_task(
+                    language, self.current_level, user_context=user_context
+                )
             else:
-                task = await self.writing_task_service.generate_writing_fill_in_the_blank_task(language, self.current_level)
+                task = await self.writing_task_service.generate_writing_fill_in_the_blank_task(
+                    language, self.current_level, user_context=user_context
+                )
             return task
 
         except Exception as e:
@@ -39,7 +49,9 @@ class Placement_Service:
         elif not was_correct and current_index > 0:
             self.current_level = levels[current_index - 1]
 
-    async def evaluate_test_results(self, answers: list, language: str) -> EvaluateTestDto:
+    async def evaluate_test_results(
+        self, answers: list, language: str, user_context: UserContext | None = None
+    ) -> EvaluateTestDto:
         print(f"Evaluating test results for {language} with answers: {answers}")
         try:
             if not answers:
@@ -81,7 +93,9 @@ class Placement_Service:
             }}
             """
 
-            result: str = await self.ai_service.get_ai_response(prompt)
+            result: str = await self.ai_service.get_ai_response(
+                prompt, user_context=user_context
+            )
             parsed_result = json.loads(result)
 
             print(f"Parsed result: {parsed_result}")

@@ -7,6 +7,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 export const TopBar: React.FC = () => {
   const navOptions = [
     { label: "Home", value: "home", path: "/" },
+    { label: "Materials", value: "materials", path: "/materials" },
     {
       label: "Speech Analysis",
       value: "speech-analysis",

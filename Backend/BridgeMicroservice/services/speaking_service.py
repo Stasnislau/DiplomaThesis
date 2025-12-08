@@ -9,6 +9,7 @@ from fastapi import HTTPException
 from dotenv import load_dotenv
 
 from .ai_service import AI_Service
+from utils.user_context import UserContext
 from models.dtos.speaking_analysis_dtos import WhisperTranscriptionResult, AIFeedbackResult, WhisperSegment, WhisperWord
 from utils.convert_to_language_code import convert_to_language_code
 
@@ -88,7 +89,11 @@ class Speaking_Service:
             print(f"Error during local Whisper transcription (using filename {filename}): {e}")
             raise HTTPException(status_code=500, detail=f"Failed to transcribe audio locally. Error: {str(e)}")
 
-    async def _get_ai_feedback_on_transcription(self, transcription_result: WhisperTranscriptionResult) -> AIFeedbackResult:
+    async def _get_ai_feedback_on_transcription(
+        self,
+        transcription_result: WhisperTranscriptionResult,
+        user_context: UserContext | None = None,
+    ) -> AIFeedbackResult:
         prompt = f"""
         The following text was transcribed from an audio recording of a user speaking:
         ---BEGIN TRANSCRIPTION---
@@ -112,7 +117,9 @@ class Speaking_Service:
         Ensure the output is a valid JSON object. If there are no errors, the "identified_errors" list should be empty.
         """
         try:
-            ai_response_str = await self.ai_service.get_ai_response(prompt=prompt)
+            ai_response_str = await self.ai_service.get_ai_response(
+                prompt=prompt, user_context=user_context
+            )
             ai_response_json = json.loads(ai_response_str)
             return AIFeedbackResult(**ai_response_json)
         except json.JSONDecodeError as e:
@@ -122,7 +129,13 @@ class Speaking_Service:
             print(f"Error getting AI feedback: {e}")
             raise HTTPException(status_code=500, detail=f"Failed to get AI feedback: {str(e)}")
 
-    async def analyze_user_audio(self, audio_file_bytes: bytes, filename: str | None = None, language: str | None = None) -> str:
+    async def analyze_user_audio(
+        self,
+        audio_file_bytes: bytes,
+        filename: str | None = None,
+        language: str | None = None,
+        user_context: UserContext | None = None,
+    ) -> str:
         print(f"Received audio file of size: {len(audio_file_bytes)} bytes for analysis.")
         if not audio_file_bytes:
             raise HTTPException(status_code=400, detail="No audio file provided.")
@@ -137,7 +150,9 @@ class Speaking_Service:
 
         ai_feedback = None
         try:
-            ai_feedback = await self._get_ai_feedback_on_transcription(transcription_result)
+            ai_feedback = await self._get_ai_feedback_on_transcription(
+                transcription_result, user_context=user_context
+            )
         except Exception as e:
             print(f"Error getting AI feedback: {e}")
             raise HTTPException(status_code=500, detail=f"Failed to get AI feedback: {str(e)}")

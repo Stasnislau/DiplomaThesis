@@ -17,6 +17,8 @@ from controllers.speaking_controller import Speaking_Controller
 from services.speaking_service import Speaking_Service
 from controllers.listening_controller import Listening_Controller
 from services.listening_task_service import Listening_Task_Service
+from controllers.material_controller import router as material_router
+from services.material_service import MaterialService
 import logging
 import litellm
 from typing import Awaitable, Callable
@@ -67,6 +69,11 @@ app.include_router(
     Listening_Controller(
         Listening_Task_Service(AI_Service()),
     ).get_router(),
+    prefix="/api",
+)
+
+app.include_router(
+    material_router,
     prefix="/api",
 )
 

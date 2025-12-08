@@ -15,6 +15,7 @@ import { AdminDashboardPage } from "./pages/Admin/AdminDashboardPage";
 import { SpeechAnalysisPage } from "./pages/SpeechAnalysis/SpeechAnalysisPage";
 import TasksPage from "./pages/Tasks/TasksPage";
 import AITokensPage from "./pages/User/AITokens";
+import { MaterialsPage } from "./pages/Materials/MaterialsPage";
 
 export const router = createBrowserRouter([
   {
@@ -32,6 +33,14 @@ export const router = createBrowserRouter([
           <UnprotectedRoute>
             <LandingPage />
           </UnprotectedRoute>
+        ),
+      },
+      {
+        path: "/materials",
+        element: (
+          <ProtectedRoute>
+            <MaterialsPage />
+          </ProtectedRoute>
         ),
       },
       {

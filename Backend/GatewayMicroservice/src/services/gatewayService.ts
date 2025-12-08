@@ -51,7 +51,8 @@ export class GatewayService {
     method: string,
     url: string,
     headers: IncomingHttpHeaders,
-    body: any
+    body: any,
+    req: any
   ): Promise<any> {
     console.log(`[Gateway] Received request: ${method} ${url}`);
     try {
@@ -114,6 +115,13 @@ export class GatewayService {
 
       console.log(userData, "userData");
 
+      // Check if request is multipart/form-data
+      const contentType = headers['content-type'] || '';
+      const isMultipart = contentType.includes('multipart/form-data');
+      
+      // If multipart, pass the request stream directly. Otherwise use the parsed body.
+      const dataToSend = isMultipart ? req : body;
+
       try {
         const response = await firstValueFrom(
           this.httpService.request({
@@ -126,8 +134,9 @@ export class GatewayService {
                 "X-User-Email": userData.email,
                 "X-User-Role": userData.role,
               }),
+              // Ensure host header is not forwarded or is correct (axios handles it usually)
             },
-            data: body,
+            data: dataToSend,
             validateStatus: () => true,
             timeout: 50000,
             family: 4,

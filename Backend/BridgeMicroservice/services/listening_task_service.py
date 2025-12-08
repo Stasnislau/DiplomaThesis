@@ -4,6 +4,7 @@ import uuid
 from models.dtos.listening_task_dto import ListeningTaskRequest
 from models.responses.listening_task_response import ListeningTaskResponse
 from services.ai_service import AI_Service
+from utils.user_context import UserContext
 from elevenlabs.client import ElevenLabs
 from elevenlabs.types import Voice
 import aiofiles
@@ -18,7 +19,11 @@ class Listening_Task_Service:
     def __init__(self, ai_service: AI_Service) -> None:
         self.ai_service = ai_service
 
-    async def create_listening_task(self, request: ListeningTaskRequest) -> ListeningTaskResponse:
+    async def create_listening_task(
+        self,
+        request: ListeningTaskRequest,
+        user_context: UserContext | None = None,
+    ) -> ListeningTaskResponse:
         language = request.language
         level = request.level
 
@@ -57,7 +62,9 @@ class Listening_Task_Service:
         }}
         """
 
-        response = await self.ai_service.get_ai_response(prompt)
+        response = await self.ai_service.get_ai_response(
+            prompt, user_context=user_context
+        )
 
         content_json = json.loads(response)
         transcript = content_json["transcript"]

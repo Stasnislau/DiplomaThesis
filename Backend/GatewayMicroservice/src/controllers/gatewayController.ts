@@ -14,7 +14,8 @@ export class GatewayController {
         method,
         url,
         headers,
-        body
+        body,
+        req
       );
       return res.status(response.status).json(response.data);
     } catch (error) {

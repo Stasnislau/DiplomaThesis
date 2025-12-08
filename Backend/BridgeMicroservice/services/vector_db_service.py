@@ -2,11 +2,10 @@ import lancedb
 from sentence_transformers import SentenceTransformer
 import pandas as pd
 from constants.constants import LEVEL_EMBEDDINGS
+
 # Import new DTOs and typing helpers
-from models.dtos.vector_db_dtos import (
-    SpecificSkillContext, FullLevelContext, SimilarLevel, LevelSkills
-)
-from typing import List, Union, Optional
+from models.dtos.vector_db_dtos import SpecificSkillContext, FullLevelContext, SimilarLevel, LevelSkills
+from typing import List, Union, Optional, Dict, Any
 
 
 class VectorDBService:
@@ -14,6 +13,7 @@ class VectorDBService:
         self.db = lancedb.connect("language_levels.db")
         self.model = SentenceTransformer("all-MiniLM-L6-v2")
         self.table_name = "levels"
+        self.materials_table_name = "materials"
         self.initialize_db()
 
     def initialize_db(self) -> None:
@@ -43,6 +43,14 @@ class VectorDBService:
                 df = pd.DataFrame(data)
                 self.db.create_table(self.table_name, data=df)
                 print(f"Table {self.table_name} created successfully")
+
+            # Initialize materials table if needed
+            if self.materials_table_name not in self.db.table_names():
+                # Create an empty table with schema implied by first insertion or explicit
+                # For now, we'll let create_table infer from data on first insert if possible,
+                # or just pass a dummy empty DF with correct schema if we want strict typing.
+                # Lancedb is flexible. We will handle creation in save_chunks if not exists.
+                pass
 
         except Exception as e:
             raise e
@@ -107,4 +115,51 @@ class VectorDBService:
             return formatted_results
 
         except Exception as e:
+            raise e
+
+    def save_chunks(self, chunks: List[str], metadatas: List[Dict[str, Any]]) -> None:
+        """
+        Saves text chunks and their metadata to the materials table.
+        """
+        try:
+            embeddings = self.model.encode(chunks)
+            data = []
+            for i, chunk in enumerate(chunks):
+                record = {
+                    "text": chunk,
+                    "vector": embeddings[i].tolist(),
+                }
+                record.update(metadatas[i])
+                data.append(record)
+
+            df = pd.DataFrame(data)
+
+            if self.materials_table_name in self.db.table_names():
+                table = self.db.open_table(self.materials_table_name)
+                table.add(data=df)
+            else:
+                self.db.create_table(self.materials_table_name, data=df)
+
+        except Exception as e:
+            print(f"Error saving chunks: {e}")
+            raise e
+
+    def search_materials(self, query: str, limit: int = 5) -> List[Dict[str, str | int]]:
+        """
+        Searches for materials similar to the query.
+        """
+        try:
+            if self.materials_table_name not in self.db.table_names():
+                return []
+
+            query_embedding = self.model.encode(query)
+            table = self.db.open_table(self.materials_table_name)
+
+            # Search and return as list of dicts
+            results = table.search(query_embedding.tolist()).limit(limit).to_pandas()
+
+            return results.to_dict("records")  # type: ignore
+
+        except Exception as e:
+            print(f"Error searching materials: {e}")
             raise e

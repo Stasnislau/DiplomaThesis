@@ -1,8 +1,9 @@
 import json
 import uuid
-from typing import Union, Any, Dict, Type, TypeVar
+from typing import Union, Any, Dict, Type, TypeVar, Optional
 from services.vector_db_service import VectorDBService
 from services.ai_service import AI_Service
+from utils.user_context import UserContext
 from dotenv import load_dotenv
 from constants.prompts import writing_multiple_choice_task_prompt, writing_fill_in_the_blank_task_prompt, explain_answer_prompt
 from models.dtos.task_dto import MultipleChoiceTask, FillInTheBlankTask
@@ -25,7 +26,9 @@ class Writing_Task_Service:
         self.ai_service = ai_service
         self.verification_pipeline = VerificationPipeline(ai_service)
 
-    async def generate_writing_multiple_choice_task(self, language: str, level: str) -> MultipleChoiceTask:
+    async def generate_writing_multiple_choice_task(
+        self, language: str, level: str, user_context: Optional[UserContext] = None
+    ) -> MultipleChoiceTask:
         level_context: Union[SpecificSkillContext, FullLevelContext, None] = self.vector_db_service.get_level_context(
             level.upper(), "writing"
         )
@@ -33,7 +36,9 @@ class Writing_Task_Service:
             raise ValueError(f"Invalid level: {level}")
 
         prompt = writing_multiple_choice_task_prompt(language, level, level_context.model_dump())
-        response = await self.ai_service.get_ai_response(prompt)
+        response = await self.ai_service.get_ai_response(
+            prompt, user_context=user_context
+        )
         json_response = await self._process_ai_response_and_validate(response)
         print(json_response, "INITIAL TASK")
 
@@ -55,7 +60,9 @@ class Writing_Task_Service:
             print(f"Error during task generation/verification: {e}")
             return self._finalize_task_generation(json_response, "multiple_choice", MultipleChoiceTask)
 
-    async def generate_writing_fill_in_the_blank_task(self, language: str, level: str) -> FillInTheBlankTask:
+    async def generate_writing_fill_in_the_blank_task(
+        self, language: str, level: str, user_context: Optional[UserContext] = None
+    ) -> FillInTheBlankTask:
         level_context: Union[SpecificSkillContext, FullLevelContext, None] = self.vector_db_service.get_level_context(
             level.upper(), "writing"
         )
@@ -64,19 +71,27 @@ class Writing_Task_Service:
             raise ValueError(f"Invalid level: {level}")
 
         prompt = writing_fill_in_the_blank_task_prompt(language, level, level_context.model_dump())
-        response = await self.ai_service.get_ai_response(prompt)
+        response = await self.ai_service.get_ai_response(
+            prompt, user_context=user_context
+        )
         json_response = await self._process_ai_response_and_validate(response, is_fill_in_blank=True)
 
         return self._finalize_task_generation(json_response, "fill_in_the_blank", FillInTheBlankTask)
 
-    async def explain_answer(self, explain_answer_request: ExplainAnswerRequest) -> ExplainAnswerResponse:
+    async def explain_answer(
+        self,
+        explain_answer_request: ExplainAnswerRequest,
+        user_context: Optional[UserContext] = None,
+    ) -> ExplainAnswerResponse:
         language = explain_answer_request.language
         level = explain_answer_request.level
         task = explain_answer_request.task
         correct_answer = explain_answer_request.correct_answer
         user_answer = explain_answer_request.user_answer
         prompt = explain_answer_prompt(language, level, task, correct_answer, user_answer)
-        response = await self.ai_service.get_ai_response(prompt)
+        response = await self.ai_service.get_ai_response(
+            prompt, user_context=user_context
+        )
         json_response = await self._process_ai_response_and_validate(response)
 
         return self._finalize_task_generation(
