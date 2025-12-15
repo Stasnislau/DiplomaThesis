@@ -15,14 +15,15 @@ interface GenerateQuizResponse {
   };
 }
 
-export const generateQuiz = async (): Promise<GenerateQuizResponse> => {
-  // Send empty body {} to ensure Content-Type is respected and some proxies don't complain about empty POST body
+export const generateQuiz = async (selectedTypes?: string[]): Promise<GenerateQuizResponse> => {
   const response = await fetchWithAuth(`${BRIDGE_MICROSERVICE_URL}/materials/quiz`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({}), 
+    body: JSON.stringify({
+      selected_types: selectedTypes
+    }), 
   });
 
   const data = (await response.json()) as BaseResponse<GenerateQuizResponse>;

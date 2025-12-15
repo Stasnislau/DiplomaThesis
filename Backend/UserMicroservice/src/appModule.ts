@@ -4,6 +4,7 @@ import configuration from "./config/configuration";
 import { UserModule } from "./modules/userModule";
 import { UserAITokensModule } from "./modules/user-ai-tokens.module";
 import { AiProvidersModule } from "./modules/ai-providers.module";
+import { MaterialModule } from "./modules/materialModule";
 import { UserDataMiddleware } from "./middlewares/userDataMiddleware";
 
 @Module({
@@ -16,6 +17,7 @@ import { UserDataMiddleware } from "./middlewares/userDataMiddleware";
     UserModule,
     UserAITokensModule,
     AiProvidersModule,
+    MaterialModule,
   ],
 
   controllers: [],

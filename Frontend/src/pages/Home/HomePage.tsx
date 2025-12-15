@@ -15,12 +15,6 @@ import {
   useAvailableLanguages,
 } from "@/api/hooks/useAvailableLanguages";
 import { useUserStore } from "@/store/useUserStore";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/common/Card";
 
 const flagIcons = {
   es: <SpanishFlagIcon className="w-12 h-12" />,
@@ -50,76 +44,109 @@ export const HomePage: React.FC = () => {
       description: "Configure your AI tokens",
       path: "/settings/ai-tokens",
       icon: "⚙️",
-      color: "bg-blue-50 text-blue-600",
+      bgColor: "bg-blue-50",
+      iconBg: "bg-blue-100",
+      hoverBg: "hover:bg-blue-100",
+      borderColor: "border-blue-200",
     },
     {
       title: "Tasks",
       description: "Practice writing and speaking",
       path: "/tasks",
       icon: "📝",
-      color: "bg-purple-50 text-purple-600",
+      bgColor: "bg-purple-50",
+      iconBg: "bg-purple-100",
+      hoverBg: "hover:bg-purple-100",
+      borderColor: "border-purple-200",
     },
     {
       title: "Quiz",
       description: "Test your knowledge",
       path: "/quiz",
       icon: "🧩",
-      color: "bg-green-50 text-green-600",
+      bgColor: "bg-green-50",
+      iconBg: "bg-green-100",
+      hoverBg: "hover:bg-green-100",
+      borderColor: "border-green-200",
     },
     {
       title: "Speech Analysis",
       description: "Analyze your pronunciation",
       path: "/speech-analysis",
       icon: "🎙️",
-      color: "bg-orange-50 text-orange-600",
+      bgColor: "bg-orange-50",
+      iconBg: "bg-orange-100",
+      hoverBg: "hover:bg-orange-100",
+      borderColor: "border-orange-200",
     },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 py-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Welcome back, {user?.name || "Student"}! 👋
-          </h1>
-          <p className="mt-2 text-gray-600">
-            Ready to continue your language learning journey?
-          </p>
+        {/* Welcome Header */}
+        <div className="bg-white rounded-3xl shadow-lg p-8 mb-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                Welcome back, {user?.name || "Student"}! 👋
+              </h1>
+              <p className="mt-2 text-gray-600">
+                Ready to continue your language learning journey?
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <p className="text-sm text-gray-500">Learning</p>
+                <p className="text-lg font-semibold text-indigo-600">
+                  {userLanguages?.length || 0} languages
+                </p>
+              </div>
+              <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
+                <span className="text-white text-xl">🌍</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="mb-12">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+        {/* Quick Actions */}
+        <div className="mb-10">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4 px-1">
             Quick Actions
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {shortcuts.map((shortcut) => (
-              <Card
+              <div
                 key={shortcut.path}
-                className="hover:shadow-md transition-shadow cursor-pointer border-none shadow-sm"
                 onClick={() => navigate(shortcut.path)}
+                className={`${shortcut.bgColor} ${shortcut.hoverBg} border ${shortcut.borderColor} rounded-2xl p-5 cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 group`}
               >
-                <CardHeader className="flex flex-row items-center space-y-0 pb-2">
-                  <div className={`p-3 rounded-lg ${shortcut.color} mr-4`}>
+                <div className="flex items-center gap-4">
+                  <div className={`${shortcut.iconBg} w-12 h-12 rounded-xl flex items-center justify-center transition-transform duration-200 group-hover:scale-110`}>
                     <span className="text-2xl">{shortcut.icon}</span>
                   </div>
-                  <CardTitle className="text-lg font-semibold">
-                    {shortcut.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-500">
-                    {shortcut.description}
-                  </p>
-                </CardContent>
-              </Card>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">{shortcut.title}</h3>
+                    <p className="text-sm text-gray-500">{shortcut.description}</p>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         </div>
 
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
-            Your Languages
-          </h2>
+        {/* Languages Section */}
+        <div className="bg-white rounded-3xl shadow-lg p-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Your Languages
+            </h2>
+            {languages && languages.length > 0 && (
+              <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                {languages.length} available
+              </span>
+            )}
+          </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {languages?.map((language) => {
               const isStarted = userLanguages?.some(

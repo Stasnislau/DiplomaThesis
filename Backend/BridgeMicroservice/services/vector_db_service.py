@@ -14,6 +14,7 @@ class VectorDBService:
         self.model = SentenceTransformer("all-MiniLM-L6-v2")
         self.table_name = "levels"
         self.materials_table_name = "materials"
+        self.templates_table_name = "task_templates"
         self.initialize_db()
 
     def initialize_db(self) -> None:
@@ -50,6 +51,9 @@ class VectorDBService:
                 # For now, we'll let create_table infer from data on first insert if possible,
                 # or just pass a dummy empty DF with correct schema if we want strict typing.
                 # Lancedb is flexible. We will handle creation in save_chunks if not exists.
+                pass
+            if self.templates_table_name not in self.db.table_names():
+                # Will be created on first insert
                 pass
 
         except Exception as e:
@@ -162,4 +166,71 @@ class VectorDBService:
 
         except Exception as e:
             print(f"Error searching materials: {e}")
+            raise e
+
+    def save_task_templates(self, templates: List[Dict[str, Any]]) -> None:
+        """
+        Saves extracted task templates into a dedicated table for reuse.
+        Each template should include 'template' (str) and metadata fields.
+        """
+        if not templates:
+            return
+        try:
+            embeddings = self.model.encode([t.get("template", "") for t in templates])
+            data = []
+            for i, template in enumerate(templates):
+                record = {
+                    **template,
+                    "vector": embeddings[i].tolist(),
+                }
+                data.append(record)
+
+            df = pd.DataFrame(data)
+            if self.templates_table_name in self.db.table_names():
+                table = self.db.open_table(self.templates_table_name)
+                table.add(data=df)
+            else:
+                self.db.create_table(self.templates_table_name, data=df)
+        except Exception as e:
+            print(f"Error saving templates: {e}")
+            raise e
+
+    def search_task_templates(self, query: str, limit: int = 20) -> List[Dict[str, Any]]:
+        """
+        Searches for stored task templates similar to the query.
+        """
+        try:
+            if self.templates_table_name not in self.db.table_names():
+                return []
+            query_embedding = self.model.encode(query)
+            table = self.db.open_table(self.templates_table_name)
+            results = (
+                table.search(query_embedding.tolist())
+                .limit(limit)
+                .to_pandas()
+            )
+            records = results.to_dict("records")  # type: ignore
+            # Drop embedding field for JSON serialization
+            for rec in records:
+                rec.pop("vector", None)
+            return records
+        except Exception as e:
+            print(f"Error searching templates: {e}")
+            return []
+
+    def get_task_template_by_id(self, template_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Returns a template by its id.
+        """
+        try:
+            if self.templates_table_name not in self.db.table_names():
+                return None
+            table = self.db.open_table(self.templates_table_name)
+            df = table.to_pandas()
+            result = df[df["id"] == template_id]
+            if result.empty:
+                return None
+            return result.to_dict("records")[0]  # type: ignore
+        except Exception as e:
+            print(f"Error fetching template by id: {e}")
             raise e

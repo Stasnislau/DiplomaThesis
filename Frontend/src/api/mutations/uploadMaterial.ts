@@ -2,11 +2,16 @@ import { BaseResponse } from "@/types/responses/BaseResponse";
 import { BRIDGE_MICROSERVICE_URL } from "../consts";
 import { fetchWithAuth } from "../fetchWithAuth";
 
+interface AnalyzedType {
+  type: string;
+  example: string;
+}
+
 interface UploadMaterialResponse {
   filename: string;
   chunks_count: number;
   status: string;
-  summary?: string;
+  analyzed_types?: AnalyzedType[] | any; // Flexible to handle varying AI output structure
 }
 
 export const uploadMaterial = async (

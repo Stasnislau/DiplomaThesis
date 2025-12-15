@@ -1,5 +1,5 @@
 import { BaseResponse } from "@/types/responses/BaseResponse";
-import { DIRECT_BRIDGE_MICROSERVICE_URL } from "../consts";
+import { BRIDGE_MICROSERVICE_URL } from "../consts";
 import { fetchWithAuth } from "../fetchWithAuth";
 
 export interface SpeechAnalysisResult {
@@ -26,7 +26,7 @@ export async function analyzeSpeech(
 ): Promise<string> {
   const formData = new FormData();
   formData.append("audio_file", input.audioFile, input.filename);
-  const url = new URL(DIRECT_BRIDGE_MICROSERVICE_URL + "/speaking/analyze");
+  const url = new URL(BRIDGE_MICROSERVICE_URL + "/speaking/analyze");
   url.searchParams.set("language", input.language);
 
   const response = await fetchWithAuth(
