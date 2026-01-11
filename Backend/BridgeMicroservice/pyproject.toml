@@ -33,6 +33,8 @@ openai-whisper = "^20250625"
 elevenlabs = "^2.17.0"
 types-aiofiles = "^25.1.0.20251011"
 pypdf = "^6.4.0"
+plt = "^0.2.0"
+seaborn = "^0.13.2"
 
 
 [tool.poetry.group.dev.dependencies]

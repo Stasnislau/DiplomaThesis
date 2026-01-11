@@ -1,0 +1,1061 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Filtered Questions</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #f5f5f5; }
+        table { width: 100%; background: white; border-collapse: collapse; }
+        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+        th { background: #3498db; color: white; }
+        tr:nth-child(even) { background: #f9f9f9; }
+    </style>
+</head>
+<body>
+    <h1>Filtered Benchmark Questions (60 results)</h1>
+    <table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>model</th>
+      <th>task_type</th>
+      <th>latency</th>
+      <th>content</th>
+      <th>error</th>
+      <th>lang</th>
+      <th>level</th>
+      <th>iteration</th>
+      <th>score</th>
+      <th>reason</th>
+      <th>parsed_content</th>
+      <th>question_text</th>
+      <th>score_category</th>
+      <th>is_success</th>
+      <th>latency_category</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Llama 4</td>
+      <td>Multiple Choice</td>
+      <td>1.97</td>
+      <td>{"question": "Когда я приехал в Москву, я узнал, что многие исторические здания __________ за последние годы.", \n"options": ["были восстановлены", "восстанавливаются", "восстановят", "восстанавливались"],\n"correctAnswer": ["были восстановлены"]}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>1</td>
+      <td>10</td>
+      <td>An excellent submission that perfectly adheres to all instructions. The task tests the passive voice combined with verbal aspect, a complex grammar point entirely appropriate for the B2 level. The context is clear, the distractors are plausible grammatical alternatives, and the JSON format is exactly as requested, including the `correctAnswer` as an array.</td>
+      <td>{'question': 'Когда я приехал в Москву, я узнал, что многие исторические здания __________ за последние годы.', 'options': ['были восстановлены', 'восстанавливаются', 'восстановят', 'восстанавливались'], 'correctAnswer': ['были восстановлены']}</td>
+      <td>Когда я приехал в Москву, я узнал, что многие исторические здания __________ за последние годы.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>Gemini 3 Flash</td>
+      <td>Multiple Choice</td>
+      <td>1.97</td>
+      <td>{\n    "question": "В своём докладе автор подробно рассматривает причины экологического кризиса, ________ на необходимость немедленного пересмотра промышленной политики страны.",\n    "options": [\n        "акцентируя внимание",\n        "уделяя значение",\n        "придавая внимание",\n        "сосредоточив значение"\n    ],\n    "correctAnswer": "акцентируя внимание"\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>1</td>
+      <td>9</td>
+      <td>This is a high-quality task that tests sophisticated B2/C1 skills: collocations and the use of adverbial participles in a formal context. The distractors are cleverly designed by mixing parts of correct collocations. It perfectly aligns with the 'writing a report' skill. A point is deducted for not following the specified format for `correctAnswer` (it's a string instead of an array).</td>
+      <td>{'question': 'В своём докладе автор подробно рассматривает причины экологического кризиса, ________ на необходимость немедленного пересмотра промышленной политики страны.', 'options': ['акцентируя внимание', 'уделяя значение', 'придавая внимание', 'сосредоточив значение'], 'correctAnswer': 'акцентируя внимание'}</td>
+      <td>В своём докладе автор подробно рассматривает причины экологического кризиса, ________ на необходимость немедленного пересмотра промышленной политики страны.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>GPT-5.2</td>
+      <td>Multiple Choice</td>
+      <td>12.89</td>
+      <td>{\n  "question": "Благодаря ______ поддержке коллег я смог уверенно выступить на конференции.",\n  "options": ["искренней", "искреннюю", "искренной", "искреннее"],\n  "correctAnswer": "искренней"\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>2</td>
+      <td>9</td>
+      <td>A very good task that correctly follows all instructions. It tests a B2-level grammar point (dative case governed by the preposition 'благодаря' and adjective agreement) within a relevant context (work/conference). The distractors are well-chosen, especially 'искренной', which tests a finer orthographic point.</td>
+      <td>{'question': 'Благодаря ______ поддержке коллег я смог уверенно выступить на конференции.', 'options': ['искренней', 'искреннюю', 'искренной', 'искреннее'], 'correctAnswer': 'искренней'}</td>
+      <td>Благодаря ______ поддержке коллег я смог уверенно выступить на конференции.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Very Slow (>10s)</td>
+    </tr>
+    <tr>
+      <td>Qwen 3 Max</td>
+      <td>Multiple Choice</td>
+      <td>4.77</td>
+      <td>{\n    "question": "Вчера я получил письмо от друга, в котором он подробно описал, почему ________ переехать в другой город.",\n    "options": [\n        "решил",\n        "решал",\n        "решит",\n        "решил бы"\n    ],\n    "correctAnswer": "решил"\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>2</td>
+      <td>10</td>
+      <td>An excellent task that perfectly meets all requirements. It tests a crucial B2 skill: the use of verb aspect and tense in complex sentences with subordinate clauses. The context is natural and aligns with the level description. The distinction between 'решил' (perfective) and 'решал' (imperfective) is a key challenge at this level.</td>
+      <td>{'question': 'Вчера я получил письмо от друга, в котором он подробно описал, почему ________ переехать в другой город.', 'options': ['решил', 'решал', 'решит', 'решил бы'], 'correctAnswer': 'решил'}</td>
+      <td>Вчера я получил письмо от друга, в котором он подробно описал, почему ________ переехать в другой город.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Medium (2-5s)</td>
+    </tr>
+    <tr>
+      <td>Llama 4</td>
+      <td>Multiple Choice</td>
+      <td>1.03</td>
+      <td>{"question": "После окончания университета я ______ работать в качестве переводчика в крупной компании.", "options": ["начал", "начинал", "начну", "начинаю"], "correctAnswer": ["начал"]}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>2</td>
+      <td>9</td>
+      <td>A solid task that tests the aspectual pair 'начал'/'начинал', which is a common point of difficulty for B1/B2 learners. The context is appropriate and the sentence is natural. It follows all instructions correctly. The task is slightly less complex in sentence structure compared to other high-scoring candidates but is still a very effective B2-level question.</td>
+      <td>{'question': 'После окончания университета я ______ работать в качестве переводчика в крупной компании.', 'options': ['начал', 'начинал', 'начну', 'начинаю'], 'correctAnswer': ['начал']}</td>
+      <td>После окончания университета я ______ работать в качестве переводчика в крупной компании.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>Gemini 3 Flash</td>
+      <td>Multiple Choice</td>
+      <td>1.43</td>
+      <td>{\n    "question": "При написании отчёта о проделанной работе крайне важно чётко и последовательно ________ свои аргументы, чтобы руководство могло объективно оценить результаты проекта.",\n    "options": [\n        "излагать",\n        "наговаривать",\n        "высказываться",\n        "пересказывать"\n    ],\n    "correctAnswer": "излагать"\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>2</td>
+      <td>10</td>
+      <td>This is an outstanding vocabulary task that fits the B2/C1 borderline. The sentence structure is complex and the context (writing a formal report) directly relates to the CEFR description for B2 writing. It tests knowledge of formal vocabulary and collocations ('излагать аргументы') by providing semantically related but contextually incorrect distractors. It fully adheres to all instructions.</td>
+      <td>{'question': 'При написании отчёта о проделанной работе крайне важно чётко и последовательно ________ свои аргументы, чтобы руководство могло объективно оценить результаты проекта.', 'options': ['излагать', 'наговаривать', 'высказываться', 'пересказывать'], 'correctAnswer': 'излагать'}</td>
+      <td>При написании отчёта о проделанной работе крайне важно чётко и последовательно ________ свои аргументы, чтобы руководство могло объективно оценить результаты проекта.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>GPT-5.2</td>
+      <td>Multiple Choice</td>
+      <td>19.48</td>
+      <td>{\n  "question": "Отправляя заявку на грант, я внимательно проверил все ___ документы, чтобы избежать ошибок.",\n  "options": ["приложенные", "приложенных", "приложенным", "приложенными"],\n  "correctAnswer": "приложенные"\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>3</td>
+      <td>9</td>
+      <td>This is a very good B2-level task. It correctly tests the agreement of a past passive participle with the noun it modifies in the accusative case, a key grammatical skill at this level. The sentence context (grant application) is appropriate. The options are well-constructed, representing different case endings of the same word. It follows all instructions, including the JSON format and the no-instructions rule.</td>
+      <td>{'question': 'Отправляя заявку на грант, я внимательно проверил все ___ документы, чтобы избежать ошибок.', 'options': ['приложенные', 'приложенных', 'приложенным', 'приложенными'], 'correctAnswer': 'приложенные'}</td>
+      <td>Отправляя заявку на грант, я внимательно проверил все ___ документы, чтобы избежать ошибок.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Very Slow (>10s)</td>
+    </tr>
+    <tr>
+      <td>Qwen 3 Max</td>
+      <td>Multiple Choice</td>
+      <td>4.12</td>
+      <td>{\n  "question": "Вчера я получил письмо от друга, в котором он подробно описал, как ему удалось ________ трудности во время путешествия по Сибири.",\n  "options": ["преодолеть", "превзойти", "перешагнуть", "прогнать"],\n  "correctAnswer": "преодолеть"\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>3</td>
+      <td>10</td>
+      <td>An excellent task that perfectly matches the B2 level and all instructions. It tests vocabulary nuance and collocation ('преодолеть трудности' - to overcome difficulties), which is a key skill for advanced learners. The sentence structure is complex enough for B2, the context is natural, and the distractors are plausible but incorrect synonyms. It's a well-designed, deterministic question.</td>
+      <td>{'question': 'Вчера я получил письмо от друга, в котором он подробно описал, как ему удалось ________ трудности во время путешествия по Сибири.', 'options': ['преодолеть', 'превзойти', 'перешагнуть', 'прогнать'], 'correctAnswer': 'преодолеть'}</td>
+      <td>Вчера я получил письмо от друга, в котором он подробно описал, как ему удалось ________ трудности во время путешествия по Сибири.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Medium (2-5s)</td>
+    </tr>
+    <tr>
+      <td>Qwen 3 Max</td>
+      <td>Multiple Choice</td>
+      <td>4.21</td>
+      <td>{\n    "question": "Вчера я получил письмо от друга, в котором он подробно описал, как ему удалось ________ трудности на новой работе.",\n    "options": ["преодолеть", "преодолевать", "преодолевающий", "преодолением"],\n    "correctAnswer": "преодолеть"\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>4</td>
+      <td>9</td>
+      <td>An excellent and precise task for the B2 level, effectively testing the choice of verb aspect within a complex clause. The question is clean, natural, and unambiguous. It adheres to almost all instructions, with the only minor flaw being the format of 'correctAnswer' as a string instead of a single-element array.</td>
+      <td>{'question': 'Вчера я получил письмо от друга, в котором он подробно описал, как ему удалось ________ трудности на новой работе.', 'options': ['преодолеть', 'преодолевать', 'преодолевающий', 'преодолением'], 'correctAnswer': 'преодолеть'}</td>
+      <td>Вчера я получил письмо от друга, в котором он подробно описал, как ему удалось ________ трудности на новой работе.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Medium (2-5s)</td>
+    </tr>
+    <tr>
+      <td>Llama 4</td>
+      <td>Multiple Choice</td>
+      <td>1.47</td>
+      <td>{"question": "После окончания университета я решил ___________ свою карьеру в области международных отношений.", \n"options": ["посвятить", "отдать", "провести", "распределить"], \n"correctAnswer": ["посвятить"]}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>4</td>
+      <td>10</td>
+      <td>This candidate is flawless. It perfectly adheres to all instructions, including the JSON structure and the array format for 'correctAnswer'. The task itself is an excellent B2-level vocabulary question testing collocation ('посвятить карьеру') in a natural and relevant context, with clear, unambiguous options.</td>
+      <td>{'question': 'После окончания университета я решил ___________ свою карьеру в области международных отношений.', 'options': ['посвятить', 'отдать', 'провести', 'распределить'], 'correctAnswer': ['посвятить']}</td>
+      <td>После окончания университета я решил ___________ свою карьеру в области международных отношений.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>Qwen 3 Max</td>
+      <td>Multiple Choice</td>
+      <td>4.01</td>
+      <td>{\n    "question": "Вчера я получил письмо от друга, в котором он подробно описал, как ему удалось ________ сложную ситуацию на новой работе.",\n    "options": ["справиться с", "справляться с", "справился с", "справлялся с"],\n    "correctAnswer": "справиться с"\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>5</td>
+      <td>9</td>
+      <td>This is an excellent task. The complex sentence structure and the specific grammatical point (requiring a perfective infinitive after 'удалось') are perfectly suited for the B2 level. The context aligns well with the prompt's guidelines. The only minor flaw is that the 'correctAnswer' was provided as a string instead of an array.</td>
+      <td>{'question': 'Вчера я получил письмо от друга, в котором он подробно описал, как ему удалось ________ сложную ситуацию на новой работе.', 'options': ['справиться с', 'справляться с', 'справился с', 'справлялся с'], 'correctAnswer': 'справиться с'}</td>
+      <td>Вчера я получил письмо от друга, в котором он подробно описал, как ему удалось ________ сложную ситуацию на новой работе.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Medium (2-5s)</td>
+    </tr>
+    <tr>
+      <td>Gemini 3 Flash</td>
+      <td>Multiple Choice</td>
+      <td>1.44</td>
+      <td>{\n    "question": "При написании отчёта о проделанной работе крайне важно не только перечислить достигнутые результаты, но и детально ________ на причинах возникших трудностей.",\n    "options": [\n        "остановиться",\n        "приостановиться",\n        "отложиться",\n        "постановиться"\n    ],\n    "correctAnswer": "остановиться"\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>5</td>
+      <td>10</td>
+      <td>This is an outstanding task that perfectly meets the user's requirements. The context of writing a formal report directly reflects the B2 proficiency description. The task tests a sophisticated and context-dependent vocabulary item ('остановиться на' meaning 'to dwell on'), which is an excellent indicator of B2/C1 proficiency. The sentence structure is complex and natural. Despite a minor format deviation ('correctAnswer' as a string), the overall high quality and relevance of the linguistic challenge make this the best candidate.</td>
+      <td>{'question': 'При написании отчёта о проделанной работе крайне важно не только перечислить достигнутые результаты, но и детально ________ на причинах возникших трудностей.', 'options': ['остановиться', 'приостановиться', 'отложиться', 'постановиться'], 'correctAnswer': 'остановиться'}</td>
+      <td>При написании отчёта о проделанной работе крайне важно не только перечислить достигнутые результаты, но и детально ________ на причинах возникших трудностей.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>Qwen 3 Max</td>
+      <td>Multiple Choice</td>
+      <td>5.86</td>
+      <td>{\n    "question": "Вчера я получил письмо от друга, в котором он подробно описал, как ему удалось ________ трудности на новой работе.",\n    "options": [\n        "преодолеть",\n        "превзойти",\n        "пресечь",\n        "превратить"\n    ],\n    "correctAnswer": "преодолеть"\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>6</td>
+      <td>10</td>
+      <td>This is an excellent B2-level task. It tests knowledge of sophisticated vocabulary and collocation ('преодолеть трудности') within a grammatically complex sentence. The context is appropriate, the options are well-chosen, and it adheres to all guidelines, with the minor exception of using a string for 'correctAnswer' based on an ambiguous instruction.</td>
+      <td>{'question': 'Вчера я получил письмо от друга, в котором он подробно описал, как ему удалось ________ трудности на новой работе.', 'options': ['преодолеть', 'превзойти', 'пресечь', 'превратить'], 'correctAnswer': 'преодолеть'}</td>
+      <td>Вчера я получил письмо от друга, в котором он подробно описал, как ему удалось ________ трудности на новой работе.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Slow (5-10s)</td>
+    </tr>
+    <tr>
+      <td>Gemini 3 Flash</td>
+      <td>Multiple Choice</td>
+      <td>1.32</td>
+      <td>{\n    "question": "В своём докладе автор приводит убедительные аргументы ________ необходимости внедрения новых технологий в образовательный процесс.",\n    "options": [\n        "в пользу",\n        "на счёт",\n        "ради",\n        "во имя"\n    ],\n    "correctAnswer": "в пользу"\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>6</td>
+      <td>10</td>
+      <td>An exemplary task that perfectly aligns with the B2 level proficiency description. It tests knowledge of formal register and collocations ('аргументы в пользу') directly relevant to writing reports and essays. The vocabulary, context, and distractors are all highly appropriate. It follows all instructions, with the only minor issue being the ambiguous 'correctAnswer' format.</td>
+      <td>{'question': 'В своём докладе автор приводит убедительные аргументы ________ необходимости внедрения новых технологий в образовательный процесс.', 'options': ['в пользу', 'на счёт', 'ради', 'во имя'], 'correctAnswer': 'в пользу'}</td>
+      <td>В своём докладе автор приводит убедительные аргументы ________ необходимости внедрения новых технологий в образовательный процесс.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>Gemini 3 Flash</td>
+      <td>Multiple Choice</td>
+      <td>1.26</td>
+      <td>{\n    "question": "Хотя многие эксперты выступали против проекта, руководство всё же решило ________ к реализации плана, обосновав это долгосрочной выгодой для компании.",\n    "options": [\n        "приступить",\n        "настаивать",\n        "участвовать",\n        "прекратить"\n    ],\n    "correctAnswer": "приступить"\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>7</td>
+      <td>10</td>
+      <td>This is an outstanding task that perfectly aligns with the B2 level, bordering on C1. It uses a complex sentence structure with advanced vocabulary and tests a nuanced point of verb government (collocation with a specific preposition and case). This requires a sophisticated understanding of Russian syntax and lexis, directly contributing to the ability to write clear, detailed, and accurate text, as described for the B2 level.</td>
+      <td>{'question': 'Хотя многие эксперты выступали против проекта, руководство всё же решило ________ к реализации плана, обосновав это долгосрочной выгодой для компании.', 'options': ['приступить', 'настаивать', 'участвовать', 'прекратить'], 'correctAnswer': 'приступить'}</td>
+      <td>Хотя многие эксперты выступали против проекта, руководство всё же решило ________ к реализации плана, обосновав это долгосрочной выгодой для компании.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>Mistral Large 3</td>
+      <td>Multiple Choice</td>
+      <td>2.60</td>
+      <td>{\n    "question": "Выберите правильный вариант, чтобы завершить предложение: «Если бы у меня было больше свободного времени, я бы ______ на курсы фотографии.»",\n    "options": [\n        "записался",\n        "запишусь",\n        "записывался",\n        "записался бы"\n    ],\n    "correctAnswer": [\n        "записался бы"\n    ]\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>8</td>
+      <td>9</td>
+      <td>This is an excellent B2-level task testing the unreal conditional mood, a key competency for this level. The JSON format is perfect, including the 'correctAnswer' as an array. The only flaw is a clear violation of Guideline 9 ('Do not include any instructions for the task'), as the question string begins with 'Выберите правильный вариант, чтобы завершить предложение:'.</td>
+      <td>{'question': 'Выберите правильный вариант, чтобы завершить предложение: «Если бы у меня было больше свободного времени, я бы ______ на курсы фотографии.»', 'options': ['записался', 'запишусь', 'записывался', 'записался бы'], 'correctAnswer': ['записался бы']}</td>
+      <td>Выберите правильный вариант, чтобы завершить предложение: «Если бы у меня было больше свободного времени, я бы ______ на курсы фотографии.»</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Medium (2-5s)</td>
+    </tr>
+    <tr>
+      <td>Qwen 3 Max</td>
+      <td>Multiple Choice</td>
+      <td>4.79</td>
+      <td>{\n    "question": "Вчера я получил письмо от друга, в котором он подробно описал, как ему удалось ________ сложную ситуацию на новой работе.",\n    "options": ["справиться с", "справляться с", "справился с", "справлялся с"],\n    "correctAnswer": "справиться с"\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>8</td>
+      <td>9</td>
+      <td>The candidate produced a high-quality B2-level task that effectively tests verb government ('удалось' + infinitive) and aspectual choice (perfective for a completed action). The context is appropriate and the distractors are well-chosen. It follows all guidelines except for a minor formatting error: 'correctAnswer' is a string instead of an array as shown in the instruction's example.</td>
+      <td>{'question': 'Вчера я получил письмо от друга, в котором он подробно описал, как ему удалось ________ сложную ситуацию на новой работе.', 'options': ['справиться с', 'справляться с', 'справился с', 'справлялся с'], 'correctAnswer': 'справиться с'}</td>
+      <td>Вчера я получил письмо от друга, в котором он подробно описал, как ему удалось ________ сложную ситуацию на новой работе.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Medium (2-5s)</td>
+    </tr>
+    <tr>
+      <td>Gemini 3 Flash</td>
+      <td>Multiple Choice</td>
+      <td>1.72</td>
+      <td>{\n    "question": "При написании отчёта о проделанной работе крайне важно не только перечислить достигнутые результаты, но и ___________ на возникших трудностях, чтобы избежать их в будущем.",\n    "options": [\n        "сосредоточиться",\n        "сосредотачиваться",\n        "акцентировать",\n        "уделять"\n    ],\n    "correctAnswer": "сосредоточиться"\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>8</td>
+      <td>10</td>
+      <td>This is an outstanding task that perfectly aligns with the B2 level. The sentence structure is complex, the vocabulary is advanced and formal ('отчёт', 'проделанная работа'), and the question requires a nuanced understanding of verb government and aspect. It directly tests skills needed for writing reports as described in the proficiency description. The only minor issue is the 'correctAnswer' being a string and not an array, but the overall quality of the linguistic task is superior to all other candidates and best fulfills the spirit of the prompt.</td>
+      <td>{'question': 'При написании отчёта о проделанной работе крайне важно не только перечислить достигнутые результаты, но и ___________ на возникших трудностях, чтобы избежать их в будущем.', 'options': ['сосредоточиться', 'сосредотачиваться', 'акцентировать', 'уделять'], 'correctAnswer': 'сосредоточиться'}</td>
+      <td>При написании отчёта о проделанной работе крайне важно не только перечислить достигнутые результаты, но и ___________ на возникших трудностях, чтобы избежать их в будущем.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>Qwen 3 Max</td>
+      <td>Multiple Choice</td>
+      <td>4.15</td>
+      <td>{\n    "question": "Вчера я получил письмо от друга, в котором он подробно описал, как ________ в новой стране.",\n    "options": ["осваивался", "освоился", "осваивается", "освоится"],\n    "correctAnswer": "осваивался"\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>9</td>
+      <td>9</td>
+      <td>An excellent task that tests a nuanced understanding of verb aspect in a subordinate clause, which is a hallmark of the B2 level. The context is natural and the options are well-chosen. It follows nearly all instructions perfectly, with only a minor deduction for the `correctAnswer` field being a string instead of the requested array format.</td>
+      <td>{'question': 'Вчера я получил письмо от друга, в котором он подробно описал, как ________ в новой стране.', 'options': ['осваивался', 'освоился', 'осваивается', 'освоится'], 'correctAnswer': 'осваивался'}</td>
+      <td>Вчера я получил письмо от друга, в котором он подробно описал, как ________ в новой стране.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Medium (2-5s)</td>
+    </tr>
+    <tr>
+      <td>Gemini 3 Flash</td>
+      <td>Multiple Choice</td>
+      <td>2.00</td>
+      <td>{\n    "question": "Хотя многие эксперты выступали против нового законопроекта, автор статьи приводит веские аргументы ________ его принятия, указывая на долгосрочные экономические выгоды.",\n    "options": ["в пользу", "в качестве", "вследствие", "в отношении"],\n    "correctAnswer": "в пользу"\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>9</td>
+      <td>9</td>
+      <td>An outstanding task that aligns perfectly with the B2 level description, testing knowledge of collocations ('аргументы в пользу') within a formal context. The vocabulary and scenario are highly appropriate for the level. It follows all major guidelines, with a minor point off for incorrect JSON formatting of the `correctAnswer` field (string instead of array).</td>
+      <td>{'question': 'Хотя многие эксперты выступали против нового законопроекта, автор статьи приводит веские аргументы ________ его принятия, указывая на долгосрочные экономические выгоды.', 'options': ['в пользу', 'в качестве', 'вследствие', 'в отношении'], 'correctAnswer': 'в пользу'}</td>
+      <td>Хотя многие эксперты выступали против нового законопроекта, автор статьи приводит веские аргументы ________ его принятия, указывая на долгосрочные экономические выгоды.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>Qwen 3 Max</td>
+      <td>Multiple Choice</td>
+      <td>7.04</td>
+      <td>{\n    "question": "Вчера я получил письмо от друга, в котором он подробно описал, как ему удалось ________ трудности на новой работе.",\n    "options": ["преодолеть", "преодолевать", "преодолевающий", "преодолев"],\n    "correctAnswer": "преодолеть"\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>10</td>
+      <td>9</td>
+      <td>This is an excellent B2-level task. It tests verb aspect following a specific construction ('удалось' + infinitive) within a complex sentence, which is highly appropriate for the level. The vocabulary and grammar are well-chosen. The only flaw is a minor formatting error where `correctAnswer` is provided as a string instead of an array.</td>
+      <td>{'question': 'Вчера я получил письмо от друга, в котором он подробно описал, как ему удалось ________ трудности на новой работе.', 'options': ['преодолеть', 'преодолевать', 'преодолевающий', 'преодолев'], 'correctAnswer': 'преодолеть'}</td>
+      <td>Вчера я получил письмо от друга, в котором он подробно описал, как ему удалось ________ трудности на новой работе.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Slow (5-10s)</td>
+    </tr>
+    <tr>
+      <td>Llama 4</td>
+      <td>Multiple Choice</td>
+      <td>2.00</td>
+      <td>{"question": "Когда я приехал в Москву, я понял, что мне нужно __________ карту города, чтобы не заблудиться.", "options": ["купить", "покупать", "куплю", "купил бы"], "correctAnswer": ["купить"]}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>10</td>
+      <td>10</td>
+      <td>This candidate perfectly adheres to all instructions. The JSON is valid and strictly follows the specified format, including the `correctAnswer` field as an array. The task itself is a solid B2-level question that tests verb aspect after a modal verb ('нужно') within a clause of purpose, a key skill for this level. The context is clear and the distractors are appropriate.</td>
+      <td>{'question': 'Когда я приехал в Москву, я понял, что мне нужно __________ карту города, чтобы не заблудиться.', 'options': ['купить', 'покупать', 'куплю', 'купил бы'], 'correctAnswer': ['купить']}</td>
+      <td>Когда я приехал в Москву, я понял, что мне нужно __________ карту города, чтобы не заблудиться.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>Gemini 3 Flash</td>
+      <td>Multiple Choice</td>
+      <td>1.89</td>
+      <td>{\n    "question": "Несмотря на активные дискуссии, автор статьи так и не привёл убедительных аргументов, ________ свою точку зрения на проблему глобального потепления.",\n    "options": [\n        "подтверждающих",\n        "подтверждающие",\n        "подтверждающим",\n        "подтвердившими"\n    ],\n    "correctAnswer": "подтверждающих"\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>10</td>
+      <td>9</td>
+      <td>This is a high-quality, challenging task that perfectly aligns with B2+ proficiency. It tests the agreement and case of participles within a complex sentence, a skill essential for writing the 'clear, detailed text' mentioned in the level description. The vocabulary and context are sophisticated. It loses one point only for the minor formatting error of providing `correctAnswer` as a string instead of an array.</td>
+      <td>{'question': 'Несмотря на активные дискуссии, автор статьи так и не привёл убедительных аргументов, ________ свою точку зрения на проблему глобального потепления.', 'options': ['подтверждающих', 'подтверждающие', 'подтверждающим', 'подтвердившими'], 'correctAnswer': 'подтверждающих'}</td>
+      <td>Несмотря на активные дискуссии, автор статьи так и не привёл убедительных аргументов, ________ свою точку зрения на проблему глобального потепления.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>Qwen 3 Max</td>
+      <td>Multiple Choice</td>
+      <td>4.61</td>
+      <td>{\n    "question": "Вчера я получил письмо от друга, в котором он описывал, как ему удалось ________ на новую должность в международной компании.",\n    "options": ["поступить", "получиться", "устроиться", "заняться"],\n    "correctAnswer": "устроиться"\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>11</td>
+      <td>9</td>
+      <td>Excellent task. It adheres to all guidelines, presenting a B2-level vocabulary question on collocations. The context of 'getting a job' described in a letter aligns well with the CEFR level description. The `correctAnswer` format is a string instead of an array, which is a minor format deviation.</td>
+      <td>{'question': 'Вчера я получил письмо от друга, в котором он описывал, как ему удалось ________ на новую должность в международной компании.', 'options': ['поступить', 'получиться', 'устроиться', 'заняться'], 'correctAnswer': 'устроиться'}</td>
+      <td>Вчера я получил письмо от друга, в котором он описывал, как ему удалось ________ на новую должность в международной компании.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Medium (2-5s)</td>
+    </tr>
+    <tr>
+      <td>Llama 4</td>
+      <td>Multiple Choice</td>
+      <td>0.52</td>
+      <td>{\n"question": "Когда я был в отпуске, я каждый день _______ длинные прогулки по лесу.",\n    "options": ["делал", "проводил", "совершал", "организовывал"],\n    "correctAnswer": ["совершал"]\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>11</td>
+      <td>9</td>
+      <td>A very good B2-level task testing vocabulary and collocations ('совершать прогулки'). It follows all instructions, including the specified array format for the correct answer. The task has clear options and a natural context, targeting common learner errors effectively.</td>
+      <td>{'question': 'Когда я был в отпуске, я каждый день _______ длинные прогулки по лесу.', 'options': ['делал', 'проводил', 'совершал', 'организовывал'], 'correctAnswer': ['совершал']}</td>
+      <td>Когда я был в отпуске, я каждый день _______ длинные прогулки по лесу.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>Gemini 3 Flash</td>
+      <td>Multiple Choice</td>
+      <td>1.38</td>
+      <td>{\n    "question": "При написании эссе на тему глобализации крайне важно не только привести аргументы «за», но и подробно ________ точку зрения оппонентов.",\n    "options": [\n        "основать",\n        "обосновать",\n        "установить",\n        "приспособить"\n    ],\n    "correctAnswer": "обосновать"\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>11</td>
+      <td>10</td>
+      <td>An outstanding task that directly tests vocabulary for academic writing, a core component of the B2 level description ('writing an essay', 'giving reasons'). It follows all non-contradictory instructions perfectly, uses appropriate formal vocabulary, and has clear, well-differentiated options. The only minor deviation is the `correctAnswer` format (string vs. array).</td>
+      <td>{'question': 'При написании эссе на тему глобализации крайне важно не только привести аргументы «за», но и подробно ________ точку зрения оппонентов.', 'options': ['основать', 'обосновать', 'установить', 'приспособить'], 'correctAnswer': 'обосновать'}</td>
+      <td>При написании эссе на тему глобализации крайне важно не только привести аргументы «за», но и подробно ________ точку зрения оппонентов.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>GPT-5.2</td>
+      <td>Multiple Choice</td>
+      <td>9.98</td>
+      <td>{\n  "question": "Отчёт оказался убедительным, потому что в нём были приведены данные, ____ независимыми экспертами.",\n  "options": ["проверенные", "проверившие", "проверяющие", "проверено"],\n  "correctAnswer": "проверенные"\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>12</td>
+      <td>10</td>
+      <td>Excellent task that perfectly aligns with the B2 level. It tests a key grammatical concept (passive vs. active participles) within a formal context ('report', 'data', 'experts'), which is relevant to the writing skills described in the prompt. The distractors are well-chosen and test for common errors. It adheres to all instructions.</td>
+      <td>{'question': 'Отчёт оказался убедительным, потому что в нём были приведены данные, ____ независимыми экспертами.', 'options': ['проверенные', 'проверившие', 'проверяющие', 'проверено'], 'correctAnswer': 'проверенные'}</td>
+      <td>Отчёт оказался убедительным, потому что в нём были приведены данные, ____ независимыми экспертами.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Slow (5-10s)</td>
+    </tr>
+    <tr>
+      <td>Gemini 3 Flash</td>
+      <td>Multiple Choice</td>
+      <td>1.22</td>
+      <td>{\n    "question": "Хотя многие эксперты высказывались против реализации проекта, руководство компании всё же решило ________ к его выполнению, надеясь на долгосрочную перспективу.",\n    "options": [\n        "преступить",\n        "приступить",\n        "поступить",\n        "отступить"\n    ],\n    "correctAnswer": "приступить"\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>12</td>
+      <td>10</td>
+      <td>An outstanding task that exemplifies the B2 level. It tests nuanced vocabulary by focusing on paronyms (verbs with different prefixes but the same root), a common challenge for advanced learners. The formal business context is perfectly aligned with the B2 proficiency description (writing reports, essays). It follows all instructions flawlessly.</td>
+      <td>{'question': 'Хотя многие эксперты высказывались против реализации проекта, руководство компании всё же решило ________ к его выполнению, надеясь на долгосрочную перспективу.', 'options': ['преступить', 'приступить', 'поступить', 'отступить'], 'correctAnswer': 'приступить'}</td>
+      <td>Хотя многие эксперты высказывались против реализации проекта, руководство компании всё же решило ________ к его выполнению, надеясь на долгосрочную перспективу.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>Gemini 3 Flash</td>
+      <td>Multiple Choice</td>
+      <td>1.25</td>
+      <td>{\n    "question": "Прежде чем аргументированно излагать свою позицию в эссе, необходимо тщательно ____ все имеющиеся факты и статистические данные.",\n    "options": [\n        "проанализировать",\n        "анализировались",\n        "проанализировав",\n        "анализируя"\n    ],\n    "correctAnswer": "проанализировать"\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>13</td>
+      <td>9</td>
+      <td>This is an excellent task that perfectly aligns with the B2 level and the prompt's description of writing skills ('излагать свою позицию в эссе'). It tests a clear and important grammatical point (use of the infinitive after 'необходимо') with well-chosen distractors. The answer is deterministic and the context is highly relevant. The only minor flaw is the failure to include a small English translation as requested by the original instructions.</td>
+      <td>{'question': 'Прежде чем аргументированно излагать свою позицию в эссе, необходимо тщательно ____ все имеющиеся факты и статистические данные.', 'options': ['проанализировать', 'анализировались', 'проанализировав', 'анализируя'], 'correctAnswer': 'проанализировать'}</td>
+      <td>Прежде чем аргументированно излагать свою позицию в эссе, необходимо тщательно ____ все имеющиеся факты и статистические данные.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>Gemini 3 Flash</td>
+      <td>Multiple Choice</td>
+      <td>1.34</td>
+      <td>{\n    "question": "При написании аналитического отчёта важно не только изложить факты, но и привести убедительные аргументы, _______ свою точку зрения.",\n    "options": [\n        "обосновывающие",\n        "обосновав",\n        "обоснованными",\n        "обосновать"\n    ],\n    "correctAnswer": "обосновывающие"\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>14</td>
+      <td>10</td>
+      <td>This is an excellent B2-level task. It tests a nuanced grammatical point: the difference between a participial adjective modifying a noun ('аргументы, обосновывающие...') and an adverbial participle. This is a key skill for constructing complex, precise sentences in formal writing, directly aligning with the level description. The context ('аналитический отчёт') is perfect, the options are well-chosen, and all instructions have been followed meticulously.</td>
+      <td>{'question': 'При написании аналитического отчёта важно не только изложить факты, но и привести убедительные аргументы, _______ свою точку зрения.', 'options': ['обосновывающие', 'обосновав', 'обоснованными', 'обосновать'], 'correctAnswer': 'обосновывающие'}</td>
+      <td>При написании аналитического отчёта важно не только изложить факты, но и привести убедительные аргументы, _______ свою точку зрения.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>Qwen 3 Max</td>
+      <td>Multiple Choice</td>
+      <td>5.00</td>
+      <td>{\n    "question": "Вчера я получил письмо от друга, в котором он подробно описал, как ему удалось ________ сложную ситуацию на работе.",\n    "options": ["разобраться", "разобрал", "разбирая", "разобрался"],\n    "correctAnswer": "разобраться"\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>15</td>
+      <td>9</td>
+      <td>An excellent candidate that adheres to all instructions. The complex sentence structure, testing the use of the infinitive after 'удалось', is perfectly suited for the B2 level. The context of receiving a letter aligns directly with the proficiency description provided in the prompt. The task is clear, deterministic, and well-formed.</td>
+      <td>{'question': 'Вчера я получил письмо от друга, в котором он подробно описал, как ему удалось ________ сложную ситуацию на работе.', 'options': ['разобраться', 'разобрал', 'разбирая', 'разобрался'], 'correctAnswer': 'разобраться'}</td>
+      <td>Вчера я получил письмо от друга, в котором он подробно описал, как ему удалось ________ сложную ситуацию на работе.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Medium (2-5s)</td>
+    </tr>
+    <tr>
+      <td>Gemini 3 Flash</td>
+      <td>Multiple Choice</td>
+      <td>1.42</td>
+      <td>{\n    "question": "В своём докладе автор приводит весомые аргументы ________ целесообразности перехода на альтернативные источники энергии в крупных мегаполисах.",\n    "options": [\n        "в пользу",\n        "вопреки",\n        "насчёт",\n        "согласно"\n    ],\n    "correctAnswer": "в пользу"\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>15</td>
+      <td>10</td>
+      <td>This is an outstanding candidate that perfectly matches all requirements. The task, which tests vocabulary and prepositional government ('аргументы в пользу'), is highly relevant to the B2 level, particularly the skill of presenting arguments in a report. The vocabulary is level-appropriate and sophisticated. The submission adheres strictly to all formatting and content guidelines, making it the best of the set.</td>
+      <td>{'question': 'В своём докладе автор приводит весомые аргументы ________ целесообразности перехода на альтернативные источники энергии в крупных мегаполисах.', 'options': ['в пользу', 'вопреки', 'насчёт', 'согласно'], 'correctAnswer': 'в пользу'}</td>
+      <td>В своём докладе автор приводит весомые аргументы ________ целесообразности перехода на альтернативные источники энергии в крупных мегаполисах.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>Llama 4</td>
+      <td>Fill Blank</td>
+      <td>1.76</td>
+      <td>{"question": "В последнее время я много читаю и нахожу это занятие очень ____. (relaxing)", "correctAnswer": ["расслабляющим"]}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>1</td>
+      <td>10</td>
+      <td>This is an excellent B2-level task. It correctly tests a specific and challenging grammatical construction ('находить что-то + instrumental case') that distinguishes intermediate from upper-intermediate learners. The sentence is natural, the answer is unique and unambiguous, and the context of expressing an opinion aligns well with B2 skills. It perfectly follows all instructions.</td>
+      <td>{'question': 'В последнее время я много читаю и нахожу это занятие очень ____. (relaxing)', 'correctAnswer': ['расслабляющим']}</td>
+      <td>В последнее время я много читаю и нахожу это занятие очень ____. (relaxing)</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>GPT-5.2</td>
+      <td>Fill Blank</td>
+      <td>1.84</td>
+      <td>{\n  "question": "В отчёте я подробно изложил причины, ____ я поддерживаю это решение. (why)",\n  "correctAnswer": ["почему"]\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>2</td>
+      <td>9</td>
+      <td>The task is excellent and well-aligned with the B2 level, testing complex sentence structure and formal vocabulary ('в отчёте', 'изложил причины'). The JSON is valid. It's scored slightly below perfect because another answer, 'по которым', is also grammatically correct and natural in this context, which slightly undermines the 'only one correct answer' guideline. However, 'почему' is the most direct translation of the English cue '(why)'.</td>
+      <td>{'question': 'В отчёте я подробно изложил причины, ____ я поддерживаю это решение. (why)', 'correctAnswer': ['почему']}</td>
+      <td>В отчёте я подробно изложил причины, ____ я поддерживаю это решение. (why)</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>Gemini 3 Flash</td>
+      <td>Fill Blank</td>
+      <td>1.19</td>
+      <td>{\n    "question": "Несмотря на многократные попытки прийти к компромиссу, стороны так и не ____ общего решения. (arrived at)",\n    "correctAnswer": [\n        "достигли"\n    ]\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>2</td>
+      <td>10</td>
+      <td>This is an outstanding task that perfectly meets all requirements. The JSON is valid. The sentence uses advanced, formal vocabulary ('многократные попытки,' 'прийти к компромиссу,' 'достичь решения') and a complex structure, making it ideal for the B2 level. The context aligns perfectly with the proficiency description of analyzing and reporting on events. The answer is unambiguous and the most appropriate choice.</td>
+      <td>{'question': 'Несмотря на многократные попытки прийти к компромиссу, стороны так и не ____ общего решения. (arrived at)', 'correctAnswer': ['достигли']}</td>
+      <td>Несмотря на многократные попытки прийти к компромиссу, стороны так и не ____ общего решения. (arrived at)</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>Gemini 3 Flash</td>
+      <td>Fill Blank</td>
+      <td>1.11</td>
+      <td>{\n    "question": "Несмотря на все приведённые аргументы, автор так и не смог ____ свою точку зрения. (to justify)",\n    "correctAnswer": [\n        "обосновать"\n    ]\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>3</td>
+      <td>9</td>
+      <td>This is an excellent task that perfectly meets the B2 level requirements. The vocabulary ('приведённые аргументы', 'точка зрения', 'обосновать') is advanced and appropriate. The context of justifying a point of view directly aligns with the B2 writing skill description. The chosen word 'обосновать' is the most precise and direct translation for '(to justify)' in this context, making it a strong, single-best answer, even if other synonyms could technically fit.</td>
+      <td>{'question': 'Несмотря на все приведённые аргументы, автор так и не смог ____ свою точку зрения. (to justify)', 'correctAnswer': ['обосновать']}</td>
+      <td>Несмотря на все приведённые аргументы, автор так и не смог ____ свою точку зрения. (to justify)</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>Gemini 3 Flash</td>
+      <td>Fill Blank</td>
+      <td>8.72</td>
+      <td>{\n    "question": "Многие эксперты высказываются в пользу этого проекта, ____ (despite) определённые финансовые риски.",\n    "correctAnswer": [\n        "несмотря на"\n    ]\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>4</td>
+      <td>10</td>
+      <td>This is an excellent response that perfectly adheres to all instructions. The JSON is valid. The task is unambiguously at the B2 level, testing the crucial conjunction 'несмотря на' within a formal, argumentative context ('эксперты высказываются', 'финансовые риски'). The answer is unique and deterministic, making it a high-quality assessment item.</td>
+      <td>{'question': 'Многие эксперты высказываются в пользу этого проекта, ____ (despite) определённые финансовые риски.', 'correctAnswer': ['несмотря на']}</td>
+      <td>Многие эксперты высказываются в пользу этого проекта, ____ (despite) определённые финансовые риски.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Slow (5-10s)</td>
+    </tr>
+    <tr>
+      <td>GPT-5.2</td>
+      <td>Fill Blank</td>
+      <td>2.00</td>
+      <td>{\n  "question": "В отчёте я подробно ____ причины задержки проекта и предложил решения. (explained)",\n  "correctAnswer": ["объяснил"]\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>5</td>
+      <td>9</td>
+      <td>This is a strong candidate. The task aligns well with the B2 level, using relevant vocabulary ('отчёт', 'задержка проекта') and a context (writing a report) that matches the proficiency description. The grammar tested (perfective aspect in a sequence of past actions) is appropriate. The answer is correct and the most likely choice.</td>
+      <td>{'question': 'В отчёте я подробно ____ причины задержки проекта и предложил решения. (explained)', 'correctAnswer': ['объяснил']}</td>
+      <td>В отчёте я подробно ____ причины задержки проекта и предложил решения. (explained)</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>Qwen 3 Max</td>
+      <td>Fill Blank</td>
+      <td>4.04</td>
+      <td>{\n    "question": "Вчера я написал эссе, в котором ____ свои аргументы за сохранение исторических зданий. (presented)",\n    "correctAnswer": ["представил"]\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>5</td>
+      <td>10</td>
+      <td>An excellent task that perfectly meets all requirements. The context of writing an essay and presenting arguments ('эссе', 'аргументы') directly reflects the B2 writing skills described in the original instruction. The vocabulary is appropriate, and the answer is the most fitting word for the sentence, making the task both relevant and deterministic.</td>
+      <td>{'question': 'Вчера я написал эссе, в котором ____ свои аргументы за сохранение исторических зданий. (presented)', 'correctAnswer': ['представил']}</td>
+      <td>Вчера я написал эссе, в котором ____ свои аргументы за сохранение исторических зданий. (presented)</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Medium (2-5s)</td>
+    </tr>
+    <tr>
+      <td>Gemini 3 Flash</td>
+      <td>Fill Blank</td>
+      <td>1.27</td>
+      <td>{\n    "question": "Многие эксперты высказываются в пользу этого проекта, ____ наличие определённых рисков. (despite)",\n    "correctAnswer": [\n        "несмотря на"\n    ]\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>5</td>
+      <td>10</td>
+      <td>This is an outstanding task for the B2 level. It tests the use of a complex preposition ('несмотря на') to express concession, which is a key skill for constructing nuanced arguments. The vocabulary is formal and appropriate for the level. The answer is correct, deterministic, and the sentence structure is suitably complex.</td>
+      <td>{'question': 'Многие эксперты высказываются в пользу этого проекта, ____ наличие определённых рисков. (despite)', 'correctAnswer': ['несмотря на']}</td>
+      <td>Многие эксперты высказываются в пользу этого проекта, ____ наличие определённых рисков. (despite)</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>Qwen 3 Max</td>
+      <td>Fill Blank</td>
+      <td>3.02</td>
+      <td>{\n    "question": "Вчера я написал письмо другу, чтобы ____ важность нашей встречи. (emphasize)",\n    "correctAnswer": ["подчеркнуть"]\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>6</td>
+      <td>10</td>
+      <td>This is an excellent task that perfectly meets all the requirements. The context ('написал письмо другу, чтобы ... важность') directly reflects the B2 skill description ('write letters highlighting the personal significance'). The vocabulary ('подчеркнуть важность') is appropriate for the level, and the phrase is a strong collocation, making 'подчеркнуть' the most natural and expected answer, thus closely adhering to the 'only one correct answer' rule. The format and accuracy are flawless.</td>
+      <td>{'question': 'Вчера я написал письмо другу, чтобы ____ важность нашей встречи. (emphasize)', 'correctAnswer': ['подчеркнуть']}</td>
+      <td>Вчера я написал письмо другу, чтобы ____ важность нашей встречи. (emphasize)</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Medium (2-5s)</td>
+    </tr>
+    <tr>
+      <td>Qwen 3 Max</td>
+      <td>Fill Blank</td>
+      <td>3.90</td>
+      <td>{\n    "question": "Вчера я написал(а) отчёт, чтобы ____ внимание руководства на эту серьёзную проблему. (draw)",\n    "correctAnswer": ["обратить"]\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>7</td>
+      <td>10</td>
+      <td>Excellent task. It perfectly matches the B2 level by using a professional context (report for management) and testing a key collocation ('обратить внимание'). The question is unambiguous and has a single correct answer. The inclusion of '(а)' to account for gender is a thoughtful detail.</td>
+      <td>{'question': 'Вчера я написал(а) отчёт, чтобы ____ внимание руководства на эту серьёзную проблему. (draw)', 'correctAnswer': ['обратить']}</td>
+      <td>Вчера я написал(а) отчёт, чтобы ____ внимание руководства на эту серьёзную проблему. (draw)</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Medium (2-5s)</td>
+    </tr>
+    <tr>
+      <td>Llama 4</td>
+      <td>Fill Blank</td>
+      <td>0.55</td>
+      <td>{\n"question": "В последнее время я часто пишу письма, в которых ____ (argue) свою точку зрения на современные проблемы.",\n  "correctAnswer": ["аргументирую"]\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>7</td>
+      <td>9</td>
+      <td>A very strong candidate that directly reflects the B2 writing skills described in the prompt (arguing a point of view). The vocabulary is highly appropriate. The task is slightly less deterministic than others, as 'отстаиваю' (I defend) could be a possible alternative, but 'аргументирую' is the best fit for the provided hint.</td>
+      <td>{'question': 'В последнее время я часто пишу письма, в которых ____ (argue) свою точку зрения на современные проблемы.', 'correctAnswer': ['аргументирую']}</td>
+      <td>В последнее время я часто пишу письма, в которых ____ (argue) свою точку зрения на современные проблемы.</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>Gemini 3 Flash</td>
+      <td>Fill Blank</td>
+      <td>1.71</td>
+      <td>{\n    "question": "Многие эксперты высказываются в поддержку данного законопроекта, ____ его важную роль в развитии экономики. (emphasizing)",\n    "correctAnswer": [\n        "подчеркивая"\n    ]\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>7</td>
+      <td>10</td>
+      <td>Excellent task. It tests a key advanced B2 grammar point (the adverbial participle, 'деепричастие') within a formal, relevant context ('experts', 'bill', 'economy'). The vocabulary is appropriate for the level, and the answer is completely deterministic, making it a high-quality assessment item.</td>
+      <td>{'question': 'Многие эксперты высказываются в поддержку данного законопроекта, ____ его важную роль в развитии экономики. (emphasizing)', 'correctAnswer': ['подчеркивая']}</td>
+      <td>Многие эксперты высказываются в поддержку данного законопроекта, ____ его важную роль в развитии экономики. (emphasizing)</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>Gemini 3 Flash</td>
+      <td>Fill Blank</td>
+      <td>1.96</td>
+      <td>{\n    "question": "Несмотря на все сложности, автор смог убедительно ____ свою точку зрения в статье. (justify)",\n    "correctAnswer": [\n        "обосновать"\n    ]\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>8</td>
+      <td>9</td>
+      <td>An excellent task that aligns perfectly with the B2 level. The vocabulary ('обосновать') and the collocation ('обосновать свою точку зрения') are highly relevant. The context, concerning an author justifying a viewpoint in an article, directly matches the prompt's description. Although a close synonym ('аргументировать') exists, the chosen answer 'обосновать' is the most precise fit for the English hint '(justify)' and the adverb 'убедительно' (convincingly), making it the most well-constrained and high-quality task among the candidates.</td>
+      <td>{'question': 'Несмотря на все сложности, автор смог убедительно ____ свою точку зрения в статье. (justify)', 'correctAnswer': ['обосновать']}</td>
+      <td>Несмотря на все сложности, автор смог убедительно ____ свою точку зрения в статье. (justify)</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>GPT-5.2</td>
+      <td>Fill Blank</td>
+      <td>1.84</td>
+      <td>{\n  "question": "Хотя доклад был написан ясно и подробно, некоторые выводы оказались ____ (unconvincing).",\n  "correctAnswer": ["неубедительными"]\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>9</td>
+      <td>10</td>
+      <td>This is an excellent task for the B2 level. The sentence structure ('Хотя..., ...') is appropriately complex. The vocabulary ('доклад', 'выводы') aligns with the B2 skill of writing reports. Most importantly, it tests a key grammatical point for this level: the use of the instrumental case after the verb 'оказаться'. The answer is unambiguous and the task is natural.</td>
+      <td>{'question': 'Хотя доклад был написан ясно и подробно, некоторые выводы оказались ____ (unconvincing).', 'correctAnswer': ['неубедительными']}</td>
+      <td>Хотя доклад был написан ясно и подробно, некоторые выводы оказались ____ (unconvincing).</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>Qwen 3 Max</td>
+      <td>Fill Blank</td>
+      <td>3.89</td>
+      <td>{\n    "question": "Многие эксперты считают, что использование возобновляемых источников энергии ____ решающую роль в борьбе с изменением климата. (plays)",\n    "correctAnswer": ["играет"]\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>9</td>
+      <td>9</td>
+      <td>A very strong candidate. The topic (climate change, renewable energy) is highly relevant for B2-level discussions. The task effectively tests the important collocation 'играть роль' (to play a role), which is crucial for producing more natural and advanced text. The vocabulary is appropriate and the answer is deterministic.</td>
+      <td>{'question': 'Многие эксперты считают, что использование возобновляемых источников энергии ____ решающую роль в борьбе с изменением климата. (plays)', 'correctAnswer': ['играет']}</td>
+      <td>Многие эксперты считают, что использование возобновляемых источников энергии ____ решающую роль в борьбе с изменением климата. (plays)</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Medium (2-5s)</td>
+    </tr>
+    <tr>
+      <td>Llama 4</td>
+      <td>Fill Blank</td>
+      <td>0.40</td>
+      <td>{\n"question": "В последнее время я ____ большое внимание развитию своего бизнеса. (pay)",\n    "correctAnswer": ["уделяю"]\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>9</td>
+      <td>9</td>
+      <td>This is a very good task that tests the common and important collocation 'уделять внимание' (to pay attention). Mastery of such set phrases is a key indicator of B2 proficiency. The context of business is relevant, and the use of 'В последнее время' correctly signals the imperfective aspect, making the answer unambiguous.</td>
+      <td>{'question': 'В последнее время я ____ большое внимание развитию своего бизнеса. (pay)', 'correctAnswer': ['уделяю']}</td>
+      <td>В последнее время я ____ большое внимание развитию своего бизнеса. (pay)</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>Gemini 3 Flash</td>
+      <td>Fill Blank</td>
+      <td>1.12</td>
+      <td>{\n    "question": "Автор статьи убедительно аргументирует свою позицию, несмотря на то что многие эксперты ____ его точку зрения. (dispute)",\n    "correctAnswer": [\n        "оспаривают"\n    ]\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>9</td>
+      <td>10</td>
+      <td>An outstanding task that perfectly aligns with the B2 level description. It uses a complex sentence structure ('...несмотря на то что...'), advanced academic vocabulary ('аргументирует', 'позиция', 'оспаривают'), and a context directly related to argumentation and expressing points of view. The verb 'оспаривают' is a precise, high-level vocabulary choice.</td>
+      <td>{'question': 'Автор статьи убедительно аргументирует свою позицию, несмотря на то что многие эксперты ____ его точку зрения. (dispute)', 'correctAnswer': ['оспаривают']}</td>
+      <td>Автор статьи убедительно аргументирует свою позицию, несмотря на то что многие эксперты ____ его точку зрения. (dispute)</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>Gemini 3 Flash</td>
+      <td>Fill Blank</td>
+      <td>11.92</td>
+      <td>{\n    "question": "При обсуждении глобального потепления эксперты часто ____ на необходимость немедленного сокращения выбросов углекислого газа. (insist)",\n    "correctAnswer": [\n        "настаивают"\n    ]\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>11</td>
+      <td>10</td>
+      <td>This is an outstanding task that perfectly meets all criteria. The topic (global warming) and vocabulary ('выбросы', 'сокращение') are appropriate for a B2+ level. It tests a specific and useful verb-preposition combination ('настаивать на' - to insist on) that is key for expressing opinions and arguments. The answer is unambiguous, and the sentence is natural and well-formed.</td>
+      <td>{'question': 'При обсуждении глобального потепления эксперты часто ____ на необходимость немедленного сокращения выбросов углекислого газа. (insist)', 'correctAnswer': ['настаивают']}</td>
+      <td>При обсуждении глобального потепления эксперты часто ____ на необходимость немедленного сокращения выбросов углекислого газа. (insist)</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Very Slow (>10s)</td>
+    </tr>
+    <tr>
+      <td>GPT-5.2</td>
+      <td>Fill Blank</td>
+      <td>5.96</td>
+      <td>{\n  "question": "Несмотря на то что у меня было мало времени, мне ____ закончить отчёт к сроку. (managed)",\n  "correctAnswer": ["удалось"]\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>12</td>
+      <td>10</td>
+      <td>The candidate provides a high-quality task that is fully compliant with all instructions. The sentence structure `Несмотря на то что... мне удалось...` is complex and highly appropriate for the B2 level. The chosen vocabulary is specific and the task is unambiguous, making it an excellent measure of both grammatical and lexical proficiency.</td>
+      <td>{'question': 'Несмотря на то что у меня было мало времени, мне ____ закончить отчёт к сроку. (managed)', 'correctAnswer': ['удалось']}</td>
+      <td>Несмотря на то что у меня было мало времени, мне ____ закончить отчёт к сроку. (managed)</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Slow (5-10s)</td>
+    </tr>
+    <tr>
+      <td>Qwen 3 Max</td>
+      <td>Fill Blank</td>
+      <td>3.12</td>
+      <td>{\n    "question": "Я _____ эту книгу уже неделю и до сих пор не могу оторваться. (have been reading)",\n    "correctAnswer": ["читаю"]\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>12</td>
+      <td>10</td>
+      <td>This is an exemplary task. It perfectly tests a core grammatical concept for the B2 level: the use of the imperfective present tense to describe an action that has been ongoing for a period of time. The sentence is natural, the answer is unambiguous, and the context is relatable.</td>
+      <td>{'question': 'Я _____ эту книгу уже неделю и до сих пор не могу оторваться. (have been reading)', 'correctAnswer': ['читаю']}</td>
+      <td>Я _____ эту книгу уже неделю и до сих пор не могу оторваться. (have been reading)</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Medium (2-5s)</td>
+    </tr>
+    <tr>
+      <td>Llama 4</td>
+      <td>Fill Blank</td>
+      <td>0.53</td>
+      <td>{\n"question": "В последнее время я ____ над проектом, который требует много времени и усилий. (have been working)",\n  "correctAnswer": ["работаю"]\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>12</td>
+      <td>10</td>
+      <td>Excellent task that is very similar in quality and grammatical focus to Candidate 3. It correctly identifies a key B2-level grammar point (tense/aspect usage for ongoing actions) and places it in a relevant, professional context. The task is clear, accurate, and unambiguous.</td>
+      <td>{'question': 'В последнее время я ____ над проектом, который требует много времени и усилий. (have been working)', 'correctAnswer': ['работаю']}</td>
+      <td>В последнее время я ____ над проектом, который требует много времени и усилий. (have been working)</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>GPT-5.2</td>
+      <td>Fill Blank</td>
+      <td>1.93</td>
+      <td>{\n  "question": "В отчёте я подробно изложил причины, по которым мы ____ от сотрудничества с этим поставщиком. (decided to refuse)",\n  "correctAnswer": ["решили отказаться"]\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>13</td>
+      <td>9</td>
+      <td>The task is very well-constructed and appropriate for the B2 level. It uses a complex sentence structure within a formal context (a report), which aligns perfectly with the CEFR description provided. The required phrase 'решили отказаться' tests both vocabulary and grammar (aspect and modality). The task is accurate, natural-sounding, and has a deterministic answer. It's an excellent example of a B2-level task.</td>
+      <td>{'question': 'В отчёте я подробно изложил причины, по которым мы ____ от сотрудничества с этим поставщиком. (decided to refuse)', 'correctAnswer': ['решили отказаться']}</td>
+      <td>В отчёте я подробно изложил причины, по которым мы ____ от сотрудничества с этим поставщиком. (decided to refuse)</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>Qwen 3 Max</td>
+      <td>Fill Blank</td>
+      <td>3.00</td>
+      <td>{\n    "question": "Вчера я написал(а) отчёт, ____ все основные выводы из нашего исследования. (summarizing)",\n    "correctAnswer": ["обобщив"]\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>13</td>
+      <td>10</td>
+      <td>This is an outstanding candidate. The task tests the use of a past adverbial participle ('обобщив'), which is an advanced grammatical structure characteristic of sophisticated B2/C1 writing. The context of summarizing findings in a report directly corresponds to the writing skills described in the original instruction. The task is unambiguous, accurate, and highly relevant.</td>
+      <td>{'question': 'Вчера я написал(а) отчёт, ____ все основные выводы из нашего исследования. (summarizing)', 'correctAnswer': ['обобщив']}</td>
+      <td>Вчера я написал(а) отчёт, ____ все основные выводы из нашего исследования. (summarizing)</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Medium (2-5s)</td>
+    </tr>
+    <tr>
+      <td>Gemini 3 Flash</td>
+      <td>Fill Blank</td>
+      <td>1.26</td>
+      <td>{\n    "question": "Автор статьи приводит убедительные аргументы в ____ своей точки зрения. (in support of)",\n    "correctAnswer": [\n        "поддержку"\n    ]\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>13</td>
+      <td>10</td>
+      <td>This is a perfect B2-level task. It tests the knowledge of a fixed prepositional phrase, 'в поддержку', which is crucial for formal and argumentative writing. This aligns directly with the B2 skill description 'giving reasons in support of or against a particular point of view'. The task is concise, unambiguous, and tests a key piece of vocabulary for academic and formal contexts.</td>
+      <td>{'question': 'Автор статьи приводит убедительные аргументы в ____ своей точки зрения. (in support of)', 'correctAnswer': ['поддержку']}</td>
+      <td>Автор статьи приводит убедительные аргументы в ____ своей точки зрения. (in support of)</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>Gemini 3 Flash</td>
+      <td>Fill Blank</td>
+      <td>1.49</td>
+      <td>{\n    "question": "При обсуждении глобального потепления эксперты подчёркивают, что последствия могут быть необратимыми, ____ мы не предпримем решительных действий прямо сейчас. (unless)",\n    "correctAnswer": [\n        "если"\n    ]\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>14</td>
+      <td>10</td>
+      <td>This is an outstanding submission that perfectly adheres to all guidelines. The task is deterministic with only one correct answer. The vocabulary ('глобальное потепление', 'последствия', 'необратимыми', 'предпринять решительных действий') is advanced and perfectly suited for the B2 level. The grammatical point being tested (the use of 'если... не' for 'unless') is subtle and appropriate for B2. The context is complex and relevant.</td>
+      <td>{'question': 'При обсуждении глобального потепления эксперты подчёркивают, что последствия могут быть необратимыми, ____ мы не предпримем решительных действий прямо сейчас. (unless)', 'correctAnswer': ['если']}</td>
+      <td>При обсуждении глобального потепления эксперты подчёркивают, что последствия могут быть необратимыми, ____ мы не предпримем решительных действий прямо сейчас. (unless)</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+    <tr>
+      <td>Mistral Large 3</td>
+      <td>Fill Blank</td>
+      <td>2.08</td>
+      <td>{\n    "question": "Недавно я прочитал интересную статью о том, как важно ____ свои цели и не сдаваться на полпути. (to achieve)",\n    "correctAnswer": ["достигать"]\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>15</td>
+      <td>9</td>
+      <td>A very strong task. It effectively tests the distinction between imperfective ('достигать') and perfective verb aspects, a core B2 skill. The context makes the choice of the imperfective aspect for a general truth unambiguous. The topic and vocabulary are well-suited for the B2 level.</td>
+      <td>{'question': 'Недавно я прочитал интересную статью о том, как важно ____ свои цели и не сдаваться на полпути. (to achieve)', 'correctAnswer': ['достигать']}</td>
+      <td>Недавно я прочитал интересную статью о том, как важно ____ свои цели и не сдаваться на полпути. (to achieve)</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Medium (2-5s)</td>
+    </tr>
+    <tr>
+      <td>Qwen 3 Max</td>
+      <td>Fill Blank</td>
+      <td>2.75</td>
+      <td>{\n    "question": "Вчера я написал(а) отчёт, ____ все основные моменты обсуждения. (summarizing)",\n    "correctAnswer": ["обобщив"]\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>15</td>
+      <td>10</td>
+      <td>An excellent task that is perfectly calibrated for the B2 level. It tests the use of adverbial participles ('деепричастия'), an advanced grammatical structure that is crucial for the formal writing skills described in the proficiency level. The answer is unambiguous and the context is very clear.</td>
+      <td>{'question': 'Вчера я написал(а) отчёт, ____ все основные моменты обсуждения. (summarizing)', 'correctAnswer': ['обобщив']}</td>
+      <td>Вчера я написал(а) отчёт, ____ все основные моменты обсуждения. (summarizing)</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Medium (2-5s)</td>
+    </tr>
+    <tr>
+      <td>Gemini 3 Flash</td>
+      <td>Fill Blank</td>
+      <td>1.08</td>
+      <td>{\n    "question": "Принимая во внимание все аргументы, автор приходит к выводу, что данная реформа принесёт больше ____, чем пользы. (harm)",\n    "correctAnswer": [\n        "вреда"\n    ]\n}</td>
+      <td>NaN</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>15</td>
+      <td>10</td>
+      <td>An outstanding task that aligns perfectly with the B2 proficiency description. It uses formal, academic language ('Принимая во внимание', 'приходит к выводу') and tests both vocabulary and grammar (genitive case in a comparative construction). The complex sentence structure and context make it an ideal B2-level question.</td>
+      <td>{'question': 'Принимая во внимание все аргументы, автор приходит к выводу, что данная реформа принесёт больше ____, чем пользы. (harm)', 'correctAnswer': ['вреда']}</td>
+      <td>Принимая во внимание все аргументы, автор приходит к выводу, что данная реформа принесёт больше ____, чем пользы. (harm)</td>
+      <td>Excellent (9-10)</td>
+      <td>True</td>
+      <td>Fast (<2s)</td>
+    </tr>
+  </tbody>
+</table>
+</body>
+</html>

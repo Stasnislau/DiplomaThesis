@@ -1,0 +1,390 @@
+
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Scientific LLM Benchmark Report</title>
+        <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; margin: 40px; background-color: #f8f9fa; color: #333; line-height: 1.6; }
+            .container { max-width: 1200px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+            h1 { color: #1a3a5f; text-align: center; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
+            h2 { color: #2c3e50; margin-top: 40px; border-left: 5px solid #3498db; padding-left: 15px; }
+            table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 0.9em; }
+            th { background-color: #3498db; color: white; padding: 12px; text-transform: uppercase; font-size: 0.85em; }
+            td { padding: 12px; border-bottom: 1px solid #eee; }
+            tr:nth-child(even) { background-color: #fcfcfc; }
+            tr:hover { background-color: #f1f7ff; }
+            .score-high { color: #27ae60; font-weight: 700; }
+            .score-mid { color: #f39c12; font-weight: 700; }
+            .score-low { color: #e74c3c; font-weight: 700; }
+            .reason-box { font-size: 0.85em; color: #666; font-style: italic; max-width: 450px; line-height: 1.4; }
+            .footer { text-align: center; margin-top: 50px; font-size: 0.8em; color: #999; }
+            .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; background: #eee; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Scientific Comparison of LLMs (Late 2025)</h1>
+            <p style="text-align: center;"><b>Target:</b> Language Learning Task Generation (CEFR Standards)</p>
+            <p style="text-align: center; font-size: 0.9em;">Report Date: 22 December 2025, 10:56</p>
+            
+            <h2>1. Aggregate Performance Metrics</h2>
+            <p>Average scores across 15 iterations per scenario. Stability (Std) represents model consistency.</p>
+            <table class="dataframe summary-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Model</th>
+      <th>Language</th>
+      <th>Level</th>
+      <th>Mean Score</th>
+      <th>Stability (Std)</th>
+      <th>Total Runs</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>GPT-5.2</td>
+      <td>English</td>
+      <td>B2</td>
+      <td>8.21</td>
+      <td>0.86</td>
+      <td>29</td>
+    </tr>
+    <tr>
+      <td>Gemini 3 Flash</td>
+      <td>English</td>
+      <td>B2</td>
+      <td>7.83</td>
+      <td>2.17</td>
+      <td>29</td>
+    </tr>
+    <tr>
+      <td>Mistral Large 3</td>
+      <td>English</td>
+      <td>B2</td>
+      <td>7.21</td>
+      <td>1.80</td>
+      <td>29</td>
+    </tr>
+    <tr>
+      <td>Qwen 3 Max</td>
+      <td>English</td>
+      <td>B2</td>
+      <td>6.79</td>
+      <td>1.92</td>
+      <td>29</td>
+    </tr>
+    <tr>
+      <td>Llama 4</td>
+      <td>English</td>
+      <td>B2</td>
+      <td>5.34</td>
+      <td>3.04</td>
+      <td>29</td>
+    </tr>
+    <tr>
+      <td>Gemini 3 Flash</td>
+      <td>Polish</td>
+      <td>A1</td>
+      <td>9.03</td>
+      <td>1.43</td>
+      <td>30</td>
+    </tr>
+    <tr>
+      <td>GPT-5.2</td>
+      <td>Polish</td>
+      <td>A1</td>
+      <td>9.00</td>
+      <td>0.91</td>
+      <td>30</td>
+    </tr>
+    <tr>
+      <td>Mistral Large 3</td>
+      <td>Polish</td>
+      <td>A1</td>
+      <td>7.00</td>
+      <td>2.52</td>
+      <td>30</td>
+    </tr>
+    <tr>
+      <td>Qwen 3 Max</td>
+      <td>Polish</td>
+      <td>A1</td>
+      <td>6.87</td>
+      <td>2.54</td>
+      <td>30</td>
+    </tr>
+    <tr>
+      <td>Llama 4</td>
+      <td>Polish</td>
+      <td>A1</td>
+      <td>5.83</td>
+      <td>3.70</td>
+      <td>30</td>
+    </tr>
+    <tr>
+      <td>Gemini 3 Flash</td>
+      <td>Polish</td>
+      <td>B2</td>
+      <td>8.33</td>
+      <td>1.81</td>
+      <td>30</td>
+    </tr>
+    <tr>
+      <td>GPT-5.2</td>
+      <td>Polish</td>
+      <td>B2</td>
+      <td>8.07</td>
+      <td>1.34</td>
+      <td>30</td>
+    </tr>
+    <tr>
+      <td>Qwen 3 Max</td>
+      <td>Polish</td>
+      <td>B2</td>
+      <td>7.50</td>
+      <td>2.29</td>
+      <td>30</td>
+    </tr>
+    <tr>
+      <td>Mistral Large 3</td>
+      <td>Polish</td>
+      <td>B2</td>
+      <td>6.27</td>
+      <td>2.16</td>
+      <td>30</td>
+    </tr>
+    <tr>
+      <td>Llama 4</td>
+      <td>Polish</td>
+      <td>B2</td>
+      <td>4.97</td>
+      <td>2.82</td>
+      <td>30</td>
+    </tr>
+    <tr>
+      <td>Qwen 3 Max</td>
+      <td>Russian</td>
+      <td>A1</td>
+      <td>8.88</td>
+      <td>1.96</td>
+      <td>25</td>
+    </tr>
+    <tr>
+      <td>Gemini 3 Flash</td>
+      <td>Russian</td>
+      <td>A1</td>
+      <td>8.81</td>
+      <td>1.72</td>
+      <td>26</td>
+    </tr>
+    <tr>
+      <td>GPT-5.2</td>
+      <td>Russian</td>
+      <td>A1</td>
+      <td>8.68</td>
+      <td>1.55</td>
+      <td>25</td>
+    </tr>
+    <tr>
+      <td>Llama 4</td>
+      <td>Russian</td>
+      <td>A1</td>
+      <td>5.50</td>
+      <td>2.92</td>
+      <td>26</td>
+    </tr>
+    <tr>
+      <td>Mistral Large 3</td>
+      <td>Russian</td>
+      <td>A1</td>
+      <td>5.12</td>
+      <td>2.93</td>
+      <td>25</td>
+    </tr>
+    <tr>
+      <td>Gemini 3 Flash</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>9.07</td>
+      <td>1.66</td>
+      <td>30</td>
+    </tr>
+    <tr>
+      <td>GPT-5.2</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>8.10</td>
+      <td>1.06</td>
+      <td>30</td>
+    </tr>
+    <tr>
+      <td>Qwen 3 Max</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>7.57</td>
+      <td>2.60</td>
+      <td>30</td>
+    </tr>
+    <tr>
+      <td>Llama 4</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>6.00</td>
+      <td>3.10</td>
+      <td>30</td>
+    </tr>
+    <tr>
+      <td>Mistral Large 3</td>
+      <td>Russian</td>
+      <td>B2</td>
+      <td>5.97</td>
+      <td>1.38</td>
+      <td>30</td>
+    </tr>
+  </tbody>
+</table>
+
+            <h2>2. Qualitative Analysis (Model Showcases)</h2>
+            <p>Selected high-quality outputs generated during the benchmark.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Model</th>
+                        <th>Context</th>
+                        <th>Quality Score</th>
+                        <th>Output Snippet</th>
+                        <th>Judge's Critique</th>
+                    </tr>
+                </thead>
+                <tbody>
+    
+                <tr>
+                    <td><span class="badge">Llama 4</span></td>
+                    <td>Polish<br><small>A1</small></td>
+                    <td class="score-high">10.0 / 10</td>
+                    <td style="font-size: 0.8em; font-family: monospace; background: #f9f9f9;">Mam siostrę. Ona ________ 18 lat.</td>
+                    <td class="reason-box">This is an excellent response that adheres to all instructions perfectly. The task tests a core A1 grammar point (verb 'mieć' for age) in a natural context. It correctly omits any instructions from the question, provides four clear options, and uses the specified JSON format, including the `correctAnswer` as an array. While the question consists of two short sentences, they form a single cohesive context for the blank, which is a perfectly acceptable and common format that fully respects the spirit of the instruction.</td>
+                </tr>
+        
+                <tr>
+                    <td><span class="badge">Llama 4</span></td>
+                    <td>Russian<br><small>B2</small></td>
+                    <td class="score-high">10.0 / 10</td>
+                    <td style="font-size: 0.8em; font-family: monospace; background: #f9f9f9;">В последнее время я ____ над проектом, который требует много времени и усилий. (have been working)</td>
+                    <td class="reason-box">Excellent task that is very similar in quality and grammatical focus to Candidate 3. It correctly identifies a key B2-level grammar point (tense/aspect usage for ongoing actions) and places it in a relevant, professional context. The task is clear, accurate, and unambiguous.</td>
+                </tr>
+        
+                <tr>
+                    <td><span class="badge">Llama 4</span></td>
+                    <td>Polish<br><small>B2</small></td>
+                    <td class="score-high">10.0 / 10</td>
+                    <td style="font-size: 0.8em; font-family: monospace; background: #f9f9f9;">Podczas ostatniego urlopu, moi przyjaciele i ja zdecydowaliśmy się na wakacje w górach, gdzie mogliś...</td>
+                    <td class="reason-box">This candidate is flawless. It perfectly adheres to all instructions, including the specific JSON format for the `correctAnswer` field. The task tests appropriate B2 vocabulary ('udoskonalić') in a context (hobbies/interests) that is both relevant to the proficiency description and explicitly allowed by the prompt's examples. The question is natural and the answer is unambiguous.</td>
+                </tr>
+        
+                <tr>
+                    <td><span class="badge">Gemini 3 Flash</span></td>
+                    <td>Russian<br><small>A1</small></td>
+                    <td class="score-high">10.0 / 10</td>
+                    <td style="font-size: 0.8em; font-family: monospace; background: #f9f9f9;">Меня ____ Иван. (name/is called)</td>
+                    <td class="reason-box">This is a perfect A1 task. It tests the fundamental and fixed expression 'Меня зовут...'. The question is completely deterministic, as only the verb 'зовут' can correctly complete the sentence. It perfectly follows all guidelines regarding level, format, and task design.</td>
+                </tr>
+        
+                <tr>
+                    <td><span class="badge">Gemini 3 Flash</span></td>
+                    <td>Polish<br><small>A1</small></td>
+                    <td class="score-high">10.0 / 10</td>
+                    <td style="font-size: 0.8em; font-family: monospace; background: #f9f9f9;">Nazywam się Marek i ____ w Warszawie. (live)</td>
+                    <td class="reason-box">This is a perfect A1 task. It aligns with the 'personal details' part of the level description. It tests a core A1 verb ('mieszkać') in its first-person conjugation, which is a fundamental skill. Most importantly, the answer 'mieszkam' is unambiguous in this context, fulfilling all the prompt's guidelines flawlessly.</td>
+                </tr>
+        
+                <tr>
+                    <td><span class="badge">Gemini 3 Flash</span></td>
+                    <td>English<br><small>B2</small></td>
+                    <td class="score-high">10.0 / 10</td>
+                    <td style="font-size: 0.8em; font-family: monospace; background: #f9f9f9;">Despite the complexity of the project, the team managed to ____ the deadline. (meet)</td>
+                    <td class="reason-box">This is an excellent response that perfectly meets all requirements. The task tests a key B2-level collocation ('meet the deadline'), the sentence structure is appropriate, and it successfully adheres to the 'only one correct answer' rule by testing a strong, idiomatic phrase. The JSON format is valid and follows all instructions.</td>
+                </tr>
+        
+                <tr>
+                    <td><span class="badge">GPT-5.2</span></td>
+                    <td>Polish<br><small>A1</small></td>
+                    <td class="score-high">10.0 / 10</td>
+                    <td style="font-size: 0.8em; font-family: monospace; background: #f9f9f9;">Pozdrawiam Cię z ____ . (the mountains)</td>
+                    <td class="reason-box">The task is excellent. It perfectly aligns with the A1 level description by using vocabulary and a sentence structure ('Pozdrawiam z...') typical for writing a postcard. The question tests both vocabulary ('góry') and a key grammatical concept for this level (the genitive case after the preposition 'z'). The answer is unambiguous and the format is correct.</td>
+                </tr>
+        
+                <tr>
+                    <td><span class="badge">GPT-5.2</span></td>
+                    <td>Russian<br><small>A1</small></td>
+                    <td class="score-high">10.0 / 10</td>
+                    <td style="font-size: 0.8em; font-family: monospace; background: #f9f9f9;">Привет, Анна! Я ____ тебе из Москвы. (write)</td>
+                    <td class="reason-box">The candidate produced a perfectly formatted JSON. The task is excellent for the A1 level, directly referencing the 'writing a postcard' skill mentioned in the prompt. It tests a high-frequency verb ('писать') in the correct 1st person singular present tense form ('пишу'), which is a core A1 grammar point. The sentence is natural, and the answer is deterministic, fulfilling all guidelines.</td>
+                </tr>
+        
+                <tr>
+                    <td><span class="badge">GPT-5.2</span></td>
+                    <td>Polish<br><small>A1</small></td>
+                    <td class="score-high">10.0 / 10</td>
+                    <td style="font-size: 0.8em; font-family: monospace; background: #f9f9f9;">Pozdrawiam Cię z ____! (mountains)</td>
+                    <td class="reason-box">An excellent task that perfectly aligns with the A1 level description of 'writing a short, simple postcard'. The sentence is natural, and it correctly tests the use of the genitive case after the preposition 'z', a key grammatical point for this context. The format is valid and the answer is unambiguous.</td>
+                </tr>
+        
+                <tr>
+                    <td><span class="badge">Mistral Large 3</span></td>
+                    <td>Polish<br><small>A1</small></td>
+                    <td class="score-high">10.0 / 10</td>
+                    <td style="font-size: 0.8em; font-family: monospace; background: #f9f9f9;">Dzień dobry! Mam na imię Anna i ____ z Polski. (am from)</td>
+                    <td class="reason-box">Excellent task. It's grammatically correct, natural, and perfectly aligned with the A1 level by testing a fundamental verb ('jestem') in the context of personal introductions, as mentioned in the proficiency description. The answer is unambiguous.</td>
+                </tr>
+        
+                <tr>
+                    <td><span class="badge">Mistral Large 3</span></td>
+                    <td>Polish<br><small>A1</small></td>
+                    <td class="score-high">10.0 / 10</td>
+                    <td style="font-size: 0.8em; font-family: monospace; background: #f9f9f9;">Dzień dobry! Mam na imię Anna i ____ z Polski. (am from)</td>
+                    <td class="reason-box">This is a perfect A1 task. The sentence 'Mam na imię Anna i ____ z Polski' is a fundamental introductory phrase. The answer 'jestem' is unambiguous and tests the core verb 'to be'. It aligns perfectly with the A1 skill of providing personal details, as mentioned in the level description.</td>
+                </tr>
+        
+                <tr>
+                    <td><span class="badge">Mistral Large 3</span></td>
+                    <td>Polish<br><small>A1</small></td>
+                    <td class="score-high">10.0 / 10</td>
+                    <td style="font-size: 0.8em; font-family: monospace; background: #f9f9f9;">Dzień dobry! Mam na imię Anna i ____ z Polski. (am from)</td>
+                    <td class="reason-box">This is an excellent A1 task. It tests fundamental vocabulary ('jestem z...') and grammar (the verb 'być') used for personal introductions. This aligns perfectly with the A1 skill of filling in personal details. The sentence is natural, and 'jestem' is the only correct and unambiguous answer. The JSON format is valid and all instructions were followed.</td>
+                </tr>
+        
+                <tr>
+                    <td><span class="badge">Qwen 3 Max</span></td>
+                    <td>English<br><small>B2</small></td>
+                    <td class="score-high">10.0 / 10</td>
+                    <td style="font-size: 0.8em; font-family: monospace; background: #f9f9f9;">She has been working here since she ____ her degree in 2020. (graduated)</td>
+                    <td class="reason-box">This is an excellent task that perfectly adheres to all instructions. It tests a crucial B2 grammar point—the use of present perfect continuous with the simple past and 'since'. The answer 'graduated' is unambiguously correct due to the context ('in 2020'). The format is perfect, and the difficulty is ideal for the target level.</td>
+                </tr>
+        
+                <tr>
+                    <td><span class="badge">Qwen 3 Max</span></td>
+                    <td>Russian<br><small>A1</small></td>
+                    <td class="score-high">10.0 / 10</td>
+                    <td style="font-size: 0.8em; font-family: monospace; background: #f9f9f9;">Я пишу ____ другу из Москвы. (a postcard)</td>
+                    <td class="reason-box">This is an excellent task that perfectly adheres to all instructions. It directly references the 'postcard' context from the level description. It tests a key vocabulary word ('открытка') and a crucial A1/A2 grammar point (the accusative case 'открытку'). The answer is deterministic and unambiguous. This is a model example of a well-designed task for the specified level.</td>
+                </tr>
+        
+                <tr>
+                    <td><span class="badge">Qwen 3 Max</span></td>
+                    <td>Russian<br><small>A1</small></td>
+                    <td class="score-high">10.0 / 10</td>
+                    <td style="font-size: 0.8em; font-family: monospace; background: #f9f9f9;">Я пишу ____ другу из Москвы. (a postcard)</td>
+                    <td class="reason-box">This is an outstanding response that perfectly adheres to all instructions. The task is excellently designed for the A1 level, as it cleverly tests both a key vocabulary word ('открытка' - postcard) from the provided context and a fundamental grammatical concept (the accusative case, 'открытку'). The JSON is valid, and the answer is unambiguous.</td>
+                </tr>
+        
+                </tbody>
+            </table>
+            <div class="footer">
+                This report was generated automatically by the Diploma Thesis AI Pipeline.<br>
+                Judge Model: Gemini 2.5 Pro Preview | Evaluation Parameters: Format, Accuracy, Level Adherence.
+            </div>
+        </div>
+    </body>
+    </html>
+    

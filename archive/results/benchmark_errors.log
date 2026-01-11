@@ -1,0 +1,37 @@
+Scientific Benchmark Log - Started at Sun Dec 21 20:22:16 2025
+==================================================
+[23:07:43] ERROR JUDGE_PARSE: Failed to parse judge response: {
+  "evaluations": [
+    {
+      "candidate_index": 1,
+      "score": 8,
+      "reason": "A strong B2-level grammar task testing the third conditional, a classic concept for this proficiency. The task is well-designed with good distractors. It loses points for a minor format deviation: the `correctAnswer` field value is a string instead of an array as implied by the instructions ('The correct option in array')."
+    },
+    {
+      "candidate_index": 2,
+      "score": 9,
+      "reason": "This candidate perfectly adheres to all instructions, including the JSON format and the structure of the `correctAnswer` as an array. The task, testing a gerund after a preposition, is clear and grammatically sound. However, the specific grammar point ('after + -ing') is arguably on the lower end of the B2 level, closer to B1, which is a minor linguistic drawback."
+    },
+    {
+      "candidate_index": 3,
+      "score": 8,
+      "reason": "This is a very good B2-level vocabulary task that tests the nuanced difference between similar verbs, a key skill for this level. The context is clear and the distractors are well-chosen. Like Candidate 1, it deviates slightly from the requested JSON format by providing `correctAnswer` as a string instead of an array."
+    },
+    {
+      "candidate_index": 4,
+      "score": 2,
+      "reason": "The candidate fails on multiple fronts. The JSON format is incorrect (uses `correct: 0` instead of `correctAnswer`). It violates the instruction to not include instructions in the question string. Most critically, the task itself is flawed as all options are plausible, making the answer non-deterministic and subjective, which directly contradicts a key guideline."
+    },
+    {
+      "candidate_index": 5,
+      score": 8,
+      "reason": "This is a solid B2-level task testing vocabulary, specifically the collocation 'meet a deadline'. The task is clear, deterministic, and relevant. The only issue is the minor formatting error where `correctAnswer` is a string instead of an array, which was a specific instruction."
+    }
+  ]
+}
+[00:24:38] ERROR GPT-5.2: HTTPSConnectionPool(host='openrouter.ai', port=443): Read timed out.
+[03:13:07] ERROR Qwen 3 Max: HTTPSConnectionPool(host='openrouter.ai', port=443): Read timed out. (read timeout=60)
+[05:12:54] ERROR Qwen 3 Max: HTTPSConnectionPool(host='openrouter.ai', port=443): Read timed out. (read timeout=60)
+[06:17:21] ERROR Gemini 3 Flash: HTTPSConnectionPool(host='openrouter.ai', port=443): Read timed out. (read timeout=60)
+[09:20:42] ERROR Mistral Large 3: HTTPSConnectionPool(host='openrouter.ai', port=443): Read timed out.
+[09:32:41] ERROR Qwen 3 Max: HTTPSConnectionPool(host='openrouter.ai', port=443): Read timed out.
