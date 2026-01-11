@@ -1,0 +1,30 @@
+[
+  {
+    "language": "polish",
+    "level": "A1",
+    "type": "Multiple Choice",
+    "model_results": [
+      {
+        "model": "Gemini 3 Flash",
+        "score": 0,
+        "reason": "Error: Status 400: {\"error\":{\"message\":\"openrouter/google/gemini-3-flash-preview is not a valid model ID\",\"code\":400},\"user_id\":\"user_37A861ccqKVlC3WunOdLY82V2VM\"}",
+        "latency": 0,
+        "full_response": null
+      }
+    ]
+  },
+  {
+    "language": "polish",
+    "level": "A1",
+    "type": "Fill Blank",
+    "model_results": [
+      {
+        "model": "Gemini 3 Flash",
+        "score": 0,
+        "reason": "Error: Status 400: {\"error\":{\"message\":\"openrouter/google/gemini-3-flash-preview is not a valid model ID\",\"code\":400},\"user_id\":\"user_37A861ccqKVlC3WunOdLY82V2VM\"}",
+        "latency": 0,
+        "full_response": null
+      }
+    ]
+  }
+]
