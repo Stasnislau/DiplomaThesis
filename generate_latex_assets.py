@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 
-# Цены за 1M токенов (Input + Output среднее) - прогноз на конец 2025
 PRICES = {
     "GPT-5.2": 10.0,
     "Gemini 3 Flash": 0.1,
@@ -15,7 +14,7 @@ PRICES = {
 
 def estimate_tokens(text):
     if pd.isna(text): return 0
-    return len(str(text)) / 4  # Грубая, но научная оценка
+    return len(str(text)) / 4 
 
 def generate_assets():
     csv_path = "archive/results/benchmark_2025_scientific_results.csv"
@@ -82,7 +81,7 @@ def generate_assets():
     plt.tight_layout()
     plt.savefig('plot_stability.pdf')
 
-    print("✅ Все ассеты для LaTeX сгенерированы: 2 .tex файла и 2 .pdf графика.")
+    print("All assets for LaTeX generated: 2 .tex files and 2 .pdf graphs.")
 
 if __name__ == "__main__":
     generate_assets()
