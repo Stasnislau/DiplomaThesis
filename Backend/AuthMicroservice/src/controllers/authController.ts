@@ -9,11 +9,11 @@ import {
 } from "@nestjs/common";
 import { AuthService } from "../services/authService";
 import { JwtAuthGuard } from "../guards/jwtAuthGuard";
-import { LoginDto } from "src/dtos/loginDto";
+import { LoginDto } from "../dtos/loginDto";
 import { AuthenticatedRequest } from "../types/AuthenticatedRequest";
 import { RolesGuard } from "../guards/rolesGuard";
 import { Roles } from "../guards/roles.decorator";
-import { UserDto } from "src/dtos/userDto";
+import { UserDto } from "../dtos/userDto";
 
 @Controller("auth")
 export class AuthController {
@@ -93,13 +93,12 @@ export class AuthController {
   @Put("updatePassword")
   async updatePassword(
     @Request() req: AuthenticatedRequest,
-    @Body() password: { oldPassword: string; newPassword: string }
+    @Body() password: { oldPassword: string; newPassword: string },
   ) {
     await this.authService.updatePassword(
       req.user.id,
       password.oldPassword,
-      password.newPassword
-      
+      password.newPassword,
     );
     return { success: true, payload: "Password updated successfully" };
   }

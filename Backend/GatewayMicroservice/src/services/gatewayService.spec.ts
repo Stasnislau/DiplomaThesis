@@ -115,57 +115,191 @@ describe("GatewayService", () => {
     // ==========================================
 
     it("should route request to user microservice", async () => {
-      // TODO: Напиши тест
-      // 1. Мокни httpService.post для validateToken
-      // 2. Мокни httpService.request для проксирования
-      // 3. Вызови handleRequest с URL "/api/gateway/user/profile"
-      // 4. Проверь что targetUrl содержит USER_MICROSERVICE_URL
+      (httpService.post as jest.Mock).mockReturnValue(of(mockAuthResponse));
+      (httpService.request as jest.Mock).mockReturnValue(
+        of({
+          status: 200,
+          data: { success: true, payload: "response from user" },
+        }),
+      );
+
+      const result = await service.handleRequest(
+        "GET",
+        "/api/gateway/user/profile",
+        mockHeaders,
+        {},
+        {},
+      );
+
+      expect(result.status).toBe(200);
+      expect(httpService.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: "http://user:3004/api/profile",
+        }),
+      );
     });
 
     it("should route request to bridge microservice", async () => {
-      // TODO: Напиши тест для bridge
-      // URL: "/api/gateway/bridge/writing/task"
+      (httpService.post as jest.Mock).mockReturnValue(of(mockAuthResponse));
+      (httpService.request as jest.Mock).mockReturnValue(
+        of({
+          status: 200,
+          data: { success: true, payload: "response from bridge" },
+        }),
+      );
+
+      const result = await service.handleRequest(
+        "GET",
+        "/api/gateway/bridge/writing/task",
+        mockHeaders,
+        {},
+        {},
+      );
+
+      expect(result.status).toBe(200);
+      expect(httpService.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: "http://bridge:8000/api/writing/task",
+        }),
+      );
     });
 
     it("should return 404 for unknown microservice", async () => {
-      // TODO: Напиши тест
-      // 1. Вызови handleRequest с URL "/api/gateway/unknown/something"
-      // 2. Проверь что result.status === 404
-      // 3. Проверь что result.data.payload.message содержит "not found"
+      const result = await service.handleRequest(
+        "GET",
+        "/api/gateway/unknown/something",
+        mockHeaders,
+        {},
+        {},
+      );
+
+      expect(result.status).toBe(404);
+      expect(result.data.payload.message).toContain("not found");
     });
 
     it("should return 404 for invalid URL pattern", async () => {
-      // TODO: Напиши тест
-      // URL без паттерна /api/gateway/...
-      // Например: "/api/something/else"
+      const result = await service.handleRequest(
+        "GET",
+        "/api/something/else",
+        mockHeaders,
+        {},
+        {},
+      );
+
+      expect(result.status).toBe(404);
+      expect(result.data.payload.message).toContain("not found");
     });
 
     it("should add user headers when authenticated", async () => {
-      // TODO: Напиши тест
-      // 1. Мокни успешную аутентификацию
-      // 2. Проверь что httpService.request вызывается с headers:
-      //    - "X-User-Id"
-      //    - "X-User-Email"
-      //    - "X-User-Role"
+      (httpService.post as jest.Mock).mockReturnValue(of(mockAuthResponse));
+      (httpService.request as jest.Mock).mockReturnValue(
+        of({
+          status: 200,
+          data: { success: true },
+        }),
+      );
+
+      await service.handleRequest(
+        "GET",
+        "/api/gateway/user/profile",
+        mockHeaders,
+        {},
+        {},
+      );
+
+      // Verify validation call
+      expect(httpService.post).toHaveBeenCalled();
+
+      // Verify request forwarding
+      expect(httpService.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            "X-User-Id": "user-123",
+            "X-User-Email": "test@test.com",
+            "X-User-Role": "USER",
+          }),
+        }),
+      );
     });
 
-    it("should throw UnauthorizedException for invalid token", async () => {
-      // TODO: Напиши тест
-      // 1. Мокни httpService.post чтобы выбросил ошибку
-      // 2. Вызови handleRequest с невалидным токеном
-      // 3. Проверь что возвращается status 500 (или ловит ошибку)
+    it("should return error response when unauthorized", async () => {
+      (httpService.post as jest.Mock).mockReturnValue(
+        throwError(() => new UnauthorizedException()),
+      );
+
+      const result = await service.handleRequest(
+        "GET",
+        "/api/gateway/user/profile",
+        mockHeaders,
+        {},
+        {},
+      );
+
+      // handleRequest catches the error and returns 500
+      expect(result.status).toBe(500);
+    });
+
+    // Correction: handleRequest catches all errors and returns 500 structure.
+    it("should return 500 structure when token validation fails", async () => {
+      (httpService.post as jest.Mock).mockReturnValue(
+        throwError(() => new Error("Invalid token")),
+      );
+
+      const result = await service.handleRequest(
+        "GET",
+        "/api/gateway/user/profile",
+        mockHeaders,
+        {},
+        {},
+      );
+
+      expect(result.status).toBe(500);
+      expect(result.data.success).toBe(false);
     });
 
     it("should return 503 when downstream service is unavailable", async () => {
-      // TODO: Напиши тест
-      // 1. Мокни httpService.request чтобы выбросил ошибку без response
-      // 2. Проверь что возвращается status 503
+      (httpService.post as jest.Mock).mockReturnValue(of(mockAuthResponse));
+      (httpService.request as jest.Mock).mockReturnValue(
+        throwError(() => ({ request: {} })), // Error with request but no response = network error
+      );
+
+      const result = await service.handleRequest(
+        "GET",
+        "/api/gateway/user/profile",
+        mockHeaders,
+        {},
+        {},
+      );
+
+      expect(result.status).toBe(503);
+      expect(result.data.payload.message).toContain("unavailable");
     });
 
     it("should handle multipart/form-data requests", async () => {
-      // TODO: Напиши тест
-      // Headers: { "content-type": "multipart/form-data; boundary=xxx" }
-      // Проверь что req передаётся напрямую, а не body
+      (httpService.post as jest.Mock).mockReturnValue(of(mockAuthResponse));
+      (httpService.request as jest.Mock).mockReturnValue(
+        of({ status: 200, data: {} }),
+      );
+
+      const mockReq = { pipe: jest.fn() }; // simulate stream
+      const multipartHeaders = {
+        ...mockHeaders,
+        "content-type": "multipart/form-data; boundary=xxx",
+      };
+
+      await service.handleRequest(
+        "POST",
+        "/api/gateway/user/upload",
+        multipartHeaders,
+        {}, // body is ignored for multipart
+        mockReq,
+      );
+
+      expect(httpService.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: mockReq, // Should pass req object directly
+        }),
+      );
     });
   });
 });
