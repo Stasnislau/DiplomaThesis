@@ -1,12 +1,12 @@
-import { PrismaService } from "../../prisma/prismaService";
-
 import {
-  Injectable,
   BadRequestException,
+  Injectable,
   NotFoundException,
 } from "@nestjs/common";
 import { Language, LanguageLevel, User } from "@prisma/client";
+
 import { BaseResponse } from "src/types/BaseResponse";
+import { PrismaService } from "../../prisma/prismaService";
 
 @Injectable()
 export class UserService {
@@ -33,8 +33,6 @@ export class UserService {
       },
     });
 
-    console.log(user, "me");
-
     if (!user) {
       throw new NotFoundException("User not found");
     }
@@ -54,38 +52,7 @@ export class UserService {
     };
   }
 
-  async addLanguage(userId: string, languageId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      throw new NotFoundException("User not found");
-    }
-
-    const language = await this.prisma.language.findUnique({
-      where: { id: languageId },
-    });
-
-    if (!language) {
-      throw new NotFoundException("Language not found");
-    }
-
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { languages: { connect: { id: languageId } } },
-      include: {
-        languages: true,
-      },
-    });
-    return {
-      success: true,
-      payload: true,
-    };
-  }
-
   async setNativeLanguage(userId: string, languageId: string) {
-    console.log(userId + " " + languageId);
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
@@ -100,9 +67,9 @@ export class UserService {
     if (user.languages.find((language) => language.languageId === languageId)) {
       throw new BadRequestException("Language already added");
     }
-    const newLanguage = await this.prisma.userLanguage.create({
+
+    await this.prisma.userLanguage.create({
       data: {
-        id: languageId,
         level: LanguageLevel.NATIVE,
         languageId: languageId,
         userId: userId,
@@ -110,7 +77,7 @@ export class UserService {
         isNative: true,
       },
     });
-    console.log(newLanguage);
+
     return {
       success: true,
       payload: true,
@@ -161,7 +128,6 @@ export class UserService {
 
     await this.prisma.userLanguage.create({
       data: {
-        id: languageId,
         level: currentLevel,
         languageId: languageId,
         userId: userId,
