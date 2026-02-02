@@ -243,37 +243,46 @@ describe("UserService", () => {
     });
   });
 
-  // ==================== addLanguage ====================
-  describe("addLanguage", () => {
-    it("should add language to user", async () => {
-      (prisma.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
-      (prisma.language.findUnique as jest.Mock).mockResolvedValue(mockLanguage);
-      (prisma.user.update as jest.Mock).mockResolvedValue({
+  // ==================== setNativeLanguage ====================
+  describe("setNativeLanguage", () => {
+    it("should set native language for user", async () => {
+      (prisma.user.findUnique as jest.Mock).mockResolvedValue({
         ...mockUser,
-        languages: [mockLanguage],
+        languages: [],
       });
+      (prisma.userLanguage.create as jest.Mock).mockResolvedValue({});
 
-      const result = await service.addLanguage("user-123", "lang-1");
+      const result = await service.setNativeLanguage("user-123", "lang-1");
 
       expect(result.success).toBe(true);
-      expect(prisma.user.update).toHaveBeenCalled();
+      expect(prisma.userLanguage.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          level: LanguageLevel.NATIVE,
+          languageId: "lang-1",
+          userId: "user-123",
+          isNative: true,
+          isStarted: true,
+        }),
+      });
     });
 
     it("should throw NotFoundException when user not found", async () => {
       (prisma.user.findUnique as jest.Mock).mockResolvedValue(null);
 
       await expect(
-        service.addLanguage("nonexistent", "lang-1"),
+        service.setNativeLanguage("nonexistent", "lang-1"),
       ).rejects.toThrow(NotFoundException);
     });
 
-    it("should throw NotFoundException when language not found", async () => {
-      (prisma.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
-      (prisma.language.findUnique as jest.Mock).mockResolvedValue(null);
+    it("should throw BadRequestException when language already added", async () => {
+      (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+        ...mockUser,
+        languages: [{ languageId: "lang-1" }],
+      });
 
       await expect(
-        service.addLanguage("user-123", "nonexistent"),
-      ).rejects.toThrow(NotFoundException);
+        service.setNativeLanguage("user-123", "lang-1"),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -292,6 +301,7 @@ describe("UserService", () => {
           level: LanguageLevel.B1,
           languageId: "lang-1",
           userId: "user-123",
+          isNative: false,
         }),
       });
     });
@@ -317,6 +327,23 @@ describe("UserService", () => {
       }
 
       expect(prisma.userLanguage.create).toHaveBeenCalledTimes(6);
+    });
+
+    it("should throw NotFoundException if user not found", async () => {
+      (prisma.user.findUnique as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        service.addUserLanguage("nonexistent", "lang-1", "A1"),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it("should throw NotFoundException if language not found", async () => {
+      (prisma.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
+      (prisma.language.findUnique as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        service.addUserLanguage("user-123", "nonexistent", "A1"),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });
