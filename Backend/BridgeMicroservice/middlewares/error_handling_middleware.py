@@ -13,7 +13,7 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
             return response
 
         except HTTPException as http_exc:
-            error_payload: Union[List[Dict[str, Any]], None] = None
+            error_payload: Union[List[Dict[str, Any]], Dict[str, Any], None] = None
             message: str
 
             if isinstance(http_exc.detail, (list, dict)):
@@ -36,9 +36,12 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
             )
 
     def handle_error(
-        self, status_code: int, message: str, errors: Union[List[Dict[str, Any]], None] = None
+        self,
+        status_code: int,
+        message: str,
+        errors: Union[List[Dict[str, Any]], Dict[str, Any], None] = None,
     ) -> JSONResponse:
-        response_body: Dict = {
+        response_body: Dict[str, Any] = {
             "success": False,
             "payload": {"message": message, "timestamp": datetime.now().isoformat()},
         }

@@ -1,5 +1,5 @@
-import { BaseResponse } from "@/types/responses/BaseResponse";
 import { BRIDGE_MICROSERVICE_URL } from "../consts";
+import { BaseResponse } from "@/types/responses/BaseResponse";
 import { fetchWithAuth } from "../fetchWithAuth";
 
 interface AnalyzedType {
@@ -11,11 +11,12 @@ interface UploadMaterialResponse {
   filename: string;
   chunks_count: number;
   status: string;
-  analyzed_types?: AnalyzedType[] | any; // Flexible to handle varying AI output structure
+  templates_extracted?: number;
+  analyzed_types?: AnalyzedType[];
 }
 
 export const uploadMaterial = async (
-  file: File
+  file: File,
 ): Promise<UploadMaterialResponse> => {
   const formData = new FormData();
   formData.append("file", file);
@@ -25,7 +26,7 @@ export const uploadMaterial = async (
     {
       method: "POST",
       body: formData,
-    }
+    },
   );
 
   const data = (await response.json()) as BaseResponse<UploadMaterialResponse>;

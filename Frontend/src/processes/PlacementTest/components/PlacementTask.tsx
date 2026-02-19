@@ -1,13 +1,15 @@
-import React, { useCallback, useState } from "react";
 import {
   FillInTheBlankTask,
   MultipleChoiceTask,
 } from "@/types/responses/TaskResponse";
+import React, { useCallback, useState } from "react";
+
 import Button from "@/components/common/Button";
-import { motion } from "framer-motion";
 import { UserAnswer } from "@/store/usePlacementTestStore";
+import { isAnswerCorrect } from "@/utils/answerValidation";
 import { isMultipleChoice } from "@/types/typeGuards/isMultipleChoice";
-import { isArray } from "framer/utils/utils.js";
+import { motion } from "framer-motion";
+
 interface PlacementTaskComponentProps {
   task: MultipleChoiceTask | FillInTheBlankTask;
   onAnswer: (answer: UserAnswer) => void;
@@ -24,15 +26,29 @@ export const PlacementTask: React.FC<PlacementTaskComponentProps> = ({
   const handleSubmit = () => {
     if (!userAnswer) return;
 
+    let correct: boolean;
+    if (isMultipleChoice(task)) {
+      // Exact match for MC — the option text must equal the correct answer
+      const ca = task.correctAnswer;
+      correct = Array.isArray(ca) ? ca.includes(userAnswer) : ca === userAnswer;
+    } else {
+      // Fuzzy + synonym match for fill-in-blank
+      correct = isAnswerCorrect(userAnswer, task.correctAnswer, {
+        tolerance: 2,
+        ignoreCase: true,
+        trim: true,
+      });
+    }
+
     onAnswer({
-      isCorrect: isArray(task.correctAnswer)
-        ? task.correctAnswer.includes(userAnswer)
-        : task.correctAnswer === userAnswer,
+      isCorrect: correct,
       userAnswer,
       questionNumber: currentQuestion,
+      question: task.question,
     });
     setUserAnswer("");
   };
+
 
   const renderAnswerInput = useCallback(() => {
     if (isMultipleChoice(task)) {
@@ -47,7 +63,7 @@ export const PlacementTask: React.FC<PlacementTaskComponentProps> = ({
               className={`p-4 rounded-xl border-2 transition-all duration-200 ${
                 userAnswer === option
                   ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white border-transparent shadow-lg"
-                  : "bg-white hover:bg-gray-50 border-gray-200 hover:border-indigo-300"
+                  : "bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-500 text-gray-900 dark:text-gray-100"
               }`}
             >
               <span className="block text-xs mb-1 opacity-70">
@@ -65,7 +81,7 @@ export const PlacementTask: React.FC<PlacementTaskComponentProps> = ({
             type="text"
             value={userAnswer}
             onChange={(e) => setUserAnswer(e.target.value)}
-            className="w-full p-4 border-2 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+            className="w-full p-4 border-2 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
             placeholder="Type your answer here..."
           />
         </div>
@@ -75,13 +91,13 @@ export const PlacementTask: React.FC<PlacementTaskComponentProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="bg-gray-50 p-6 rounded-xl border border-gray-200">
+      <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 transition-colors duration-200">
         <div className="flex items-center justify-between mb-4">
           <span
             className={`px-3 py-1 rounded-full text-xs font-semibold ${
               task.type === "multiple_choice"
-                ? "bg-blue-100 text-blue-800"
-                : "bg-purple-100 text-purple-800"
+                ? "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300"
+                : "bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300"
             }`}
           >
             {task.type === "multiple_choice"
@@ -89,7 +105,7 @@ export const PlacementTask: React.FC<PlacementTaskComponentProps> = ({
               : "Fill in the Blank"}
           </span>
         </div>
-        <p className="text-xl font-medium text-gray-900">{task.question}</p>
+        <p className="text-xl font-medium text-gray-900 dark:text-white">{task.question}</p>
       </div>
 
       <div className="space-y-4">

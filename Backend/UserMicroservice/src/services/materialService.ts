@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'prisma/prismaService';
-import { CreateUserMaterialDto } from '../dtos/createMaterial.dto';
+import { CreateUserMaterialDto } from "../dtos/createMaterial.dto";
+import { Injectable } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
+import { PrismaService } from "prisma/prismaService";
 
 @Injectable()
 export class MaterialService {
@@ -11,7 +12,7 @@ export class MaterialService {
       data: {
         userId,
         filename: createMaterialDto.filename,
-        analyzedTypes: createMaterialDto.analyzedTypes,
+        analyzedTypes: createMaterialDto.analyzedTypes as Prisma.InputJsonValue,
       },
     });
   }
@@ -22,7 +23,7 @@ export class MaterialService {
         userId,
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
     });
   }
@@ -36,4 +37,3 @@ export class MaterialService {
     });
   }
 }
-

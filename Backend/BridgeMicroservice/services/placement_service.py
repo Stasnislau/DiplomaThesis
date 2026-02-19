@@ -1,29 +1,31 @@
-from .writing_task_service import Writing_Task_Service
+from services.writing_task_service import WritingTaskService
 from .vector_db_service import VectorDBService
 from .ai_service import AI_Service
 from utils.user_context import UserContext
 import random
 import json
+from typing import List, Optional
 
 from models.dtos.task_dto import MultipleChoiceTask, FillInTheBlankTask
 from models.dtos.evaluate_test_dto import EvaluateTestDto
+from models.dtos.placement_dtos import PlacementAnswer, PlacementTestAnswer
 
 
-class Placement_Service:
+class PlacementService:
     def __init__(self, ai_service: AI_Service, vector_db_service: VectorDBService):
         self.ai_service = ai_service
         self.vector_db_service = vector_db_service
-        self.writing_task_service = Writing_Task_Service(vector_db_service, ai_service)
-        self.current_level = "B1"
+        self.writing_task_service = WritingTaskService(vector_db_service, ai_service)
+        self.current_level = "A1"  # Default starting level
 
     async def generate_placement_task(
         self,
         language: str,
-        previous_answer: dict | None = None,
+        previous_answer: Optional[PlacementAnswer] = None,
         user_context: UserContext | None = None,
     ) -> MultipleChoiceTask | FillInTheBlankTask:
         if previous_answer:
-            self.adjust_difficulty(previous_answer["isCorrect"])
+            self.adjust_difficulty(previous_answer.is_correct)
 
         task_type = random.choice(["multiple_choice", "fill_in_the_blank"])
         task: MultipleChoiceTask | FillInTheBlankTask
@@ -50,48 +52,53 @@ class Placement_Service:
             self.current_level = levels[current_index - 1]
 
     async def evaluate_test_results(
-        self, answers: list, language: str, user_context: UserContext | None = None
+        self, answers: List[PlacementTestAnswer], language: str, user_context: UserContext | None = None
     ) -> EvaluateTestDto:
         print(f"Evaluating test results for {language} with answers: {answers}")
         try:
             if not answers:
                 raise ValueError("The 'answers' list cannot be empty!")
 
-            for i, answer in enumerate(answers):
-                if not isinstance(answer, dict):
-                    raise ValueError(f"Answer at index {i} must be a dictionary")
-
-                if "isCorrect" not in answer:
-                    raise ValueError(f"Answer at index {i} missing 'isCorrect' field")
-
-                if not isinstance(answer.get("isCorrect"), bool):
-                    raise ValueError(f"'isCorrect' at index {i} must be a boolean")
-
             if not language or not isinstance(language, str):
                 raise ValueError("A valid language string is required")
 
-            correct_answers = len([a for a in answers if a["isCorrect"]])
+            correct_answers = len([a for a in answers if a.is_correct])
             total_questions = len(answers)
             percentage = (correct_answers / total_questions) * 100
 
-            prompt = f"""Evaluate the language placement test results for {language}:
-            - Total questions: {total_questions}
-            - Correct answers: {correct_answers}
-            - Success rate: {percentage}%
+            # Build a readable Q&A list for the AI to re-verify each answer
+            qa_lines = []
+            for i, a in enumerate(answers, 1):
+                status = "✓" if a.is_correct else "✗"
+                qa_lines.append(
+                    f"  Q{i}: {a.question}\n"
+                    f"       User answered: \"{a.user_answer}\"  [{status}]"
+                )
+            qa_block = "\n".join(qa_lines)
 
-            Analyze the following answers:
-            {json.dumps(answers, indent=2)}
+            prompt = f"""You are a language proficiency evaluator.
+Evaluate the following {language} placement test.
 
-            Provide a detailed evaluation in JSON format:
-            {{
-                "level": string,  // Recommended CEFR level (A1-C2), the response should contain only the level as a letter and number,
-                  no other text or comments. Example: "B1"
-                "confidence": number,  // Confidence score 0-100
-                "strengths": string[],  // List of strong areas
-                "weaknesses": string[],  // List of areas to improve
-                "recommendation": string  // Learning path recommendation
-            }}
-            """
+Summary:
+  - Total questions : {total_questions}
+  - Marked correct  : {correct_answers}
+  - Success rate    : {percentage:.0f}%
+
+Question-by-question breakdown (re-verify each if needed — the user may have
+given a close synonym or made a minor typo that was still marked wrong):
+
+{qa_block}
+
+Based on the above, return ONLY a JSON object (no markdown fences) with these fields:
+{{
+    "level": "<CEFR level A1-C2, e.g. B1>",
+    "confidence": <integer 0-100>,
+    "strengths": ["<strength 1>", "..."],
+    "weaknesses": ["<area to improve 1>", "..."],
+    "recommendation": "<personalised learning path recommendation>"
+}}
+"""
+
 
             result: str = await self.ai_service.get_ai_response(
                 prompt, user_context=user_context

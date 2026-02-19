@@ -2,14 +2,16 @@ import {
   FillInTheBlankTask,
   MultipleChoiceTask,
 } from "@/types/responses/TaskResponse";
-import { create } from "zustand";
+
 import { Language } from "@/api/hooks/useAvailableLanguages";
 import { TOTAL_QUESTIONS } from "@/constants";
+import { create } from "zustand";
 
 export interface UserAnswer {
   questionNumber: number;
   isCorrect: boolean;
   userAnswer: string;
+  question: string;
 }
 
 type Task = MultipleChoiceTask | FillInTheBlankTask;
@@ -39,7 +41,10 @@ export const usePlacementTestStore = create<PlacementTestStore>((set) => ({
   currentTask: null,
   nextTask: null,
   cachedTasks: [], // Add cachedTasks back
-  addAnswer: (answer, task) => // Pass task to addAnswer
+  addAnswer: (
+    answer,
+    task, // Pass task to addAnswer
+  ) =>
     set((state) => {
       const newAnswer = {
         ...answer,
@@ -66,7 +71,8 @@ export const usePlacementTestStore = create<PlacementTestStore>((set) => ({
       cachedTasks: [], // Reset cachedTasks
     }),
   setLanguage: (language: Language) => set({ language }),
-  setTasks: (tasks) => set({ currentTask: tasks.current, nextTask: tasks.next }),
+  setTasks: (tasks) =>
+    set({ currentTask: tasks.current, nextTask: tasks.next }),
   advanceTasks: () =>
     set((state) => ({
       currentTask: state.nextTask,

@@ -1,19 +1,31 @@
-import { BaseResponse } from "@/types/responses/BaseResponse";
 import { BRIDGE_MICROSERVICE_URL } from "../consts";
+import { BaseResponse } from "@/types/responses/BaseResponse";
 import { fetchWithAuth } from "../fetchWithAuth";
 
-export interface SpeechAnalysisResult {
-  overall_assessment: string;
-  identified_errors: {
-    error_type: string;
-    erroneous_text: string;
-    explanation: string;
-    suggestion: string;
-  }[];
-  positive_points: string[];
-  areas_for_improvement: string[];
+export interface IdentifiedError {
+  errorType: string;
+  erroneousText: string;
+  explanation: string;
+  suggestion: string;
 }
 
+export interface PronunciationMetrics {
+  overallConfidence: number;
+  wordsPerMinute: number | null;
+  avgPauseDuration: number | null;
+  lowConfidenceWords: string[];
+  fluencyScore: number;
+}
+
+export interface SpeakingAnalysisResult {
+  transcription: string;
+  detectedLanguage: string | null;
+  overallAssessment: string;
+  identifiedErrors: IdentifiedError[];
+  positivePoints: string[];
+  areasForImprovement: string[];
+  pronunciation: PronunciationMetrics;
+}
 
 export interface AnalyzeSpeechRequest {
   audioFile: File;
@@ -21,34 +33,29 @@ export interface AnalyzeSpeechRequest {
   language: string;
 }
 
+/**
+ * Analyzes the user's audio file and returns structured feedback with
+ * transcription, language errors, and pronunciation metrics.
+ */
 export async function analyzeSpeech(
-  input: AnalyzeSpeechRequest
-): Promise<string> {
+  input: AnalyzeSpeechRequest,
+): Promise<SpeakingAnalysisResult> {
   const formData = new FormData();
   formData.append("audio_file", input.audioFile, input.filename);
   const url = new URL(BRIDGE_MICROSERVICE_URL + "/speaking/analyze");
   url.searchParams.set("language", input.language);
 
-  const response = await fetchWithAuth(
-    url.toString(),
-    {
-      method: "POST",
-      body: formData,
-    }
-  );
+  const response = await fetchWithAuth(url.toString(), {
+    method: "POST",
+    body: formData,
+  });
 
-  const data = (await response.json()) as BaseResponse<SpeechAnalysisResult>;
+  const data = (await response.json()) as BaseResponse<SpeakingAnalysisResult>;
+
   if (!data.success) {
-    throw new Error((data.payload as unknown as Error).message || "Failed to analyze speech");
+    const errorMessage = data.errors?.join(", ") || "Failed to analyze speech";
+    throw new Error(errorMessage);
   }
 
-  if (typeof data.payload === 'string') {
-    try {
-      return data.payload;
-    } catch (e) {
-      console.error("Failed to parse payload string as JSON:", e);
-      throw new Error("Received string payload, but failed to parse as JSON object for SpeechAnalysisResult");
-    }
-  }
-  return data.payload as unknown as string;
+  return data.payload;
 }

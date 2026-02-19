@@ -1,12 +1,14 @@
 import React, { useState } from "react";
+
 import { Link } from "react-router-dom";
 
 export const ResetPasswordPage: React.FC = () => {
   const [email, setEmail] = useState("");
 
+  // TODO: Implement password reset API call
   const handleResetPassword = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Password reset attempt for:", email);
+    // Placeholder for API call
   };
 
   return (

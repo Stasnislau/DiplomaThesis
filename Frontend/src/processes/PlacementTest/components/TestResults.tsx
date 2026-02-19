@@ -1,24 +1,30 @@
-import { usePlacementTestStore } from "@/store/usePlacementTestStore";
-import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
-import { useEffect } from "react";
-import { useAvailableLanguages } from "@/api/hooks/useAvailableLanguages";
-import { useAddUserLanguage } from "@/api/hooks/useAddUserLanguage";
-import { useEvaluatePlacementTest } from "../api/hooks/useEvaluatePlacementTest";
+
+import { BRIDGE_MICROSERVICE_URL } from "@/api/consts";
 import LoadingSpinner from "@/components/layout/Loading";
+import { fetchWithAuth } from "@/api/fetchWithAuth";
+import { motion } from "framer-motion";
+import { useAvailableLanguages } from "@/api/hooks/useAvailableLanguages";
+import { useCompletePlacementTest } from "@/api/hooks/useCompletePlacementTest";
+import { useEffect } from "react";
+import { useEvaluatePlacementTest } from "../api/hooks/useEvaluatePlacementTest";
+import { usePlacementTestStore } from "@/store/usePlacementTestStore";
+import { useQueryClient } from "@tanstack/react-query";
 
 const TestResults = () => {
   const navigate = useNavigate();
-  const { userAnswers, cachedTasks, resetTest } = usePlacementTestStore();
+  const queryClient = useQueryClient();
+  const { userAnswers, cachedTasks, resetTest, language: storeLanguage } = usePlacementTestStore();
   const { languageCode } = useParams<{ languageCode: string }>();
   const {
     evaluateTest,
     isLoading,
     data: evaluation,
+    error: evaluateError,
   } = useEvaluatePlacementTest();
   const { languages, isLoading: isLoadingLanguages } = useAvailableLanguages();
-  const { addUserLanguage, isLoading: isLoadingAddUserLanguage } =
-    useAddUserLanguage();
+  const { completeTest, isLoading: isLoadingCompleteTest } =
+    useCompletePlacementTest();
 
   useEffect(() => {
     if (!languageCode || cachedTasks.length === 0) {
@@ -26,10 +32,10 @@ const TestResults = () => {
       return;
     }
 
-    if (!evaluation && !isLoading) {
+    if (!evaluation && !isLoading && !evaluateError) {
       evaluateTest({
         answers: userAnswers,
-        language: languageCode,
+        language: storeLanguage?.name || languageCode,
       });
     }
   }, [
@@ -37,16 +43,19 @@ const TestResults = () => {
     cachedTasks,
     navigate,
     languageCode,
+    storeLanguage,
     evaluateTest,
     evaluation,
     isLoading,
+    evaluateError,
   ]);
 
-  const handleSaveLevel = async () => {
-    console.log(languages, languageCode, evaluation, "save level");
+  const correctAnswers = userAnswers.filter((a) => a.isCorrect).length;
+  const totalQuestions = userAnswers.length;
+  const percentage = Math.round((correctAnswers / totalQuestions) * 100);
 
+  const handleSaveLevel = async () => {
     if (!languages || !languageCode || !evaluation) {
-      console.error("Unable to save language level: missing data");
       return;
     }
 
@@ -55,67 +64,92 @@ const TestResults = () => {
     );
 
     if (!language) {
-      console.error(`Language "${languageCode}" not found`);
       return;
     }
 
-    await addUserLanguage({
+    await completeTest({
       languageId: language.id,
       level: evaluation.level,
+      score: percentage,
+      feedback: {
+        strengths: evaluation.strengths,
+        weaknesses: evaluation.weaknesses,
+        recommendation: evaluation.recommendation,
+        confidence: evaluation.confidence,
+      },
     });
 
-    navigate("/");
+    // Auto-complete all lessons from levels below the determined level
+    if (evaluation.level !== "A1") {
+      try {
+        await fetchWithAuth(`${BRIDGE_MICROSERVICE_URL}/learning-path/bulk-complete`, {
+          method: "POST",
+          body: JSON.stringify({ userLevel: evaluation.level }),
+        });
+        // Refresh learning path cache so the map shows correct statuses immediately
+        queryClient.invalidateQueries({
+          predicate: (q) => q.queryKey[0] === "learning-path",
+        });
+      } catch {
+        // Non-fatal — the map will still show correct statuses via level_index logic
+      }
+    }
+
+    // Navigate directly to the learning path for the correct language & level
+    navigate("/learning-path", {
+      state: {
+        language: language.name.toLowerCase(),
+        level: evaluation.level,
+      },
+    });
+
   };
 
   if (isLoading || isLoadingLanguages) {
     return <LoadingSpinner />;
   }
 
-  const correctAnswers = userAnswers.filter((a) => a.isCorrect).length;
-  const totalQuestions = userAnswers.length;
-  const percentage = Math.round((correctAnswers / totalQuestions) * 100);
-
   return (
     <div className="max-w-4xl mx-auto px-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-lg shadow-md p-8"
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 transition-colors duration-200"
       >
-        <h1 className="text-3xl font-bold text-center mb-8">
+        <h1 className="text-3xl font-bold text-center mb-8 text-gray-900 dark:text-white">
           Your Placement Test Results
         </h1>
 
         <div className="space-y-8">
           <div className="text-center">
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              className="inline-block p-6 bg-blue-100 rounded-full mb-4"
-            >
-              <span className="text-4xl font-bold text-blue-600">
-                {percentage}%
-              </span>
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="inline-block p-6 bg-blue-100 dark:bg-blue-900/30 rounded-full mb-4"
+              >
+                <span className="text-4xl font-bold text-blue-600 dark:text-blue-400">
+                  {percentage}%
+                </span>
             </motion.div>
 
             {evaluation && (
               <>
-                <h2 className="text-2xl font-semibold mb-2">
+                <h2 className="text-2xl font-semibold mb-2 text-gray-900 dark:text-white">
                   Recommended Level: {evaluation.level}
                 </h2>
-                <div className="text-gray-600 mb-4">
+                <div className="text-gray-600 dark:text-gray-400 mb-4">
                   Confidence: {evaluation.confidence}%
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6 mt-8">
-                  <div className="bg-green-50 p-6 rounded-lg">
-                    <h3 className="font-semibold text-green-800 mb-3">
+                  <div className="bg-green-50 dark:bg-green-900/20 p-6 rounded-lg">
+                    <h3 className="font-semibold text-green-800 dark:text-green-300 mb-3">
                       Strengths
                     </h3>
                     <ul className="space-y-2">
                       {evaluation.strengths.map(
                         (strength: string, idx: number) => (
-                          <li key={idx} className="text-green-700">
+                          <li key={idx} className="text-green-700 dark:text-green-400">
                             • {strength}
                           </li>
                         )
@@ -123,14 +157,14 @@ const TestResults = () => {
                     </ul>
                   </div>
 
-                  <div className="bg-red-50 p-6 rounded-lg">
-                    <h3 className="font-semibold text-red-800 mb-3">
+                  <div className="bg-red-50 dark:bg-red-900/20 p-6 rounded-lg">
+                    <h3 className="font-semibold text-red-800 dark:text-red-300 mb-3">
                       Areas to Improve
                     </h3>
                     <ul className="space-y-2">
                       {evaluation.weaknesses.map(
                         (weakness: string, idx: number) => (
-                          <li key={idx} className="text-red-700">
+                          <li key={idx} className="text-red-700 dark:text-red-400">
                             • {weakness}
                           </li>
                         )
@@ -139,18 +173,18 @@ const TestResults = () => {
                   </div>
                 </div>
 
-                <div className="mt-8 p-6 bg-blue-50 rounded-lg">
-                  <h3 className="font-semibold text-blue-800 mb-3">
+                <div className="mt-8 p-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <h3 className="font-semibold text-blue-800 dark:text-blue-300 mb-3">
                     Recommendation
                   </h3>
-                  <p className="text-blue-700">{evaluation.recommendation}</p>
+                  <p className="text-blue-700 dark:text-blue-400">{evaluation.recommendation}</p>
                 </div>
               </>
             )}
           </div>
 
-          <div className="border-t pt-6">
-            <h3 className="text-xl font-semibold mb-4">Question Analysis</h3>
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+            <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Question Analysis</h3>
             <div className="space-y-4">
               {userAnswers.map((answer, index) => (
                 <motion.div
@@ -159,17 +193,19 @@ const TestResults = () => {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
                   className={`p-4 rounded-lg ${
-                    answer.isCorrect ? "bg-green-50" : "bg-red-50"
+                    answer.isCorrect 
+                      ? "bg-green-50 dark:bg-green-900/20" 
+                      : "bg-red-50 dark:bg-red-900/20"
                   }`}
                 >
-                  <p className="font-medium mb-2">
+                  <p className="font-medium mb-2 text-gray-900 dark:text-gray-100">
                     Question {index + 1}: {cachedTasks[index].question}
                   </p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
                     Your answer: {answer.userAnswer}
                   </p>
                   {!answer.isCorrect && (
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                       Correct answer: {cachedTasks[index].correctAnswer}
                     </p>
                   )}
@@ -195,12 +231,11 @@ const TestResults = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleSaveLevel}
-              disabled={isLoadingAddUserLanguage}
+              disabled={isLoadingCompleteTest}
               className="px-6 py-3 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors disabled:bg-gray-400"
             >
-              {isLoadingAddUserLanguage ? "Saving..." : "Save Language Level"}
+              {isLoadingCompleteTest ? "Saving..." : "Save Language Level"}
             </motion.button>
-
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}

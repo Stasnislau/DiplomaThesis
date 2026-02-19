@@ -1,5 +1,6 @@
 import json
 import uuid
+import logging
 from typing import Union, Any, Dict, Type, TypeVar, Optional
 from services.vector_db_service import VectorDBService
 from services.ai_service import AI_Service
@@ -17,17 +18,20 @@ from pydantic import BaseModel
 
 load_dotenv()
 
+logger = logging.getLogger("bridge_microservice")
+
 TaskModelType = TypeVar("TaskModelType", bound=BaseModel)
 
 
-class Writing_Task_Service:
+class WritingTaskService:
     def __init__(self, vector_db_service: VectorDBService, ai_service: AI_Service):
         self.vector_db_service = vector_db_service
         self.ai_service = ai_service
         self.verification_pipeline = VerificationPipeline(ai_service)
 
     async def generate_writing_multiple_choice_task(
-        self, language: str, level: str, user_context: Optional[UserContext] = None
+        self, language: str, level: str, user_context: Optional[UserContext] = None,
+        topic: Optional[str] = None, keywords: Optional[list[str]] = None,
     ) -> MultipleChoiceTask:
         level_context: Union[SpecificSkillContext, FullLevelContext, None] = self.vector_db_service.get_level_context(
             level.upper(), "writing"
@@ -35,33 +39,33 @@ class Writing_Task_Service:
         if not level_context:
             raise ValueError(f"Invalid level: {level}")
 
-        prompt = writing_multiple_choice_task_prompt(language, level, level_context.model_dump())
+        prompt = writing_multiple_choice_task_prompt(language, level, level_context.model_dump(), topic=topic, keywords=keywords)
         response = await self.ai_service.get_ai_response(
             prompt, user_context=user_context
         )
         json_response = await self._process_ai_response_and_validate(response)
-        print(json_response, "INITIAL TASK")
+        logger.debug("Multiple choice task generated successfully")
 
-        verification_result: VerificationResult = VerificationResult(is_valid=True)  # Default to valid
+        # Note: Verification pipeline is currently disabled for performance
+        # TODO: Re-enable when verification latency is acceptable
+        verification_result = VerificationResult(is_valid=True)
+
         try:
-            # verification_result = await self.verification_pipeline.verify_task(json_response, language)
-
-            verification_result = VerificationResult(is_valid=True)
-
             if not verification_result.is_valid and verification_result.better_task:
                 json_response = verification_result.better_task.model_dump(exclude_unset=True)
-                print("Using improved task from verification.", json_response)
+                logger.info("Using improved task from verification")
             elif not verification_result.is_valid:
-                print(f"Task not valid and no better_task provided: {verification_result.explanation}")
+                logger.warning(f"Task not valid: {verification_result.explanation}")
 
             return self._finalize_task_generation(json_response, "multiple_choice", MultipleChoiceTask)
 
         except Exception as e:
-            print(f"Error during task generation/verification: {e}")
+            logger.error(f"Error during task generation/verification: {e}")
             return self._finalize_task_generation(json_response, "multiple_choice", MultipleChoiceTask)
 
     async def generate_writing_fill_in_the_blank_task(
-        self, language: str, level: str, user_context: Optional[UserContext] = None
+        self, language: str, level: str, user_context: Optional[UserContext] = None,
+        topic: Optional[str] = None, keywords: Optional[list[str]] = None,
     ) -> FillInTheBlankTask:
         level_context: Union[SpecificSkillContext, FullLevelContext, None] = self.vector_db_service.get_level_context(
             level.upper(), "writing"
@@ -70,7 +74,7 @@ class Writing_Task_Service:
         if not level_context:
             raise ValueError(f"Invalid level: {level}")
 
-        prompt = writing_fill_in_the_blank_task_prompt(language, level, level_context.model_dump())
+        prompt = writing_fill_in_the_blank_task_prompt(language, level, level_context.model_dump(), topic=topic, keywords=keywords)
         response = await self.ai_service.get_ai_response(
             prompt, user_context=user_context
         )
@@ -103,17 +107,14 @@ class Writing_Task_Service:
     async def _process_ai_response_and_validate(self, response_str: str, is_fill_in_blank: bool = False) -> Dict[str, Any]:
         try:
             json_data = json.loads(response_str)
-            if is_fill_in_blank and isinstance(json_data.get("correctAnswer"), list):
-                if len(json_data["correctAnswer"]) > 0:
-                    json_data["correctAnswer"] = json_data["correctAnswer"][0]
-                else:
-                    json_data["correctAnswer"] = ""
-            return json_data  # type: ignore # Explicitly ignore until mypy correctly infers dict type from json.loads
+            # If it's a list, we keep it as a list to support multiple correct answers (synonyms)
+            # Frontend now supports array of correct answers
+            return json_data  # type: ignore
         except json.JSONDecodeError as e:
-            print(f"Failed to parse AI response JSON: {e}\nRaw response: {response_str}")
+            logger.error(f"Failed to parse AI response JSON: {e}")
             raise HTTPException(status_code=500, detail="Failed to parse AI response into expected JSON structure.")
         except Exception as e:
-            print(f"Error processing AI response: {e}")
+            logger.error(f"Error processing AI response: {e}")
             raise HTTPException(status_code=500, detail=f"Failed to process AI response: {str(e)}")
 
     def _finalize_task_generation(self, json_response: Dict[str, Any], task_type: str, model_class: Type[TaskModelType]) -> TaskModelType:
@@ -122,6 +123,6 @@ class Writing_Task_Service:
         try:
             return model_class(**json_response)
         except Exception as e:
-            print(f"Pydantic validation failed for {model_class.__name__}. Data: {json_response}")
-            print(f"Validation Error: {e}")
+            logger.error(f"Pydantic validation failed for {model_class.__name__}: {e}")
             raise HTTPException(status_code=500, detail=f"Failed to create valid {model_class.__name__}: {e}")
+

@@ -1,12 +1,11 @@
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
-import { useAuthStore } from "../../store/useAuthStore";
-import LoadingPage from "./Loading";
 import { useEffect, useMemo, useState } from "react";
-import { useUserStore } from "@/store/useUserStore";
-import { useMe } from "@/api/hooks/useMe";
-import { useGetUserAITokens } from "@/api/hooks/useGetUserAITokens";
-import { Modal } from "../common/Modal";
+
 import Button from "../common/Button";
+import LoadingPage from "./Loading";
+import { Modal } from "../common/Modal";
+import { useAuthStore } from "../../store/useAuthStore";
+import { useGetUserAITokens } from "@/api/hooks/useGetUserAITokens";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -17,8 +16,8 @@ function ProtectedRoute({ children, accessLevel }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading, userRole } = useAuthStore();
   const location = useLocation();
   const navigate = useNavigate();
-  const userStore = useUserStore();
-  const { me, isFetching: isMeFetching } = useMe();
+  // useMe and userStore logic removed as it is handled in HOC.tsx
+
   const { data: aiTokens, isLoading: isTokensLoading } = useGetUserAITokens();
   const [isTokenModalOpen, setTokenModalOpen] = useState(false);
 
@@ -27,25 +26,6 @@ function ProtectedRoute({ children, accessLevel }: ProtectedRouteProps) {
     if (location.pathname === "/settings/ai-tokens") return false;
     return (aiTokens?.length || 0) === 0;
   }, [aiTokens?.length, isAuthenticated, isTokensLoading, location.pathname]);
-
-  useEffect(() => {
-    if (isAuthenticated && !isMeFetching) {
-      if (me) {
-        userStore.setUser({
-          id: me.id,
-          email: me.email,
-          name: me.name,
-          surname: me.surname,
-          role: me.role,
-          createdAt: me.createdAt,
-          updatedAt: me.updatedAt,
-        });
-      }
-      if (me?.languages?.length === 0) {
-        userStore.setUserLanguages(me.languages);
-      }
-    }
-  }, [isAuthenticated, me]);
 
   useEffect(() => {
     setTokenModalOpen(shouldShowTokenModal);

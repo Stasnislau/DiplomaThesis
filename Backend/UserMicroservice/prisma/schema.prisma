@@ -28,20 +28,26 @@ model User {
     createdAt DateTime @default(now()) @map("created_at")
     updatedAt DateTime @updatedAt @map("updated_at")
 
-    languages    UserLanguage[]
-    achievements UserAchievement[]
-    aiTokens     UserAIToken[]
-    materials    UserMaterial[]
+    languages            UserLanguage[]
+    achievements         UserAchievement[]
+    aiTokens             UserAIToken[]
+    userMaterials        UserMaterial[]
+    placementTestResults PlacementTestResult[]
+    userErrors           UserError[]
+    userLessonProgresses UserLessonProgress[]
 
     @@map("users")
 }
 
 model Language {
-    id           String         @id @default(uuid()) @map("id")
-    name         String         @map("name")
-    code         String         @unique @map("code")
-    tasks        Task[]
-    UserLanguage UserLanguage[]
+    id                   String                @id @default(uuid()) @map("id")
+    name                 String                @map("name")
+    code                 String                @unique @map("code")
+    tasks                Task[]
+    UserLanguage         UserLanguage[]
+    placementTestResults PlacementTestResult[]
+    userErrors           UserError[]
+    modules              Module[]
 
     @@map("languages")
 }
@@ -86,9 +92,13 @@ model Task {
 
 model Achievement {
     id              String            @id @default(uuid()) @map("id")
-    name            String            @map("name")
+    name            String            @unique @map("name")
     description     String            @map("description")
-    imageUrl        String            @map("image_url")
+    imageUrl        String            @default("") @map("image_url")
+    icon            String            @default("🏆") @map("icon")
+    category        String            @default("general") @map("category")
+    maxProgress     Int               @default(1) @map("max_progress")
+    isHidden        Boolean           @default(false) @map("is_hidden")
     UserAchievement UserAchievement[]
 
     @@map("achievements")
@@ -98,9 +108,13 @@ model UserAchievement {
     id            String      @id @default(uuid()) @map("id")
     userId        String      @map("user_id")
     achievementId String      @map("achievement_id")
+    progress      Int         @default(0) @map("progress")
+    unlockedAt    DateTime?   @map("unlocked_at")
+    createdAt     DateTime    @default(now()) @map("created_at")
     user          User        @relation(fields: [userId], references: [id])
     achievement   Achievement @relation(fields: [achievementId], references: [id])
 
+    @@unique([userId, achievementId])
     @@map("user_achievements")
 }
 
@@ -121,4 +135,78 @@ model UserMaterial {
     user          User     @relation(fields: [userId], references: [id])
 
     @@map("user_materials")
+}
+
+model PlacementTestResult {
+    id         String   @id @default(uuid()) @map("id")
+    userId     String   @map("user_id")
+    languageId String   @map("language_id")
+    level      String   @map("level")
+    score      Int      @map("score")
+    feedback   Json     @map("feedback")
+    createdAt  DateTime @default(now()) @map("created_at")
+
+    user     User     @relation(fields: [userId], references: [id])
+    language Language @relation(fields: [languageId], references: [id])
+
+    @@map("placement_test_results")
+}
+
+model UserError {
+    id             String   @id @default(uuid()) @map("id")
+    userId         String   @map("user_id")
+    languageId     String   @map("language_id")
+    errorText      String   @map("error_text")
+    correction     String   @map("correction")
+    errorType      String   @map("error_type")
+    context        String?  @map("context")
+    source         String   @map("source")
+    frequency      Int      @default(1) @map("frequency")
+    lastOccurredAt DateTime @default(now()) @map("last_occurred_at")
+
+    user     User     @relation(fields: [userId], references: [id])
+    language Language @relation(fields: [languageId], references: [id])
+
+    @@map("user_errors")
+}
+
+model Module {
+    id          String   @id @default(uuid()) @map("id")
+    languageId  String   @map("language_id")
+    level       String   @map("level") // A1, A2...
+    title       String   @map("title")
+    description String   @map("description")
+    order       Int      @map("order")
+    lessons     Lesson[]
+
+    language Language @relation(fields: [languageId], references: [id])
+
+    @@map("modules")
+}
+
+model Lesson {
+    id           String               @id @default(uuid()) @map("id")
+    moduleId     String               @map("module_id")
+    title        String               @map("title")
+    content      Json                 @map("content") // { theory: "string", vocabulary: [{word, translation}] }
+    order        Int                  @map("order")
+    userProgress UserLessonProgress[]
+
+    module Module @relation(fields: [moduleId], references: [id])
+
+    @@map("lessons")
+}
+
+model UserLessonProgress {
+    id          String    @id @default(uuid()) @map("id")
+    userId      String    @map("user_id")
+    lessonId    String    @map("lesson_id")
+    status      String    @default("LOCKED") @map("status") // LOCKED, UNLOCKED, COMPLETED
+    completedAt DateTime? @map("completed_at")
+
+    user   User   @relation(fields: [userId], references: [id])
+    lesson Lesson @relation(fields: [lessonId], references: [id])
+
+    @@unique([userId, lessonId])
+    @@map("user_lesson_progress")
 }

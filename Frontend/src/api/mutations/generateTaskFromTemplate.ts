@@ -1,5 +1,6 @@
-import { fetchWithAuth } from "../fetchWithAuth";
 import { BRIDGE_MICROSERVICE_URL } from "../consts";
+import { TaskData } from "@/types/responses/TaskResponse";
+import { fetchWithAuth } from "../fetchWithAuth";
 
 export interface GenerateTaskFromTemplateRequest {
   templateId?: string;
@@ -8,27 +9,32 @@ export interface GenerateTaskFromTemplateRequest {
   level?: string;
 }
 
+// ... (existing imports)
+
 export interface GeneratedTaskResponse {
   template_id?: string | null;
   template_text?: string | null;
-  task: any;
+  task: TaskData;
 }
 
 export const generateTaskFromTemplate = async (
-  payload: GenerateTaskFromTemplateRequest
+  payload: GenerateTaskFromTemplateRequest,
 ): Promise<GeneratedTaskResponse> => {
-  const response = await fetchWithAuth(`${BRIDGE_MICROSERVICE_URL}/materials/templates/generate`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+  const response = await fetchWithAuth(
+    `${BRIDGE_MICROSERVICE_URL}/materials/templates/generate`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        templateId: payload.templateId,
+        templateText: payload.templateText,
+        language: payload.language,
+        level: payload.level,
+      }),
     },
-    body: JSON.stringify({
-      templateId: payload.templateId,
-      templateText: payload.templateText,
-      language: payload.language,
-      level: payload.level,
-    }),
-  });
+  );
 
   if (!response.ok) {
     const text = await response.text();
@@ -42,4 +48,3 @@ export const generateTaskFromTemplate = async (
 
   return data.payload as GeneratedTaskResponse;
 };
-

@@ -1,18 +1,53 @@
-import React, { useState } from "react";
-import { useUploadMaterial } from "@/api/hooks/useUploadMaterial";
-import { useGenerateQuiz } from "@/api/hooks/useGenerateQuiz";
-import { useSaveMaterial } from "@/api/hooks/useSaveMaterial";
-import { useGetUserMaterials } from "@/api/hooks/useGetUserMaterials";
-import Button from "@/components/common/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/common/Card";
-import { QuizQuestion } from "@/api/mutations/generateQuiz";
-import cn from "@/utils/cn";
+import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/common/Tabs";
+
+import Button from "@/components/common/Button";
+import { QuizQuestion } from "@/api/mutations/generateQuiz";
+import { UserMaterial } from "@/api/mutations/saveMaterial";
+import cn from "@/utils/cn";
+import { useGenerateQuiz } from "@/api/hooks/useGenerateQuiz";
+import { useGetUserMaterials } from "@/api/hooks/useGetUserMaterials";
+import { useSaveMaterial } from "@/api/hooks/useSaveMaterial";
+import { useUploadMaterial } from "@/api/hooks/useUploadMaterial";
 
 interface AnalyzedType {
   type: string;
   example: string;
 }
+
+// Simple Levenshtein distance for fuzzy matching typos
+function levenshtein(a: string, b: string): number {
+  if (a.length === 0) return b.length;
+  if (b.length === 0) return a.length;
+  const matrix = [];
+  for (let i = 0; i <= b.length; i++) { matrix[i] = [i]; }
+  for (let j = 0; j <= a.length; j++) { matrix[0][j] = j; }
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b.charAt(i - 1) === a.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        );
+      }
+    }
+  }
+  return matrix[b.length][a.length];
+}
+
+const isAnswerCorrect = (user: string, correct: string) => {
+    if (!user) return false;
+    const u = user.toLowerCase().trim().replace(/[.,!?;:]/g, "");
+    const c = correct.toLowerCase().trim().replace(/[.,!?;:]/g, "");
+    if (u === c) return true;
+    // Allow 1 typo for short words (4-6 chars), 2 for longer
+    const threshold = c.length > 6 ? 2 : (c.length > 3 ? 1 : 0);
+    return levenshtein(u, c) <= threshold;
+};
 
 export const MaterialsPage: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -20,6 +55,8 @@ export const MaterialsPage: React.FC = () => {
   const [analyzedTypes, setAnalyzedTypes] = useState<AnalyzedType[]>([]);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [quiz, setQuiz] = useState<QuizQuestion[]>([]);
+  const [userAnswers, setUserAnswers] = useState<Record<number, string>>({});
+  const [isSubmitted, setIsSubmitted] = useState(false);
   
   const { mutate: upload, isPending: isUploading, error: uploadError } = useUploadMaterial();
   const { mutate: generateQuizMutation, isPending: isGeneratingQuiz } = useGenerateQuiz();
@@ -68,6 +105,8 @@ export const MaterialsPage: React.FC = () => {
           onSuccess: (data) => {
               if (data.quiz && Array.isArray(data.quiz.questions)) {
                   setQuiz(data.quiz.questions);
+                  setUserAnswers({});
+                  setIsSubmitted(false);
                   setView("quiz");
               } else {
                   console.error("Unexpected quiz format", data);
@@ -76,13 +115,16 @@ export const MaterialsPage: React.FC = () => {
       });
   };
 
-  const loadMaterial = (material: any) => {
+
+// ...
+
+  const loadMaterial = (material: UserMaterial) => {
       setFile({ name: material.filename } as File); // Mock file object just for display name
       
       // Ensure analyzedTypes is an array of objects
       let types: AnalyzedType[] = [];
       if (Array.isArray(material.analyzedTypes)) {
-          types = material.analyzedTypes.map((t: any) => {
+          types = material.analyzedTypes.map((t: AnalyzedType | string) => {
               if (typeof t === 'string') return { type: t, example: '' };
               return t;
           });
@@ -260,52 +302,110 @@ export const MaterialsPage: React.FC = () => {
         )}
 
         {view === "quiz" && (
-            <div className="space-y-6">
-                 <div className="flex justify-between items-center">
-                    <h2 className="text-2xl font-bold">Generated Tasks</h2>
-                    <Button variant="secondary" onClick={() => setView("ready")}>Back to Options</Button>
+            <div className="space-y-6 pb-20">
+                 <div className="flex justify-between items-center sticky top-0 bg-gray-50 z-10 py-4 shadow-sm px-2">
+                    <h2 className="text-2xl font-bold">Quiz</h2>
+                    <div className="flex gap-4 items-center">
+                        {isSubmitted && (
+                             <div className="text-lg font-bold">
+                                 Score: {quiz.filter((q, i) => isAnswerCorrect(userAnswers[i], q.correct_answer)).length} / {quiz.length}
+                             </div>
+                        )}
+                        <Button variant="secondary" onClick={() => setView("ready")}>Exit</Button>
+                    </div>
                  </div>
                  
-                 {quiz.map((q, idx) => (
-                     <Card key={idx}>
+                 {quiz.map((q, idx) => {
+                     const isCorrect = isSubmitted ? isAnswerCorrect(userAnswers[idx], q.correct_answer) : undefined;
+                     
+                     return (
+                     <Card key={idx} className={cn(
+                         "transition-colors border-2",
+                         isSubmitted && isCorrect === true ? "border-green-200 bg-green-50/30" : "",
+                         isSubmitted && isCorrect === false ? "border-red-200 bg-red-50/30" : "border-transparent"
+                     )}>
                          <CardHeader>
-                             <CardTitle className="text-lg flex justify-between">
-                                 <span>Task {idx + 1}</span>
-                                 {q.type && <span className="text-sm font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded">{q.type}</span>}
+                             <CardTitle className="text-lg flex justify-between items-start">
+                                 <div className="flex flex-col gap-1">
+                                    <span>Question {idx + 1}</span>
+                                    {q.type && <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded w-fit">{q.type}</span>}
+                                 </div>
+                                 {isSubmitted && (
+                                     <span className={cn(
+                                         "text-sm font-bold px-3 py-1 rounded-full",
+                                         isCorrect ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                                     )}>
+                                         {isCorrect ? "Correct" : "Incorrect"}
+                                     </span>
+                                 )}
                              </CardTitle>
                          </CardHeader>
                          <CardContent>
-                             <p className="font-medium text-gray-800 mb-4 text-lg">{q.question}</p>
-                             
-                             {q.options && q.options.length > 0 ? (
-                                 <div className="space-y-2">
-                                     {q.options.map((opt, i) => (
-                                         <div key={i} className="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                                             <div className="w-4 h-4 rounded-full border border-gray-300 mr-3"></div>
-                                             <span>{opt}</span>
-                                         </div>
-                                     ))}
-                                 </div>
-                             ) : (
-                                 <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 italic text-gray-500">
-                                     (Open answer / Fill in the blank)
+                             {q.context_text && (
+                                 <div className="mb-6 p-4 bg-indigo-50/50 rounded-lg border-l-4 border-indigo-400">
+                                     <p className="text-sm text-gray-800 italic leading-relaxed whitespace-pre-line">{q.context_text}</p>
                                  </div>
                              )}
 
-                             <div className="mt-6">
-                                 <details className="group">
-                                     <summary className="flex cursor-pointer items-center text-indigo-600 font-medium">
-                                         <span className="group-open:hidden">Show Answer</span>
-                                         <span className="hidden group-open:inline">Hide Answer</span>
-                                     </summary>
-                                     <div className="mt-2 p-3 bg-green-50 text-green-800 rounded-lg">
-                                         <strong>Correct Answer:</strong> {q.correct_answer}
-                                     </div>
-                                 </details>
-                             </div>
+                             <p className="font-medium text-gray-800 mb-6 text-lg">{q.question}</p>
+                             
+                             {q.options && q.options.length > 0 ? (
+                                 <div className="space-y-3">
+                                     {q.options.map((opt, i) => (
+                                         <label key={i} className={cn(
+                                             "flex items-center p-4 border rounded-xl cursor-pointer transition-all",
+                                             userAnswers[idx] === opt 
+                                                ? "border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500" 
+                                                : "border-gray-200 hover:bg-gray-50",
+                                             isSubmitted && q.correct_answer === opt ? "border-green-500 bg-green-100 ring-1 ring-green-500" : ""
+                                         )}>
+                                             <input 
+                                                 type="radio" 
+                                                 name={`q-${idx}`} 
+                                                 value={opt}
+                                                 checked={userAnswers[idx] === opt}
+                                                 onChange={() => !isSubmitted && setUserAnswers(prev => ({...prev, [idx]: opt}))}
+                                                 disabled={isSubmitted}
+                                                 className="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500 disabled:opacity-50"
+                                             />
+                                             <span className="ml-3 text-gray-700">{opt}</span>
+                                         </label>
+                                     ))}
+                                 </div>
+                             ) : (
+                                 <div className="space-y-4">
+                                     <input
+                                         type="text"
+                                         placeholder="Your answer..."
+                                         value={userAnswers[idx] || ""}
+                                         onChange={(e) => !isSubmitted && setUserAnswers(prev => ({...prev, [idx]: e.target.value}))}
+                                         disabled={isSubmitted}
+                                         className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100"
+                                     />
+                                 </div>
+                             )}
+
+                             {isSubmitted && !isCorrect && (
+                                 <div className="mt-4 p-3 bg-red-50 text-red-800 rounded-lg border border-red-100">
+                                     <strong>Correct Answer:</strong> {q.correct_answer}
+                                 </div>
+                             )}
                          </CardContent>
                      </Card>
-                 ))}
+                 )})}
+
+                 {!isSubmitted && (
+                     <div className="flex justify-end pt-4">
+                         <Button 
+                            variant="primary" 
+                            onClick={() => setIsSubmitted(true)}
+                            className="w-full sm:w-auto px-12 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all hover:-translate-y-1"
+                            disabled={Object.keys(userAnswers).length < quiz.length} // Optional: Require all answers? Maybe not.
+                         >
+                            Submit Answers
+                         </Button>
+                     </div>
+                 )}
             </div>
         )}
       </div>

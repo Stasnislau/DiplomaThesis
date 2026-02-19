@@ -1,11 +1,13 @@
-import { NestFactory } from "@nestjs/core";
-import { AppModule } from "./appModule";
-import { ErrorHandlingMiddleware } from "./middlewares/errorHandlingMiddleware";
-import { ConfigService } from "@nestjs/config";
-import { ValidationPipe } from "@nestjs/common";
+import { Logger, ValidationPipe } from "@nestjs/common";
 import { MicroserviceOptions, Transport } from "@nestjs/microservices";
 
+import { AppModule } from "./appModule";
+import { ConfigService } from "@nestjs/config";
+import { ErrorHandlingMiddleware } from "./middlewares/errorHandlingMiddleware";
+import { NestFactory } from "@nestjs/core";
+
 async function bootstrap() {
+  const logger = new Logger("AuthMicroservice");
   const app = await NestFactory.create(AppModule);
   app.useGlobalFilters(new ErrorHandlingMiddleware());
   app.useGlobalPipes(new ValidationPipe());
@@ -27,11 +29,10 @@ async function bootstrap() {
       },
     },
   });
-  console.log(configService.get<string>("rabbitmq.url"), configService.get<string>("rabbitmq.queue"))
+
   await app.startAllMicroservices();
   const port = configService.get("PORT");
   await app.listen(port);
-  console.log("Auth Microservice is running on port:", port);
-
+  logger.log(`Auth Microservice is running on port: ${port}`);
 }
 bootstrap();

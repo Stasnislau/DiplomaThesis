@@ -1,4 +1,7 @@
-import React, { useState, useRef, useEffect } from "react";
+import { ChevronDownIcon } from "@radix-ui/react-icons";
+import { DropdownMenu } from "./DropdownMenu";
+import React from "react";
+import cn from "classnames";
 import { useNavigate } from "react-router-dom";
 
 interface NavOption {
@@ -18,60 +21,34 @@ export const NavBar: React.FC<NavBarProps> = ({
   defaultLabel = "Navigate", 
   className = "" 
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedOption, setSelectedOption] = useState<NavOption | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  const toggleDropdown = () => setIsOpen(!isOpen);
-
-  const handleClickOutside = (event: MouseEvent) => {
-    if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-      setIsOpen(false);
-    }
-  };
-
-  useEffect(() => {
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
-  const handleOptionClick = (option: NavOption) => {
-    setSelectedOption(option);
-    setIsOpen(false);
-    navigate(option.path);
-  };
-
   return (
-    <div ref={dropdownRef} className={`relative inline-block text-left ${className}`}>
-      <button
-        type="button"
-        onClick={toggleDropdown}
-        className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-white bg-transparent rounded-md hover:bg-cyan-600 transition duration-150 ease-in-out focus:outline-none"
-      >
-        {selectedOption ? selectedOption.label : defaultLabel}
-        <span className="ml-2 h-4 w-4 text-white">
-          {isOpen ? "▲" : "▼"}
-        </span>
-      </button>
+    <DropdownMenu>
+      <DropdownMenu.Trigger asChild>
+        <button
+          className={cn(
+            "flex items-center justify-between gap-2 px-4 py-2 text-sm font-medium transition duration-150 ease-in-out focus:outline-none rounded-md",
+            "bg-transparent hover:bg-white/10", // Default style assumption, can be overridden by className
+            className
+          )}
+        >
+          {defaultLabel}
+          <ChevronDownIcon className="h-4 w-4" />
+        </button>
+      </DropdownMenu.Trigger>
 
-      {isOpen && (
-        <div className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-          <div className="py-1">
-            {options.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => handleOptionClick(option)}
-                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+      <DropdownMenu.Content align="end" className="w-48 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+        {options.map((option) => (
+          <DropdownMenu.Item
+            key={option.value}
+            onSelect={() => navigate(option.path)}
+            className="cursor-pointer text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700"
+          >
+            {option.label}
+          </DropdownMenu.Item>
+        ))}
+      </DropdownMenu.Content>
+    </DropdownMenu>
   );
 };

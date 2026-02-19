@@ -87,7 +87,7 @@ class AI_Service:
                 {"role": "user", "content": prompt},
             ],
             response_format=response_format,
-            timeout=45,  # Set a 45-second timeout
+            timeout=180,  # 3-minute timeout for long operations like speaking analysis
             **litellm_params,
         )
         content: Optional[str] = chat_response.choices[0].message.content

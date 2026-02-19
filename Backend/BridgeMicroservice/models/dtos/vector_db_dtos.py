@@ -1,6 +1,5 @@
-from pydantic import BaseModel, ConfigDict
-from typing import List
-from pydantic.alias_generators import to_camel
+from pydantic import BaseModel, ConfigDict, Field
+from typing import List, Optional, Any
 
 class LevelSkills(BaseModel):
     listening: str
@@ -11,7 +10,6 @@ class LevelSkills(BaseModel):
 
     model_config = ConfigDict(
         populate_by_name=True,
-        alias_generator=to_camel,
     )
 
 class LevelData(BaseModel):
@@ -26,7 +24,6 @@ class LevelData(BaseModel):
 
     model_config = ConfigDict(
         populate_by_name=True,
-        alias_generator=to_camel,
     )
 
 class SpecificSkillContext(BaseModel):
@@ -41,7 +38,6 @@ class FullLevelContext(BaseModel):
 
     model_config = ConfigDict(
         populate_by_name=True,
-        alias_generator=to_camel,
     )
 
 class SimilarLevel(BaseModel):
@@ -51,5 +47,26 @@ class SimilarLevel(BaseModel):
 
     model_config = ConfigDict(
         populate_by_name=True,
-        alias_generator=to_camel,
+    )
+
+class MaterialChunk(BaseModel):
+    text: str
+    source: str
+    chunk_index: int
+    vector: Optional[List[float]] = None
+    distance: Optional[float] = Field(default=None, alias="_distance")
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+        extra='ignore' 
+    )
+
+class TaskTemplate(BaseModel):
+    id: Optional[str] = None
+    template: str
+    vector: Optional[List[float]] = None
+    
+    model_config = ConfigDict(
+        populate_by_name=True,
+        extra='allow' 
     )

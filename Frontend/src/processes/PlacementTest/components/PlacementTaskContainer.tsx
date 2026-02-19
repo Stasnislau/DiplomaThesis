@@ -1,13 +1,14 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { usePlacementTestStore } from "@/store/usePlacementTestStore";
-import { PlacementTask } from "./PlacementTask";
-import LoadingSpinner from "@/components/layout/Loading";
-import { PlacementAnswer } from "../types/EvaluationResult";
-import { usePlacementTask } from "../api/hooks/usePlacementTask";
 import { useEffect, useRef } from "react";
 
+import LoadingSpinner from "@/components/layout/Loading";
+import { PlacementTask } from "./PlacementTask";
+import { UserAnswer } from "@/store/usePlacementTestStore";
+import { usePlacementTask } from "../api/hooks/usePlacementTask";
+import { usePlacementTestStore } from "@/store/usePlacementTestStore";
+
 export const PlacementTaskContainer = () => {
-  const { createTask, isLoading } = usePlacementTask();
+    const { createTask, isLoading } = usePlacementTask();
 
   const {
     language,
@@ -88,12 +89,13 @@ export const PlacementTaskContainer = () => {
     userAnswers,
   ]);
 
-  const handleAnswer = (placementAnswer: PlacementAnswer) => {
+  const handleAnswer = (placementAnswer: UserAnswer) => {
     if (!currentTask) return;
     addAnswer(
       {
         ...placementAnswer,
         questionNumber: currentQuestionNumber,
+        question: currentTask.question
       },
       currentTask
     );

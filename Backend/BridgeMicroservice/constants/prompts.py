@@ -1,13 +1,27 @@
-from typing import Dict
+from typing import Dict, Any
 
-def writing_fill_in_the_blank_task_prompt(language: str, level: str, level_context: Dict[str, str]) -> str:
+def writing_fill_in_the_blank_task_prompt(
+    language: str,
+    level: str,
+    level_context: Dict[str, str],
+    topic: str | None = None,
+    keywords: list[str] | None = None,
+) -> str:
+    lesson_hint = ""
+    if topic or keywords:
+        lesson_hint = f"""
+        LESSON CONTEXT (MANDATORY — your task MUST use this):
+        - Topic: {topic or 'General'}
+        - Key words / phrases to test: {', '.join(keywords) if keywords else 'any relevant to the topic'}
+        The missing word in the blank MUST be one of the key words or phrases listed above.
+        """
     return f"""
         Generate a **fill-in-the-blank task** for language learners in {language} at {level} level.
         FOLLOW STRICTLY ALL THE GUIDELINES BELOW.
 
         Level proficiency description:
         {level_context}
-
+        {lesson_hint}
         *GUIDELINES:*
         1. Create one sentence with in the {language} language.
         2. Since this is a writing task, the question could be a grammar question or a vocabulary question.
@@ -37,12 +51,27 @@ def writing_fill_in_the_blank_task_prompt(language: str, level: str, level_conte
         """
 
 
-def writing_multiple_choice_task_prompt(language: str, level: str, level_context: Dict[str, str]) -> str:
+def writing_multiple_choice_task_prompt(
+    language: str,
+    level: str,
+    level_context: Dict[str, str],
+    topic: str | None = None,
+    keywords: list[str] | None = None,
+) -> str:
+    lesson_hint = ""
+    if topic or keywords:
+        lesson_hint = f"""
+        LESSON CONTEXT (MANDATORY — your task MUST use this):
+        - Topic: {topic or 'General'}
+        - Key words / phrases to include or test: {', '.join(keywords) if keywords else 'any relevant to the topic'}
+        Build the sentence and options around the above words/phrases.
+        """
     return f"""
         Generate a language learning task in {language} at {level} level. FOLLOW STRICTLY ALL THE GUIDELINES BELOW.
 
         Level proficiency description:
         {level_context}
+        {lesson_hint}
         *GUIDELINES:*
         Create a **multiple-choice task** that matches the level's requirements without using the example in the level context:
         1. The task must consist of a single sentence with one clear objective.
@@ -96,7 +125,7 @@ def explain_answer_prompt(language: str, level: str, task: str, correct_answer: 
         """
 
 
-def verify_french_task_prompt(task: dict) -> str:
+def verify_french_task_prompt(task: Dict[str, Any]) -> str:
     return f"""
         Vérifiez rigoureusement la tâche d'apprentissage suivante :
         {task}
@@ -137,7 +166,7 @@ def verify_french_task_prompt(task: dict) -> str:
         """
 
 
-def verify_polish_task_prompt(task: dict) -> str:
+def verify_polish_task_prompt(task: Dict[str, Any]) -> str:
     return f"""
         Sprawdź dokładnie następujące zadanie językowe:
         {task}

@@ -1,13 +1,14 @@
 import json
 import os
 import uuid
+from typing import List, Union
 from models.dtos.listening_task_dto import ListeningTaskRequest
-from models.responses.listening_task_response import ListeningTaskResponse
+from models.responses.listening_task_response import ListeningTaskResponse, MultipleChoiceQuestion, FillInTheBlankQuestion
 from services.ai_service import AI_Service
 from utils.user_context import UserContext
 from elevenlabs.client import ElevenLabs
-from elevenlabs.types import Voice
 import aiofiles
+from pydantic import TypeAdapter
 
 # Ensure ELEVENLABS_API_KEY is set in your environment variables.
 elevenlabs_client = ElevenLabs(api_key=os.getenv("ELEVENLABS_API_KEY"))
@@ -15,7 +16,7 @@ elevenlabs_client = ElevenLabs(api_key=os.getenv("ELEVENLABS_API_KEY"))
 BASE_URL = "http://localhost:3003"
 
 
-class Listening_Task_Service:
+class ListeningTaskService:
     def __init__(self, ai_service: AI_Service) -> None:
         self.ai_service = ai_service
 
@@ -27,7 +28,7 @@ class Listening_Task_Service:
         language = request.language
         level = request.level
 
-        # Step 1: Generate story and questions with AI_Service (using gemini-flash-latest by default)
+        # Step 1: Generate story and questions with AI_Service
         prompt = f"""
         You are an expert in language education. Your task is to create a listening exercise for a student learning {language} at the {level} level.
 
@@ -66,16 +67,33 @@ class Listening_Task_Service:
             prompt, user_context=user_context
         )
 
-        content_json = json.loads(response)
-        transcript = content_json["transcript"]
-        questions = content_json["questions"]
+        try:
+            content_json = json.loads(response)
+            transcript = content_json.get("transcript", "")
+            raw_questions = content_json.get("questions", [])
+            
+            # Validate questions using TypeAdapter
+            question_adapter = TypeAdapter(List[Union[MultipleChoiceQuestion, FillInTheBlankQuestion]])
+            questions = question_adapter.validate_python(raw_questions)
 
-        audio = elevenlabs_client.text_to_speech.convert(
-            text=transcript,
-            voice_id="hIssydxXZ1WuDorjx6Ic", # <-- Передаем voice_id напрямую, ты, мудила!
-            model_id='eleven_flash_v2_5'
-            # model="eleven_multilingual_v2",  # Убираем этот аргумент нахуй!
-        )
+        except Exception as e:
+            print(f"Error parsing AI response: {e}")
+            raise ValueError("Failed to parse AI response for listening task")
+
+        if not transcript:
+             raise ValueError("Generated transcript is empty")
+
+        # Step 3: Generate Audio with ElevenLabs
+        try:
+            audio = elevenlabs_client.text_to_speech.convert(
+                text=transcript,
+                voice_id="hIssydxXZ1WuDorjx6Ic", 
+                model_id='eleven_flash_v2_5'
+            )
+        except Exception as e:
+             print(f"Error calling ElevenLabs: {e}")
+             # Fallback or re-raise? Re-raising for now as audio is critical
+             raise e
 
         audio_dir = "static/audio"
         os.makedirs(audio_dir, exist_ok=True)
@@ -84,8 +102,8 @@ class Listening_Task_Service:
 
         # Use aiofiles for async file writing
         async with aiofiles.open(file_path, "wb") as f:
-            for chunk in audio:  # Теперь обычный for, ты, тупица!
-                await f.write(chunk)  # Write each chunk
+            for chunk in audio:
+                await f.write(chunk) 
 
         # Step 4: Construct the response object
         audio_url = f"{BASE_URL}/static/audio/{file_name}"
@@ -94,5 +112,5 @@ class Listening_Task_Service:
             type="listening",
             audioUrl=audio_url,
             transcript=transcript,
-            questions=questions,
+            questions=questions, 
         )

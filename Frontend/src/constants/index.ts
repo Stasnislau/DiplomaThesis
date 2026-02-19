@@ -1,4 +1,4 @@
-export const TOTAL_QUESTIONS = 5;
+export const TOTAL_QUESTIONS = 15;
 
 export const AI_PROVIDERS = [
   { value: "openai", label: "OpenAI" },

@@ -1,33 +1,47 @@
+import { FillInTheBlankTask, MultipleChoiceTask } from "@/types/responses/TaskResponse";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/common/Tabs";
-import { useCreateMultipleChoiceTask } from "@/api/hooks/useCreateMultipleChoiceTask";
-import { useCreateBlankSpaceTask } from "@/api/hooks/useCreateBlankSpaceTask";
-import React, { useState, useEffect } from "react";
-import { MultipleChoiceTask, FillInTheBlankTask } from "@/types/responses/TaskResponse";
+import { useEffect, useState } from "react";
+
 import Button from "@/components/common/Button";
 import { TaskComponent } from "@/pages/Quiz/components/TaskComponent";
-import { useExplainAnswer } from "@/api/hooks/useExplainAnswer";
 import { isMultipleChoice } from "@/types/typeGuards/isMultipleChoice";
+import { useCreateBlankSpaceTask } from "@/api/hooks/useCreateBlankSpaceTask";
+import { useCreateMultipleChoiceTask } from "@/api/hooks/useCreateMultipleChoiceTask";
+import { useExplainAnswer } from "@/api/hooks/useExplainAnswer";
+import { useTranslation } from "react-i18next";
 
 const LANGUAGES = [
-  { code: "Spanish", flag: "🇪🇸" },
-  { code: "French", flag: "🇫🇷" },
-  { code: "German", flag: "🇩🇪" },
-  { code: "Russian", flag: "🇷🇺" },
-  { code: "Polish", flag: "🇵🇱" },
-  { code: "English", flag: "🇬🇧" },
-  { code: "Italian", flag: "🇮🇹" },
+  { code: "spanish", flag: "🇪🇸" },
+  { code: "french", flag: "🇫🇷" },
+  { code: "german", flag: "🇩🇪" },
+  { code: "russian", flag: "🇷🇺" },
+  { code: "polish", flag: "🇵🇱" },
+  { code: "english", flag: "🇬🇧" },
+  { code: "italian", flag: "🇮🇹" },
 ];
 
 const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
-const WritingTask = () => {
-  const [language, setLanguage] = useState("");
-  const [level, setLevel] = useState("");
+interface WritingTaskProps {
+  initialLanguage?: string;
+  initialLevel?: string;
+  initialTaskType?: "multiple-choice" | "fill-blank";
+}
+
+const WritingTask = ({ initialLanguage, initialLevel, initialTaskType }: WritingTaskProps) => {
+  const { t } = useTranslation();
+  const [language, setLanguage] = useState(initialLanguage || "");
+  const [level, setLevel] = useState(initialLevel || "");
+
+  useEffect(() => {
+    if (initialLanguage) setLanguage(initialLanguage);
+    if (initialLevel) setLevel(initialLevel);
+  }, [initialLanguage, initialLevel]);
   const [userAnswer, setUserAnswer] = useState("");
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
   const [currentTaskData, setCurrentTaskData] = useState<MultipleChoiceTask | FillInTheBlankTask | null>(null);
-  const [taskType, setTaskType] = useState<"multiple-choice" | "fill-blank">("multiple-choice");
+  const [taskType, setTaskType] = useState<"multiple-choice" | "fill-blank">(initialTaskType || "multiple-choice");
 
   const { createTask: createMultipleChoice, isLoading: isLoadingMC, data: dataMC, error: errorMC } = useCreateMultipleChoiceTask();
   const { createTask: createFillBlank, isLoading: isLoadingFB, data: dataFB, error: errorFB } = useCreateBlankSpaceTask();
@@ -45,32 +59,33 @@ const WritingTask = () => {
   const handleCreateTask = () => {
     if (language && level) {
       setCurrentTaskData(null);
+      // Ensure we send capitalized language code if backend expects it (e.g. "Spanish")
+      // But based on LANGUAGES array update, code is lowercase. Assuming backend handles case or expects capitalized.
+      // Usually better to map to backend expected format. Assuming backend expects Title Case.
+      const backendLanguage = language.charAt(0).toUpperCase() + language.slice(1);
+      
       if (taskType === "multiple-choice") {
-        createMultipleChoice({ language, level });
+        createMultipleChoice({ language: backendLanguage, level });
       } else {
-        createFillBlank({ language, level });
+        createFillBlank({ language: backendLanguage, level });
       }
       setUserAnswer("");
       setShowExplanation(false);
       setIsCorrect(null);
-    } else {
-      alert("Please select both language and level.");
-    }
+    } 
   };
 
   useEffect(() => {
     if (data && !currentTaskData && !isLoading) {
-      setCurrentTaskData(data);
+      setCurrentTaskData(data as MultipleChoiceTask | FillInTheBlankTask);
     }
-  }, [data, isLoading]);
+  }, [data, isLoading, currentTaskData]);
 
 
   const handleCheckAnswer = () => {
     if (!currentTaskData || !userAnswer) return;
 
     let isAnswerCorrect = false;
-    if (!currentTaskData) return;
-    console.log(currentTaskData, userAnswer);
     if (isMultipleChoice(currentTaskData)) {
       const correctOptionIndex = currentTaskData?.options?.indexOf(
         Array.isArray(currentTaskData.correctAnswer) ? currentTaskData.correctAnswer[0] : currentTaskData.correctAnswer
@@ -79,7 +94,6 @@ const WritingTask = () => {
       isAnswerCorrect =
         currentTaskData.options[correctOptionIndex] === userAnswer;
     } else {
-      console.log(currentTaskData.correctAnswer, userAnswer, currentTaskData.correctAnswer === userAnswer, "fill in the blank");
       isAnswerCorrect = currentTaskData.correctAnswer === userAnswer;
     }
     setIsCorrect(isAnswerCorrect);
@@ -88,8 +102,9 @@ const WritingTask = () => {
   const handleExplainAnswer = () => {
     if (currentTaskData && userAnswer) {
       setShowExplanation(true);
+      const backendLanguage = language.charAt(0).toUpperCase() + language.slice(1);
       explainAnswer({
-        language,
+        language: backendLanguage,
         level,
         task: currentTaskData.question,
         correctAnswer: Array.isArray(currentTaskData.correctAnswer) ? currentTaskData.correctAnswer[0] : currentTaskData.correctAnswer,
@@ -102,53 +117,56 @@ const WritingTask = () => {
   return (
     <div className="space-y-6">
       {/* Language Selection */}
-      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-6 border border-indigo-100">
+      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 rounded-2xl p-6 border border-indigo-100 dark:border-gray-600 transition-colors duration-300">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
-            <span className="text-lg">🌍</span>
+          <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
+            <span className="text-lg" role="img" aria-hidden="true">🌍</span>
           </div>
-          <label className="text-sm font-semibold text-gray-800">
-            Choose Language
+          <label className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+            {t('languages.chooseLanguage')}
           </label>
         </div>
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-3">
           {LANGUAGES.map((lang) => (
             <button
               key={lang.code}
               onClick={() => setLanguage(lang.code)}
-              className={`py-3 px-4 rounded-xl text-sm font-medium transition-all duration-200 flex flex-col items-center gap-1 ${
+              className={`py-3 px-2 rounded-xl text-sm font-medium transition-all duration-200 flex flex-col items-center gap-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
                 language === lang.code
-                  ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30 scale-105"
-                  : "bg-white text-gray-700 border border-gray-200 hover:bg-indigo-50 hover:border-indigo-200"
+                  ? "bg-indigo-600 text-white shadow-md ring-2 ring-indigo-300 dark:ring-indigo-700"
+                  : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 hover:bg-indigo-50 dark:hover:bg-gray-700 hover:border-indigo-200"
               }`}
+              aria-pressed={language === lang.code}
+              aria-label={t(`languages.${lang.code}`)}
             >
-              <span className="text-xl">{lang.flag}</span>
-              <span className="text-xs">{lang.code}</span>
+              <span className="text-2xl" role="img" aria-hidden="true">{lang.flag}</span>
+              <span className="text-xs font-semibold">{t(`languages.${lang.code}`)}</span>
             </button>
           ))}
         </div>
       </div>
 
       {/* Level Selection */}
-      <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm transition-colors duration-300">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
-            <span className="text-lg">📊</span>
+          <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center">
+            <span className="text-lg" role="img" aria-hidden="true">📊</span>
           </div>
-          <label className="text-sm font-semibold text-gray-800">
-            Proficiency Level
+          <label className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+            {t('languages.proficiencyLevel')}
           </label>
         </div>
-        <div className="grid grid-cols-6 gap-2">
+        <div className="flex flex-wrap gap-3">
           {LEVELS.map((lvl) => (
             <button
               key={lvl}
               onClick={() => setLevel(lvl)}
-              className={`py-3 px-4 rounded-xl text-sm font-bold transition-all duration-200 ${
+              className={`flex-1 min-w-[60px] py-2 px-3 rounded-lg text-sm font-bold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 ${
                 level === lvl
-                  ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/30"
-                  : "bg-gray-100 text-gray-700 hover:bg-purple-50 hover:text-purple-700"
+                  ? "bg-purple-600 text-white shadow-md ring-2 ring-purple-300 dark:ring-purple-700"
+                  : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-gray-600 hover:text-purple-700 dark:hover:text-purple-300"
               }`}
+              aria-pressed={level === lvl}
             >
               {lvl}
             </button>
@@ -157,29 +175,29 @@ const WritingTask = () => {
       </div>
 
       {/* Task Type Selection */}
-      <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm transition-colors duration-300">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
-            <span className="text-lg">✍️</span>
+          <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
+            <span className="text-lg" role="img" aria-hidden="true">✍️</span>
           </div>
-          <h2 className="text-sm font-semibold text-gray-800">Task Type</h2>
+          <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Task Type</h2>
         </div>
         
         <Tabs defaultValue="multiple-choice" onValueChange={(value) => setTaskType(value as "multiple-choice" | "fill-blank")}>
-          <TabsList className="grid grid-cols-2 gap-2 bg-gray-100 p-1 rounded-xl mb-4">
+          <TabsList className="grid grid-cols-2 gap-2 bg-gray-100 dark:bg-gray-700 p-1 rounded-lg mb-4 h-auto">
             <TabsTrigger 
               value="multiple-choice"
-              className="rounded-lg py-3 px-4 text-sm font-semibold transition-all data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-indigo-600"
+              className="rounded-md py-2 px-3 text-sm font-medium transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-gray-600 data-[state=active]:shadow-sm data-[state=active]:text-indigo-600 dark:data-[state=active]:text-white dark:text-gray-300"
             >
-              <span className="mr-2">🔘</span>
-              Multiple Choice
+              <span className="mr-2" role="img" aria-hidden="true">🔘</span>
+              {t('tasks.multipleChoice')}
             </TabsTrigger>
             <TabsTrigger 
               value="fill-blank"
-              className="rounded-lg py-3 px-4 text-sm font-semibold transition-all data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-indigo-600"
+              className="rounded-md py-2 px-3 text-sm font-medium transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-gray-600 data-[state=active]:shadow-sm data-[state=active]:text-indigo-600 dark:data-[state=active]:text-white dark:text-gray-300"
             >
-              <span className="mr-2">📝</span>
-              Fill in the Blank
+              <span className="mr-2" role="img" aria-hidden="true">📝</span>
+              {t('tasks.fillInBlank')}
             </TabsTrigger>
           </TabsList>
           
@@ -189,9 +207,9 @@ const WritingTask = () => {
               disabled={!language || !level || isLoading}
               variant="primary"
               isLoading={isLoading}
-              className="w-full h-12 rounded-xl font-semibold"
+              className="w-full h-12 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Generate Multiple Choice Task
+              {t('tasks.generateTask')}
             </Button>
           </TabsContent>
           <TabsContent value="fill-blank">
@@ -200,32 +218,32 @@ const WritingTask = () => {
               disabled={!language || !level || isLoading}
               variant="primary"
               isLoading={isLoading}
-              className="w-full h-12 rounded-xl font-semibold"
+              className="w-full h-12 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Generate Fill in the Blank Task
+              {t('tasks.generateTask')}
             </Button>
           </TabsContent>
         </Tabs>
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 rounded-2xl border border-red-200">
+        <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-2xl border border-red-200 dark:border-red-800">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
-              <span className="text-lg">⚠️</span>
+            <div className="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-900/50 flex items-center justify-center">
+              <span className="text-lg" role="img" aria-hidden="true">⚠️</span>
             </div>
-            <p className="text-sm text-red-600 font-medium">{error.message}</p>
+            <p className="text-sm text-red-600 dark:text-red-400 font-medium">{error.message}</p>
           </div>
         </div>
       )}
 
       {currentTaskData && (
-        <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-lg">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-lg transition-colors duration-300">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
-              <span className="text-white text-lg">🎯</span>
+              <span className="text-white text-lg" role="img" aria-hidden="true">🎯</span>
             </div>
-            <h3 className="text-lg font-bold text-gray-900">Your Task</h3>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Your Task</h3>
           </div>
           <TaskComponent
             taskData={currentTaskData}

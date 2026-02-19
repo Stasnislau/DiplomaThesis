@@ -1,15 +1,15 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  addUserLanguage,
   AddUserLanguageRequest,
+  addUserLanguage,
 } from "../mutations/addUserLanguage";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export function useAddUserLanguage() {
-    const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: (data: AddUserLanguageRequest) => addUserLanguage(data),
-    onSuccess: () => { 
-        queryClient.invalidateQueries({ queryKey: ["user", "getMe"] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users", "getMe"] });
     },
   });
 

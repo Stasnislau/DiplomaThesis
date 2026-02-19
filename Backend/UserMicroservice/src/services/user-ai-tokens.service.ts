@@ -1,13 +1,13 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'prisma/prismaService';
-import { CreateUserAITokenDto } from '../dtos/createUserAIToken.dto';
+import { CreateUserAITokenDto } from "../dtos/createUserAIToken.dto";
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "prisma/prismaService";
 
 @Injectable()
 export class UserAITokensService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(userId: string, createUserAITokenDto: CreateUserAITokenDto) {
-    return this.prisma.$transaction(async (tx) => {
+    const createdToken = await this.prisma.$transaction(async (tx) => {
       // If the new token is set as default, unset other defaults for this user
       if (createUserAITokenDto.isDefault) {
         await tx.userAIToken.updateMany({
@@ -21,18 +21,20 @@ export class UserAITokensService {
       const isDefault = createUserAITokenDto.isDefault || count === 0;
 
       return tx.userAIToken.create({
-      data: {
-        userId,
+        data: {
+          userId,
           token: createUserAITokenDto.token,
           aiProviderId: createUserAITokenDto.aiProviderId,
           isDefault: isDefault,
-      },
+        },
       });
     });
+
+    return { ...createdToken, token: this.maskToken(createdToken.token) };
   }
 
-  async findAllForUser(userId: string) {
-    return this.prisma.userAIToken.findMany({
+  async findAllForUser(userId: string, includeToken = false) {
+    const tokens = await this.prisma.userAIToken.findMany({
       where: {
         userId,
       },
@@ -40,14 +42,19 @@ export class UserAITokensService {
         aiProvider: true,
       },
       orderBy: [
-        { isDefault: 'desc' }, // Defaults first
-        { createdAt: 'desc' },
+        { isDefault: "desc" }, // Defaults first
+        { createdAt: "desc" },
       ],
     });
+
+    return tokens.map((t) => ({
+      ...t,
+      token: includeToken ? t.token : this.maskToken(t.token),
+    }));
   }
 
   async findOne(id: string, userId: string) {
-    return this.prisma.userAIToken.findFirst({
+    const token = await this.prisma.userAIToken.findFirst({
       where: {
         id,
         userId,
@@ -56,18 +63,63 @@ export class UserAITokensService {
         aiProvider: true,
       },
     });
+
+    if (!token) return null;
+
+    return { ...token, token: this.maskToken(token.token) };
   }
 
   async remove(id: string, userId: string) {
     // First, verify the token belongs to the user to prevent unauthorized deletion
-    const token = await this.findOne(id, userId);
+    const token = await this.prisma.userAIToken.findFirst({
+      where: { id, userId },
+    });
+
     if (!token) {
       return null;
     }
-    return this.prisma.userAIToken.delete({
+
+    const deletedToken = await this.prisma.userAIToken.delete({
       where: {
         id,
       },
     });
+
+    return { ...deletedToken, token: this.maskToken(deletedToken.token) };
+  }
+
+  async setDefault(id: string, userId: string) {
+    const updatedToken = await this.prisma.$transaction(async (tx) => {
+      const token = await tx.userAIToken.findFirst({
+        where: { id, userId },
+      });
+
+      if (!token) {
+        return null; // Token not found or not owned by user
+      }
+
+      // Unset other defaults
+      await tx.userAIToken.updateMany({
+        where: { userId, isDefault: true },
+        data: { isDefault: false },
+      });
+
+      // Set this one as default
+      return tx.userAIToken.update({
+        where: { id },
+        data: { isDefault: true },
+        include: { aiProvider: true }, // Include relation for consistency
+      });
+    });
+
+    if (!updatedToken) return null;
+
+    return { ...updatedToken, token: this.maskToken(updatedToken.token) };
+  }
+
+  private maskToken(token: string): string {
+    if (!token) return "";
+    if (token.length <= 8) return "********";
+    return `${token.substring(0, 4)}...${token.substring(token.length - 4)}`;
   }
 }

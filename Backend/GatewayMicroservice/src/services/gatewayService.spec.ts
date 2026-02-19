@@ -3,6 +3,7 @@ import { of, throwError } from "rxjs";
 
 import { GatewayService } from "./gatewayService";
 import { HttpService } from "@nestjs/axios";
+import { IncomingMessage } from "http";
 import { UnauthorizedException } from "@nestjs/common";
 
 // Мокаем константы
@@ -33,6 +34,13 @@ describe("GatewayService", () => {
     },
     status: 200,
     headers: {},
+  };
+
+  // Mock IncomingMessage
+  const createMockReq = (): IncomingMessage => {
+    return {
+      pipe: jest.fn(),
+    } as unknown as IncomingMessage;
   };
 
   beforeEach(async () => {
@@ -76,7 +84,7 @@ describe("GatewayService", () => {
         "/api/gateway/auth/users",
         mockHeaders,
         {},
-        {},
+        createMockReq(),
       );
 
       expect(result.status).toBe(200);
@@ -102,17 +110,13 @@ describe("GatewayService", () => {
         "/api/gateway/auth/auth/login",
         { "content-type": "application/json" },
         { email: "test@test.com", password: "123" },
-        {},
+        createMockReq(),
       );
 
       expect(result.status).toBe(200);
       // validate token should NOT be called for login
       expect(httpService.post).not.toHaveBeenCalled();
     });
-
-    // ==========================================
-    // 🔴 ТВОЯ ОЧЕРЕДЬ - ДОПИШИ ЭТИ ТЕСТЫ:
-    // ==========================================
 
     it("should route request to user microservice", async () => {
       (httpService.post as jest.Mock).mockReturnValue(of(mockAuthResponse));
@@ -128,7 +132,7 @@ describe("GatewayService", () => {
         "/api/gateway/user/profile",
         mockHeaders,
         {},
-        {},
+        createMockReq(),
       );
 
       expect(result.status).toBe(200);
@@ -153,7 +157,7 @@ describe("GatewayService", () => {
         "/api/gateway/bridge/writing/task",
         mockHeaders,
         {},
-        {},
+        createMockReq(),
       );
 
       expect(result.status).toBe(200);
@@ -170,11 +174,13 @@ describe("GatewayService", () => {
         "/api/gateway/unknown/something",
         mockHeaders,
         {},
-        {},
+        createMockReq(),
       );
 
       expect(result.status).toBe(404);
-      expect(result.data.payload.message).toContain("not found");
+      expect(
+        (result.data as { payload: { message: string } }).payload.message,
+      ).toContain("not found");
     });
 
     it("should return 404 for invalid URL pattern", async () => {
@@ -183,11 +189,13 @@ describe("GatewayService", () => {
         "/api/something/else",
         mockHeaders,
         {},
-        {},
+        createMockReq(),
       );
 
       expect(result.status).toBe(404);
-      expect(result.data.payload.message).toContain("not found");
+      expect(
+        (result.data as { payload: { message: string } }).payload.message,
+      ).toContain("not found");
     });
 
     it("should add user headers when authenticated", async () => {
@@ -204,7 +212,7 @@ describe("GatewayService", () => {
         "/api/gateway/user/profile",
         mockHeaders,
         {},
-        {},
+        createMockReq(),
       );
 
       // Verify validation call
@@ -232,7 +240,7 @@ describe("GatewayService", () => {
         "/api/gateway/user/profile",
         mockHeaders,
         {},
-        {},
+        createMockReq(),
       );
 
       // handleRequest catches the error and returns 500
@@ -250,7 +258,7 @@ describe("GatewayService", () => {
         "/api/gateway/user/profile",
         mockHeaders,
         {},
-        {},
+        createMockReq(),
       );
 
       expect(result.status).toBe(500);
@@ -268,11 +276,13 @@ describe("GatewayService", () => {
         "/api/gateway/user/profile",
         mockHeaders,
         {},
-        {},
+        createMockReq(),
       );
 
       expect(result.status).toBe(503);
-      expect(result.data.payload.message).toContain("unavailable");
+      expect(
+        (result.data as { payload: { message: string } }).payload.message,
+      ).toContain("unavailable");
     });
 
     it("should handle multipart/form-data requests", async () => {
@@ -281,7 +291,7 @@ describe("GatewayService", () => {
         of({ status: 200, data: {} }),
       );
 
-      const mockReq = { pipe: jest.fn() }; // simulate stream
+      const mockReq = createMockReq();
       const multipartHeaders = {
         ...mockHeaders,
         "content-type": "multipart/form-data; boundary=xxx",

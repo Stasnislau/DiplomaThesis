@@ -3,14 +3,13 @@ import cn from 'classnames';
 
 export interface IconProps extends React.HTMLAttributes<HTMLDivElement> {
   className?: string;
-  size?: number;
   src?: React.FunctionComponent<React.SVGProps<SVGSVGElement>>;
   alt?: string;
   fill?: string;
 }
 
 const Icon = React.forwardRef<HTMLDivElement, IconProps>(
-  ({ className, size = 24, src: SvgIcon, alt, fill, ...props }, ref) => {
+  ({ className, src: SvgIcon, alt, fill, ...props }, ref) => {
     return (
       <div
         ref={ref}

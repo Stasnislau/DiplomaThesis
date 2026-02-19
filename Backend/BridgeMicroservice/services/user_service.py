@@ -18,7 +18,7 @@ class UserAIToken(TypedDict, total=False):
 class UserService:
     def __init__(self) -> None:
         self.base_url = os.getenv(
-            "USER_MICROSERVICE_URL", "http://localhost:3001/api/gateway/user"
+            "USER_MICROSERVICE_URL", "http://localhost:3004/api"
         ).rstrip("/")
 
     async def _get(
@@ -53,15 +53,23 @@ class UserService:
             )
 
         try:
-            return response.json()  # type: ignore[return-value]
+            response.raise_for_status()
+            return response.json()  # type: ignore[no-any-return]
         except ValueError as exc:
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail="User service returned invalid JSON",
             ) from exc
+        except httpx.HTTPStatusError as exc:
+            raise HTTPException(
+                status_code=exc.response.status_code,
+                detail=f"User service error: {exc.response.text}",
+            ) from exc
 
     async def get_ai_tokens(self, ctx: UserContext) -> List[UserAIToken]:
-        data = await self._get("/ai-tokens", ctx.to_forward_headers())
+        headers = ctx.to_forward_headers()
+        headers["x-internal-service-key"] = os.getenv("INTERNAL_SERVICE_KEY", "supersecretbridgekey")
+        data = await self._get("/ai-tokens", headers)
 
         if not isinstance(data, dict) or not data.get("success"):
             raise HTTPException(

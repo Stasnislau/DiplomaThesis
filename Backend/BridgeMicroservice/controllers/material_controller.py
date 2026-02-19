@@ -1,11 +1,13 @@
 from typing import Dict, Any, List, Optional
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Body
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Body, Request
 from services.material_service import MaterialService
 from services.vector_db_service import VectorDBService
 from services.ai_service import AI_Service
 from pydantic import BaseModel
-import json
 import logging
+from models.base_response import BaseResponse
+from models.dtos.material_dtos import ProcessPdfResponse, GenerateQuizResponse
+from utils.user_context import extract_user_context
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -25,8 +27,9 @@ class GenerateQuizRequest(BaseModel):
     selected_types: Optional[List[str]] = None
 
 
-@router.post("/upload")
-async def upload_pdf(file: UploadFile = File(...), service: MaterialService = Depends(get_material_service)) -> Dict[str, Any]:
+@router.post("/upload", response_model=BaseResponse[ProcessPdfResponse])
+async def upload_pdf(request: Request, file: UploadFile = File(...), service: MaterialService = Depends(get_material_service)) -> BaseResponse[ProcessPdfResponse]:
+    user_context = extract_user_context(request)
     logger.info(f"Received file upload request: {file.filename}")
     if not file.filename:
         raise HTTPException(status_code=400, detail="File name is required")
@@ -38,38 +41,27 @@ async def upload_pdf(file: UploadFile = File(...), service: MaterialService = De
     try:
         content = await file.read()
         logger.info(f"File read successfully, size: {len(content)} bytes. Starting processing...")
-        result = await service.process_pdf(content, file.filename)
+        result = await service.process_pdf(content, file.filename, user_context=user_context)
         logger.info("PDF processed successfully.")
-        return {
-            "success": True,
-            "payload": result
-        }
+        return BaseResponse[ProcessPdfResponse](success=True, payload=result)
     except Exception as e:
         logger.error(f"Error uploading/processing PDF: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/quiz")
+@router.post("/quiz", response_model=BaseResponse[GenerateQuizResponse])
 async def generate_quiz(
-    request: GenerateQuizRequest = Body(...),
+    request: Request,
+    body: GenerateQuizRequest = Body(...),
     service: MaterialService = Depends(get_material_service)
-) -> Dict[str, Any]:
-    logger.info(f"Received quiz generation request. Selected types: {request.selected_types}")
+) -> BaseResponse[GenerateQuizResponse]:
+    user_context = extract_user_context(request)
+    logger.info(f"Received quiz generation request. Selected types: {body.selected_types}")
     try:
-        result = await service.generate_quiz(request.selected_types)
-        
-        # Parse inner JSON if stringified
-        if isinstance(result.get("quiz"), str):
-            try:
-                result["quiz"] = json.loads(result["quiz"])
-            except:
-                pass
+        result = await service.generate_quiz(body.selected_types, user_context=user_context)
         
         logger.info("Quiz generated successfully.")
-        return {
-            "success": True,
-            "payload": result
-        }
+        return BaseResponse[GenerateQuizResponse](success=True, payload=result)
     except Exception as e:
         logger.error(f"Error generating quiz: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

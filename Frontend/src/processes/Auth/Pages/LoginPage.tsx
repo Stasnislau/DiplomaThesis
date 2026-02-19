@@ -1,16 +1,18 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { useAuthStore } from "@/store/useAuthStore";
-import { useNavigate } from "react-router-dom";
-import Button from "@/components/common/Button";
-import TextField from "@/components/common/TextField";
-import FormField from "@/components/common/FormField";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
-import { LoginUserRequest } from "@/api/mutations/login";
-import { loginUserDtoSchema } from "@/api/mutations/login";
+import { Link, useNavigate } from "react-router-dom";
+import { LoginUserRequest, loginUserDtoSchema } from "@/api/mutations/login";
+import React, { useState } from "react";
+
+import Button from "@/components/common/Button";
+import { LanguageSelector } from "@/components/common/LanguageSelector";
+import TextField from "@/components/common/TextField";
+import { ThemeToggle } from "@/components/common/ThemeToggle";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useTranslation } from "react-i18next";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 export const LoginPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -34,7 +36,7 @@ export const LoginPage: React.FC = () => {
       setLoading(true);
       const result = await login(input);
       if (!result.success) {
-        setError(result.message ?? "Unknown error");
+        setError(result.message ?? t('common.error'));
         return;
       }
       navigate("/");
@@ -42,7 +44,7 @@ export const LoginPage: React.FC = () => {
       if (error instanceof Error) {
         setError(error.message);
       } else {
-        setError("An unexpected error occurred");
+        setError(t('common.error'));
       }
     } finally {
       setLoading(false);
@@ -50,78 +52,75 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-100 to-purple-100 py-4 flex flex-col justify-center sm:py-12">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-gray-900 dark:to-gray-800 py-4 flex flex-col justify-center sm:py-12 transition-colors duration-300">
+      <div className="absolute top-4 right-4 flex gap-2">
+        <ThemeToggle />
+        <LanguageSelector />
+      </div>
+
       <div className="relative py-1 sm:max-w-xl sm:mx-auto">
-        <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-light-blue-500 shadow-lg transform -skew-y-6 sm:skew-y-0 sm:-rotate-6 sm:rounded-3xl"></div>
-        <div className="relative px-4 py-6 bg-white shadow-lg sm:rounded-3xl sm:px-20 sm:py-8">
+        <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-light-blue-500 dark:from-cyan-700 dark:to-blue-900 shadow-lg transform -skew-y-6 sm:skew-y-0 sm:-rotate-6 sm:rounded-3xl transition-all duration-300"></div>
+        <div className="relative px-4 py-6 bg-white dark:bg-gray-800 shadow-lg sm:rounded-3xl sm:px-20 sm:py-8 transition-colors duration-300">
           <div className="max-w-md mx-auto">
-            <h1 className="text-3xl font-extrabold text-gray-900 mb-6 text-center">
-              Login
+            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-6 text-center">
+              {t('auth.signIn')}
             </h1>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-2">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <Controller
                 control={control}
                 name="email"
                 render={({ field }) => (
-                  <FormField
-                    label="Email"
-                    className="block text-sm font-medium text-gray-700"
-                    required={!loginUserDtoSchema.shape.email.isOptional}
+                  <TextField
+                    id="email"
+                    type="email"
+                    label={t('auth.email')}
+                    autoComplete="email"
                     error={errors.email?.message}
-                  >
-                    <TextField
-                      id="email"
-                      type="email"
-                      autoComplete="email"
-                      {...field}
-                    />
-                  </FormField>
+                    required
+                    {...field}
+                  />
                 )}
               />
               <Controller
                 control={control}
                 name="password"
                 render={({ field }) => (
-                  <FormField
-                    label="Password"
-                    className="block text-sm font-medium text-gray-700"
+                  <TextField
+                    id="password"
+                    type="password"
+                    label={t('auth.password')}
+                    autoComplete="current-password"
                     error={errors.password?.message}
-                    required={!loginUserDtoSchema.shape.password.isOptional}
-                  >
-                    <TextField
-                      id="password"
-                      type="password"
-                      autoComplete="current-password"
-                      {...field}
-                    />
-                  </FormField>
+                    required
+                    {...field}
+                  />
                 )}
               />
-              <div>
+              <div className="pt-2">
                 <Button
                   isLoading={loading}
                   type="submit"
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  className="w-full justify-center bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white"
                 >
-                  Login
+                  {t('auth.signIn')}
                 </Button>
               </div>
             </form>
-            {error && <p className="text-red-500">{error}</p>}
+            {error && <p className="mt-4 text-center text-red-500 dark:text-red-400" role="alert">{error}</p>}
             <div className="mt-6 text-center">
               <Link
                 to="/register"
-                className="text-sm text-indigo-600 hover:text-indigo-500"
+                className="text-sm text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
               >
-                Don't have an account? Register
+                {t('auth.noAccount')} {t('auth.signUp')}
               </Link>
             </div>
             <div className="mt-2 text-center">
               <Link
                 to="/reset-password"
-                className="text-sm text-indigo-600 hover:text-indigo-500"
+                className="text-sm text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
               >
-                Forgot your password?
+                {t('auth.forgotPassword')}
               </Link>
             </div>
           </div>

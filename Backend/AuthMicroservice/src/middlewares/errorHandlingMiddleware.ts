@@ -1,14 +1,28 @@
 import {
-  ExceptionFilter,
-  Catch,
   ArgumentsHost,
-  HttpException,
-  UnauthorizedException,
   BadRequestException,
+  Catch,
+  ExceptionFilter,
+  HttpException,
   InternalServerErrorException,
+  UnauthorizedException,
 } from "@nestjs/common";
+import { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
+
 import { Response } from "express";
-import { TokenExpiredError, JsonWebTokenError } from "jsonwebtoken";
+
+/** Error response payload structure */
+interface ErrorPayload {
+  message: string;
+  timestamp: string;
+  errors?: unknown;
+}
+
+/** Standard error response structure */
+interface ErrorResponseBody {
+  success: false;
+  payload: ErrorPayload;
+}
 
 @Catch()
 export class ErrorHandlingMiddleware implements ExceptionFilter {
@@ -28,7 +42,7 @@ export class ErrorHandlingMiddleware implements ExceptionFilter {
     } else {
       this.handleError(
         new InternalServerErrorException(exception.message),
-        host
+        host,
       );
     }
   }
@@ -38,7 +52,7 @@ export class ErrorHandlingMiddleware implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const status = exception.getStatus();
 
-    let responseBody: any = {
+    const responseBody: ErrorResponseBody = {
       success: false,
       payload: {
         message: exception.message,
@@ -48,11 +62,9 @@ export class ErrorHandlingMiddleware implements ExceptionFilter {
 
     if (exception instanceof BadRequestException) {
       const validationErrors = exception.getResponse();
-      if (typeof validationErrors === "object") {
-        responseBody.payload = {
-          ...responseBody.payload,
-          errors: validationErrors["message"] || validationErrors,
-        };
+      if (typeof validationErrors === "object" && validationErrors !== null) {
+        const errors = validationErrors as Record<string, unknown>;
+        responseBody.payload.errors = errors["message"] || validationErrors;
       }
     }
 

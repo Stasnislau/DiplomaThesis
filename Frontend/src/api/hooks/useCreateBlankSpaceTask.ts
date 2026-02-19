@@ -1,13 +1,17 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   createBlankSpaceTask,
   createTaskRequest,
 } from "../mutations/createBlankSpaceTask";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+import { TaskData } from "@/types/responses/TaskResponse";
+
+// ... (existing imports)
 
 export function useCreateBlankSpaceTask() {
   const queryClient = useQueryClient();
 
-  const mutation = useMutation<any, Error, createTaskRequest>({
+  const mutation = useMutation<TaskData, Error, createTaskRequest>({
     mutationFn: async (input: createTaskRequest) => {
       return createBlankSpaceTask(input);
     },

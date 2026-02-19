@@ -1,28 +1,41 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
-import { HttpService } from "@nestjs/axios";
-import { IncomingHttpHeaders } from "http";
-import { firstValueFrom } from "rxjs";
-import { BaseResponse } from "src/types";
 import {
   AUTH_MICROSERVICE_URL,
   AVAILABLE_MICROSERVICES,
   BRIDGE_MICROSERVICE_URL,
   USER_MICROSERVICE_URL,
 } from "src/consts";
+import { IncomingHttpHeaders, IncomingMessage } from "http";
+import { Injectable, Logger, UnauthorizedException } from "@nestjs/common";
+
 import { AuthenticatedUser } from "src/types";
+import { BaseResponse } from "src/types";
+import { HttpService } from "@nestjs/axios";
+import { firstValueFrom } from "rxjs";
+
+/** Request body type - can be JSON object, string, or undefined */
+type RequestBody = Record<string, unknown> | string | undefined;
+
+/** Gateway response structure */
+interface GatewayResponse {
+  status: number;
+  data: BaseResponse<unknown> | Record<string, unknown>;
+}
 
 @Injectable()
 export class GatewayService {
+  private readonly logger = new Logger(GatewayService.name);
+
   private readonly PUBLIC_ROUTES = [
     "api/auth/login",
     "api/auth/register",
     "api/auth/refresh",
+    "api/languages",
   ];
 
   constructor(private readonly httpService: HttpService) {}
 
   private async validateToken(
-    headers: IncomingHttpHeaders
+    headers: IncomingHttpHeaders,
   ): Promise<AuthenticatedUser> {
     try {
       const response = await firstValueFrom(
@@ -33,8 +46,8 @@ export class GatewayService {
             headers: {
               Authorization: headers.authorization,
             },
-          }
-        )
+          },
+        ),
       );
       const data = response.data as BaseResponse<AuthenticatedUser>;
       return data.payload;
@@ -51,10 +64,10 @@ export class GatewayService {
     method: string,
     url: string,
     headers: IncomingHttpHeaders,
-    body: any,
-    req: any
-  ): Promise<any> {
-    console.log(`[Gateway] Received request: ${method} ${url}`);
+    body: RequestBody,
+    req: IncomingMessage,
+  ): Promise<GatewayResponse> {
+    this.logger.log(`Received request: ${method} ${url}`);
     try {
       let userData: AuthenticatedUser | undefined;
 
@@ -62,7 +75,7 @@ export class GatewayService {
       const match = url.match(apiGatewayPattern);
 
       if (!match) {
-        console.error(`[Gateway] Route pattern not matched for URL: ${url}`);
+        this.logger.warn(`Route pattern not matched for URL: ${url}`);
         return {
           status: 404,
           data: {
@@ -75,7 +88,9 @@ export class GatewayService {
       const [, microservice, path] = match;
       let targetUrl = "";
 
-      console.log(`[Gateway] Parsed microservice: '${microservice}', path: '${path}'`);
+      this.logger.debug(
+        `Parsed microservice: '${microservice}', path: '${path}'`,
+      );
 
       switch (microservice) {
         case "auth":
@@ -88,7 +103,7 @@ export class GatewayService {
           targetUrl = `${USER_MICROSERVICE_URL}/api/${path}`;
           break;
         default:
-          console.error(`[Gateway] Unknown microservice requested: '${microservice}'`);
+          this.logger.warn(`Unknown microservice requested: '${microservice}'`);
           return {
             status: 404,
             data: {
@@ -98,7 +113,7 @@ export class GatewayService {
           };
       }
 
-      console.log(`[Gateway] Forwarding request to target URL: ${targetUrl}`);
+      this.logger.debug(`Forwarding request to target URL: ${targetUrl}`);
 
       let shouldAuthenticate = true;
       this.PUBLIC_ROUTES.forEach((route) => {
@@ -107,18 +122,18 @@ export class GatewayService {
         }
       });
 
-      console.log(shouldAuthenticate, "shouldAuthenticate");
+      this.logger.debug(`shouldAuthenticate: ${shouldAuthenticate}`);
 
       if (shouldAuthenticate) {
         userData = await this.validateToken(headers);
       }
 
-      console.log(userData, "userData");
+      this.logger.debug(`userData: ${userData?.id || "anonymous"}`);
 
       // Check if request is multipart/form-data
-      const contentType = headers['content-type'] || '';
-      const isMultipart = contentType.includes('multipart/form-data');
-      
+      const contentType = headers["content-type"] || "";
+      const isMultipart = contentType.includes("multipart/form-data");
+
       // If multipart, pass the request stream directly. Otherwise use the parsed body.
       const dataToSend = isMultipart ? req : body;
 
@@ -129,6 +144,8 @@ export class GatewayService {
             url: targetUrl,
             headers: {
               ...headers,
+              // Sanitize internal headers
+              "x-internal-service-key": undefined,
               ...(userData && {
                 "X-User-Id": userData.id,
                 "X-User-Email": userData.email,
@@ -138,28 +155,41 @@ export class GatewayService {
             },
             data: dataToSend,
             validateStatus: () => true,
-            timeout: 50000,
+            timeout: 200000,
             family: 4,
           }),
         );
 
-        console.log(`[Gateway] Response from ${microservice} microservice: Status ${response.status}`);
+        this.logger.log(
+          `Response from ${microservice} microservice: Status ${response.status}`,
+        );
 
         return {
           status: response.status,
-          data: response.data,
+          data: response.data as Record<string, unknown>,
         };
-      } catch (error) {
-        console.error(`[Gateway] Error forwarding request to ${targetUrl}:`, error.message);
-        if (error.response) {
+      } catch (error: unknown) {
+        const axiosError = error as {
+          message?: string;
+          response?: { status: number; data: unknown };
+          request?: unknown;
+        };
+
+        this.logger.error(
+          `Error forwarding request to ${targetUrl}: ${axiosError.message}`,
+        );
+
+        if (axiosError.response) {
           return {
-            status: error.response.status,
-            data: error.response.data,
+            status: axiosError.response.status,
+            data: axiosError.response.data as Record<string, unknown>,
           };
-        } else if (error.request) {
-          console.error(`[Gateway] Service unavailable or no response from ${targetUrl}`);
+        } else if (axiosError.request) {
+          this.logger.error(
+            `Service unavailable or no response from ${targetUrl}`,
+          );
           return {
-            status: 503, // Service Unavailable
+            status: 503,
             data: {
               success: false,
               payload: {
@@ -179,8 +209,9 @@ export class GatewayService {
           };
         }
       }
-    } catch (error) {
-      console.error(`[Gateway] Unhandled error in gatewayService:`, error.message);
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      this.logger.error(`Unhandled error in gatewayService: ${err.message}`);
       return {
         status: 500,
         data: {
