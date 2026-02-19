@@ -7,15 +7,15 @@ export const PlacementTaskTopBar = () => {
   return (
     <div className="mb-8">
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
           Placement Test: {language.name}
         </h1>
-        <div className="text-sm font-medium text-gray-600">
+        <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
           Question {currentQuestionNumber + 1} of {TOTAL_QUESTIONS}
         </div>
       </div>
 
-      <div className="w-full bg-gray-200 rounded-full h-2.5">
+      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
         <div
           className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2.5 rounded-full"
           style={{

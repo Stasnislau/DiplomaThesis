@@ -1,19 +1,21 @@
-import React, { useMemo, useState } from "react";
-import { useGetTaskTemplates } from "@/api/hooks/useGetTaskTemplates";
-import { useGenerateTaskFromTemplate } from "@/api/hooks/useGenerateTaskFromTemplate";
-import { useUploadMaterial } from "@/api/hooks/useUploadMaterial";
-import { TaskTemplate } from "@/types/models/TaskTemplate";
-import Button from "@/components/common/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/common/Card";
-import { Modal } from "@/components/common/Modal";
-import LoadingSpinner from "@/components/common/LoadingSpinner";
-import TextField from "@/components/common/TextField";
+import React, { useMemo, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/common/Select";
+
+import Button from "@/components/common/Button";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
+import { Modal } from "@/components/common/Modal";
+import { TaskData } from "@/types/responses/TaskResponse";
+import { TaskTemplate } from "@/types/models/TaskTemplate";
+import TextField from "@/components/common/TextField";
+import { useGenerateTaskFromTemplate } from "@/api/hooks/useGenerateTaskFromTemplate";
+import { useGetTaskTemplates } from "@/api/hooks/useGetTaskTemplates";
+import { useUploadMaterial } from "@/api/hooks/useUploadMaterial";
 
 const TemplatesPage: React.FC = () => {
   const [search, setSearch] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState<TaskTemplate | null>(null);
-  const [generatedTask, setGeneratedTask] = useState<any | null>(null);
+  const [generatedTask, setGeneratedTask] = useState<TaskData | null>(null);
   const [language, setLanguage] = useState("English");
   const [level, setLevel] = useState("B1");
   const [file, setFile] = useState<File | null>(null);
@@ -45,8 +47,12 @@ const TemplatesPage: React.FC = () => {
       );
       setFile(null);
       await refetch();
-    } catch (e: any) {
-      setUploadError(e?.message || "Upload failed");
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        setUploadError(e.message || "Upload failed");
+      } else {
+        setUploadError("Upload failed");
+      }
     }
   };
 
@@ -236,4 +242,3 @@ const TemplatesPage: React.FC = () => {
 };
 
 export default TemplatesPage;
-

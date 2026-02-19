@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request
-from services.writing_task_service import Writing_Task_Service
+from services.writing_task_service import WritingTaskService
 # from services.bielik_service import Bielik_Service
 from models.dtos.task_dto import MultipleChoiceTask, FillInTheBlankTask
 from models.request.explain_answer_request import ExplainAnswerRequest
@@ -9,15 +9,18 @@ from models.base_response import BaseResponse
 from utils.user_context import extract_user_context
 
 
-class Writing_Controller:
-    def __init__(self, writing_task_service: Writing_Task_Service):
+class WritingController:
+    def __init__(
+        self,
+        writing_task_service: WritingTaskService,
+    ) -> None:
+        self.router = APIRouter(prefix="/writing", tags=["Writing"])
         self.writing_task_service = writing_task_service
-        # self.bielik_service = bielik_service
-        self.router = APIRouter()
+        self._setup_routes()
 
-    def get_router(self) -> APIRouter:
+    def _setup_routes(self) -> None:
         @self.router.post(
-            "/writing/multiplechoice",
+            "/multiplechoice",
             response_model=BaseResponse[MultipleChoiceTask],
         )
         async def generate_writing_multiple_choice_task(
@@ -25,14 +28,15 @@ class Writing_Controller:
         ) -> BaseResponse[MultipleChoiceTask]:
             user_context = extract_user_context(request)
             task: MultipleChoiceTask = await self.writing_task_service.generate_writing_multiple_choice_task(
-                task_request.language, task_request.level, user_context=user_context
+                task_request.language, task_request.level,
+                user_context=user_context,
+                topic=task_request.topic,
+                keywords=task_request.keywords,
             )
-            response = BaseResponse[MultipleChoiceTask](success=True, payload=task)
-            print(response.model_dump_json())
-            return response
+            return BaseResponse[MultipleChoiceTask](success=True, payload=task)
 
         @self.router.post(
-            "/writing/blank",
+            "/blank",
             response_model=BaseResponse[FillInTheBlankTask],
             response_model_exclude_none=True
         )
@@ -41,14 +45,15 @@ class Writing_Controller:
         ) -> BaseResponse[FillInTheBlankTask]:
             user_context = extract_user_context(request)
             task: FillInTheBlankTask = await self.writing_task_service.generate_writing_fill_in_the_blank_task(
-                task_request.language, task_request.level, user_context=user_context
+                task_request.language, task_request.level,
+                user_context=user_context,
+                topic=task_request.topic,
+                keywords=task_request.keywords,
             )
-            response = BaseResponse[FillInTheBlankTask](success=True, payload=task)
-            print(response.model_dump_json())
-            return response
+            return BaseResponse[FillInTheBlankTask](success=True, payload=task)
 
         @self.router.post(
-            "/writing/explainanswer",
+            "/explainanswer",
             response_model=BaseResponse[ExplainAnswerResponse],
             response_model_exclude_none=True
         )
@@ -63,4 +68,5 @@ class Writing_Controller:
             response = BaseResponse[ExplainAnswerResponse](success=True, payload=result)
             return response
 
+    def get_router(self) -> APIRouter:
         return self.router

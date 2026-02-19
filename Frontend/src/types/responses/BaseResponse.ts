@@ -1,5 +1,5 @@
-export interface BaseResponse <T> {
+export interface BaseResponse<T> {
   success: boolean;
   payload: T;
-  errors: string[];
+  errors?: string[];
 }

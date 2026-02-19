@@ -1,25 +1,34 @@
 from fastapi import APIRouter, File, UploadFile, Query, Request
-from services.speaking_service import Speaking_Service
+from services.speaking_service import SpeakingService
 from models.base_response import BaseResponse
+from models.responses.speaking_analysis_response import SpeakingAnalysisResponse
 from utils.user_context import extract_user_context
+import logging
+
+logger = logging.getLogger("bridge_microservice")
 
 
-class Speaking_Controller:
-    def __init__(self, speaking_service: Speaking_Service):
+class SpeakingController:
+    def __init__(self, speaking_service: SpeakingService) -> None:
+        self.router = APIRouter(prefix="/speaking", tags=["Speaking"])
         self.speaking_service = speaking_service
-        self.router = APIRouter()
+        self._setup_routes()
 
-    def get_router(self) -> APIRouter:
-        @self.router.post("/speaking/analyze")
+    def _setup_routes(self) -> None:
+        @self.router.post(
+            "/analyze",
+            response_model=BaseResponse[SpeakingAnalysisResponse],
+        )
         async def analyze_user_audio(
             request: Request, audio_file: UploadFile = File(...), language: str = Query(...)
-        ) -> BaseResponse[str]:
+        ) -> BaseResponse[SpeakingAnalysisResponse]:
             audio_bytes = await audio_file.read()
-            print(f"Controller received audio file: {audio_file.filename}, size: {len(audio_bytes)} bytes")
+            logger.debug(f"Received audio file: {audio_file.filename}, size: {len(audio_bytes)} bytes")
             user_context = extract_user_context(request)
             result = await self.speaking_service.analyze_user_audio(
                 audio_bytes, audio_file.filename, language, user_context=user_context
             )
-            return BaseResponse[str](success=True, payload=result)
+            return BaseResponse(success=True, payload=result)
 
+    def get_router(self) -> APIRouter:
         return self.router

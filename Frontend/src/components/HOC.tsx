@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { useAuthStore } from "@/store/useAuthStore";
-import { useUserStore } from "@/store/useUserStore";
-import { useMe } from "@/api/hooks/useMe";
+
 import LoadingPage from "./layout/Loading";
 import { NoLanguagesModal } from "./modals/NoLanguagesModal";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useMe } from "@/api/hooks/useMe";
+import { useThemeSync } from "@/hooks/useThemeSync";
 import { useToastsStore } from "@/store/useToastsStore";
+import { useUserStore } from "@/store/useUserStore";
 
 interface HOCProps {
   children: React.ReactNode;
 }
 
 export const HOC: React.FC<HOCProps> = ({ children }) => {
+  useThemeSync();
   const {
     isAuthenticated,
     isLoading: authLoading,
@@ -44,7 +47,6 @@ export const HOC: React.FC<HOCProps> = ({ children }) => {
 
   useEffect(() => {
     if (userFetched && userDataPayload) {
-      console.log("userDataPayload", userDataPayload);
       setUser(userDataPayload);
       setUserLanguages(userDataPayload.languages || []);
       const hasNativeLanguage = userDataPayload.languages?.some(
@@ -69,6 +71,9 @@ export const HOC: React.FC<HOCProps> = ({ children }) => {
     isAuthenticated,
     authInitialized,
     userError,
+    logout,
+    setUser,
+    setUserLanguages,
   ]);
 
   useEffect(() => {

@@ -1,0 +1,17 @@
+export const ROUTES = {
+  HOME: "/",
+  WELCOME: "/welcome",
+  LOGIN: "/login",
+  REGISTER: "/register",
+  RESET_PASSWORD: "/reset-password",
+  MATERIALS: "/materials",
+  MATERIALS_TEMPLATES: "/materials/templates",
+  PROFILE: "/profile",
+  SPEECH_ANALYSIS: "/speech-analysis",
+  TASKS: "/tasks",
+  SETTINGS_AI_TOKENS: "/settings/ai-tokens",
+  QUIZ: "/quiz",
+  ADMIN: "/admin",
+  PLACEMENT_TEST: "/placement/test/:languageCode",
+  LEARNING_PATH: "/learning-path",
+} as const;

@@ -1,5 +1,5 @@
-import React from "react";
 import Button from "@/components/common/Button";
+import React from "react";
 
 interface User {
   id: string;
@@ -14,20 +14,19 @@ interface UserDetailsProps {
 }
 
 export const UserDetails: React.FC<UserDetailsProps> = ({ user }) => {
-  // These functions will be implemented when API is integrated
+  // TODO: Implement role change when API is available
   const handleRoleChange = () => {
-    // Will be implemented with API
-    console.log(`Change role for user ${user.id}`);
+    // Placeholder for API call
   };
 
+  // TODO: Implement password reset when API is available
   const handleResetPassword = () => {
-    // Will be implemented with API
-    console.log(`Reset password for user ${user.id}`);
+    // Placeholder for API call
   };
 
+  // TODO: Implement user deletion when API is available
   const handleDeleteUser = () => {
-    // Will be implemented with API
-    console.log(`Delete user ${user.id}`);
+    // Placeholder for API call
   };
 
   return (

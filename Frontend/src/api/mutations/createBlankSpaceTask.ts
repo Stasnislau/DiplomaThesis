@@ -1,22 +1,24 @@
+import { BRIDGE_MICROSERVICE_URL } from "../consts";
 import { BaseResponse } from "@/types/responses/BaseResponse";
 import { TaskData } from "@/types/responses/TaskResponse";
-import { BRIDGE_MICROSERVICE_URL } from "../consts";
 import { fetchWithAuth } from "../fetchWithAuth";
 
 export interface createTaskRequest {
   language: string;
   level: string;
+  topic?: string;
+  keywords?: string[];
 }
 
 export async function createBlankSpaceTask(
-  input: createTaskRequest
+  input: createTaskRequest,
 ): Promise<TaskData> {
   const response = await fetchWithAuth(
     `${BRIDGE_MICROSERVICE_URL}/writing/blank`,
     {
       method: "POST",
       body: JSON.stringify(input),
-    }
+    },
   );
 
   const data = (await response.json()) as BaseResponse<TaskData>;

@@ -45,7 +45,6 @@ describe("ProxyMiddleware", () => {
   });
 
   describe("use", () => {
-    // ✅ ГОТОВЫЙ ТЕСТ
     it("should proxy request to auth microservice", async () => {
       const mockAxiosResponse = {
         status: 200,
@@ -69,34 +68,148 @@ describe("ProxyMiddleware", () => {
       expect(mockResponse.send).toHaveBeenCalledWith({ success: true });
     });
 
-    // ==========================================
-    // 🔴 ТВОЯ ОЧЕРЕДЬ - ДОПИШИ ЭТИ ТЕСТЫ:
-    // ==========================================
-
     it("should forward response headers", async () => {
-      // TODO: Напиши тест
-      // 1. Мокни response с headers: { "x-custom-header": "value" }
-      // 2. Проверь что mockResponse.setHeader был вызван
+      const mockAxiosResponse = {
+        status: 200,
+        data: { success: true },
+        headers: {
+          "x-custom-header": "custom-value",
+          "content-type": "application/json",
+        },
+      };
+      (httpService.request as jest.Mock).mockReturnValue(of(mockAxiosResponse));
+
+      await middleware.use(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext,
+      );
+
+      expect(mockResponse.setHeader).toHaveBeenCalledWith(
+        "x-custom-header",
+        "custom-value",
+      );
+      expect(mockResponse.setHeader).toHaveBeenCalledWith(
+        "content-type",
+        "application/json",
+      );
     });
 
     it("should return 500 on error", async () => {
-      // TODO: Напиши тест
-      // 1. Мокни httpService.request чтобы выбросил ошибку:
-      //    throwError(() => new Error("Connection refused"))
-      // 2. Проверь что mockResponse.status(500) был вызван
-      // 3. Проверь что mockResponse.json был вызван с { success: false }
+      (httpService.request as jest.Mock).mockReturnValue(
+        throwError(() => new Error("Connection refused")),
+      );
+
+      await middleware.use(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext,
+      );
+
+      expect(mockResponse.status).toHaveBeenCalledWith(500);
+      expect(mockResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+        }),
+      );
     });
 
     it("should forward request body", async () => {
-      // TODO: Напиши тест
-      // 1. Установи mockRequest.body = { email: "test@test.com" }
-      // 2. Проверь что httpService.request был вызван с data: { email: "..." }
+      mockRequest.body = { email: "test@test.com", password: "secret123" };
+      mockRequest.method = "POST";
+
+      const mockAxiosResponse = {
+        status: 200,
+        data: { success: true },
+        headers: {},
+      };
+      (httpService.request as jest.Mock).mockReturnValue(of(mockAxiosResponse));
+
+      await middleware.use(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext,
+      );
+
+      expect(httpService.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { email: "test@test.com", password: "secret123" },
+        }),
+      );
     });
 
     it("should forward request method", async () => {
-      // TODO: Напиши тест
-      // 1. Установи mockRequest.method = "POST"
-      // 2. Проверь что httpService.request был вызван с method: "POST"
+      mockRequest.method = "POST";
+
+      const mockAxiosResponse = {
+        status: 200,
+        data: { success: true },
+        headers: {},
+      };
+      (httpService.request as jest.Mock).mockReturnValue(of(mockAxiosResponse));
+
+      await middleware.use(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext,
+      );
+
+      expect(httpService.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: "POST",
+        }),
+      );
+    });
+
+    it("should handle DELETE requests", async () => {
+      mockRequest.method = "DELETE";
+      mockRequest.url = "/api/auth/users/123";
+
+      const mockAxiosResponse = {
+        status: 204,
+        data: null,
+        headers: {},
+      };
+      (httpService.request as jest.Mock).mockReturnValue(of(mockAxiosResponse));
+
+      await middleware.use(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext,
+      );
+
+      expect(httpService.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: "DELETE",
+          url: "http://auth:3001/api/auth/users/123",
+        }),
+      );
+      expect(mockResponse.status).toHaveBeenCalledWith(204);
+    });
+
+    it("should forward authorization header", async () => {
+      mockRequest.headers = { authorization: "Bearer valid-jwt-token" };
+
+      const mockAxiosResponse = {
+        status: 200,
+        data: { success: true },
+        headers: {},
+      };
+      (httpService.request as jest.Mock).mockReturnValue(of(mockAxiosResponse));
+
+      await middleware.use(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext,
+      );
+
+      expect(httpService.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            authorization: "Bearer valid-jwt-token",
+          }),
+        }),
+      );
     });
   });
 });

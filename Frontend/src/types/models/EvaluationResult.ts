@@ -5,9 +5,3 @@ export interface EvaluationResult {
   weaknesses: string[];
   recommendation: string;
 }
-
-export interface PlacementAnswer {
-  isCorrect: boolean;
-  questionNumber: number;
-  userAnswer: string;
-}

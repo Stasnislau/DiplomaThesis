@@ -1,8 +1,9 @@
-import { create } from "zustand";
-import { login as apiLogin, LoginUserRequest } from "../api/mutations/login";
-import { refresh as apiRefresh } from "../api/mutations/refresh";
+import { LoginUserRequest, login as apiLogin } from "../api/mutations/login";
+
 import Cookies from "js-cookie";
 import { logout as apiLogout } from "../api/mutations/logout";
+import { refresh as apiRefresh } from "../api/mutations/refresh";
+import { create } from "zustand";
 import { getAccessToken } from "@/utils/getAccessToken";
 import { jwtDecode } from "jwt-decode";
 
@@ -20,7 +21,7 @@ interface AuthState {
   initialized: boolean;
   userRole: string | null;
   login: (
-    input: LoginUserRequest
+    input: LoginUserRequest,
   ) => Promise<{ success: boolean; message?: string; errors?: string[] }>;
   logout: () => void;
   refresh: () => Promise<void>;
@@ -38,7 +39,7 @@ export const useAuthStore = create<AuthState>((set, _get) => ({
       if (data.success) {
         const accessToken = data.payload.accessToken;
         localStorage.setItem("accessToken", accessToken);
-        
+
         if (
           data.payload.refreshToken !== undefined &&
           data.payload.refreshToken !== ""
@@ -69,10 +70,12 @@ export const useAuthStore = create<AuthState>((set, _get) => ({
           errors: data.payload.errors,
         };
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Login error:", error);
       set({ initialized: true });
-      return { success: false, message: error.message };
+      const errorMessage =
+        error instanceof Error ? error.message : "An unknown error occurred";
+      return { success: false, message: errorMessage };
     }
   },
   logout: () => {
@@ -105,7 +108,7 @@ export const useAuthStore = create<AuthState>((set, _get) => ({
         return;
       }
       localStorage.setItem("accessToken", newAccessToken);
-      
+
       // Decode new token
       let userRole = null;
       try {

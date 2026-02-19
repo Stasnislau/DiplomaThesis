@@ -1,9 +1,10 @@
-import { useMutation } from "@tanstack/react-query";
 import {
-  evaluatePlacementTest,
   EvaluatePlacementTestRequest,
+  evaluatePlacementTest,
 } from "../mutations/evaluatePlacementTest";
-import { EvaluationResult } from "../../types/EvaluationResult";
+
+import { EvaluationResult } from "@/types/models/EvaluationResult";
+import { useMutation } from "@tanstack/react-query";
 
 export function useEvaluatePlacementTest() {
   const mutation = useMutation<

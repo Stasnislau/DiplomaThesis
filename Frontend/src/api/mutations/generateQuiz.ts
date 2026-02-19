@@ -7,6 +7,7 @@ export interface QuizQuestion {
   options: string[];
   correct_answer: string;
   type?: string;
+  context_text?: string;
 }
 
 interface GenerateQuizResponse {
@@ -15,16 +16,21 @@ interface GenerateQuizResponse {
   };
 }
 
-export const generateQuiz = async (selectedTypes?: string[]): Promise<GenerateQuizResponse> => {
-  const response = await fetchWithAuth(`${BRIDGE_MICROSERVICE_URL}/materials/quiz`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+export const generateQuiz = async (
+  selectedTypes?: string[],
+): Promise<GenerateQuizResponse> => {
+  const response = await fetchWithAuth(
+    `${BRIDGE_MICROSERVICE_URL}/materials/quiz`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        selected_types: selectedTypes,
+      }),
     },
-    body: JSON.stringify({
-      selected_types: selectedTypes
-    }), 
-  });
+  );
 
   const data = (await response.json()) as BaseResponse<GenerateQuizResponse>;
   if (!data.success) {

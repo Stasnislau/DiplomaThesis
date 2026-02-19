@@ -1,8 +1,8 @@
 import { AUTH_MICROSERVICE_URL } from "../consts";
 import { BaseResponse } from "../../types/responses/BaseResponse";
+import { fetchWithAuth } from "../fetchWithAuth";
 import { userSchema } from "../../types/models/User";
 import { z } from "zod";
-import { fetchWithAuth } from "../fetchWithAuth";
 
 export const registerUserDtoSchema = userSchema
   .pick({ email: true, name: true, surname: true })
@@ -18,13 +18,17 @@ export const register = async (input: RegisterUserRequest) => {
     {
       method: "POST",
       body: JSON.stringify(input),
-    }
+    },
   );
 
   const data = (await response.json()) as BaseResponse<boolean>;
 
   if (!data.success) {
-    throw new Error("failed to register");
+    const errorMsg =
+      (data.payload as any)?.message ||
+      data.errors?.join(", ") ||
+      "Failed to register";
+    throw new Error(errorMsg);
   }
 
   return data.payload;

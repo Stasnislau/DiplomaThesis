@@ -4,9 +4,9 @@ import pandas as pd
 from constants.constants import LEVEL_EMBEDDINGS
 
 # Import new DTOs and typing helpers
-from models.dtos.vector_db_dtos import SpecificSkillContext, FullLevelContext, SimilarLevel, LevelSkills
+from models.dtos.vector_db_dtos import SpecificSkillContext, FullLevelContext, SimilarLevel, LevelSkills, MaterialChunk, TaskTemplate
+from models.dtos.material_dtos import ChunkMetadata
 from typing import List, Union, Optional, Dict, Any
-
 
 class VectorDBService:
     def __init__(self) -> None:
@@ -47,13 +47,8 @@ class VectorDBService:
 
             # Initialize materials table if needed
             if self.materials_table_name not in self.db.table_names():
-                # Create an empty table with schema implied by first insertion or explicit
-                # For now, we'll let create_table infer from data on first insert if possible,
-                # or just pass a dummy empty DF with correct schema if we want strict typing.
-                # Lancedb is flexible. We will handle creation in save_chunks if not exists.
                 pass
             if self.templates_table_name not in self.db.table_names():
-                # Will be created on first insert
                 pass
 
         except Exception as e:
@@ -121,7 +116,7 @@ class VectorDBService:
         except Exception as e:
             raise e
 
-    def save_chunks(self, chunks: List[str], metadatas: List[Dict[str, Any]]) -> None:
+    def save_chunks(self, chunks: List[str], metadatas: List[ChunkMetadata]) -> None:
         """
         Saves text chunks and their metadata to the materials table.
         """
@@ -132,8 +127,9 @@ class VectorDBService:
                 record = {
                     "text": chunk,
                     "vector": embeddings[i].tolist(),
+                    "source": metadatas[i].source,
+                    "chunk_index": metadatas[i].chunk_index
                 }
-                record.update(metadatas[i])
                 data.append(record)
 
             df = pd.DataFrame(data)
@@ -148,7 +144,7 @@ class VectorDBService:
             print(f"Error saving chunks: {e}")
             raise e
 
-    def search_materials(self, query: str, limit: int = 5) -> List[Dict[str, str | int]]:
+    def search_materials(self, query: str, limit: int = 5) -> List[MaterialChunk]:
         """
         Searches for materials similar to the query.
         """
@@ -159,30 +155,27 @@ class VectorDBService:
             query_embedding = self.model.encode(query)
             table = self.db.open_table(self.materials_table_name)
 
-            # Search and return as list of dicts
-            results = table.search(query_embedding.tolist()).limit(limit).to_pandas()
-
-            return results.to_dict("records")  # type: ignore
+            results_df = table.search(query_embedding.tolist()).limit(limit).to_pandas()
+            records = results_df.to_dict("records")
+            
+            return [MaterialChunk(**record) for record in records]
 
         except Exception as e:
             print(f"Error searching materials: {e}")
             raise e
 
-    def save_task_templates(self, templates: List[Dict[str, Any]]) -> None:
+    def save_task_templates(self, templates: List[TaskTemplate]) -> None:
         """
-        Saves extracted task templates into a dedicated table for reuse.
-        Each template should include 'template' (str) and metadata fields.
+        Saves extracted task templates.
         """
         if not templates:
             return
         try:
-            embeddings = self.model.encode([t.get("template", "") for t in templates])
+            embeddings = self.model.encode([t.template for t in templates])
             data = []
             for i, template in enumerate(templates):
-                record = {
-                    **template,
-                    "vector": embeddings[i].tolist(),
-                }
+                record = template.model_dump()
+                record["vector"] = embeddings[i].tolist()
                 data.append(record)
 
             df = pd.DataFrame(data)
@@ -195,7 +188,7 @@ class VectorDBService:
             print(f"Error saving templates: {e}")
             raise e
 
-    def search_task_templates(self, query: str, limit: int = 20) -> List[Dict[str, Any]]:
+    def search_task_templates(self, query: str, limit: int = 20) -> List[TaskTemplate]:
         """
         Searches for stored task templates similar to the query.
         """
@@ -209,16 +202,14 @@ class VectorDBService:
                 .limit(limit)
                 .to_pandas()
             )
-            records = results.to_dict("records")  # type: ignore
-            # Drop embedding field for JSON serialization
-            for rec in records:
-                rec.pop("vector", None)
-            return records
+            records = results.to_dict("records")
+            # Convert to models, Pydantic handles _distance if defined or extra fields
+            return [TaskTemplate(**rec) for rec in records]
         except Exception as e:
             print(f"Error searching templates: {e}")
             return []
 
-    def get_task_template_by_id(self, template_id: str) -> Optional[Dict[str, Any]]:
+    def get_task_template_by_id(self, template_id: str) -> Optional[TaskTemplate]:
         """
         Returns a template by its id.
         """
@@ -230,7 +221,8 @@ class VectorDBService:
             result = df[df["id"] == template_id]
             if result.empty:
                 return None
-            return result.to_dict("records")[0]  # type: ignore
+            record = result.to_dict("records")[0]
+            return TaskTemplate(**record)
         except Exception as e:
             print(f"Error fetching template by id: {e}")
             raise e

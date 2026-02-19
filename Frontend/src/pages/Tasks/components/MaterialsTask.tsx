@@ -1,11 +1,12 @@
-import { useState } from "react";
-import { useUploadMaterial } from "@/api/hooks/useUploadMaterial";
-import { useGenerateQuiz } from "@/api/hooks/useGenerateQuiz";
-import { useSaveMaterial } from "@/api/hooks/useSaveMaterial";
-import { useGetUserMaterials } from "@/api/hooks/useGetUserMaterials";
 import Button from "@/components/common/Button";
 import { QuizQuestion } from "@/api/mutations/generateQuiz";
+import { UserMaterial } from "@/api/mutations/saveMaterial";
 import cn from "@/utils/cn";
+import { useGenerateQuiz } from "@/api/hooks/useGenerateQuiz";
+import { useGetUserMaterials } from "@/api/hooks/useGetUserMaterials";
+import { useSaveMaterial } from "@/api/hooks/useSaveMaterial";
+import { useState } from "react";
+import { useUploadMaterial } from "@/api/hooks/useUploadMaterial";
 
 interface AnalyzedType {
   type: string;
@@ -78,11 +79,16 @@ const MaterialsTask = () => {
     });
   };
 
-  const loadMaterial = (material: any) => {
+
+// ... (existing imports)
+
+// ...
+
+  const loadMaterial = (material: UserMaterial) => {
     setFile({ name: material.filename } as File);
     let types: AnalyzedType[] = [];
     if (Array.isArray(material.analyzedTypes)) {
-      types = material.analyzedTypes.map((t: any) => {
+      types = material.analyzedTypes.map((t) => {
         if (typeof t === 'string') return { type: t, example: '' };
         return t;
       });

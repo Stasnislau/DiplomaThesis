@@ -1,11 +1,4 @@
-import React from "react";
-import { Controller, useForm, SubmitHandler } from "react-hook-form";
-import Button from "@/components/common/Button";
-import TextField from "@/components/common/TextField";
-import { TrashIcon } from "@/assets/icons";
-import { useGetUserAITokens } from "@/api/hooks/useGetUserAITokens";
-import { useCreateUserAIToken } from "@/api/hooks/useCreateUserAIToken";
-import { useDeleteUserAIToken } from "@/api/hooks/useDeleteUserAIToken";
+import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import {
   Select,
   SelectContent,
@@ -13,14 +6,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/common/Select";
+
 import { AI_PROVIDERS } from "@/constants";
+import Button from "@/components/common/Button";
 import IconButton from "@/components/common/IconButton";
 import { Link } from "react-router-dom";
+import React from "react";
 import Spinner from "@/components/common/Spinner";
+import TextField from "@/components/common/TextField";
+import { TrashIcon } from "@/assets/icons";
+import { useCreateUserAIToken } from "@/api/hooks/useCreateUserAIToken";
+import { useDeleteUserAIToken } from "@/api/hooks/useDeleteUserAIToken";
+import { useGetUserAITokens } from "@/api/hooks/useGetUserAITokens";
+import { useSetDefaultUserAIToken } from "@/api/hooks/useSetDefaultUserAIToken";
 
 interface IFormInput {
   aiProviderId: string;
   token: string;
+  isDefault: boolean;
 }
 
 // Brand colors for AI providers (light theme compatible)
@@ -41,8 +44,13 @@ const AITokensPage: React.FC = () => {
   const { data: aiTokens, isLoading } = useGetUserAITokens();
   const { mutate: createToken, isPending: isCreating } = useCreateUserAIToken();
   const { mutate: deleteToken } = useDeleteUserAIToken();
+  const { setDefaultToken, isSettingDefault } = useSetDefaultUserAIToken();
 
-  const { register, handleSubmit, reset, control } = useForm<IFormInput>();
+  const { register, handleSubmit, reset, control } = useForm<IFormInput>({
+    defaultValues: {
+      isDefault: true, // Default to true as user likely wants to use the new token
+    }
+  });
 
   const onSubmit: SubmitHandler<IFormInput> = (data) => {
     createToken(data, {
@@ -119,6 +127,15 @@ const AITokensPage: React.FC = () => {
                   className="h-12"
                 />
               </div>
+              <div className="md:col-span-12 flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isDefault"
+                  {...register("isDefault")}
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                />
+                <label htmlFor="isDefault" className="text-sm text-gray-700">Set as default provider</label>
+              </div>
               <div className="md:col-span-3 flex items-end">
                 <Button 
                   type="submit" 
@@ -192,12 +209,31 @@ const AITokensPage: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                    <IconButton
-                      onClick={() => deleteToken(token.id)}
-                      className="h-10 w-10 flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 opacity-0 group-hover:opacity-100"
-                    >
-                      <TrashIcon className="h-5 w-5" />
-                    </IconButton>
+                    <div className="flex items-center gap-4">
+                      {token.isDefault && (
+                        <span className="bg-yellow-100 text-yellow-800 text-xs font-semibold px-2.5 py-0.5 rounded border border-yellow-200 flex items-center gap-1">
+                          <span role="img" aria-label="star">⭐</span> Default
+                        </span>
+                      )}
+                      
+                      {!token.isDefault && (
+                        <Button
+                          variant="secondary" 
+                          onClick={() => setDefaultToken(token.id)}
+                          disabled={isSettingDefault}
+                          className="text-xs text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 px-2 py-1 rounded"
+                        >
+                          Make Default
+                        </Button>
+                      )}
+
+                      <IconButton
+                        onClick={() => deleteToken(token.id)}
+                        className="h-10 w-10 flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 opacity-0 group-hover:opacity-100"
+                      >
+                        <TrashIcon className="h-5 w-5" />
+                      </IconButton>
+                    </div>
                   </div>
                 );
               })}

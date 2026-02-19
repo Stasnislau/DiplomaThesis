@@ -85,16 +85,24 @@ describe("UserAITokensService", () => {
   });
 
   describe("findAllForUser", () => {
-    it("should return all tokens for user", async () => {
+    it("should return all tokens for user with masked tokens by default", async () => {
       const tokens = [
-        mockToken,
-        { ...mockToken, id: "token-456", isDefault: false },
+        { ...mockToken, token: "sk-very-long-secret-key-12345" },
+        {
+          ...mockToken,
+          id: "token-456",
+          isDefault: false,
+          token: "sk-another-secret-54321",
+        },
       ];
+      // @ts-ignore
       (prisma.userAIToken.findMany as jest.Mock).mockResolvedValue(tokens);
 
       const result = await service.findAllForUser("user-123");
 
       expect(result).toHaveLength(2);
+      expect(result[0].token).toBe("sk-v...2345");
+      expect(result[1].token).toBe("sk-a...4321");
       expect(prisma.userAIToken.findMany).toHaveBeenCalledWith({
         where: { userId: "user-123" },
         include: { aiProvider: true },
@@ -102,7 +110,18 @@ describe("UserAITokensService", () => {
       });
     });
 
+    it("should return unmasked tokens when includeToken is true", async () => {
+      const tokens = [{ ...mockToken, token: "sk-very-long-secret-key-12345" }];
+      // @ts-ignore
+      (prisma.userAIToken.findMany as jest.Mock).mockResolvedValue(tokens);
+
+      const result = await service.findAllForUser("user-123", true);
+
+      expect(result[0].token).toBe("sk-very-long-secret-key-12345");
+    });
+
     it("should return empty array when no tokens", async () => {
+      // @ts-ignore
       (prisma.userAIToken.findMany as jest.Mock).mockResolvedValue([]);
 
       const result = await service.findAllForUser("user-123");
@@ -112,12 +131,17 @@ describe("UserAITokensService", () => {
   });
 
   describe("findOne", () => {
-    it("should return token by id and userId", async () => {
-      (prisma.userAIToken.findFirst as jest.Mock).mockResolvedValue(mockToken);
+    it("should return masked token by id and userId", async () => {
+      // @ts-ignore
+      (prisma.userAIToken.findFirst as jest.Mock).mockResolvedValue({
+        ...mockToken,
+        token: "sk-very-long-secret-key-12345",
+      });
 
       const result = await service.findOne("token-123", "user-123");
 
-      expect(result).toEqual(mockToken);
+      expect(result).toBeDefined();
+      expect(result?.token).toBe("sk-v...2345");
       expect(prisma.userAIToken.findFirst).toHaveBeenCalledWith({
         where: { id: "token-123", userId: "user-123" },
         include: { aiProvider: true },
@@ -125,6 +149,7 @@ describe("UserAITokensService", () => {
     });
 
     it("should return null when token not found", async () => {
+      // @ts-ignore
       (prisma.userAIToken.findFirst as jest.Mock).mockResolvedValue(null);
 
       const result = await service.findOne("nonexistent", "user-123");
@@ -134,19 +159,26 @@ describe("UserAITokensService", () => {
   });
 
   describe("remove", () => {
-    it("should delete token if it belongs to user", async () => {
+    it("should delete token and return masked result if it belongs to user", async () => {
+      // @ts-ignore
       (prisma.userAIToken.findFirst as jest.Mock).mockResolvedValue(mockToken);
-      (prisma.userAIToken.delete as jest.Mock).mockResolvedValue(mockToken);
+      // @ts-ignore
+      (prisma.userAIToken.delete as jest.Mock).mockResolvedValue({
+        ...mockToken,
+        token: "sk-very-long-secret-key-12345",
+      });
 
       const result = await service.remove("token-123", "user-123");
 
-      expect(result).toEqual(mockToken);
+      expect(result).toBeDefined();
+      expect(result?.token).toBe("sk-v...2345");
       expect(prisma.userAIToken.delete).toHaveBeenCalledWith({
         where: { id: "token-123" },
       });
     });
 
     it("should return null if token does not belong to user", async () => {
+      // @ts-ignore
       (prisma.userAIToken.findFirst as jest.Mock).mockResolvedValue(null);
 
       const result = await service.remove("token-123", "wrong-user");

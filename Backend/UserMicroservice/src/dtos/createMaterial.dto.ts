@@ -1,4 +1,11 @@
-import { IsNotEmpty, IsString, IsArray, IsJSON } from 'class-validator';
+import { IsArray, IsNotEmpty, IsString } from "class-validator";
+
+/** Structure for analyzed material type */
+interface AnalyzedMaterialType {
+  type: string;
+  count?: number;
+  details?: string;
+}
 
 export class CreateUserMaterialDto {
   @IsString()
@@ -6,6 +13,6 @@ export class CreateUserMaterialDto {
   filename: string;
 
   @IsNotEmpty()
-  analyzedTypes: any; // Can be JSON or array of objects
+  @IsArray()
+  analyzedTypes: AnalyzedMaterialType[] | string[];
 }
-

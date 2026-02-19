@@ -1,22 +1,29 @@
-import { createBrowserRouter } from "react-router-dom";
-import { RootPage } from "./pages/Home/RootPage";
-import { LandingPage } from "./pages/Home/LandingPage";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
+import { ROUTES } from "./constants/routes";
+import { SuspenseWrapper } from "./components/common/SuspenseWrapper";
 import UnprotectedRoute from "./components/modals/UnprotectedRoute";
 import WithTopBar from "./components/layout/WithTopBar";
-import { LoginPage } from "./processes/Auth/Pages/LoginPage";
-import { RegisterPage } from "./processes/Auth/Pages/RegisterPage";
-import { ResetPasswordPage } from "./processes/Auth/Pages/ResetPasswordPage";
-import NotFoundPage from "./components/layout/NotFoundPage";
-import { TaskPage } from "./pages/Quiz/TaskPage";
-import { ProfilePage } from "./pages/User/Profile";
-import { PlacementTestPage } from "./processes/PlacementTest/pages/PlacementTestPage";
-import { AdminDashboardPage } from "./pages/Admin/AdminDashboardPage";
-import { SpeechAnalysisPage } from "./pages/SpeechAnalysis/SpeechAnalysisPage";
-import TasksPage from "./pages/Tasks/TasksPage";
-import AITokensPage from "./pages/User/AITokens";
-import { MaterialsPage } from "./pages/Materials/MaterialsPage";
-import TemplatesPage from "./pages/Materials/TemplatesPage";
+import { createBrowserRouter } from "react-router-dom";
+import { lazy } from "react";
+
+// Lazy load pages
+const AITokensPage = lazy(() => import("./pages/User/AITokens"));
+const AdminDashboardPage = lazy(() => import("./pages/Admin/AdminDashboardPage").then(module => ({ default: module.AdminDashboardPage })));
+const LandingPage = lazy(() => import("./pages/Home/LandingPage").then(module => ({ default: module.LandingPage })));
+const LoginPage = lazy(() => import("./processes/Auth/Pages/LoginPage").then(module => ({ default: module.LoginPage })));
+const MaterialsPage = lazy(() => import("./pages/Materials/MaterialsPage").then(module => ({ default: module.MaterialsPage })));
+const NotFoundPage = lazy(() => import("./components/layout/NotFoundPage"));
+const PlacementTestPage = lazy(() => import("./processes/PlacementTest/pages/PlacementTestPage").then(module => ({ default: module.PlacementTestPage })));
+const ProfilePage = lazy(() => import("./pages/User/Profile").then(module => ({ default: module.ProfilePage })));
+const RegisterPage = lazy(() => import("./processes/Auth/Pages/RegisterPage").then(module => ({ default: module.RegisterPage })));
+const ResetPasswordPage = lazy(() => import("./processes/Auth/Pages/ResetPasswordPage").then(module => ({ default: module.ResetPasswordPage })));
+const RootPage = lazy(() => import("./pages/Home/RootPage").then(module => ({ default: module.RootPage })));
+const SpeechAnalysisPage = lazy(() => import("./pages/SpeechAnalysis/SpeechAnalysisPage").then(module => ({ default: module.SpeechAnalysisPage })));
+const LearningPathPage = lazy(() => import("./pages/LearningPath/LearningPathPage"));
+const LessonPracticePage = lazy(() => import("./pages/LearningPath/LessonPracticePage"));
+const TaskPage = lazy(() => import("./pages/Quiz/TaskPage").then(module => ({ default: module.TaskPage })));
+const TasksPage = lazy(() => import("./pages/Tasks/TasksPage"));
+const TemplatesPage = lazy(() => import("./pages/Materials/TemplatesPage"));
 
 export const router = createBrowserRouter([
   {
@@ -24,91 +31,133 @@ export const router = createBrowserRouter([
     element: <WithTopBar />,
     children: [
       {
-        path: "/",
+        path: ROUTES.HOME,
         index: true,
-        element: <RootPage />,
+        element: (
+          <SuspenseWrapper>
+            <RootPage />
+          </SuspenseWrapper>
+        ),
       },
       {
-        path: "/welcome",
+        path: ROUTES.WELCOME,
         element: (
           <UnprotectedRoute>
-            <LandingPage />
+            <SuspenseWrapper>
+              <LandingPage />
+            </SuspenseWrapper>
           </UnprotectedRoute>
         ),
       },
       {
-        path: "/materials",
+        path: ROUTES.MATERIALS,
         element: (
           <ProtectedRoute>
-            <MaterialsPage />
+            <SuspenseWrapper>
+              <MaterialsPage />
+            </SuspenseWrapper>
           </ProtectedRoute>
         ),
       },
       {
-        path: "/materials/templates",
+        path: ROUTES.MATERIALS_TEMPLATES,
         element: (
           <ProtectedRoute>
-            <TemplatesPage />
+            <SuspenseWrapper>
+              <TemplatesPage />
+            </SuspenseWrapper>
           </ProtectedRoute>
         ),
       },
       {
-        path: "/profile",
+        path: ROUTES.PROFILE,
         element: (
           <ProtectedRoute>
-            <ProfilePage />
+            <SuspenseWrapper>
+              <ProfilePage />
+            </SuspenseWrapper>
           </ProtectedRoute>
         ),
       },
       {
-        path: "/speech-analysis",
+        path: ROUTES.SPEECH_ANALYSIS,
         element: (
           <ProtectedRoute>
-            <SpeechAnalysisPage />
+            <SuspenseWrapper>
+              <SpeechAnalysisPage />
+            </SuspenseWrapper>
           </ProtectedRoute>
         ),
       },
       {
-        path: "/tasks",
+        path: "learning-path",
         element: (
           <ProtectedRoute>
-            <TasksPage />
+            <SuspenseWrapper>
+              <LearningPathPage />
+            </SuspenseWrapper>
           </ProtectedRoute>
         ),
       },
       {
-        path: "/settings/ai-tokens",
+        path: "lesson",
         element: (
           <ProtectedRoute>
-            <AITokensPage />
+            <SuspenseWrapper>
+              <LessonPracticePage />
+            </SuspenseWrapper>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: ROUTES.TASKS,
+        element: (
+          <ProtectedRoute>
+            <SuspenseWrapper>
+              <TasksPage />
+            </SuspenseWrapper>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: ROUTES.SETTINGS_AI_TOKENS,
+        element: (
+          <ProtectedRoute>
+            <SuspenseWrapper>
+              <AITokensPage />
+            </SuspenseWrapper>
           </ProtectedRoute>
         ),
       },
     ],
   },
   {
-    path: "/quiz",
+    path: ROUTES.QUIZ,
     element: <WithTopBar />,
     children: [
       {
         path: "",
         element: (
           <ProtectedRoute>
-            <TaskPage />
+            <SuspenseWrapper>
+              <TaskPage />
+            </SuspenseWrapper>
           </ProtectedRoute>
         ),
       },
     ],
   },
   {
-    path: "/admin",
+    path: ROUTES.ADMIN,
     element: <WithTopBar />,
     children: [
       {
         path: "",
         element: (
           <ProtectedRoute accessLevel="ADMIN">
-            <AdminDashboardPage />
+            <SuspenseWrapper>
+              <AdminDashboardPage />
+            </SuspenseWrapper>
           </ProtectedRoute>
         ),
       },
@@ -122,7 +171,9 @@ export const router = createBrowserRouter([
         path: "test/:languageCode",
         element: (
           <ProtectedRoute>
-            <PlacementTestPage />
+            <SuspenseWrapper>
+              <PlacementTestPage />
+            </SuspenseWrapper>
           </ProtectedRoute>
         ),
       },
@@ -132,26 +183,32 @@ export const router = createBrowserRouter([
     path: "/",
     children: [
       {
-        path: "/login",
+        path: ROUTES.LOGIN,
         element: (
           <UnprotectedRoute>
-            <LoginPage />
+            <SuspenseWrapper>
+              <LoginPage />
+            </SuspenseWrapper>
           </UnprotectedRoute>
         ),
       },
       {
-        path: "/register",
+        path: ROUTES.REGISTER,
         element: (
           <UnprotectedRoute>
-            <RegisterPage />
+            <SuspenseWrapper>
+              <RegisterPage />
+            </SuspenseWrapper>
           </UnprotectedRoute>
         ),
       },
       {
-        path: "/reset-password",
+        path: ROUTES.RESET_PASSWORD,
         element: (
           <UnprotectedRoute>
-            <ResetPasswordPage />
+            <SuspenseWrapper>
+              <ResetPasswordPage />
+            </SuspenseWrapper>
           </UnprotectedRoute>
         ),
       },
@@ -159,6 +216,10 @@ export const router = createBrowserRouter([
   },
   {
     path: "*",
-    element: <NotFoundPage />,
+    element: (
+      <SuspenseWrapper>
+        <NotFoundPage />
+      </SuspenseWrapper>
+    ),
   },
 ]);

@@ -26,6 +26,7 @@ describe("UserAITokensController", () => {
       email: "test@test.com",
       role: "USER",
     },
+    headers: {},
   } as AuthenticatedRequest;
 
   beforeEach(async () => {
@@ -57,13 +58,18 @@ describe("UserAITokensController", () => {
 
   describe("create", () => {
     it("should create a token", async () => {
-      service.create.mockResolvedValue(mockToken);
+      const maskedToken = { ...mockToken, token: "sk-t...test" };
+      service.create.mockResolvedValue(maskedToken);
 
-      const dto = { token: "sk-test", aiProviderId: "openai", isDefault: true };
+      const dto = {
+        token: "sk-test-long-token",
+        aiProviderId: "openai",
+        isDefault: true,
+      };
       const result = await controller.create(mockRequest, dto);
 
       expect(result.success).toBe(true);
-      expect(result.payload).toEqual(mockToken);
+      expect(result.payload).toEqual(maskedToken);
       expect(service.create).toHaveBeenCalledWith("user-123", dto);
     });
 
@@ -79,14 +85,27 @@ describe("UserAITokensController", () => {
   });
 
   describe("findAll", () => {
-    it("should return all tokens", async () => {
+    it("should return tokens normally (masked default)", async () => {
       service.findAllForUser.mockResolvedValue([mockToken]);
 
       const result = await controller.findAll(mockRequest);
 
       expect(result.success).toBe(true);
       expect(result.payload).toHaveLength(1);
-      expect(service.findAllForUser).toHaveBeenCalledWith("user-123");
+      expect(service.findAllForUser).toHaveBeenCalledWith("user-123", false);
+    });
+
+    it("should return unmasked tokens if internal key is present", async () => {
+      const internalRequest = {
+        ...mockRequest,
+        headers: { "x-internal-service-key": "supersecretbridgekey" },
+      } as unknown as AuthenticatedRequest;
+
+      service.findAllForUser.mockResolvedValue([mockToken]);
+
+      await controller.findAll(internalRequest);
+
+      expect(service.findAllForUser).toHaveBeenCalledWith("user-123", true);
     });
   });
 
