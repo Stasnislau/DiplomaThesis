@@ -105,6 +105,7 @@ export const LandingPage: React.FC = () => {
                 code={language.code}
                 isStarted={false}
                 onStartTest={() => handleLanguageClick(language)}
+                onContinue={() => handleLanguageClick(language)}
               />
             );
           })}

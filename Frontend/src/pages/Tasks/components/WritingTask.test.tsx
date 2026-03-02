@@ -9,7 +9,36 @@ import { fireEvent, render, screen } from '@testing-library/react';
 
 import WritingTask from './WritingTask';
 
-// Mock child components
+// ── Mock i18n so t() returns a human-readable fallback ────────────────────────
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      const translations: Record<string, string> = {
+        'languages.chooseLanguage': 'Choose Language',
+        'languages.proficiencyLevel': 'Proficiency Level',
+        'tasks.multipleChoice': 'Multiple Choice',
+        'tasks.fillInBlank': 'Fill in the Blank',
+        'tasks.taskType': 'Task Type',
+        'tasks.generateTask': 'Generate Task',
+        'tasks.checkAnswer': 'Check Answer',
+        'tasks.correct': 'Correct!',
+        'tasks.incorrect': 'Incorrect',
+        'tasks.showExplanation': 'Show Explanation',
+        'languages.spanish': 'Spanish',
+        'languages.french': 'French',
+        'languages.german': 'German',
+        'languages.russian': 'Russian',
+        'languages.polish': 'Polish',
+        'languages.english': 'English',
+        'languages.italian': 'Italian',
+      };
+      return translations[key] ?? key;
+    },
+    i18n: { language: 'en' },
+  }),
+}));
+
+// ── Mock child components ─────────────────────────────────────────────────────
 vi.mock('@/components/common/Tabs', () => ({
   Tabs: ({ children, onValueChange }: { children: React.ReactNode; onValueChange?: (v: string) => void }) => (
     <div onClick={() => onValueChange && onValueChange('fill-blank')}>{children}</div>
@@ -70,7 +99,7 @@ describe('WritingTask', () => {
     render(<WritingTask />);
     expect(screen.getByText('Choose Language')).toBeInTheDocument();
     expect(screen.getByText('Proficiency Level')).toBeInTheDocument();
-    
+
     // Check specific options exist
     expect(screen.getByText('Spanish')).toBeInTheDocument();
     expect(screen.getByText('B1')).toBeInTheDocument();
@@ -79,8 +108,8 @@ describe('WritingTask', () => {
   it('disables generate button when language or level is not selected', () => {
     render(<WritingTask />);
 
-    const generateBtn = screen.getByRole('button', { name: 'Generate Multiple Choice Task' });
-    
+    const generateBtn = screen.getAllByRole('button', { name: 'Generate Task' })[0];
+
     // Should be disabled initially
     expect(generateBtn).toBeDisabled();
 
@@ -98,12 +127,12 @@ describe('WritingTask', () => {
 
     // Select Language Spanish
     fireEvent.click(screen.getByText('Spanish'));
-    
+
     // Select Level B1
     fireEvent.click(screen.getByText('B1'));
 
     // Click Generate MC
-    const generateBtn = screen.getByRole('button', { name: 'Generate Multiple Choice Task' });
+    const generateBtn = screen.getAllByRole('button', { name: 'Generate Task' })[0];
     fireEvent.click(generateBtn);
 
     expect(mockCreateMC).toHaveBeenCalledWith({ language: 'Spanish', level: 'B1' });
@@ -114,12 +143,12 @@ describe('WritingTask', () => {
     vi.spyOn(useMC, 'useCreateMultipleChoiceTask').mockReturnValue({
       createTask: mockCreateMC,
       isLoading: false,
-      data: { 
+      data: {
         id: '123',
-        question: 'Generated Question', 
+        question: 'Generated Question',
         type: 'multiple_choice',
         options: ['A', 'B'],
-        correctAnswer: 'A'
+        correctAnswer: 'A',
       },
       error: null,
       isSuccess: true,
@@ -127,7 +156,7 @@ describe('WritingTask', () => {
     });
 
     render(<WritingTask />);
-    
+
     // The effect should pick up the data and render the task
     expect(screen.getByTestId('task-component')).toHaveTextContent('Task: Generated Question');
   });

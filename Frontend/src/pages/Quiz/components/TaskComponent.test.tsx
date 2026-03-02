@@ -14,10 +14,10 @@ describe("TaskComponent", () => {
   };
 
   const mockFillInTheBlankTask: FillInTheBlankTask = {
-    type: "fill_in_the_blank",
-    question: "The capital of Poland is ____.",
-    correctAnswer: "Warsaw",
-    id: "2",
+    id: "task-2",
+    type: "fill_in_the_blank" as const,
+    question: "This is a ___.",
+    correctAnswer: ["test"],
   };
 
   const defaultProps = {
