@@ -7,6 +7,7 @@ import { isMultipleChoice } from "@/types/typeGuards/isMultipleChoice";
 import { useCreateTask } from "@/api/hooks/useCreateTask";
 import { useExplainAnswer } from "@/api/hooks/useExplainAnswer";
 import { useTranslation } from "react-i18next";
+import { isAnswerCorrect as checkAnswer } from "@/utils/answerValidation";
 
 const LANGUAGES = [
   { code: "Spanish", flag: "🇪🇸" },
@@ -65,7 +66,7 @@ export const TaskPage: React.FC = () => {
       isAnswerCorrect =
         currentTaskData.options[correctOptionIndex] === userAnswer;
     } else {
-      isAnswerCorrect = currentTaskData.correctAnswer === userAnswer;
+      isAnswerCorrect = checkAnswer(userAnswer, currentTaskData.correctAnswer);
     }
     setIsCorrect(isAnswerCorrect);
   };

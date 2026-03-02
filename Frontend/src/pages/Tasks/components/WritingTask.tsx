@@ -8,6 +8,7 @@ import { isMultipleChoice } from "@/types/typeGuards/isMultipleChoice";
 import { useCreateBlankSpaceTask } from "@/api/hooks/useCreateBlankSpaceTask";
 import { useCreateMultipleChoiceTask } from "@/api/hooks/useCreateMultipleChoiceTask";
 import { useExplainAnswer } from "@/api/hooks/useExplainAnswer";
+import { isAnswerCorrect as checkAnswer } from "@/utils/answerValidation";
 import { useTranslation } from "react-i18next";
 
 const LANGUAGES = [
@@ -94,7 +95,7 @@ const WritingTask = ({ initialLanguage, initialLevel, initialTaskType }: Writing
       isAnswerCorrect =
         currentTaskData.options[correctOptionIndex] === userAnswer;
     } else {
-      isAnswerCorrect = currentTaskData.correctAnswer === userAnswer;
+      isAnswerCorrect = checkAnswer(userAnswer, currentTaskData.correctAnswer);
     }
     setIsCorrect(isAnswerCorrect);
   };

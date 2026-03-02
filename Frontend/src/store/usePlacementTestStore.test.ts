@@ -105,7 +105,7 @@ describe("usePlacementTestStore", () => {
         id: "1",
         type: "fill_in_the_blank" as const,
         question: "Test?",
-        correctAnswer: "answer",
+        correctAnswer: ["answer"],
       };
 
       // First add some answers
@@ -159,14 +159,14 @@ describe("usePlacementTestStore", () => {
         type: "multiple_choice" as const,
         question: "Current?",
         options: ["A", "B"],
-        correctAnswer: "A",
+        correctAnswer: ["A"],
       };
 
       const nextTask = {
         id: "2",
         type: "fill_in_the_blank" as const,
         question: "Next?",
-        correctAnswer: "answer",
+        correctAnswer: ["answer"],
       };
 
       act(() => {

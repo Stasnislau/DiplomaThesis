@@ -74,7 +74,7 @@ async def test_generate_writing_fill_in_the_blank_task(writing_service: WritingT
     task = await writing_service.generate_writing_fill_in_the_blank_task("English", "A1")
     
     assert isinstance(task, FillInTheBlankTask)
-    assert task.correct_answer == "test"
+    assert task.correct_answer == ["test"]
 
 @pytest.mark.asyncio
 async def test_explain_answer(writing_service: WritingTaskService, mock_ai_service: MagicMock) -> None:

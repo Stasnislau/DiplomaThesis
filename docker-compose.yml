@@ -1,8 +1,7 @@
 name: diploma-thesis
 
-version: '3.8'
-
 services:
+  # ── Infrastructure ──────────────────────────────────────────────────────────
 
   postgres-auth:
     image: postgres:15
@@ -14,7 +13,12 @@ services:
     volumes:
       - postgres_auth_data:/var/lib/postgresql/data
     ports:
-      - '5432:5432'
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   postgres-user:
     image: postgres:15
@@ -26,19 +30,120 @@ services:
     volumes:
       - postgres_user_data:/var/lib/postgresql/data
     ports:
-      - '5433:5432'
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   rabbitmq:
     image: rabbitmq:3-management
     restart: always
     ports:
-      - '5672:5672'  # AMQP protocol port
-      - '15672:15672'  # Management UI port
+      - "5672:5672"
+      - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  # ── Backend Services ────────────────────────────────────────────────────────
+
+  auth:
+    build:
+      context: ./Backend/AuthMicroservice
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3002:3002"
+    environment:
+      PORT: 3002
+      JWT_SECRET: MYSECRET
+      JWT_EXPIRES_IN: 1h
+      REFRESH_TOKEN_SECRET: MYSUPERSECRET
+      REFRESH_TOKEN_EXPIRES_IN: 7d
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      RABBITMQ_QUEUE: user_data
+      PRISMA_DATABASE_AUTH_URL: postgresql://postgres:12345@postgres-auth:5432/authdb?schema=public
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  user:
+    build:
+      context: ./Backend/UserMicroservice
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3004:3004"
+    environment:
+      PORT: 3004
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      RABBITMQ_QUEUE: user_data
+      INTERNAL_SERVICE_KEY: supersecretbridgekey
+      PRISMA_DATABASE_USER_URL: postgresql://postgres:12345@postgres-user:5432/userdb?schema=public
+    depends_on:
+      postgres-user:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  gateway:
+    build:
+      context: ./Backend/GatewayMicroservice
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      AUTH_MICROSERVICE_URL: http://auth:3002
+      BRIDGE_MICROSERVICE_URL: http://bridge:3003
+      USER_MICROSERVICE_URL: http://user:3004
+    depends_on:
+      - auth
+      - user
+      - bridge
+
+  bridge:
+    build:
+      context: ./Backend/BridgeMicroservice
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3003:3003"
+    environment:
+      USER_MICROSERVICE_URL: http://user:3004/api
+      INTERNAL_SERVICE_KEY: supersecretbridgekey
+      # AI API keys — set these in your .env or pass at runtime
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY:-}
+    depends_on:
+      - user
+
+  # ── Frontend ────────────────────────────────────────────────────────────────
+
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:3001
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - gateway
 
 volumes:
   postgres_auth_data:
