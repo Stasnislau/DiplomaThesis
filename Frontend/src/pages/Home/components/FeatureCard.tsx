@@ -11,10 +11,6 @@ interface FeatureCardProps {
   gradientTo: string;
 }
 
-// Safely map specific colors if needed, but assuming user setup is standard.
-// Using inline styles for dynamic gradients if classes fail? No, stick to classes for now.
-// Note: Tailwind doesn't support string interpolation for classes in build time unless safelisted.
-
 export const FeatureCard: React.FC<FeatureCardProps> = ({
   title,
   description,

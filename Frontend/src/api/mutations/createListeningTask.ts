@@ -28,12 +28,6 @@ export async function createListeningTask(
     throw new Error(errorMessage);
   }
 
-  // If the backend wrapper is BaseResponse, we return payload.
-  // If the backend returns raw ListeningTaskResponse (Bridge usually did this historically), we check.
-  // Bridge historically returned raw JSON. But my recent material controller uses wrapper.
-  // Listening controller might still return raw JSON or wrapper.
-  // Let's assume raw for now if it doesn't have 'payload' property, or payload if it does.
-
   if ("payload" in data) {
     return data.payload as ListeningTaskResponse;
   }

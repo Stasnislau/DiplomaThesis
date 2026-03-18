@@ -44,18 +44,15 @@ describe("JwtAuthGuard", () => {
     });
 
     it("should throw original error even when user exists", () => {
-      // Arrange
       const customError = new UnauthorizedException("Custom auth error");
       const mockUser = { id: "user-123", email: "test@example.com" };
 
-      // Act & Assert
       expect(() => guard.handleRequest(customError, mockUser, null)).toThrow(
         "Custom auth error",
       );
     });
 
     it("should throw UnauthorizedException when both err and user are null", () => {
-      // Act & Assert
       expect(() => guard.handleRequest(null, null, null)).toThrow(
         UnauthorizedException,
       );
@@ -64,7 +61,6 @@ describe("JwtAuthGuard", () => {
 
   describe("canActivate", () => {
     it("should call super.canActivate", () => {
-      // Arrange
       const mockContext = {
         switchToHttp: jest.fn().mockReturnValue({
           getRequest: jest.fn().mockReturnValue({

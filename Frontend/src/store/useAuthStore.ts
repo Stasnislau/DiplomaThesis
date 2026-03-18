@@ -47,7 +47,6 @@ export const useAuthStore = create<AuthState>((set, _get) => ({
           Cookies.set("refreshToken", data.payload.refreshToken);
         }
 
-        // Decode token to get role
         let userRole = null;
         try {
           const decoded = jwtDecode<DecodedToken>(accessToken);
@@ -109,7 +108,6 @@ export const useAuthStore = create<AuthState>((set, _get) => ({
       }
       localStorage.setItem("accessToken", newAccessToken);
 
-      // Decode new token
       let userRole = null;
       try {
         const decoded = jwtDecode<DecodedToken>(newAccessToken);

@@ -77,7 +77,7 @@ const TemplatesPage: React.FC = () => {
           <div>
             <p className="text-sm font-semibold text-indigo-600 uppercase tracking-wide">Templates Lab</p>
             <h1 className="text-3xl font-bold text-gray-900 mt-1">Task templates</h1>
-            <p className="text-gray-600">Загружай PDF, вытаскивай паттерны заданий и мгновенно генерируй новые задачи.</p>
+            <p className="text-gray-600">Upload PDF, extract task patterns, and instantly generate new tasks.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button
@@ -139,7 +139,7 @@ const TemplatesPage: React.FC = () => {
         ) : templatesList.length === 0 ? (
           <Card className="border-dashed border-2 border-gray-200">
             <CardContent className="text-center py-10 text-gray-500">
-              Пока нет шаблонов. Загрузите PDF, чтобы извлечь паттерны заданий.
+              No templates yet. Upload a PDF to extract task patterns.
             </CardContent>
           </Card>
         ) : (

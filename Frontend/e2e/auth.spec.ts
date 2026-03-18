@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 /**
  * Auth E2E tests — Registration, Login, Logout flows.
@@ -13,8 +13,6 @@ const _TEST_USER = {
   password: "TestPassword123!",
 };
 
-// ── Registration ───────────────────────────────────────────────────────────────
-
 test.describe("Registration", () => {
   test("shows the registration form", async ({ page }) => {
     await page.goto("/register");
@@ -28,11 +26,9 @@ test.describe("Registration", () => {
   test("validates empty form submission", async ({ page }) => {
     await page.goto("/register");
 
-    // Try to submit empty form
     const submitBtn = page.locator('button[type="submit"]');
     if (await submitBtn.isVisible()) {
       await submitBtn.click();
-      // Should stay on register page or show validation
       await expect(page).toHaveURL(/register/);
     }
   });
@@ -49,8 +45,6 @@ test.describe("Registration", () => {
     }
   });
 });
-
-// ── Login ──────────────────────────────────────────────────────────────────────
 
 test.describe("Login", () => {
   test("shows the login form", async ({ page }) => {
@@ -73,7 +67,6 @@ test.describe("Login", () => {
     const submitBtn = page.locator('button[type="submit"]');
     await submitBtn.click();
 
-    // Should show error or stay on login page
     await page.waitForTimeout(2000);
     const errorEl = page.locator(
       '[role="alert"], .text-red-500, .text-red-400, .error',
@@ -97,8 +90,6 @@ test.describe("Login", () => {
   });
 });
 
-// ── Landing & Welcome ──────────────────────────────────────────────────────────
-
 test.describe("Landing page", () => {
   test("welcome page loads", async ({ page }) => {
     await page.goto("/welcome");
@@ -110,7 +101,6 @@ test.describe("Landing page", () => {
   }) => {
     await page.goto("/tasks");
     await page.waitForTimeout(2000);
-    // Should be redirected to login or welcome
     expect(page.url()).toMatch(/login|welcome/);
   });
 });

@@ -4,7 +4,6 @@ import { LanguageLevel } from "@/types/models/LanguageLevel";
 import { act } from "@testing-library/react";
 import { useUserStore } from "./useUserStore";
 
-// Mock API calls
 vi.mock("@/api/queries/getUserAITokens", () => ({
   getUserAITokens: vi.fn(),
 }));
@@ -19,7 +18,6 @@ vi.mock("@/api/mutations/deleteUserAIToken", () => ({
 
 describe("useUserStore", () => {
   beforeEach(() => {
-    // Reset store state
     act(() => {
       useUserStore.setState({
         user: null,
@@ -177,7 +175,6 @@ describe("useUserStore", () => {
       const { getUserAITokens } = await import("@/api/queries/getUserAITokens");
       vi.mocked(getUserAITokens).mockRejectedValue(new Error("Network error"));
 
-      // Should not throw
       await act(async () => {
         await useUserStore.getState().fetchAITokens();
       });
@@ -220,7 +217,6 @@ describe("useUserStore", () => {
         await import("@/api/mutations/deleteUserAIToken");
       vi.mocked(deleteUserAIToken).mockResolvedValue(undefined);
 
-      // First set some tokens
       act(() => {
         useUserStore.setState({
           aiTokens: [

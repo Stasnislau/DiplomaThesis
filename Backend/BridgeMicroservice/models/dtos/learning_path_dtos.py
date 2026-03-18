@@ -24,9 +24,9 @@ class ModuleDto(BaseModel):
     title: str
     description: str
     level: str
-    theme: str                   # Module theme, e.g. "Daily Life"
+    theme: str
     lessons: List[LessonDto]
-    progress: int                # 0-100 percent complete
+    progress: int
 
     model_config = ConfigDict(
         alias_generator=to_camel,

@@ -79,14 +79,12 @@ const TestResults = () => {
       },
     });
 
-    // Auto-complete all lessons from levels below the determined level
     if (evaluation.level !== "A1") {
       try {
         await fetchWithAuth(`${BRIDGE_MICROSERVICE_URL}/learning-path/bulk-complete`, {
           method: "POST",
           body: JSON.stringify({ userLevel: evaluation.level }),
         });
-        // Refresh learning path cache so the map shows correct statuses immediately
         queryClient.invalidateQueries({
           predicate: (q) => q.queryKey[0] === "learning-path",
         });
@@ -95,7 +93,6 @@ const TestResults = () => {
       }
     }
 
-    // Navigate directly to the learning path for the correct language & level
     navigate("/learning-path", {
       state: {
         language: language.name.toLowerCase(),

@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "@testing-library/react";
 import { useAuthStore } from "./useAuthStore";
 
-// Mock the API modules
 vi.mock("../api/mutations/login", () => ({
   login: vi.fn(),
 }));
@@ -34,7 +33,6 @@ vi.mock("jwt-decode", () => ({
 
 describe("useAuthStore", () => {
   beforeEach(() => {
-    // Reset store state
     act(() => {
       useAuthStore.setState({
         isAuthenticated: false,
@@ -44,10 +42,8 @@ describe("useAuthStore", () => {
       });
     });
 
-    // Clear localStorage
     localStorage.clear();
 
-    // Reset all mocks
     vi.clearAllMocks();
   });
 
@@ -171,7 +167,6 @@ describe("useAuthStore", () => {
 
   describe("logout", () => {
     it("clears authentication state", async () => {
-      // First set up authenticated state
       act(() => {
         useAuthStore.setState({
           isAuthenticated: true,

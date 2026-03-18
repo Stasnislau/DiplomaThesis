@@ -1,7 +1,6 @@
 import { ExplainAnswerRequest, explainAnswer } from "./explainAnswer";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Mock fetchWithAuth
 vi.mock("../fetchWithAuth", () => ({
   fetchWithAuth: vi.fn(),
 }));

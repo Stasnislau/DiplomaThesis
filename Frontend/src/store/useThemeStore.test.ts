@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "@testing-library/react";
 import { useThemeStore } from "./useThemeStore";
 
-// Mock matchMedia
 const mockMatchMedia = (matches: boolean) => {
   Object.defineProperty(window, "matchMedia", {
     writable: true,
@@ -22,11 +21,9 @@ const mockMatchMedia = (matches: boolean) => {
 
 describe("useThemeStore", () => {
   beforeEach(() => {
-    // Reset store
     act(() => {
       useThemeStore.setState({ theme: "system", isDark: false });
     });
-    // Clear classList
     document.documentElement.classList.remove("dark");
     mockMatchMedia(false);
   });
@@ -68,7 +65,7 @@ describe("useThemeStore", () => {
     });
 
     it("respects system preference when set to system", () => {
-      mockMatchMedia(true); // System prefers dark
+      mockMatchMedia(true);
 
       act(() => {
         useThemeStore.getState().setTheme("system");

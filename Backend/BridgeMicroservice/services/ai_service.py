@@ -55,6 +55,7 @@ class AI_Service:
         system_prompt: str = "You are a philologist with over 20 years of experience in language education.",
         user_context: Optional[UserContext] = None,
         ai_provider_id: Optional[str] = None,
+        temperature: float = 0.7,
     ) -> str:
         litellm_model = model
         litellm_params: Dict[str, Any] = {}
@@ -69,14 +70,12 @@ class AI_Service:
                 require_api_key=True,
             )
         else:
-            # Backwards-compatible fallback to env-configured key if no user context provided.
             litellm_model, litellm_params = self._resolve_provider_params(
                 ai_provider_id or "google-geminis",
                 api_key=None,
                 require_api_key=False,
             )
 
-        # Ensure we still have a model set (for cases when caller provided a custom one)
         if model and not user_context and ai_provider_id is None:
             litellm_model = model
 
@@ -87,7 +86,8 @@ class AI_Service:
                 {"role": "user", "content": prompt},
             ],
             response_format=response_format,
-            timeout=180,  # 3-minute timeout for long operations like speaking analysis
+            timeout=180,
+            temperature=temperature,
             **litellm_params,
         )
         content: Optional[str] = chat_response.choices[0].message.content

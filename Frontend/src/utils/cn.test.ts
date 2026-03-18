@@ -43,7 +43,6 @@ describe("cn (className utility)", () => {
 
   describe("tailwind merge", () => {
     it("merges conflicting tailwind classes", () => {
-      // twMerge should keep the last conflicting class
       expect(cn("px-2", "px-4")).toBe("px-4");
     });
 

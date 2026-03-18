@@ -80,9 +80,7 @@ const MaterialsTask = () => {
   };
 
 
-// ... (existing imports)
 
-// ...
 
   const loadMaterial = (material: UserMaterial) => {
     setFile({ name: material.filename } as File);
@@ -118,7 +116,6 @@ const MaterialsTask = () => {
 
   return (
     <div className="space-y-6">
-      {/* Mode Selection */}
       {(view === "upload" || view === "history") && (
         <div className="bg-gradient-to-r from-rose-50 to-orange-50 rounded-2xl p-6 border border-rose-100">
           <div className="flex items-center gap-3 mb-4">
@@ -158,7 +155,6 @@ const MaterialsTask = () => {
         </div>
       )}
 
-      {/* Upload Section */}
       {view === "upload" && (
         <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
           <div className="flex items-center gap-3 mb-4">

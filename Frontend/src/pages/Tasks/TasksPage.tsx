@@ -17,7 +17,6 @@ const TasksPage = () => {
   const initialLanguage = location.state?.language;
   const initialLevel = location.state?.level;
 
-  // Map learning path types to task tabs
   const typeParam = searchParams.get("type");
   const defaultTab = useMemo(() => {
     if (!typeParam) return "writing";
@@ -40,7 +39,7 @@ const TasksPage = () => {
   const shortcuts = [
     {
       title: t('nav.quiz') || "Quiz",
-      description: "Test your knowledge", // Translation needed
+      description: "Test your knowledge",
       path: "/quiz",
       icon: "🧩",
       bgColor: "bg-green-50 dark:bg-green-900/20",
@@ -50,7 +49,7 @@ const TasksPage = () => {
     },
     {
       title: t('nav.speechAnalysis') || "Speech Analysis",
-      description: "Analyze pronunciation", // Translation needed
+      description: "Analyze pronunciation",
       path: "/speech-analysis",
       icon: "🎙️",
       bgColor: "bg-orange-50 dark:bg-orange-900/20",

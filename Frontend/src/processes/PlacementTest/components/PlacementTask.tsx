@@ -28,11 +28,9 @@ export const PlacementTask: React.FC<PlacementTaskComponentProps> = ({
 
     let correct: boolean;
     if (isMultipleChoice(task)) {
-      // Exact match for MC — the option text must equal the correct answer
       const ca = task.correctAnswer;
       correct = Array.isArray(ca) ? ca.includes(userAnswer) : ca === userAnswer;
     } else {
-      // Fuzzy + synonym match for fill-in-blank
       correct = isAnswerCorrect(userAnswer, task.correctAnswer, {
         tolerance: 2,
         ignoreCase: true,

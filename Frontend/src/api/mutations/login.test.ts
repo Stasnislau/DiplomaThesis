@@ -1,7 +1,6 @@
 import { LoginUserRequest, login, loginUserDtoSchema } from "./login";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Mock fetchWithAuth
 vi.mock("../fetchWithAuth", () => ({
   fetchWithAuth: vi.fn(),
 }));

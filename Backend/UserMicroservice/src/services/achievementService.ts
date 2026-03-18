@@ -11,12 +11,7 @@ export interface AchievementDefinition {
   isHidden: boolean;
 }
 
-/**
- * Predefined achievements that get seeded into the database.
- * Categories: learning, speaking, streak, exploration, mastery
- */
 export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
-  // Learning achievements
   {
     name: "First Steps",
     description: "Complete your first placement test",
@@ -50,7 +45,6 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     isHidden: false,
   },
 
-  // Speaking achievements
   {
     name: "Voice Activated",
     description: "Complete your first speech analysis",
@@ -76,7 +70,6 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     isHidden: false,
   },
 
-  // Streak achievements
   {
     name: "On Fire",
     description: "Maintain a 3-day learning streak",
@@ -102,7 +95,6 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     isHidden: false,
   },
 
-  // Exploration achievements
   {
     name: "Explorer",
     description: "Start learning a new language",
@@ -128,7 +120,6 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     isHidden: false,
   },
 
-  // Mastery achievements
   {
     name: "Level Up",
     description: "Reach B1 level in any language",
@@ -289,7 +280,6 @@ export class AchievementService {
       },
     });
 
-    // Already unlocked — don't update
     if (existing?.unlockedAt) {
       return existing;
     }

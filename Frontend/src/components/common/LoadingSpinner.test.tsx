@@ -21,7 +21,6 @@ describe('LoadingSpinner', () => {
 
   it('supports fullScreen mode', () => {
     render(<LoadingSpinner fullScreen />);
-    // Fullscreen spinner uses "Content is loading" label and alert role
     const spinner = screen.getByRole('alert');
     expect(spinner).toBeInTheDocument();
     expect(spinner).toHaveClass('fixed inset-0');

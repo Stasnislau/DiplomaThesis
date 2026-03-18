@@ -13,7 +13,7 @@ export interface MultipleChoiceTask extends BaseTask {
 
 export interface FillInTheBlankTask extends BaseTask {
   type: "fill_in_the_blank";
-  correctAnswer: string[]; // always a list — backend normalises to array
+  correctAnswer: string[];
 }
 
 export type TaskData =

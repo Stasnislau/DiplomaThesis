@@ -36,7 +36,6 @@ describe("TaskComponent", () => {
     expect(screen.getByText("What is the capital of Poland?")).toBeInTheDocument();
     expect(screen.getAllByText("Warsaw").length).toBeGreaterThan(0);
     expect(screen.getByText("Krakow")).toBeInTheDocument();
-    // Use flexible matcher for combined text content
     expect(screen.getAllByRole("button").filter(btn => btn.textContent?.includes("Option"))).toHaveLength(4);
   });
 
@@ -44,14 +43,12 @@ describe("TaskComponent", () => {
     render(<TaskComponent taskData={mockFillInTheBlankTask} {...defaultProps} />);
     
     expect(screen.getByText("The capital of Poland is ____.")).toBeInTheDocument();
-    // Check for the translation key + ellipsis (using regex for flexibility)
     expect(screen.getByPlaceholderText(/tasks.fillInBlank/)).toBeInTheDocument();
   });
 
   it("calls setUserAnswer when clicking an option", () => {
     render(<TaskComponent taskData={mockMultipleChoiceTask} {...defaultProps} />);
     
-    // Check click on the option text
     fireEvent.click(screen.getByText("Krakow"));
     expect(defaultProps.setUserAnswer).toHaveBeenCalledWith("Krakow");
   });
@@ -67,7 +64,6 @@ describe("TaskComponent", () => {
   it("calls onCheckAnswer when Check Answer button is clicked", () => {
     render(<TaskComponent taskData={mockMultipleChoiceTask} {...defaultProps} userAnswer="Warsaw" />);
     
-    // Look for translation key
     fireEvent.click(screen.getByRole("button", { name: /tasks.checkAnswer/i }));
     expect(defaultProps.onCheckAnswer).toHaveBeenCalled();
   });
@@ -96,7 +92,6 @@ describe("TaskComponent", () => {
     
     expect(screen.getByText("tasks.incorrect")).toBeInTheDocument();
     expect(screen.getByText(/Correct answer:/)).toBeInTheDocument();
-    // Use getAllByText because "Warsaw" is present in options and potentially in the "Correct answer" text if rendered as separate node
     expect(screen.getAllByText("Warsaw").length).toBeGreaterThan(0);
   });
 

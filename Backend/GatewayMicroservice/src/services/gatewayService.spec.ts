@@ -6,7 +6,6 @@ import { HttpService } from "@nestjs/axios";
 import { IncomingMessage } from "http";
 import { UnauthorizedException } from "@nestjs/common";
 
-// Мокаем константы
 jest.mock("src/consts", () => ({
   AUTH_MICROSERVICE_URL: "http://auth:3001",
   BRIDGE_MICROSERVICE_URL: "http://bridge:8000",
@@ -36,7 +35,6 @@ describe("GatewayService", () => {
     headers: {},
   };
 
-  // Mock IncomingMessage
   const createMockReq = (): IncomingMessage => {
     return {
       pipe: jest.fn(),
@@ -64,14 +62,9 @@ describe("GatewayService", () => {
     jest.clearAllMocks();
   });
 
-  // ==================== handleRequest ====================
   describe("handleRequest", () => {
-    // ✅ ГОТОВЫЙ ТЕСТ - route to auth microservice
     it("should route request to auth microservice", async () => {
-      // Mock auth validation
       (httpService.post as jest.Mock).mockReturnValue(of(mockAuthResponse));
-
-      // Mock actual request forwarding
       (httpService.request as jest.Mock).mockReturnValue(
         of({
           status: 200,
@@ -95,7 +88,6 @@ describe("GatewayService", () => {
       );
     });
 
-    // ✅ ГОТОВЫЙ ТЕСТ - public routes skip auth
     it("should skip authentication for public routes", async () => {
       (httpService.request as jest.Mock).mockReturnValue(
         of({
@@ -104,7 +96,6 @@ describe("GatewayService", () => {
         }),
       );
 
-      // URL translates to http://auth:3001/api/auth/login which matches PUBLIC_ROUTES
       const result = await service.handleRequest(
         "POST",
         "/api/gateway/auth/auth/login",
@@ -114,7 +105,6 @@ describe("GatewayService", () => {
       );
 
       expect(result.status).toBe(200);
-      // validate token should NOT be called for login
       expect(httpService.post).not.toHaveBeenCalled();
     });
 
@@ -215,10 +205,8 @@ describe("GatewayService", () => {
         createMockReq(),
       );
 
-      // Verify validation call
       expect(httpService.post).toHaveBeenCalled();
 
-      // Verify request forwarding
       expect(httpService.request).toHaveBeenCalledWith(
         expect.objectContaining({
           headers: expect.objectContaining({
@@ -243,11 +231,9 @@ describe("GatewayService", () => {
         createMockReq(),
       );
 
-      // handleRequest catches the error and returns 500
       expect(result.status).toBe(500);
     });
 
-    // Correction: handleRequest catches all errors and returns 500 structure.
     it("should return 500 structure when token validation fails", async () => {
       (httpService.post as jest.Mock).mockReturnValue(
         throwError(() => new Error("Invalid token")),
@@ -268,7 +254,7 @@ describe("GatewayService", () => {
     it("should return 503 when downstream service is unavailable", async () => {
       (httpService.post as jest.Mock).mockReturnValue(of(mockAuthResponse));
       (httpService.request as jest.Mock).mockReturnValue(
-        throwError(() => ({ request: {} })), // Error with request but no response = network error
+        throwError(() => ({ request: {} })),
       );
 
       const result = await service.handleRequest(
@@ -301,13 +287,13 @@ describe("GatewayService", () => {
         "POST",
         "/api/gateway/user/upload",
         multipartHeaders,
-        {}, // body is ignored for multipart
+        {},
         mockReq,
       );
 
       expect(httpService.request).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: mockReq, // Should pass req object directly
+          data: mockReq,
         }),
       );
     });

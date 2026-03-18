@@ -4,7 +4,6 @@ import { of, throwError } from "rxjs";
 import { HttpService } from "@nestjs/axios";
 import { ProxyMiddleware } from "./proxy.middleware";
 
-// Мокаем константы
 jest.mock("src/consts", () => ({
   AUTH_MICROSERVICE_URL: "http://auth:3001",
 }));

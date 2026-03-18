@@ -8,7 +8,6 @@ export class UserAITokensService {
 
   async create(userId: string, createUserAITokenDto: CreateUserAITokenDto) {
     const createdToken = await this.prisma.$transaction(async (tx) => {
-      // If the new token is set as default, unset other defaults for this user
       if (createUserAITokenDto.isDefault) {
         await tx.userAIToken.updateMany({
           where: { userId, isDefault: true },
@@ -16,7 +15,6 @@ export class UserAITokensService {
         });
       }
 
-      // If this is the FIRST token for the user, make it default automatically
       const count = await tx.userAIToken.count({ where: { userId } });
       const isDefault = createUserAITokenDto.isDefault || count === 0;
 
@@ -42,7 +40,7 @@ export class UserAITokensService {
         aiProvider: true,
       },
       orderBy: [
-        { isDefault: "desc" }, // Defaults first
+        { isDefault: "desc" }, // Default s first
         { createdAt: "desc" },
       ],
     });
@@ -70,7 +68,6 @@ export class UserAITokensService {
   }
 
   async remove(id: string, userId: string) {
-    // First, verify the token belongs to the user to prevent unauthorized deletion
     const token = await this.prisma.userAIToken.findFirst({
       where: { id, userId },
     });
@@ -95,20 +92,18 @@ export class UserAITokensService {
       });
 
       if (!token) {
-        return null; // Token not found or not owned by user
+        return null;
       }
 
-      // Unset other defaults
       await tx.userAIToken.updateMany({
         where: { userId, isDefault: true },
         data: { isDefault: false },
       });
 
-      // Set this one as default
       return tx.userAIToken.update({
         where: { id },
         data: { isDefault: true },
-        include: { aiProvider: true }, // Include relation for consistency
+        include: { aiProvider: true },
       });
     });
 

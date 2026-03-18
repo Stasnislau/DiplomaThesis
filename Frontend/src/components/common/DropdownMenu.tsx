@@ -26,7 +26,6 @@ export const DropdownMenu: React.FC<DropdownMenuProps> & {
   return <DropdownMenuPrimitive.Root>{children}</DropdownMenuPrimitive.Root>;
 };
 
-// Exports for subcomponents
 DropdownMenu.Trigger = DropdownMenuPrimitive.Trigger;
 DropdownMenu.Content = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Content>,

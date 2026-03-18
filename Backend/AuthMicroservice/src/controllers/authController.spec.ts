@@ -39,6 +39,8 @@ describe("AuthController", () => {
       resetPassword: jest.fn(),
       getAllUsers: jest.fn(),
       updatePassword: jest.fn(),
+      updateUserRole: jest.fn(),
+      deleteUser: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -185,6 +187,65 @@ describe("AuthController", () => {
         "user-123",
         "old",
         "new",
+      );
+    });
+  });
+
+  describe("updateRole", () => {
+    it("should update user role to ADMIN", async () => {
+      authService.updateUserRole.mockResolvedValue(undefined);
+
+      const result = await controller.updateRole({ id: "user-123", role: "ADMIN" });
+
+      expect(result.success).toBe(true);
+      expect(result.payload).toBe("User role updated successfully");
+      expect(authService.updateUserRole).toHaveBeenCalledWith({
+        id: "user-123",
+        role: "ADMIN",
+      });
+    });
+
+    it("should update user role to USER", async () => {
+      authService.updateUserRole.mockResolvedValue(undefined);
+
+      const result = await controller.updateRole({ id: "user-456", role: "USER" });
+
+      expect(result.success).toBe(true);
+      expect(authService.updateUserRole).toHaveBeenCalledWith({
+        id: "user-456",
+        role: "USER",
+      });
+    });
+
+    it("should propagate service error", async () => {
+      authService.updateUserRole.mockRejectedValue(
+        new Error("User not found")
+      );
+
+      await expect(
+        controller.updateRole({ id: "bad-id", role: "ADMIN" })
+      ).rejects.toThrow("User not found");
+    });
+  });
+
+  describe("deleteUser", () => {
+    it("should delete user by id", async () => {
+      authService.deleteUser.mockResolvedValue(undefined);
+
+      const result = await controller.deleteUser("user-123");
+
+      expect(result.success).toBe(true);
+      expect(result.payload).toBe("User deleted successfully");
+      expect(authService.deleteUser).toHaveBeenCalledWith({ id: "user-123" });
+    });
+
+    it("should propagate service error when user not found", async () => {
+      authService.deleteUser.mockRejectedValue(
+        new Error("User not found")
+      );
+
+      await expect(controller.deleteUser("bad-id")).rejects.toThrow(
+        "User not found"
       );
     });
   });

@@ -1,4 +1,3 @@
-// User-related types
 export interface AdminUser {
   id: string;
   email: string;
@@ -9,7 +8,6 @@ export interface AdminUser {
   updatedAt?: string;
 }
 
-// API response types (for future implementation)
 export interface UsersListResponse {
   users: AdminUser[];
   totalCount: number;
@@ -21,7 +19,6 @@ export interface UserResponse {
   user: AdminUser;
 }
 
-// Action types (for future implementation)
 export interface ChangeRoleRequest {
   userId: string;
   newRole: string;
@@ -33,4 +30,4 @@ export interface ResetPasswordRequest {
 
 export interface DeleteUserRequest {
   userId: string;
-} 
+}

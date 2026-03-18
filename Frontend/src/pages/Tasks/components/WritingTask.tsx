@@ -4,11 +4,11 @@ import { useEffect, useState } from "react";
 
 import Button from "@/components/common/Button";
 import { TaskComponent } from "@/pages/Quiz/components/TaskComponent";
+import { isAnswerCorrect as checkAnswer } from "@/utils/answerValidation";
 import { isMultipleChoice } from "@/types/typeGuards/isMultipleChoice";
 import { useCreateBlankSpaceTask } from "@/api/hooks/useCreateBlankSpaceTask";
 import { useCreateMultipleChoiceTask } from "@/api/hooks/useCreateMultipleChoiceTask";
 import { useExplainAnswer } from "@/api/hooks/useExplainAnswer";
-import { isAnswerCorrect as checkAnswer } from "@/utils/answerValidation";
 import { useTranslation } from "react-i18next";
 
 const LANGUAGES = [
@@ -60,9 +60,6 @@ const WritingTask = ({ initialLanguage, initialLevel, initialTaskType }: Writing
   const handleCreateTask = () => {
     if (language && level) {
       setCurrentTaskData(null);
-      // Ensure we send capitalized language code if backend expects it (e.g. "Spanish")
-      // But based on LANGUAGES array update, code is lowercase. Assuming backend handles case or expects capitalized.
-      // Usually better to map to backend expected format. Assuming backend expects Title Case.
       const backendLanguage = language.charAt(0).toUpperCase() + language.slice(1);
       
       if (taskType === "multiple-choice") {

@@ -40,7 +40,6 @@ describe('Modal', () => {
 
     it('renders visually hidden title when title not provided', () => {
       render(<Modal {...defaultProps} ariaLabel="Custom aria label" />);
-      // VisuallyHidden title should exist but not be visible
       const dialog = screen.getByRole('dialog');
       expect(dialog).toBeInTheDocument();
     });
@@ -67,7 +66,6 @@ describe('Modal', () => {
   describe('overlay behavior', () => {
     it('renders overlay when open', () => {
       render(<Modal {...defaultProps} />);
-      // Overlay is a sibling, check modal container exists
       expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
   });
@@ -88,13 +86,11 @@ describe('Modal', () => {
 
     it('renders with visible title for screen readers', () => {
       render(<Modal {...defaultProps} title="Visible Title" />);
-      // Title should be a heading
       expect(screen.getByRole('heading', { name: 'Visible Title' })).toBeInTheDocument();
     });
 
     it('renders with hidden title when ariaLabel is provided', () => {
       render(<Modal {...defaultProps} ariaLabel="Hidden accessible label" />);
-      // Dialog should still be accessible
       expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
 
@@ -106,7 +102,6 @@ describe('Modal', () => {
         </Modal>
       );
       
-      // Modal should be focusable
       expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
 

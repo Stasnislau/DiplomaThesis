@@ -1,11 +1,12 @@
 import React, { useEffect } from "react";
-import { useForm, SubmitHandler } from "react-hook-form";
-import { Modal } from "@/components/common/Modal";
+import { SubmitHandler, useForm } from "react-hook-form";
+
 import Button from "@/components/common/Button";
+import { Modal } from "@/components/common/Modal";
+import Spinner from "@/components/common/Spinner";
 import TextField from "@/components/common/TextField";
 import { useMe } from "@/api/hooks/useMe";
 import { useUpdateUser } from "@/api/hooks/useUpdateUser";
-import Spinner from "@/components/common/Spinner";
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -47,7 +48,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
           onClose();
         })
         .catch(() => {
-          // Error handled by mutation state
         });
     } else {
       onClose();

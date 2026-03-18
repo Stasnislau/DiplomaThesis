@@ -11,10 +11,8 @@ import { useCreateBlankSpaceTask } from "@/api/hooks/useCreateBlankSpaceTask";
 import { useCreateMultipleChoiceTask } from "@/api/hooks/useCreateMultipleChoiceTask";
 import { useExplainAnswer } from "@/api/hooks/useExplainAnswer";
 
-// ─── Config ───────────────────────────────────────────────────────────────────
-const CORRECT_TO_COMPLETE = 5; // correct answers needed to finish the lesson
+const CORRECT_TO_COMPLETE = 5;
 
-// ─── Type icon / colour maps ──────────────────────────────────────────────────
 const TYPE_ICON: Record<string, string> = {
   vocabulary: "📚",
   grammar:    "📐",
@@ -35,14 +33,12 @@ const TYPE_COLOR: Record<string, string> = {
 
 type TaskFlavour = "multiple-choice" | "fill-blank";
 
-// ─── Router state ─────────────────────────────────────────────────────────────
 interface LessonState {
   lesson: Lesson;
   language: string;
   level: string;
 }
 
-// ─── Completion screen ────────────────────────────────────────────────────────
 interface CompletionScreenProps {
   lesson: Lesson;
   correctCount: number;
@@ -62,12 +58,9 @@ const CompletionScreen = ({
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center px-4 py-10">
       <div className="max-w-md w-full text-center space-y-6">
-        {/* Trophy */}
         <div className={`mx-auto w-28 h-28 rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center shadow-2xl text-6xl animate-bounce`}>
           🏆
         </div>
-
-        {/* Stars */}
         <div className="flex justify-center gap-2 text-4xl">
           {[1, 2, 3].map((s) => (
             <span key={s} className={s <= stars ? "opacity-100" : "opacity-20"}>⭐</span>
@@ -85,7 +78,6 @@ const CompletionScreen = ({
             {icon} {lesson.type} · {lesson.durationMinutes} min
           </p>
 
-          {/* Stats row */}
           <div className="grid grid-cols-3 gap-3 mb-6">
             {[
               { label: "Correct",  value: correctCount,           color: "text-green-600 dark:text-green-400"  },
@@ -99,7 +91,6 @@ const CompletionScreen = ({
             ))}
           </div>
 
-          {/* Keywords reminder */}
           <div className="mb-6">
             <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">
               Words you practised
@@ -116,7 +107,6 @@ const CompletionScreen = ({
             </div>
           </div>
 
-          {/* Actions */}
           <div className="space-y-2">
             <button
               onClick={onContinue}
@@ -137,7 +127,6 @@ const CompletionScreen = ({
   );
 };
 
-// ─── Main (guard) component ───────────────────────────────────────────────────
 const LessonPracticePage = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -158,7 +147,6 @@ const LessonPracticePage = () => {
   return <LessonPracticeContent lesson={lesson} language={taskLanguage} level={level} />;
 };
 
-// ─── Inner content ────────────────────────────────────────────────────────────
 interface ContentProps { lesson: Lesson; language: string; level: string; }
 
 const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
@@ -179,7 +167,6 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
 
   const isLoading = loadMC || loadFB;
 
-  // Receive task from mutation
   useEffect(() => {
     const raw = dataMC ?? dataFB;
     if (raw && !isLoading) {
@@ -209,7 +196,6 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [language, level, lesson.topic, lesson.keywords, createMC, createFB, resetMC, resetFB]);
 
-  // Auto-start on mount
   useEffect(() => { generateTask(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCheck = () => {
@@ -217,11 +203,9 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
 
     let correct: boolean;
     if (isMultipleChoice(currentTask)) {
-      // Multiple choice: exact match against correctAnswer (string or array)
       const ca = currentTask.correctAnswer;
       correct = Array.isArray(ca) ? ca.includes(userAnswer) : ca === userAnswer;
     } else {
-      // Fill-in-blank: fuzzy match with tolerance=2, accepts any synonym in the array
       correct = isAnswerCorrect(
         userAnswer,
         currentTask.correctAnswer as string | string[],
@@ -257,8 +241,6 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
   const gradient = TYPE_COLOR[lesson.type] ?? "from-indigo-500 to-purple-500";
   const icon     = TYPE_ICON[lesson.type]  ?? "▶";
 
-  // ── Show completion screen once the backend has confirmed
-  // (completionData is set by useCompleteLesson on success)
   if (completionData) {
     return (
       <CompletionScreen
@@ -275,7 +257,6 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
     );
   }
 
-  // ── Loading screen while completing --------------------
   if (isCompleting) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
@@ -287,14 +268,12 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
     );
   }
 
-  // ── Progress bar toward completion ─────────────────────────────────────────
   const progressPct = Math.min(Math.round((correctCount / CORRECT_TO_COMPLETE) * 100), 100);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-10 transition-colors duration-300">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
-        {/* Back */}
         <Link
           to="/learning-path"
           state={{ language: language.toLowerCase(), level }}
@@ -303,7 +282,6 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
           ← Back to Learning Path
         </Link>
 
-        {/* Lesson Hero */}
         <div className={`bg-gradient-to-r ${gradient} rounded-3xl p-6 text-white shadow-xl`}>
           <div className="flex items-start gap-4">
             <div className="h-16 w-16 rounded-2xl bg-white/20 flex items-center justify-center text-4xl flex-shrink-0">
@@ -326,7 +304,6 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
             </div>
           </div>
 
-          {/* Keywords */}
           <div className="mt-4 flex flex-wrap gap-1.5">
             {lesson.keywords.map((kw, i) => (
               <span key={i} className="text-xs px-2.5 py-0.5 rounded-full bg-white/20 font-medium">
@@ -336,7 +313,6 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
           </div>
         </div>
 
-        {/* Lesson Progress Bar */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm">
           <div className="flex justify-between text-xs font-semibold mb-2">
             <span className="text-gray-500 dark:text-gray-400">Lesson progress</span>
@@ -355,7 +331,6 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
           </p>
         </div>
 
-        {/* Session Stats */}
         <div className="grid grid-cols-3 gap-4">
           {[
             { label: "Tasks Done", value: taskCount,    color: "text-indigo-600 dark:text-indigo-400" },
@@ -373,7 +348,6 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
           ))}
         </div>
 
-        {/* Current Exercise Type Badge */}
         <div className="flex items-center gap-2 px-1">
           <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">
             Exercise type:
@@ -384,7 +358,6 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
           <span className="text-xs text-gray-400 dark:text-gray-500 italic">randomised each round</span>
         </div>
 
-        {/* Task Card */}
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
           {isLoading && (
             <div className="flex flex-col items-center gap-3 py-10">
@@ -428,7 +401,6 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
           )}
         </div>
 
-        {/* Generate Button */}
         <button
           onClick={generateTask}
           disabled={isLoading}

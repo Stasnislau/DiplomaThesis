@@ -9,7 +9,6 @@ import { render, screen, waitFor } from '@testing-library/react';
 import PlacementTaskContainer from './PlacementTaskContainer';
 import { UserAnswer } from '@/store/usePlacementTestStore';
 
-// Mock child components
 vi.mock('@/components/layout/Loading', () => ({
   default: () => <div data-testid="loading-spinner">Loading...</div>,
 }));
@@ -98,7 +97,7 @@ describe('PlacementTaskContainer', () => {
     render(<PlacementTaskContainer />);
 
     await waitFor(() => {
-      expect(mockCreateTask).toHaveBeenCalledTimes(2); // Should fetch current and next
+      expect(mockCreateTask).toHaveBeenCalledTimes(2);
     });
   });
 

@@ -22,7 +22,7 @@ class CompleteLessonRequest(BaseModel):
 
 class BulkCompleteLevelRequest(BaseModel):
     """Sent right after a placement test to auto-complete all lower levels."""
-    user_level: str   # e.g. "B1" → marks A1+A2 as COMPLETED
+    user_level: str
 
     model_config = ConfigDict(
         alias_generator=to_camel,
@@ -69,7 +69,6 @@ class LearningPathController:
                 user_id=user_id,
             )
 
-            # Trigger achievement via UserMicroservice (fire-and-forget, don't block)
             try:
                 forward_headers = ctx.to_forward_headers() if ctx else {}
                 forward_headers["x-internal-service-key"] = os.getenv(
@@ -83,7 +82,7 @@ class LearningPathController:
                         headers=forward_headers,
                     )
             except Exception:
-                pass  # Achievement update failing must not break lesson completion
+                pass
 
             return BaseResponse(success=True, payload=result, errors=None)
 
@@ -105,7 +104,6 @@ class LearningPathController:
                 user_id=user_id,
             )
 
-            # If level >= B1 also award the "Level Up" achievement
             level_order = ["A1", "A2", "B1", "B2", "C1", "C2"]
             if body.user_level in level_order and level_order.index(body.user_level) >= 2:
                 try:

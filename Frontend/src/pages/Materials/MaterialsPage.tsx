@@ -16,7 +16,6 @@ interface AnalyzedType {
   example: string;
 }
 
-// Simple Levenshtein distance for fuzzy matching typos
 function levenshtein(a: string, b: string): number {
   if (a.length === 0) return b.length;
   if (b.length === 0) return a.length;
@@ -44,7 +43,6 @@ const isAnswerCorrect = (user: string, correct: string) => {
     const u = user.toLowerCase().trim().replace(/[.,!?;:]/g, "");
     const c = correct.toLowerCase().trim().replace(/[.,!?;:]/g, "");
     if (u === c) return true;
-    // Allow 1 typo for short words (4-6 chars), 2 for longer
     const threshold = c.length > 6 ? 2 : (c.length > 3 ? 1 : 0);
     return levenshtein(u, c) <= threshold;
 };
@@ -116,12 +114,10 @@ export const MaterialsPage: React.FC = () => {
   };
 
 
-// ...
 
   const loadMaterial = (material: UserMaterial) => {
-      setFile({ name: material.filename } as File); // Mock file object just for display name
+      setFile({ name: material.filename } as File); 
       
-      // Ensure analyzedTypes is an array of objects
       let types: AnalyzedType[] = [];
       if (Array.isArray(material.analyzedTypes)) {
           types = material.analyzedTypes.map((t: AnalyzedType | string) => {
@@ -400,7 +396,7 @@ export const MaterialsPage: React.FC = () => {
                             variant="primary" 
                             onClick={() => setIsSubmitted(true)}
                             className="w-full sm:w-auto px-12 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all hover:-translate-y-1"
-                            disabled={Object.keys(userAnswers).length < quiz.length} // Optional: Require all answers? Maybe not.
+                            disabled={Object.keys(userAnswers).length < quiz.length}
                          >
                             Submit Answers
                          </Button>
