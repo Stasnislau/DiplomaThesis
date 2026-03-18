@@ -12,7 +12,6 @@ from pathlib import Path
 import warnings
 warnings.filterwarnings('ignore')
 
-# Configuration
 plt.style.use('seaborn-v0_8-paper')
 plt.rcParams['figure.dpi'] = 300
 plt.rcParams['font.size'] = 10
@@ -35,7 +34,6 @@ def plot_model_vs_model_comparison(df):
     
     fig, axes = plt.subplots(2, 3, figsize=(18, 12))
     
-    # 1. Average Score by Language
     ax1 = axes[0, 0]
     pivot_lang = df.pivot_table(values='score', index='model', columns='lang', aggfunc='mean')
     pivot_lang.plot(kind='bar', ax=ax1, width=0.8)
@@ -47,7 +45,6 @@ def plot_model_vs_model_comparison(df):
     ax1.grid(axis='y', alpha=0.3)
     ax1.set_ylim(0, 10)
     
-    # 2. Average Score by Level
     ax2 = axes[0, 1]
     pivot_level = df.pivot_table(values='score', index='model', columns='level', aggfunc='mean')
     pivot_level.plot(kind='bar', ax=ax2, width=0.8, color=['#3498db', '#e74c3c'])
@@ -59,7 +56,6 @@ def plot_model_vs_model_comparison(df):
     ax2.grid(axis='y', alpha=0.3)
     ax2.set_ylim(0, 10)
     
-    # 3. Score Consistency (Std Dev) - Lower is Better
     ax3 = axes[0, 2]
     consistency = df.groupby('model')['score'].std().sort_values()
     colors = ['#27ae60' if x < 2.5 else '#f39c12' if x < 3 else '#e74c3c' for x in consistency]
@@ -72,7 +68,6 @@ def plot_model_vs_model_comparison(df):
     ax3.axvline(x=3.0, color='orange', linestyle='--', alpha=0.5, label='Fair')
     ax3.legend()
     
-    # 4. Average Latency Comparison
     ax4 = axes[1, 0]
     latency = df.groupby('model')['latency'].mean().sort_values()
     colors_lat = ['#27ae60' if x < 3 else '#f39c12' if x < 6 else '#e74c3c' for x in latency]
@@ -85,7 +80,6 @@ def plot_model_vs_model_comparison(df):
     ax4.axvline(x=6, color='orange', linestyle='--', alpha=0.5, label='Moderate')
     ax4.legend()
     
-    # 5. Success Rate
     ax5 = axes[1, 1]
     success = df.groupby('model')['is_success'].mean() * 100
     success.plot(kind='bar', ax=ax5, color='#3498db')
@@ -98,7 +92,6 @@ def plot_model_vs_model_comparison(df):
     ax5.axhline(y=99, color='green', linestyle='--', alpha=0.5, label='Target: 99%')
     ax5.legend()
     
-    # 6. Quality Distribution (% of excellent scores)
     ax6 = axes[1, 2]
     excellent_pct = df[df['score'] >= 9].groupby('model').size() / df.groupby('model').size() * 100
     excellent_pct = excellent_pct.sort_values(ascending=False)
@@ -128,16 +121,14 @@ def plot_language_deep_dive(df):
     for idx, lang in enumerate(languages):
         lang_data = df[df['lang'] == lang]
         
-        # 1. Score distribution by model
         ax1 = axes[idx, 0]
         lang_data.boxplot(column='score', by='model', ax=ax1)
         ax1.set_title(f'{lang}: Score Distribution by Model', fontweight='bold')
         ax1.set_xlabel('Model')
         ax1.set_ylabel('Score')
-        ax1.get_figure().suptitle('')  # Remove default title
+        ax1.get_figure().suptitle('')
         plt.setp(ax1.xaxis.get_majorticklabels(), rotation=45, ha='right')
         
-        # 2. Score by level
         ax2 = axes[idx, 1]
         level_scores = lang_data.groupby(['model', 'level'])['score'].mean().unstack()
         level_scores.plot(kind='bar', ax=ax2, width=0.8)
@@ -148,7 +139,6 @@ def plot_language_deep_dive(df):
         ax2.tick_params(axis='x', rotation=45)
         ax2.grid(axis='y', alpha=0.3)
         
-        # 3. Task type performance
         ax3 = axes[idx, 2]
         task_scores = lang_data.groupby(['model', 'task_type'])['score'].mean().unstack()
         task_scores.plot(kind='bar', ax=ax3, width=0.8)
@@ -171,13 +161,10 @@ def plot_winner_matrix(df):
     
     fig, ax = plt.subplots(figsize=(14, 8))
     
-    # Calculate winners for each language-level combination
     combinations = df.groupby(['lang', 'level', 'model'])['score'].mean().reset_index()
     
-    # Find winner for each combination
     winners = combinations.loc[combinations.groupby(['lang', 'level'])['score'].idxmax()]
     
-    # Create matrix
     matrix_data = []
     categories = ['Highest Score', 'Most Consistent', 'Fastest', 'Best Efficiency']
     
@@ -188,16 +175,12 @@ def plot_winner_matrix(df):
             if len(subset) == 0:
                 continue
             
-            # Highest score
             best_score = subset.groupby('model')['score'].mean().idxmax()
             
-            # Most consistent (lowest std)
             most_consistent = subset.groupby('model')['score'].std().idxmin()
             
-            # Fastest
             fastest = subset.groupby('model')['latency'].mean().idxmin()
             
-            # Best efficiency (score/latency ratio)
             efficiency = subset.groupby('model').apply(
                 lambda x: x['score'].mean() / (x['latency'].mean() + 0.1)
             ).idxmax()
@@ -210,10 +193,8 @@ def plot_winner_matrix(df):
                 'Best Efficiency': efficiency
             })
     
-    # Create summary table
     summary_df = pd.DataFrame(matrix_data)
     
-    # Count wins per model
     win_counts = {}
     for col in categories:
         counts = summary_df[col].value_counts()
@@ -222,10 +203,8 @@ def plot_winner_matrix(df):
                 win_counts[model] = {}
             win_counts[model][col] = count
     
-    # Convert to DataFrame for plotting
     win_df = pd.DataFrame(win_counts).T.fillna(0)
     
-    # Plot
     win_df.plot(kind='barh', stacked=False, ax=ax, width=0.8)
     ax.set_title('Model Performance: Category Wins Across All Language-Level Combinations', 
                  fontweight='bold', fontsize=14)
@@ -239,7 +218,6 @@ def plot_winner_matrix(df):
     print(f"   ✅ Saved: {OUTPUT_DIR / 'winner_matrix.png'}")
     plt.close()
     
-    # Save detailed table
     summary_df.to_csv(OUTPUT_DIR / 'category_winners_detailed.csv', index=False)
     print(f"   ✅ Saved: {OUTPUT_DIR / 'category_winners_detailed.csv'}")
 
@@ -250,7 +228,6 @@ def plot_score_evolution(df):
     
     fig, axes = plt.subplots(2, 2, figsize=(16, 12))
     
-    # 1. Score by iteration for each model
     ax1 = axes[0, 0]
     for model in df['model'].unique():
         model_data = df[df['model'] == model].groupby('iteration')['score'].mean()
@@ -261,7 +238,6 @@ def plot_score_evolution(df):
     ax1.legend()
     ax1.grid(alpha=0.3)
     
-    # 2. Latency by iteration
     ax2 = axes[0, 1]
     for model in df['model'].unique():
         model_data = df[df['model'] == model].groupby('iteration')['latency'].mean()
@@ -272,7 +248,6 @@ def plot_score_evolution(df):
     ax2.legend()
     ax2.grid(alpha=0.3)
     
-    # 3. Rolling average score (smoothed)
     ax3 = axes[1, 0]
     for model in df['model'].unique():
         model_data = df[df['model'] == model].sort_values('iteration')
@@ -284,7 +259,6 @@ def plot_score_evolution(df):
     ax3.legend()
     ax3.grid(alpha=0.3)
     
-    # 4. Coefficient of variation (stability metric)
     ax4 = axes[1, 1]
     cv_data = df.groupby('model').apply(
         lambda x: (x['score'].std() / x['score'].mean()) * 100
@@ -315,13 +289,11 @@ def generate_thesis_summary_table(df):
     summary.columns = ['Mean Score', 'Std Dev', 'Min Score', 'Max Score', 'Avg Latency (s)', 'Success Rate (%)']
     summary = summary.sort_values('Mean Score', ascending=False)
     
-    # Add efficiency ranking
     summary['Efficiency Rank'] = (
         (summary['Mean Score'] / 10 * 0.7) + 
         (1 - summary['Avg Latency (s)'] / summary['Avg Latency (s)'].max()) * 0.3
     ).rank(ascending=False).astype(int)
     
-    # Export to LaTeX
     latex_table = summary.to_latex(
         caption='Comprehensive Model Performance Summary',
         label='tab:comprehensive_summary',
@@ -335,7 +307,6 @@ def generate_thesis_summary_table(df):
     
     print(f"   ✅ Saved: {OUTPUT_DIR / 'table_comprehensive_summary.tex'}")
     
-    # Also save as markdown
     with open(OUTPUT_DIR / 'table_comprehensive_summary.md', 'w') as f:
         f.write("# Comprehensive Model Performance Summary\n\n")
         f.write(summary.to_markdown())
@@ -351,7 +322,6 @@ def main():
     
     df = load_data()
     
-    # Generate all visualizations
     plot_model_vs_model_comparison(df)
     plot_language_deep_dive(df)
     plot_winner_matrix(df)

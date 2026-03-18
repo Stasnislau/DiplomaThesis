@@ -23,6 +23,6 @@ describe("AppController (e2e)", () => {
   });
 
   it("/ (GET)", () => {
-    return request(app.getHttpServer()).get("/").expect(404); // Assuming root is not mapped, or expect 200 if it is
+    return request(app.getHttpServer()).get("/").expect(404);
   });
 });

@@ -9,7 +9,6 @@ import { fireEvent, render, screen } from '@testing-library/react';
 
 import WritingTask from './WritingTask';
 
-// ── Mock i18n so t() returns a human-readable fallback ────────────────────────
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) => {
@@ -38,7 +37,6 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-// ── Mock child components ─────────────────────────────────────────────────────
 vi.mock('@/components/common/Tabs', () => ({
   Tabs: ({ children, onValueChange }: { children: React.ReactNode; onValueChange?: (v: string) => void }) => (
     <div onClick={() => onValueChange && onValueChange('fill-blank')}>{children}</div>
@@ -100,7 +98,6 @@ describe('WritingTask', () => {
     expect(screen.getByText('Choose Language')).toBeInTheDocument();
     expect(screen.getByText('Proficiency Level')).toBeInTheDocument();
 
-    // Check specific options exist
     expect(screen.getByText('Spanish')).toBeInTheDocument();
     expect(screen.getByText('B1')).toBeInTheDocument();
   });
@@ -110,14 +107,11 @@ describe('WritingTask', () => {
 
     const generateBtn = screen.getAllByRole('button', { name: 'Generate Task' })[0];
 
-    // Should be disabled initially
     expect(generateBtn).toBeDisabled();
 
-    // Still disabled if only one is selected
     fireEvent.click(screen.getByText('Spanish'));
     expect(generateBtn).toBeDisabled();
 
-    // Verify createTask is not called if we try to click
     fireEvent.click(generateBtn);
     expect(mockCreateMC).not.toHaveBeenCalled();
   });
@@ -125,13 +119,10 @@ describe('WritingTask', () => {
   it('generates Multiple Choice task when selected', () => {
     render(<WritingTask />);
 
-    // Select Language Spanish
     fireEvent.click(screen.getByText('Spanish'));
 
-    // Select Level B1
     fireEvent.click(screen.getByText('B1'));
 
-    // Click Generate MC
     const generateBtn = screen.getAllByRole('button', { name: 'Generate Task' })[0];
     fireEvent.click(generateBtn);
 
@@ -139,7 +130,6 @@ describe('WritingTask', () => {
   });
 
   it('renders TaskComponent when data is returned', () => {
-    // Mock data return
     vi.spyOn(useMC, 'useCreateMultipleChoiceTask').mockReturnValue({
       createTask: mockCreateMC,
       isLoading: false,
@@ -157,7 +147,6 @@ describe('WritingTask', () => {
 
     render(<WritingTask />);
 
-    // The effect should pick up the data and render the task
     expect(screen.getByTestId('task-component')).toHaveTextContent('Task: Generated Question');
   });
 });

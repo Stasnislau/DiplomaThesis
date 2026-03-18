@@ -1,8 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+
 import { isAnswerCorrect } from "./answerValidation";
 
 describe("isAnswerCorrect", () => {
-  // ── Exact match (tolerance = 0) ──────────────────────────────────────────
   describe("exact match (default tolerance=0)", () => {
     it("returns true for identical strings", () => {
       expect(isAnswerCorrect("hello", "hello")).toBe(true);
@@ -33,22 +33,17 @@ describe("isAnswerCorrect", () => {
     });
   });
 
-  // ── Fuzzy match (tolerance > 0) ──────────────────────────────────────────
   describe("fuzzy match (tolerance > 0)", () => {
     it("accepts 1-char typo with tolerance=1", () => {
-      // "helo" → "hello" = distance 1
       expect(isAnswerCorrect("helo", "hello", { tolerance: 1 })).toBe(true);
     });
 
     it("accepts 2-char typo with tolerance=2", () => {
-      // "hllo" → "hello" = distance 1, ok
       expect(isAnswerCorrect("hllo", "hello", { tolerance: 2 })).toBe(true);
-      // "belo" → "hello" = distance 2 (b→h, missing l), ok
       expect(isAnswerCorrect("hlo", "hello", { tolerance: 2 })).toBe(true);
     });
 
     it("rejects when distance exceeds tolerance", () => {
-      // "xyz" → "hello" = distance 5
       expect(isAnswerCorrect("xyz", "hello", { tolerance: 2 })).toBe(false);
     });
 
@@ -57,7 +52,6 @@ describe("isAnswerCorrect", () => {
     });
   });
 
-  // ── Array of correct answers (synonyms) ──────────────────────────────────
   describe("multiple correct answers (synonyms)", () => {
     const synonyms = ["book", "novel", "tome"];
 
@@ -72,9 +66,7 @@ describe("isAnswerCorrect", () => {
     });
 
     it("accepts fuzzy match on any synonym", () => {
-      // "bok" → "book" = distance 1
       expect(isAnswerCorrect("bok", synonyms, { tolerance: 1 })).toBe(true);
-      // "novl" → "novel" = distance 1
       expect(isAnswerCorrect("novl", synonyms, { tolerance: 1 })).toBe(true);
     });
 
@@ -85,7 +77,6 @@ describe("isAnswerCorrect", () => {
     });
   });
 
-  // ── Edge cases ───────────────────────────────────────────────────────────
   describe("edge cases", () => {
     it("handles empty user answer", () => {
       expect(isAnswerCorrect("", "hello")).toBe(false);

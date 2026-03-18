@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 
+import { LanguageSelector } from "./LanguageSelector";
 import { Link } from "react-router-dom";
 import { NavBar } from "./NavBar";
+import { ThemeToggle } from "./ThemeToggle";
 import { UserMenu } from "./UserMenu";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTranslation } from "react-i18next";
@@ -14,7 +16,7 @@ export const TopBar: React.FC = () => {
   const navOptions = [
     { label: t('nav.home'), value: "home", path: "/" },
     { label: t('nav.tasks') || "Tasks", value: "tasks", path: "/tasks" },
-    { label: "Quiz", value: "quiz", path: "/quiz" }, // Not yet translated in i18n config
+    { label: "Quiz", value: "quiz", path: "/quiz" },
     { label: "Speech Analysis", value: "speech-analysis", path: "/speech-analysis" },
     { label: "Leaderboard", value: "leaderboard", path: "/leaderboard" },
   ];
@@ -60,6 +62,8 @@ export const TopBar: React.FC = () => {
                 {t('nav.login')}
               </Link>
             )}
+            <ThemeToggle />
+            <LanguageSelector />
           </nav>
         </div>
       </div>

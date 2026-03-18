@@ -201,7 +201,6 @@ const ModuleCard = ({ module, onLessonStart, language, level }: ModuleCardProps)
   );
 };
 
-// ── Page ────────────────────────────────────────────────────────────────────
 
 const LearningPathPage = () => {
   const { t } = useTranslation();

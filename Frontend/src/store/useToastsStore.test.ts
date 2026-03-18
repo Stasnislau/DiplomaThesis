@@ -5,7 +5,6 @@ import { useToastsStore } from "./useToastsStore";
 
 describe("useToastsStore", () => {
   beforeEach(() => {
-    // Reset store before each test
     act(() => {
       useToastsStore.setState({ toasts: [] });
     });
@@ -44,7 +43,6 @@ describe("useToastsStore", () => {
     it("assigns unique ids to toasts", () => {
       const { addToast } = useToastsStore.getState();
 
-      // Mock Date.now to return predictable values
       let timestamp = 1000;
       vi.spyOn(Date, "now").mockImplementation(() => timestamp++);
 

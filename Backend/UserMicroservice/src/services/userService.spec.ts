@@ -58,7 +58,6 @@ describe("UserService", () => {
     jest.clearAllMocks();
   });
 
-  // ==================== getLanguages ====================
   describe("getLanguages", () => {
     it("should return all languages", async () => {
       const languages = [
@@ -84,7 +83,6 @@ describe("UserService", () => {
     });
   });
 
-  // ==================== getUser ====================
   describe("getUser", () => {
     it("should return user by ID", async () => {
       (prisma.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
@@ -116,7 +114,6 @@ describe("UserService", () => {
     });
   });
 
-  // ==================== getUsers ====================
   describe("getUsers", () => {
     it("should return all users", async () => {
       const users = [mockUser, { ...mockUser, id: "user-456" }];
@@ -129,7 +126,6 @@ describe("UserService", () => {
     });
   });
 
-  // ==================== createUser ====================
   describe("createUser", () => {
     it("should create new user", async () => {
       const userData = {
@@ -152,7 +148,6 @@ describe("UserService", () => {
     });
   });
 
-  // ==================== updateUser ====================
   describe("updateUser", () => {
     it("should update existing user", async () => {
       (prisma.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
@@ -184,7 +179,6 @@ describe("UserService", () => {
     });
   });
 
-  // ==================== updateUserRole ====================
   describe("updateUserRole", () => {
     it("should update user role", async () => {
       (prisma.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
@@ -223,7 +217,6 @@ describe("UserService", () => {
     });
   });
 
-  // ==================== deleteUser ====================
   describe("deleteUser", () => {
     it("should delete user", async () => {
       (prisma.user.delete as jest.Mock).mockResolvedValue(mockUser);
@@ -243,7 +236,6 @@ describe("UserService", () => {
     });
   });
 
-  // ==================== setNativeLanguage ====================
   describe("setNativeLanguage", () => {
     it("should set native language for user", async () => {
       (prisma.user.findUnique as jest.Mock).mockResolvedValue({
@@ -286,7 +278,6 @@ describe("UserService", () => {
     });
   });
 
-  // ==================== addUserLanguage ====================
   describe("addUserLanguage", () => {
     it("should add user language with valid level", async () => {
       (prisma.user.findUnique as jest.Mock).mockResolvedValue(mockUser);

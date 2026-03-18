@@ -1,10 +1,8 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 
-// English translations
 const en = {
   translation: {
-    // Common
     common: {
       loading: "Loading...",
       error: "An error occurred",
@@ -21,7 +19,6 @@ const en = {
       confirm: "Confirm",
     },
 
-    // Navigation
     nav: {
       home: "Home",
       dashboard: "Dashboard",
@@ -36,7 +33,6 @@ const en = {
       leaderboard: "Leaderboard",
     },
 
-    // Dashboard
     dashboard: {
       welcome: "Welcome back, {{name}}! 👋",
       subtitle: "Ready to continue your language learning journey?",
@@ -56,7 +52,6 @@ const en = {
       languages: "Languages",
     },
 
-    // Landing
     landing: {
       heroTitle: "Master Any Language",
       heroSubtitle:
@@ -76,7 +71,6 @@ const en = {
       },
     },
 
-    // Auth
     auth: {
       email: "Email",
       name: "Name",
@@ -93,7 +87,6 @@ const en = {
       registerSuccess: "Account created successfully",
     },
 
-    // Tasks
     tasks: {
       generateTask: "Generate Task",
       multipleChoice: "Multiple Choice",
@@ -108,7 +101,6 @@ const en = {
       tryAgain: "Try Again",
     },
 
-    // Placement Test
     placementTest: {
       title: "Placement Test",
       description: "Take this test to determine your language level",
@@ -119,7 +111,6 @@ const en = {
       saveLevel: "Save Level",
     },
 
-    // Levels
     levels: {
       A0: "Beginner",
       A1: "Elementary",
@@ -131,7 +122,6 @@ const en = {
       NATIVE: "Native",
     },
 
-    // Languages
     languages: {
       chooseLanguage: "Choose Language",
       proficiencyLevel: "Proficiency Level",
@@ -146,7 +136,6 @@ const en = {
       english: "English",
     },
 
-    // Settings
     settings: {
       title: "Settings",
       theme: "Theme",
@@ -156,7 +145,6 @@ const en = {
       account: "Account",
     },
 
-    // Accessibility
     a11y: {
       skipToContent: "Skip to main content",
       loading: "Content is loading",
@@ -166,7 +154,6 @@ const en = {
       lightMode: "Switch to light mode",
     },
 
-    // Errors
     errors: {
       required: "This field is required",
       invalidEmail: "Invalid email address",
@@ -178,7 +165,6 @@ const en = {
   },
 };
 
-// Polish translations
 const pl = {
   translation: {
     common: {
@@ -347,7 +333,6 @@ const pl = {
   },
 };
 
-// Spanish translations
 const es = {
   translation: {
     common: {

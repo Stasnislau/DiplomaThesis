@@ -61,7 +61,6 @@ describe('Skeleton', () => {
   describe('SkeletonText', () => {
     it('renders default 3 lines', () => {
       render(<SkeletonText />);
-      // Use label to find container
       const container = screen.getByLabelText('Loading text...');
       expect(container.children).toHaveLength(3);
     });
@@ -102,7 +101,6 @@ describe('Skeleton', () => {
   describe('SkeletonTask', () => {
     it('renders task skeleton', () => {
       render(<SkeletonTask />);
-      // Should find the main container with the specific label
       expect(screen.getByLabelText('Loading task...')).toBeInTheDocument();
     });
 

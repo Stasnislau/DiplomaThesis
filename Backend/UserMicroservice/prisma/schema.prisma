@@ -188,7 +188,7 @@ model Lesson {
     id           String               @id @default(uuid()) @map("id")
     moduleId     String               @map("module_id")
     title        String               @map("title")
-    content      Json                 @map("content") // { theory: "string", vocabulary: [{word, translation}] }
+    content      Json                 @map("content")
     order        Int                  @map("order")
     userProgress UserLessonProgress[]
 

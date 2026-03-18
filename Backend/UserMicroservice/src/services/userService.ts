@@ -53,6 +53,16 @@ export class UserService {
   }
 
   async setNativeLanguage(userId: string, languageId: string) {
+    if (!languageId) {
+       throw new BadRequestException("Language ID is missing");
+    }
+    const language = await this.prisma.language.findUnique({
+      where: { id: languageId },
+    });
+    if (!language) {
+      throw new NotFoundException(`Language with id ${languageId} not found`);
+    }
+
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {

@@ -1,18 +1,11 @@
 import { distance } from "fastest-levenshtein";
 
 interface ValidationOptions {
-  tolerance?: number; // Maximum allowed Levenshtein distance
+  tolerance?: number;
   ignoreCase?: boolean;
   trim?: boolean;
 }
 
-/**
- * Checks if the user answer matches the correct answer(s) with optional fuzzy matching.
- * @param userAnswer The user's input.
- * @param correctAnswer The correct answer or array of correct answers.
- * @param options Validation options (tolerance, case sensitivity, etc.).
- * @returns boolean indicating if the answer is accepted.
- */
 export const isAnswerCorrect = (
   userAnswer: string,
   correctAnswer: string | string[],

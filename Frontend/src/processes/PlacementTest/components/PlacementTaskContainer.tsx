@@ -41,14 +41,13 @@ export const PlacementTaskContainer = () => {
   
       try {
         if (!currentTask && !nextTask) {
-          // Initial load - run in parallel
           const [task1, task2] = await Promise.all([
             createTask({ language: language.name }),
             testTotalQuestions > 1
               ? createTask({
                   language: language.name,
                   previousAnswer: {
-                    isCorrect: true, // Dummy value
+                    isCorrect: true,
                     questionNumber: 0,
                   },
                 })
@@ -56,7 +55,6 @@ export const PlacementTaskContainer = () => {
           ]);
           setTasks({ current: task1, next: task2 });
         } else if (currentTask && !nextTask) {
-          // Fetch next task after an answer
           const lastAnswer = userAnswers[userAnswers.length - 1];
           if (currentQuestionNumber < testTotalQuestions) {
             const task = await createTask({

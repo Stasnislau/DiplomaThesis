@@ -9,14 +9,12 @@ from models.base_response import BaseResponse
 from models.dtos.material_dtos import ProcessPdfResponse, GenerateQuizResponse
 from utils.user_context import extract_user_context
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/materials", tags=["materials"])
 
 
-# Dependency Injection
 def get_material_service() -> MaterialService:
     vector_db = VectorDBService()
     ai_service = AI_Service()

@@ -80,7 +80,6 @@ describe('Button', () => {
 
     it('shows spinner when loading', () => {
       render(<Button isLoading>Loading</Button>);
-      // Children text should still exist but be visually hidden
       const button = screen.getByRole('button');
       expect(button).toBeInTheDocument();
     });
@@ -151,7 +150,6 @@ describe('Button', () => {
 
     it('spinner is hidden from screen readers', () => {
       render(<Button isLoading>Loading</Button>);
-      // The spinner container should have aria-hidden
       const button = screen.getByRole('button');
       const spinnerContainer = button.querySelector('[aria-hidden="true"]');
       expect(spinnerContainer).toBeInTheDocument();

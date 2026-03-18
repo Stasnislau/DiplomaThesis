@@ -6,7 +6,6 @@ import WithTopBar from "./components/layout/WithTopBar";
 import { createBrowserRouter } from "react-router-dom";
 import { lazy } from "react";
 
-// Lazy load pages
 const AITokensPage = lazy(() => import("./pages/User/AITokens"));
 const AdminDashboardPage = lazy(() => import("./pages/Admin/AdminDashboardPage").then(module => ({ default: module.AdminDashboardPage })));
 const LandingPage = lazy(() => import("./pages/Home/LandingPage").then(module => ({ default: module.LandingPage })));

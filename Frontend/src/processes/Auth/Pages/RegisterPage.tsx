@@ -85,7 +85,7 @@ export const RegisterPage: React.FC = () => {
                 render={({ field }) => (
                   <TextField 
                     id="name"
-                    label={t('auth.name', 'Name')} // Fallback text
+                    label={t('auth.name', 'Name')} 
                     error={errors.name?.message}
                     required 
                     {...field} 

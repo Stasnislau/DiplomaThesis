@@ -20,8 +20,8 @@ interface PlacementTestStore {
   currentQuestionNumber: number;
   isTestComplete: boolean;
   userAnswers: UserAnswer[];
-  cachedTasks: Task[]; // Add cachedTasks back
-  addAnswer: (answer: UserAnswer, task: Task) => void; // Pass task to addAnswer
+  cachedTasks: Task[];
+  addAnswer: (answer: UserAnswer, task: Task) => void;
   resetTest: () => void;
   language: Language;
   setLanguage: (language: Language) => void;
@@ -40,11 +40,8 @@ export const usePlacementTestStore = create<PlacementTestStore>((set) => ({
   testTotalQuestions: TOTAL_QUESTIONS,
   currentTask: null,
   nextTask: null,
-  cachedTasks: [], // Add cachedTasks back
-  addAnswer: (
-    answer,
-    task, // Pass task to addAnswer
-  ) =>
+  cachedTasks: [],
+  addAnswer: (answer, task) =>
     set((state) => {
       const newAnswer = {
         ...answer,
@@ -56,7 +53,7 @@ export const usePlacementTestStore = create<PlacementTestStore>((set) => ({
 
       return {
         userAnswers: [...state.userAnswers, newAnswer],
-        cachedTasks: [...state.cachedTasks, task], // Cache the answered task
+        cachedTasks: [...state.cachedTasks, task],
         currentQuestionNumber: state.currentQuestionNumber + 1,
         isTestComplete: isComplete,
       };
@@ -68,7 +65,7 @@ export const usePlacementTestStore = create<PlacementTestStore>((set) => ({
       isTestComplete: false,
       currentTask: null,
       nextTask: null,
-      cachedTasks: [], // Reset cachedTasks
+      cachedTasks: [],
     }),
   setLanguage: (language: Language) => set({ language }),
   setTasks: (tasks) =>

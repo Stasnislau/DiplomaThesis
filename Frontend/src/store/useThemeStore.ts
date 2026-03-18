@@ -64,14 +64,13 @@ export const useThemeStore = create<ThemeState>()(
   ),
 );
 
-// Listen for system theme changes
 if (typeof window !== "undefined") {
   window
     .matchMedia("(prefers-color-scheme: dark)")
     .addEventListener("change", () => {
       const { theme, setTheme } = useThemeStore.getState();
       if (theme === "system") {
-        setTheme("system"); // Re-apply to update isDark
+        setTheme("system");
       }
     });
 }

@@ -6,6 +6,7 @@ def writing_fill_in_the_blank_task_prompt(
     level_context: Dict[str, str],
     topic: str | None = None,
     keywords: list[str] | None = None,
+    seed: str | None = None,
 ) -> str:
     lesson_hint = ""
     if topic or keywords:
@@ -22,6 +23,7 @@ def writing_fill_in_the_blank_task_prompt(
         Level proficiency description:
         {level_context}
         {lesson_hint}
+        RANDOMNESS SEED (Use this to ensure variety): {seed or 'None'}
         *GUIDELINES:*
         1. Create one sentence with in the {language} language.
         2. Since this is a writing task, the question could be a grammar question or a vocabulary question.
@@ -36,8 +38,9 @@ def writing_fill_in_the_blank_task_prompt(
         10. Include *the English translation* of the missing word/phrase (in parentheses).
         11. Use diverse contexts that reflect everyday use or topics relevant to the level (e.g., greetings, work, or daily routines)
         12. The example in the level context should be used as a reference for the task, but it should not be exactly the same.
-        13. Do not include any instructions for the task.
-        14. Return the result in JSON format with these fields:
+        13. IMPORTANT: Use the provided RANDOMNESS SEED to vary the context. Do not repeat typical examples or sentences if possible. Be creative and diverse in your task generation.
+        14. Do not include any instructions for the task.
+        15. Return the result in JSON format with these fields:
         {{
             "question": "The sentence with ____ (MISSING WORD/PHRASE IN ENGLISH) without any instructions or options",
             "correctAnswer": array of correct answers as the missing word/phrase
@@ -57,6 +60,7 @@ def writing_multiple_choice_task_prompt(
     level_context: Dict[str, str],
     topic: str | None = None,
     keywords: list[str] | None = None,
+    seed: str | None = None,
 ) -> str:
     lesson_hint = ""
     if topic or keywords:
@@ -72,6 +76,7 @@ def writing_multiple_choice_task_prompt(
         Level proficiency description:
         {level_context}
         {lesson_hint}
+        RANDOMNESS SEED (Use this to ensure variety): {seed or 'None'}
         *GUIDELINES:*
         Create a **multiple-choice task** that matches the level's requirements without using the example in the level context:
         1. The task must consist of a single sentence with one clear objective.
@@ -85,7 +90,8 @@ def writing_multiple_choice_task_prompt(
         The answer should be **deterministic** and not allow for multiple correct interpretations.
         9. Do not include any instructions for the task.
         10. The example in the level context should be used as a reference for the task, but it should not be exactly the same.
-        11. Return the task in JSON format, including these fields:
+        11. IMPORTANT: Use the provided RANDOMNESS SEED to vary the context. Do not repeat typical examples or sentences if possible. Be creative and diverse in your task generation.
+        12. Return the task in JSON format, including these fields:
         {{
             "question": "The sentence and question for the user, without any instructions or options",
             "options": ["Option A", "Option B", "Option C", "Option D"] as the missing word/phrase,

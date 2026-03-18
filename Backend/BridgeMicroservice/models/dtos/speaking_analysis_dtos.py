@@ -23,12 +23,12 @@ class WhisperSegment(BaseModel):
 class WhisperTranscriptionResult(BaseModel):
     text: str
     language: Optional[str] = None
-    segments: Optional[List[WhisperSegment]] = None # If response_format=verbose_json is effectively used
-    words: Optional[List[WhisperWord]] = None # If word_timestamps=True is effectively used
-    raw_response: Optional[Any] = None # To store the full response if needed for debugging
+    segments: Optional[List[WhisperSegment]] = None
+    words: Optional[List[WhisperWord]] = None
+    raw_response: Optional[Any] = None
 
 class IdentifiedError(BaseModel):
-    error_type: str # e.g., "Grammar", "Vocabulary", "Phrasing", "Fluency"
+    error_type: str
     erroneous_text: str
     explanation: str
     suggestion: str

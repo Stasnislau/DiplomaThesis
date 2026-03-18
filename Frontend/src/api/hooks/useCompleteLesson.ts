@@ -44,11 +44,9 @@ export function useCompleteLesson() {
   >({
     mutationFn: completeLesson,
     onSuccess: () => {
-      // Refresh the learning path map so completed/unlocked states update
       queryClient.invalidateQueries({
         predicate: (q) => q.queryKey[0] === "learning-path",
       });
-      // Refresh achievements panel
       queryClient.invalidateQueries({
         predicate: (q) => q.queryKey[0] === "achievements",
       });

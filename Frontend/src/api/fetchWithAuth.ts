@@ -23,12 +23,18 @@ export async function fetchWithAuth(url: URL | string, options: FetchOptions) {
     }
 
     const finalHeaders = {
-      ...currentHeaders, 
-      ...options.headers, 
+      ...currentHeaders,
+      ...options.headers,
     };
-    
-    if (options.body instanceof FormData && finalHeaders["Content-Type"] && 
-        !(currentHeaders["Content-Type"] && currentHeaders["Content-Type"] === finalHeaders["Content-Type"])) {
+
+    if (
+      options.body instanceof FormData &&
+      finalHeaders["Content-Type"] &&
+      !(
+        currentHeaders["Content-Type"] &&
+        currentHeaders["Content-Type"] === finalHeaders["Content-Type"]
+      )
+    ) {
       delete finalHeaders["Content-Type"];
     }
 
@@ -38,31 +44,31 @@ export async function fetchWithAuth(url: URL | string, options: FetchOptions) {
     });
 
     if (response.status === 401) {
-        await useAuthStore.getState().refresh();
-        token = getAccessToken();
-        
-        const refreshedHeaders: Record<string, string> = {
-            Authorization: `Bearer ${token}`,
-        };
-        if (!(options.body instanceof FormData)) {
-            if (options.headers && options.headers["Content-Type"]) {
-                refreshedHeaders["Content-Type"] = options.headers["Content-Type"];
-            } else if (options.body) {
-                refreshedHeaders["Content-Type"] = "application/json";
-            }
-        }
-        const finalRefreshedHeaders = {
-            ...refreshedHeaders,
-            ...options.headers,
-        };
-        if (options.body instanceof FormData) {
-            delete finalRefreshedHeaders["Content-Type"]; // Ensure browser sets it for FormData
-        }
+      await useAuthStore.getState().refresh();
+      token = getAccessToken();
 
-        response = await fetch(url, {
-          ...options,
-          headers: finalRefreshedHeaders,
-        });
+      const refreshedHeaders: Record<string, string> = {
+        Authorization: `Bearer ${token}`,
+      };
+      if (!(options.body instanceof FormData)) {
+        if (options.headers && options.headers["Content-Type"]) {
+          refreshedHeaders["Content-Type"] = options.headers["Content-Type"];
+        } else if (options.body) {
+          refreshedHeaders["Content-Type"] = "application/json";
+        }
+      }
+      const finalRefreshedHeaders = {
+        ...refreshedHeaders,
+        ...options.headers,
+      };
+      if (options.body instanceof FormData) {
+        delete finalRefreshedHeaders["Content-Type"];
+      }
+
+      response = await fetch(url, {
+        ...options,
+        headers: finalRefreshedHeaders,
+      });
     }
     return response;
   } catch (error) {

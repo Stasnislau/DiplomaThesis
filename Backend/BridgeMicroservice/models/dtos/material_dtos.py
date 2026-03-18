@@ -18,9 +18,9 @@ class ProcessPdfResponse(BaseModel):
 class QuizQuestion(BaseModel):
     question: str
     options: List[str] = Field(default_factory=list)
-    correct_answer: str = Field(alias="correct_answer") # AI prompt says snake_case "correct_answer"
+    correct_answer: str = Field(alias="correct_answer")
     type: str
-    context_text: Optional[str] = None # For reading comprehension or context-based questions
+    context_text: Optional[str] = None
 
     model_config = ConfigDict(
         populate_by_name=True,

@@ -29,7 +29,7 @@ export const NavBar: React.FC<NavBarProps> = ({
         <button
           className={cn(
             "flex items-center justify-between gap-2 px-4 py-2 text-sm font-medium transition duration-150 ease-in-out focus:outline-none rounded-md",
-            "bg-transparent hover:bg-white/10", // Default style assumption, can be overridden by className
+            "bg-transparent hover:bg-white/10",
             className
           )}
         >

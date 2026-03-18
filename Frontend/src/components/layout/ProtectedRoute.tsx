@@ -16,7 +16,6 @@ function ProtectedRoute({ children, accessLevel }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading, userRole } = useAuthStore();
   const location = useLocation();
   const navigate = useNavigate();
-  // useMe and userStore logic removed as it is handled in HOC.tsx
 
   const { data: aiTokens, isLoading: isTokensLoading } = useGetUserAITokens();
   const [isTokenModalOpen, setTokenModalOpen] = useState(false);

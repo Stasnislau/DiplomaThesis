@@ -23,7 +23,6 @@ const SettingsIcon = ({ className }: { className?: string }) => (
   <GearIcon className={className} />
 );
 
-// Helper function to map LanguageLevel enum to readable string
 const mapLevelToString = (
   level: LanguageLevel | string
 ): {

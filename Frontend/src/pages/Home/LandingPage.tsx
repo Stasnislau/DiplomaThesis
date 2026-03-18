@@ -17,10 +17,8 @@ import Button from "@/components/common/Button";
 import { FeatureCard } from "./components/FeatureCard";
 import { HeroSection } from "./components/HeroSection";
 import { LanguageCard } from "./components/LanguageCard";
-import { LanguageSelector } from "@/components/common/LanguageSelector";
 import React from "react";
 import { StatCard } from "./components/StatCard";
-import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { useTranslation } from "react-i18next";
 
 const flagIcons = {
@@ -38,7 +36,6 @@ export const LandingPage: React.FC = () => {
   const { t } = useTranslation();
   const { languages } = useAvailableLanguages();
 
-  // Features data with translations
   const features = [
     {
       title: t('dashboard.testKnowledge') || "Language Quiz",
@@ -59,7 +56,7 @@ export const LandingPage: React.FC = () => {
       gradientTo: "indigo-500",
     },
     {
-      title: "Track Progress", // Add key if missed
+      title: "Track Progress",
       description: "Track your learning journey and achievements",
       linkTo: "/register",
       buttonText: t('landing.createFreeAccount') || "Create Account",
@@ -81,12 +78,7 @@ export const LandingPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
-      
-      {/* Header Controls */}
-      <div className="absolute top-4 right-4 flex gap-2 z-10">
-        <ThemeToggle />
-        <LanguageSelector />
-      </div>
+
 
       <HeroSection />
 

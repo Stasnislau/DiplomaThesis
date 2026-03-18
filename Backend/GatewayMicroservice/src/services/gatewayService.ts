@@ -130,11 +130,9 @@ export class GatewayService {
 
       this.logger.debug(`userData: ${userData?.id || "anonymous"}`);
 
-      // Check if request is multipart/form-data
       const contentType = headers["content-type"] || "";
       const isMultipart = contentType.includes("multipart/form-data");
 
-      // If multipart, pass the request stream directly. Otherwise use the parsed body.
       const dataToSend = isMultipart ? req : body;
 
       try {
@@ -144,14 +142,13 @@ export class GatewayService {
             url: targetUrl,
             headers: {
               ...headers,
-              // Sanitize internal headers
               "x-internal-service-key": undefined,
+              "content-length": undefined,
               ...(userData && {
                 "X-User-Id": userData.id,
                 "X-User-Email": userData.email,
                 "X-User-Role": userData.role,
               }),
-              // Ensure host header is not forwarded or is correct (axios handles it usually)
             },
             data: dataToSend,
             validateStatus: () => true,

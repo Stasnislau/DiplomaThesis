@@ -4,7 +4,6 @@ import { getAccessToken } from "./getAccessToken";
 
 describe("getAccessToken", () => {
   beforeEach(() => {
-    // Clear localStorage before each test
     localStorage.clear();
   });
 

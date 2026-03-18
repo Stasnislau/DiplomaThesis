@@ -6,6 +6,9 @@ import {
   Request,
   Get,
   Put,
+  Patch,
+  Delete,
+  Param,
 } from "@nestjs/common";
 import { AuthService } from "../services/authService";
 import { JwtAuthGuard } from "../guards/jwtAuthGuard";
@@ -101,5 +104,23 @@ export class AuthController {
       password.newPassword,
     );
     return { success: true, payload: "Password updated successfully" };
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("ADMIN")
+  @Patch("updateRole")
+  async updateRole(
+    @Body() body: { id: string; role: string },
+  ) {
+    await this.authService.updateUserRole({ id: body.id, role: body.role as any });
+    return { success: true, payload: "User role updated successfully" };
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("ADMIN")
+  @Delete("deleteUser/:id")
+  async deleteUser(@Param("id") id: string) {
+    await this.authService.deleteUser({ id });
+    return { success: true, payload: "User deleted successfully" };
   }
 }

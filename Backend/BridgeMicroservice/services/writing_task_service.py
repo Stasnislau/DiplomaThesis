@@ -39,9 +39,12 @@ class WritingTaskService:
         if not level_context:
             raise ValueError(f"Invalid level: {level}")
 
-        prompt = writing_multiple_choice_task_prompt(language, level, level_context.model_dump(), topic=topic, keywords=keywords)
+        seed = str(uuid.uuid4())
+        prompt = writing_multiple_choice_task_prompt(
+            language, level, level_context.model_dump(), topic=topic, keywords=keywords, seed=seed
+        )
         response = await self.ai_service.get_ai_response(
-            prompt, user_context=user_context
+            prompt, user_context=user_context, temperature=0.8
         )
         json_response = await self._process_ai_response_and_validate(response)
         logger.debug("Multiple choice task generated successfully")
@@ -74,9 +77,12 @@ class WritingTaskService:
         if not level_context:
             raise ValueError(f"Invalid level: {level}")
 
-        prompt = writing_fill_in_the_blank_task_prompt(language, level, level_context.model_dump(), topic=topic, keywords=keywords)
+        seed = str(uuid.uuid4())
+        prompt = writing_fill_in_the_blank_task_prompt(
+            language, level, level_context.model_dump(), topic=topic, keywords=keywords, seed=seed
+        )
         response = await self.ai_service.get_ai_response(
-            prompt, user_context=user_context
+            prompt, user_context=user_context, temperature=0.8
         )
         json_response = await self._process_ai_response_and_validate(response, is_fill_in_blank=True)
 

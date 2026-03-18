@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Advanced Benchmark Data Analysis & Visualization
 Generates comprehensive report from benchmark results
@@ -14,7 +13,6 @@ from typing import Dict, List, Any
 import warnings
 warnings.filterwarnings('ignore')
 
-# Set style for publication-quality plots
 plt.style.use('seaborn-v0_8-paper')
 sns.set_palette("husl")
 plt.rcParams['figure.dpi'] = 300
@@ -22,7 +20,6 @@ plt.rcParams['savefig.dpi'] = 300
 plt.rcParams['font.size'] = 10
 plt.rcParams['figure.figsize'] = (12, 8)
 
-# Paths
 ARCHIVE_DIR = Path("archive")
 RESULTS_CSV = ARCHIVE_DIR / "benchmark_2025_scientific_results.csv"
 DETAILED_LOG = ARCHIVE_DIR / "benchmark_2025_detailed_scientific_log.json"
@@ -51,7 +48,6 @@ def clean_and_process_data(df: pd.DataFrame) -> pd.DataFrame:
     """Clean and add computed columns"""
     print("\n🧹 Processing data...")
     
-    # Parse JSON content (safe parsing)
     def safe_parse_json(x):
         if pd.isna(x) or x == '':
             return None
@@ -62,12 +58,10 @@ def clean_and_process_data(df: pd.DataFrame) -> pd.DataFrame:
     
     df['parsed_content'] = df['content'].apply(safe_parse_json)
     
-    # Extract question text
     df['question_text'] = df['parsed_content'].apply(
         lambda x: x.get('question', '') if isinstance(x, dict) else ''
     )
     
-    # Categorize scores
     df['score_category'] = pd.cut(
         df['score'], 
         bins=[0, 4, 6, 8, 10], 
@@ -75,10 +69,8 @@ def clean_and_process_data(df: pd.DataFrame) -> pd.DataFrame:
         include_lowest=True
     )
     
-    # Add success flag
     df['is_success'] = df['error'].isna()
     
-    # Latency bins
     df['latency_category'] = pd.cut(
         df['latency'],
         bins=[0, 2, 5, 10, np.inf],
@@ -102,11 +94,7 @@ def generate_summary_statistics(df: pd.DataFrame) -> pd.DataFrame:
     
     summary.columns = ['_'.join(col).strip() for col in summary.columns.values]
     summary = summary.reset_index()
-    
-    # Add score stability ranking
     summary['stability_rank'] = summary['score_std'].rank(ascending=True)
-    
-    # Add efficiency score (high score, low latency)
     summary['efficiency'] = (
         (summary['score_mean'] / 10) * 0.7 + 
         (1 - summary['latency_mean'] / summary['latency_mean'].max()) * 0.3
@@ -121,7 +109,6 @@ def plot_score_distribution_detailed(df: pd.DataFrame):
     
     fig, axes = plt.subplots(2, 2, figsize=(16, 12))
     
-    # 1. Score distribution by model (violin plot)
     ax1 = axes[0, 0]
     sns.violinplot(data=df, x='model', y='score', ax=ax1, inner='box')
     ax1.set_title('Score Distribution by Model (Violin Plot)', fontsize=14, fontweight='bold')
@@ -130,7 +117,6 @@ def plot_score_distribution_detailed(df: pd.DataFrame):
     ax1.tick_params(axis='x', rotation=45)
     ax1.grid(axis='y', alpha=0.3)
     
-    # 2. Score by language and level (box plot)
     ax2 = axes[0, 1]
     df_pivot = df.copy()
     df_pivot['lang_level'] = df_pivot['lang'] + ' ' + df_pivot['level']
@@ -142,7 +128,6 @@ def plot_score_distribution_detailed(df: pd.DataFrame):
     ax2.legend(title='Model', bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=8)
     ax2.grid(axis='y', alpha=0.3)
     
-    # 3. Score category distribution (stacked bar)
     ax3 = axes[1, 0]
     score_cat = pd.crosstab(df['model'], df['score_category'], normalize='index') * 100
     score_cat.plot(kind='bar', stacked=True, ax=ax3, colormap='RdYlGn')
@@ -153,7 +138,6 @@ def plot_score_distribution_detailed(df: pd.DataFrame):
     ax3.legend(title='Score Category', bbox_to_anchor=(1.05, 1), loc='upper left')
     ax3.grid(axis='y', alpha=0.3)
     
-    # 4. Task type performance comparison
     ax4 = axes[1, 1]
     task_perf = df.groupby(['model', 'task_type'])['score'].mean().unstack()
     task_perf.plot(kind='bar', ax=ax4, width=0.8)
@@ -176,7 +160,6 @@ def plot_latency_analysis(df: pd.DataFrame):
     
     fig, axes = plt.subplots(2, 2, figsize=(16, 12))
     
-    # 1. Latency distribution by model
     ax1 = axes[0, 0]
     for model in df['model'].unique():
         model_data = df[df['model'] == model]['latency']
@@ -187,7 +170,6 @@ def plot_latency_analysis(df: pd.DataFrame):
     ax1.legend()
     ax1.grid(alpha=0.3)
     
-    # 2. Latency vs Score scatter
     ax2 = axes[0, 1]
     for model in df['model'].unique():
         model_data = df[df['model'] == model]
@@ -199,7 +181,6 @@ def plot_latency_analysis(df: pd.DataFrame):
     ax2.legend()
     ax2.grid(alpha=0.3)
     
-    # 3. Average latency by language
     ax3 = axes[1, 0]
     latency_lang = df.groupby(['model', 'lang'])['latency'].mean().unstack()
     latency_lang.plot(kind='bar', ax=ax3, width=0.8)
@@ -210,7 +191,6 @@ def plot_latency_analysis(df: pd.DataFrame):
     ax3.legend(title='Language')
     ax3.grid(axis='y', alpha=0.3)
     
-    # 4. Latency category distribution
     ax4 = axes[1, 1]
     latency_cat = pd.crosstab(df['model'], df['latency_category'], normalize='index') * 100
     latency_cat.plot(kind='bar', stacked=True, ax=ax4, colormap='YlOrRd')
@@ -233,7 +213,6 @@ def plot_comprehensive_heatmap(df: pd.DataFrame):
     
     fig, axes = plt.subplots(2, 2, figsize=(18, 14))
     
-    # 1. Mean Score Heatmap (Model x Language-Level)
     ax1 = axes[0, 0]
     df_pivot = df.copy()
     df_pivot['lang_level'] = df_pivot['lang'] + '\n' + df_pivot['level']
@@ -249,7 +228,6 @@ def plot_comprehensive_heatmap(df: pd.DataFrame):
     ax1.set_xlabel('Language - Level', fontsize=12)
     ax1.set_ylabel('Model', fontsize=12)
     
-    # 2. Score Stability (Std) Heatmap
     ax2 = axes[0, 1]
     stability_data = df_pivot.pivot_table(
         values='score', 
@@ -263,7 +241,6 @@ def plot_comprehensive_heatmap(df: pd.DataFrame):
     ax2.set_xlabel('Language - Level', fontsize=12)
     ax2.set_ylabel('Model', fontsize=12)
     
-    # 3. Average Latency Heatmap
     ax3 = axes[1, 0]
     latency_data = df_pivot.pivot_table(
         values='latency', 
@@ -277,7 +254,6 @@ def plot_comprehensive_heatmap(df: pd.DataFrame):
     ax3.set_xlabel('Language - Level', fontsize=12)
     ax3.set_ylabel('Model', fontsize=12)
     
-    # 4. Success Rate Heatmap
     ax4 = axes[1, 1]
     success_data = df_pivot.pivot_table(
         values='is_success', 
@@ -303,14 +279,13 @@ def plot_model_comparison_radar(df: pd.DataFrame):
     
     from math import pi
     
-    # Calculate metrics for each model
     metrics = {}
     for model in df['model'].unique():
         model_data = df[df['model'] == model]
         metrics[model] = {
-            'Avg Score': model_data['score'].mean() / 10,  # Normalize to 0-1
-            'Consistency': 1 - (model_data['score'].std() / 10),  # Lower std = higher consistency
-            'Speed': 1 - (model_data['latency'].mean() / df['latency'].max()),  # Inverse normalized
+            'Avg Score': model_data['score'].mean() / 10,
+            'Consistency': 1 - (model_data['score'].std() / 10),
+            'Speed': 1 - (model_data['latency'].mean() / df['latency'].max()),
             'Success Rate': model_data['is_success'].mean(),
             'Peak Performance': model_data['score'].max() / 10,
         }
@@ -318,7 +293,6 @@ def plot_model_comparison_radar(df: pd.DataFrame):
     categories = list(next(iter(metrics.values())).keys())
     N = len(categories)
     
-    # Create radar chart
     fig, ax = plt.subplots(figsize=(12, 10), subplot_kw=dict(projection='polar'))
     
     angles = [n / float(N) * 2 * pi for n in range(N)]
@@ -351,7 +325,6 @@ def create_detailed_questions_table(df: pd.DataFrame):
     """Create filterable HTML table with all questions and scores"""
     print("\n📋 Creating detailed questions table...")
     
-    # Select relevant columns and clean
     questions_df = df[[
         'model', 'lang', 'level', 'task_type', 'iteration',
         'question_text', 'score', 'reason', 'latency', 'is_success'
@@ -359,7 +332,6 @@ def create_detailed_questions_table(df: pd.DataFrame):
     
     questions_df = questions_df.sort_values(['lang', 'level', 'model', 'iteration'])
     
-    # Generate HTML with DataTables for interactivity
     html_template = """
 <!DOCTYPE html>
 <html>
@@ -487,7 +459,6 @@ def create_detailed_questions_table(df: pd.DataFrame):
 </html>
 """
     
-    # Generate table HTML
     table_html = questions_df.to_html(
         table_id='results_table',
         classes='display compact',
@@ -496,7 +467,6 @@ def create_detailed_questions_table(df: pd.DataFrame):
         na_rep='N/A'
     )
     
-    # Fill template
     html_output = html_template.format(
         total_questions=len(questions_df),
         models_count=len(questions_df['model'].unique()),
@@ -518,7 +488,6 @@ def export_latex_tables(summary: pd.DataFrame, df: pd.DataFrame):
     """Export publication-ready LaTeX tables"""
     print("\n📝 Exporting LaTeX tables for thesis...")
     
-    # Table 1: Overall Model Ranking
     ranking = summary.groupby('model').agg({
         'score_mean': 'mean',
         'score_std': 'mean',
@@ -538,7 +507,6 @@ def export_latex_tables(summary: pd.DataFrame, df: pd.DataFrame):
     with open(OUTPUT_DIR / 'table_model_ranking.tex', 'w') as f:
         f.write(latex_ranking)
     
-    # Table 2: Language-specific performance
     lang_perf = df.groupby(['lang', 'model']).agg({
         'score': 'mean',
         'latency': 'mean'
@@ -612,7 +580,6 @@ def generate_markdown_report(summary: pd.DataFrame, df: pd.DataFrame):
     most_stable = df.groupby('model')['score'].std().idxmin()
     report += f"3. **Most Consistent**: {most_stable}\n"
     
-    # Save report
     with open(OUTPUT_DIR / 'detailed_analysis_report.md', 'w', encoding='utf-8') as f:
         f.write(report)
     
@@ -625,29 +592,22 @@ def main():
     print("🚀 ADVANCED BENCHMARK ANALYSIS & VISUALIZATION")
     print("=" * 60)
     
-    # Load data
     df, detailed_log = load_data()
     
-    # Process
     df = clean_and_process_data(df)
     
-    # Generate summary statistics
     summary = generate_summary_statistics(df)
     
-    # Create visualizations
     plot_score_distribution_detailed(df)
     plot_latency_analysis(df)
     plot_comprehensive_heatmap(df)
     plot_model_comparison_radar(df)
     
-    # Create detailed tables
     create_detailed_questions_table(df)
     
-    # Export for thesis
     export_latex_tables(summary, df)
     generate_markdown_report(summary, df)
     
-    # Save processed data
     summary.to_csv(OUTPUT_DIR / 'summary_statistics.csv', index=False)
     df.to_csv(OUTPUT_DIR / 'processed_data.csv', index=False)
     

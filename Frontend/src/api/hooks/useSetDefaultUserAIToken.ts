@@ -8,7 +8,6 @@ export const useSetDefaultUserAIToken = () => {
   const mutation = useMutation({
     mutationFn: (id: string) => setDefaultUserAIToken(id),
     onSuccess: () => {
-      // Invalidate tokens query to refresh list (and isDefault status)
       queryClient.invalidateQueries({ queryKey: ["ai-tokens"] });
     },
   });

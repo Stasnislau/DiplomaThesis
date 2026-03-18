@@ -17,7 +17,6 @@ export class PlacementTestService {
     score: number;
     feedback: any;
   }) {
-    // 1. Save the detailed result
     const result = await this.prisma.placementTestResult.create({
       data: {
         userId: data.userId,
@@ -28,8 +27,6 @@ export class PlacementTestService {
       },
     });
 
-    // 2. Update or Create UserLanguage level
-    // We check if the user already has this language.
     const userLanguage = await this.prisma.userLanguage.findFirst({
       where: {
         userId: data.userId,
@@ -57,7 +54,6 @@ export class PlacementTestService {
       });
     }
 
-    // 3. Unlock "First Steps" achievement
     await this.achievementService.updateProgress(data.userId, "First Steps", 1);
 
     return result;

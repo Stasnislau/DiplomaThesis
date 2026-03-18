@@ -28,10 +28,8 @@ class MultipleChoiceTask(TaskDto):
 
 class FillInTheBlankTask(TaskDto):
     type: Literal["fill_in_the_blank"]
-    # Always a list — supports synonyms / multiple accepted answers
     correct_answer: List[str]
 
-    # Normalise: str → [str], list stays as-is
     @field_validator("correct_answer", mode="before")
     @classmethod
     def normalise_to_list(cls, v: Union[str, List[str]]) -> List[str]:

@@ -10,7 +10,6 @@ from pathlib import Path
 import argparse
 from typing import Optional
 
-# Paths
 ARCHIVE_DIR = Path("archive/advanced_analysis")
 DATA_FILE = ARCHIVE_DIR / "processed_data.csv"
 
@@ -70,7 +69,6 @@ def display_question(row, index=None):
     print(f"✅ Success:      {'Yes' if row['is_success'] else 'No'}")
     print("-" * 80)
     
-    # Parse and display question content
     try:
         content = json.loads(row['content'])
         print("📋 Question:")
@@ -152,7 +150,6 @@ def interactive_mode():
     print("🔍 INTERACTIVE QUESTION EXPLORER")
     print("=" * 80)
     
-    # Get filters
     print("\n📋 Available filters (press Enter to skip):")
     
     models = [''] + df['model'].unique().tolist()
@@ -177,7 +174,6 @@ def interactive_mode():
     max_score = input("Maximum score (0-10, default: 10): ").strip()
     max_score = float(max_score) if max_score else 10
     
-    # Apply filters
     filters = {
         'model': model if model else None,
         'language': language if language else None,
@@ -191,10 +187,8 @@ def interactive_mode():
     
     print(f"\n✅ Found {len(filtered)} questions matching your criteria")
     
-    # Show statistics
     show_statistics(filtered)
     
-    # Ask what to do
     print("\n" + "=" * 80)
     print("What would you like to do?")
     print("  1. Browse questions one by one")
@@ -257,12 +251,10 @@ def main():
     
     args = parser.parse_args()
     
-    # Interactive mode
     if args.interactive or len(vars(args)) == 0:
         interactive_mode()
         return
     
-    # CLI mode
     df = load_questions()
     
     filters = {
@@ -299,7 +291,6 @@ def main():
             display_question(row, idx)
         return
     
-    # Default: show all
     for idx, (_, row) in enumerate(filtered.iterrows()):
         display_question(row, idx)
 

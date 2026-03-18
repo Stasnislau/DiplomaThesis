@@ -9,8 +9,6 @@ export interface GenerateTaskFromTemplateRequest {
   level?: string;
 }
 
-// ... (existing imports)
-
 export interface GeneratedTaskResponse {
   template_id?: string | null;
   template_text?: string | null;

@@ -51,7 +51,6 @@ export const NoLanguagesModal: React.FC = () => {
 
   const handleSelect = (languageId: string) => {
     setSelectedId(languageId);
-    // Small delay for the visual feedback before submitting
     setTimeout(() => {
       setNativeLanguage(languageId);
     }, 400);
@@ -59,24 +58,20 @@ export const NoLanguagesModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop with blur */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         className="absolute inset-0 bg-gradient-to-br from-indigo-900/60 via-purple-900/50 to-pink-900/60 backdrop-blur-sm"
       />
 
-      {/* Modal */}
       <motion.div
         initial={{ opacity: 0, scale: 0.9, y: 30 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className="relative bg-white dark:bg-gray-800 rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl border border-gray-100 dark:border-gray-700/50"
       >
-        {/* Decorative gradient accent */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-1 rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
 
-        {/* Icon */}
         <div className="flex justify-center mb-4 mt-2">
           <motion.div
             initial={{ scale: 0, rotate: -30 }}
@@ -90,7 +85,6 @@ export const NoLanguagesModal: React.FC = () => {
           </motion.div>
         </div>
 
-        {/* Title */}
         <motion.h2
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -100,7 +94,6 @@ export const NoLanguagesModal: React.FC = () => {
           What&apos;s your native language?
         </motion.h2>
 
-        {/* Subtitle */}
         <motion.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -110,7 +103,6 @@ export const NoLanguagesModal: React.FC = () => {
           This helps us personalize your learning experience
         </motion.p>
 
-        {/* Language list */}
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-10 gap-3">
             <div className="w-10 h-10 rounded-full border-3 border-indigo-200 dark:border-indigo-800 border-t-indigo-500 dark:border-t-indigo-400 animate-spin" />
@@ -151,7 +143,6 @@ export const NoLanguagesModal: React.FC = () => {
                     whileHover={!selectedId ? { scale: 1.02, x: 4 } : {}}
                     whileTap={!selectedId ? { scale: 0.98 } : {}}
                   >
-                    {/* Flag icon */}
                     <div
                       className={`
                         flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center
@@ -170,7 +161,6 @@ export const NoLanguagesModal: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Language name */}
                     <div className="flex-grow">
                       <span
                         className={`
@@ -198,7 +188,6 @@ export const NoLanguagesModal: React.FC = () => {
                       </span>
                     </div>
 
-                    {/* Selection indicator */}
                     <div
                       className={`
                         flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center
@@ -236,7 +225,6 @@ export const NoLanguagesModal: React.FC = () => {
           </motion.div>
         )}
 
-        {/* Footer hint */}
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

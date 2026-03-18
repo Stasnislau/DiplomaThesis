@@ -6,8 +6,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { TaskData } from "@/types/responses/TaskResponse";
 
-// ... (existing imports)
-
 export function useCreateBlankSpaceTask() {
   const queryClient = useQueryClient();
 

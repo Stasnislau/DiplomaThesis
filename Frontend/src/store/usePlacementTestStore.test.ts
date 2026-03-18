@@ -6,7 +6,6 @@ import { usePlacementTestStore } from "./usePlacementTestStore";
 
 describe("usePlacementTestStore", () => {
   beforeEach(() => {
-    // Reset store state
     act(() => {
       usePlacementTestStore.getState().resetTest();
     });
@@ -76,10 +75,8 @@ describe("usePlacementTestStore", () => {
         correctAnswer: "A",
       };
 
-      // Get total questions from store
       const { testTotalQuestions } = usePlacementTestStore.getState();
 
-      // Add answers up to total
       act(() => {
         for (let i = 0; i < testTotalQuestions; i++) {
           usePlacementTestStore.getState().addAnswer(
@@ -108,7 +105,6 @@ describe("usePlacementTestStore", () => {
         correctAnswer: ["answer"],
       };
 
-      // First add some answers
       act(() => {
         usePlacementTestStore.getState().addAnswer(
           {
@@ -121,7 +117,6 @@ describe("usePlacementTestStore", () => {
         );
       });
 
-      // Then reset
       act(() => {
         usePlacementTestStore.getState().resetTest();
       });
