@@ -132,7 +132,7 @@ class SpeakingService:
                     words_per_minute = round((len(words) / duration_seconds) * 60, 1)
 
         # --- Average pause duration between words ---
-        avg_pause: Optional[float] = None
+        avg_pause: float = 0.0
         pauses: List[float] = []
         for i in range(1, len(words)):
             prev_end = words[i - 1].end

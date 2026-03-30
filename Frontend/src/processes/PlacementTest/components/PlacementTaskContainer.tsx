@@ -8,7 +8,7 @@ import { usePlacementTask } from "../api/hooks/usePlacementTask";
 import { usePlacementTestStore } from "@/store/usePlacementTestStore";
 
 export const PlacementTaskContainer = () => {
-    const { createTask, isLoading } = usePlacementTask();
+    const { createTask } = usePlacementTask();
 
   const {
     language,
@@ -20,6 +20,7 @@ export const PlacementTaskContainer = () => {
     nextTask,
     addAnswer,
     setTasks,
+    setNextTask,
     advanceTasks,
   } = usePlacementTestStore();
 
@@ -66,8 +67,12 @@ export const PlacementTaskContainer = () => {
                   }
                 : undefined,
             });
-            setTasks({ current: currentTask, next: task });
+            setNextTask(task);
           }
+        } else if (!currentTask && nextTask) {
+          // If the user answered faster than nextTask could load, 
+          // we now have nextTask but no currentTask.
+          setTasks({ current: nextTask, next: null });
         }
       } finally {
         isFetching.current = false;
@@ -83,6 +88,7 @@ export const PlacementTaskContainer = () => {
     isTestComplete,
     createTask,
     setTasks,
+    setNextTask,
     testTotalQuestions,
     userAnswers,
   ]);
@@ -109,15 +115,15 @@ export const PlacementTaskContainer = () => {
         exit={{ opacity: 0, x: -50 }}
         transition={{ duration: 0.3 }}
       >
-        {!currentTask && isLoading ? (
+        {!currentTask ? (
           <LoadingSpinner />
-        ) : currentTask ? (
+        ) : (
           <PlacementTask
             task={currentTask}
             onAnswer={handleAnswer}
             currentQuestion={currentQuestionNumber} 
           />
-        ) : null}
+        )}
       </motion.div>
     </AnimatePresence>
   );

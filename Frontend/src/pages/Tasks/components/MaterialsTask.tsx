@@ -117,23 +117,23 @@ const MaterialsTask = () => {
   return (
     <div className="space-y-6">
       {(view === "upload" || view === "history") && (
-        <div className="bg-gradient-to-r from-rose-50 to-orange-50 rounded-2xl p-6 border border-rose-100">
+        <div className="bg-gradient-to-r from-rose-50 to-orange-50 dark:from-rose-950/50 dark:to-orange-950/50 rounded-2xl p-6 border border-rose-100 dark:border-rose-900/50">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center">
               <span className="text-lg">📚</span>
             </div>
-            <label className="text-sm font-semibold text-gray-800">
+            <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">
               Choose Source
             </label>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button
               onClick={() => setView("upload")}
               className={cn(
                 "py-4 px-6 rounded-xl text-sm font-medium transition-all duration-200 flex flex-col items-center gap-2",
                 view === "upload"
                   ? "bg-gradient-to-r from-rose-500 to-orange-500 text-white shadow-lg shadow-rose-500/30"
-                  : "bg-white text-gray-700 border border-gray-200 hover:bg-rose-50 hover:border-rose-200"
+                  : "bg-white dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-rose-50 dark:hover:bg-rose-900/40 hover:border-rose-200 dark:hover:border-rose-700"
               )}
             >
               <span className="text-2xl">📤</span>
@@ -145,7 +145,7 @@ const MaterialsTask = () => {
                 "py-4 px-6 rounded-xl text-sm font-medium transition-all duration-200 flex flex-col items-center gap-2",
                 view === "history"
                   ? "bg-gradient-to-r from-rose-500 to-orange-500 text-white shadow-lg shadow-rose-500/30"
-                  : "bg-white text-gray-700 border border-gray-200 hover:bg-rose-50 hover:border-rose-200"
+                  : "bg-white dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-rose-50 dark:hover:bg-rose-900/40 hover:border-rose-200 dark:hover:border-rose-700"
               )}
             >
               <span className="text-2xl">📁</span>
@@ -156,12 +156,12 @@ const MaterialsTask = () => {
       )}
 
       {view === "upload" && (
-        <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center">
               <span className="text-lg">📄</span>
             </div>
-            <label className="text-sm font-semibold text-gray-800">
+            <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">
               Upload PDF Document
             </label>
           </div>
@@ -171,7 +171,7 @@ const MaterialsTask = () => {
               "flex flex-col items-center justify-center border-2 border-dashed rounded-2xl p-10 transition-all duration-200 cursor-pointer",
               file 
                 ? "border-rose-400 bg-rose-50" 
-                : "border-gray-300 bg-gray-50 hover:bg-gray-100 hover:border-gray-400"
+                : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500"
             )}
             onClick={() => document.getElementById('material-file-upload')?.click()}
           >
@@ -187,24 +187,24 @@ const MaterialsTask = () => {
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-rose-500 to-orange-500 flex items-center justify-center mb-4 shadow-lg">
                   <span className="text-3xl">📄</span>
                 </div>
-                <span className="text-lg font-semibold text-gray-900">{file.name}</span>
+                <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">{file.name}</span>
                 <span className="text-sm text-gray-500 mt-1">Click to change file</span>
               </>
             ) : (
               <>
-                <div className="w-16 h-16 rounded-2xl bg-gray-200 flex items-center justify-center mb-4">
+                <div className="w-16 h-16 rounded-2xl bg-gray-200 dark:bg-gray-700 flex items-center justify-center mb-4">
                   <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
                 </div>
-                <span className="text-lg font-medium text-gray-700">Click to select PDF file</span>
+                <span className="text-lg font-medium text-gray-700 dark:text-gray-300">Click to select PDF file</span>
                 <span className="text-sm text-gray-500 mt-1">Max size 10MB</span>
               </>
             )}
           </div>
 
           {uploadError && (
-            <div className="mt-4 p-4 bg-red-50 rounded-xl border border-red-200">
+            <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-900/50">
               <div className="flex items-center gap-3">
                 <span className="text-lg">⚠️</span>
                 <p className="text-sm text-red-600 font-medium">{uploadError.message}</p>
@@ -216,12 +216,12 @@ const MaterialsTask = () => {
 
       {/* History Section */}
       {view === "history" && (
-        <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center">
               <span className="text-lg">📁</span>
             </div>
-            <label className="text-sm font-semibold text-gray-800">
+            <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">
               Previously Analyzed Materials
             </label>
           </div>
@@ -256,7 +256,7 @@ const MaterialsTask = () => {
                       <span className="text-xl">📄</span>
                     </div>
                     <div>
-                      <h4 className="font-semibold text-gray-900 group-hover:text-rose-700 transition-colors">{material.filename}</h4>
+                      <h4 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-rose-700 transition-colors">{material.filename}</h4>
                       <p className="text-sm text-gray-500">
                         {new Date(material.createdAt).toLocaleDateString('en-US', { 
                           month: 'short', 
@@ -309,13 +309,13 @@ const MaterialsTask = () => {
           </div>
 
           {/* Task Types */}
-          <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
                   <span className="text-lg">🎯</span>
                 </div>
-                <label className="text-sm font-semibold text-gray-800">
+                <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">
                   Select Task Types to Practice
                 </label>
               </div>
@@ -337,7 +337,7 @@ const MaterialsTask = () => {
                       "p-4 rounded-xl cursor-pointer transition-all duration-200 border-2",
                       selectedTypes.includes(t.type) 
                         ? "border-indigo-500 bg-indigo-50 shadow-md" 
-                        : "border-gray-200 hover:border-indigo-300 hover:bg-gray-50"
+                        : "border-gray-200 hover:border-indigo-300 hover:bg-gray-50 dark:bg-gray-800"
                     )}
                   >
                     <div className="flex items-start gap-3">
@@ -354,7 +354,7 @@ const MaterialsTask = () => {
                         )}
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900">{t.type}</h4>
+                        <h4 className="font-semibold text-gray-900 dark:text-gray-100">{t.type}</h4>
                         {t.example && (
                           <p className="text-sm text-gray-500 mt-1 italic line-clamp-2">
                             Example: "{t.example}"
@@ -414,15 +414,15 @@ const MaterialsTask = () => {
 
           {/* Questions */}
           {quiz.map((q, idx) => (
-            <div key={idx} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div key={idx} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
               {/* Question Header */}
-              <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+              <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 px-6 py-4 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center shadow-sm">
                       <span className="text-white font-bold">{idx + 1}</span>
                     </div>
-                    <span className="font-semibold text-gray-700">Question {idx + 1}</span>
+                    <span className="font-semibold text-gray-700 dark:text-gray-300">Question {idx + 1}</span>
                   </div>
                   {q.type && (
                     <span className="text-xs font-medium text-violet-700 bg-violet-100 px-3 py-1 rounded-full">
@@ -434,7 +434,7 @@ const MaterialsTask = () => {
               
               {/* Question Content */}
               <div className="p-6">
-                <p className="text-lg font-medium text-gray-900 mb-6">{q.question}</p>
+                <p className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-6">{q.question}</p>
                 
                 {q.options && q.options.length > 0 ? (
                   <div className="space-y-3">
@@ -452,10 +452,10 @@ const MaterialsTask = () => {
                             isRevealed && isCorrect
                               ? "border-green-500 bg-green-50"
                               : isRevealed && isSelected && !isCorrect
-                              ? "border-red-500 bg-red-50"
+                              ? "border-red-500 bg-red-50 dark:bg-red-900/20"
                               : isSelected
                               ? "border-violet-500 bg-violet-50"
-                              : "border-gray-200 hover:border-violet-300 hover:bg-gray-50 cursor-pointer"
+                              : "border-gray-200 hover:border-violet-300 hover:bg-gray-50 dark:bg-gray-800 cursor-pointer"
                           )}
                         >
                           <div className={cn(
@@ -463,7 +463,7 @@ const MaterialsTask = () => {
                             isRevealed && isCorrect
                               ? "border-green-500 bg-green-500"
                               : isRevealed && isSelected && !isCorrect
-                              ? "border-red-500 bg-red-500"
+                              ? "border-red-500 bg-red-50 dark:bg-red-900/200"
                               : isSelected
                               ? "border-violet-500 bg-violet-500"
                               : "border-gray-300"
@@ -475,7 +475,7 @@ const MaterialsTask = () => {
                           <span className={cn(
                             "font-medium",
                             isRevealed && isCorrect ? "text-green-700" : 
-                            isRevealed && isSelected && !isCorrect ? "text-red-700" : "text-gray-700"
+                            isRevealed && isSelected && !isCorrect ? "text-red-700" : "text-gray-700 dark:text-gray-300"
                           )}>
                             {opt}
                           </span>
@@ -484,9 +484,9 @@ const MaterialsTask = () => {
                     })}
                   </div>
                 ) : (
-                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200">
                     <textarea 
-                      className="w-full bg-transparent resize-none outline-none text-gray-700 placeholder-gray-400"
+                      className="w-full bg-transparent resize-none outline-none text-gray-700 dark:text-gray-300 placeholder-gray-400"
                       rows={3}
                       placeholder="Type your answer here..."
                       value={selectedAnswer[idx] || ''}

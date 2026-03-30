@@ -29,6 +29,7 @@ interface PlacementTestStore {
   currentTask: Task | null;
   nextTask: Task | null;
   setTasks: (tasks: { current: Task | null; next: Task | null }) => void;
+  setNextTask: (task: Task | null) => void;
   advanceTasks: () => void;
 }
 
@@ -70,6 +71,7 @@ export const usePlacementTestStore = create<PlacementTestStore>((set) => ({
   setLanguage: (language: Language) => set({ language }),
   setTasks: (tasks) =>
     set({ currentTask: tasks.current, nextTask: tasks.next }),
+  setNextTask: (task) => set({ nextTask: task }),
   advanceTasks: () =>
     set((state) => ({
       currentTask: state.nextTask,

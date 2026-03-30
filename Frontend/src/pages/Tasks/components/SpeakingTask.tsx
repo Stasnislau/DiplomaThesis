@@ -171,12 +171,12 @@ const SpeakingTask = () => {
             {t("languages.chooseLanguage")}
           </label>
         </div>
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
           {LANGUAGES.map((lang) => (
             <button
               key={lang.code}
               onClick={() => setLanguage(lang.code)}
-              className={`py-3 px-4 rounded-xl text-sm font-medium transition-all duration-200 flex flex-col items-center gap-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+              className={`flex-1 min-w-[90px] py-3 px-4 rounded-xl text-sm font-medium transition-all duration-200 flex flex-col items-center gap-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
                 language === lang.code
                   ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30 scale-105"
                   : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 hover:bg-indigo-50 dark:hover:bg-gray-600 hover:border-indigo-200 hover:scale-102"

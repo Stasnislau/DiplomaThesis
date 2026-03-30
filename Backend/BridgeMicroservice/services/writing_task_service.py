@@ -33,11 +33,12 @@ class WritingTaskService:
         self, language: str, level: str, user_context: Optional[UserContext] = None,
         topic: Optional[str] = None, keywords: Optional[list[str]] = None,
     ) -> MultipleChoiceTask:
+        effective_level = "A1" if level.upper() == "A0" else level.upper()
         level_context: Union[SpecificSkillContext, FullLevelContext, None] = self.vector_db_service.get_level_context(
-            level.upper(), "writing"
+            effective_level, "writing"
         )
         if not level_context:
-            raise ValueError(f"Invalid level: {level}")
+            raise ValueError(f"Invalid level: {effective_level}")
 
         seed = str(uuid.uuid4())
         prompt = writing_multiple_choice_task_prompt(
@@ -70,12 +71,13 @@ class WritingTaskService:
         self, language: str, level: str, user_context: Optional[UserContext] = None,
         topic: Optional[str] = None, keywords: Optional[list[str]] = None,
     ) -> FillInTheBlankTask:
+        effective_level = "A1" if level.upper() == "A0" else level.upper()
         level_context: Union[SpecificSkillContext, FullLevelContext, None] = self.vector_db_service.get_level_context(
-            level.upper(), "writing"
+            effective_level, "writing"
         )
 
         if not level_context:
-            raise ValueError(f"Invalid level: {level}")
+            raise ValueError(f"Invalid level: {effective_level}")
 
         seed = str(uuid.uuid4())
         prompt = writing_fill_in_the_blank_task_prompt(

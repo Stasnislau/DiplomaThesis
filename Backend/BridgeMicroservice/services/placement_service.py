@@ -27,16 +27,19 @@ class PlacementService:
         if previous_answer:
             self.adjust_difficulty(previous_answer.is_correct)
 
+        topics = ["travel", "food", "work", "hobbies", "shopping", "family", "education", "technology", "nature", "sports", "daily routine", "friends", "movies", "music", "books", "health", "weather", "clothes"]
+        random_topic = random.choice(topics)
+        
         task_type = random.choice(["multiple_choice", "fill_in_the_blank"])
         task: MultipleChoiceTask | FillInTheBlankTask
         try:
             if task_type == "multiple_choice":
                 task = await self.writing_task_service.generate_writing_multiple_choice_task(
-                    language, self.current_level, user_context=user_context
+                    language, self.current_level, user_context=user_context, topic=random_topic
                 )
             else:
                 task = await self.writing_task_service.generate_writing_fill_in_the_blank_task(
-                    language, self.current_level, user_context=user_context
+                    language, self.current_level, user_context=user_context, topic=random_topic
                 )
             return task
 
