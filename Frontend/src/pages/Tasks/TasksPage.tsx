@@ -99,12 +99,12 @@ const TasksPage = () => {
           <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-1">
             Quick Actions
           </h2>
-          <div className="flex flex-wrap gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {shortcuts.map((shortcut) => (
               <button
                 key={shortcut.path}
                 onClick={() => navigate(shortcut.path)}
-                className={`${shortcut.bgColor} ${shortcut.hoverBg} border ${shortcut.borderColor} flex-1 min-w-[200px] text-left rounded-xl p-3 cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 group focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+                className={`${shortcut.bgColor} ${shortcut.hoverBg} border ${shortcut.borderColor} text-left rounded-xl p-3 cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 group focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                 aria-label={`Go to ${shortcut.title}`}
               >
                 <div className="flex items-center gap-3">
@@ -124,31 +124,31 @@ const TasksPage = () => {
         {/* Tasks Tabs */}
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 transition-colors duration-300">
           <Tabs defaultValue={defaultTab} className="w-full">
-            <TabsList className="w-full grid grid-cols-2 md:grid-cols-4 gap-2 bg-gray-100 dark:bg-gray-700 p-1.5 rounded-xl mb-6">
+            <TabsList className="w-full flex flex-wrap gap-2 bg-gray-100 dark:bg-gray-700 p-1.5 rounded-xl mb-6 h-auto">
               <TabsTrigger 
                 value="writing" 
-                className="rounded-lg py-3 px-3 text-sm font-semibold transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-gray-600 data-[state=active]:shadow-md data-[state=active]:text-indigo-600 dark:data-[state=active]:text-white dark:text-gray-300"
+                className="flex-1 min-w-[140px] whitespace-normal text-center h-auto rounded-lg py-3 px-3 text-sm font-semibold transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-gray-600 data-[state=active]:shadow-md data-[state=active]:text-indigo-600 dark:data-[state=active]:text-white dark:text-gray-300"
               >
                 <span className="mr-1.5" role="img" aria-hidden="true">✍️</span>
                 {t('tasks.writing')}
               </TabsTrigger>
               <TabsTrigger 
                 value="speaking"
-                className="rounded-lg py-3 px-3 text-sm font-semibold transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-gray-600 data-[state=active]:shadow-md data-[state=active]:text-indigo-600 dark:data-[state=active]:text-white dark:text-gray-300"
+                className="flex-1 min-w-[140px] whitespace-normal text-center h-auto rounded-lg py-3 px-3 text-sm font-semibold transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-gray-600 data-[state=active]:shadow-md data-[state=active]:text-indigo-600 dark:data-[state=active]:text-white dark:text-gray-300"
               >
                 <span className="mr-1.5" role="img" aria-hidden="true">🗣️</span>
                 {t('tasks.speaking')}
               </TabsTrigger>
               <TabsTrigger 
                 value="listening"
-                className="rounded-lg py-3 px-3 text-sm font-semibold transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-gray-600 data-[state=active]:shadow-md data-[state=active]:text-indigo-600 dark:data-[state=active]:text-white dark:text-gray-300"
+                className="flex-1 min-w-[140px] whitespace-normal text-center h-auto rounded-lg py-3 px-3 text-sm font-semibold transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-gray-600 data-[state=active]:shadow-md data-[state=active]:text-indigo-600 dark:data-[state=active]:text-white dark:text-gray-300"
               >
                 <span className="mr-1.5" role="img" aria-hidden="true">👂</span>
                 {t('tasks.listening')}
               </TabsTrigger>
               <TabsTrigger 
                 value="materials"
-                className="rounded-lg py-3 px-3 text-sm font-semibold transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-gray-600 data-[state=active]:shadow-md data-[state=active]:text-rose-600 dark:data-[state=active]:text-rose-400 dark:text-gray-300"
+                className="flex-1 min-w-[140px] whitespace-normal text-center h-auto rounded-lg py-3 px-3 text-sm font-semibold transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-gray-600 data-[state=active]:shadow-md data-[state=active]:text-rose-600 dark:data-[state=active]:text-rose-400 dark:text-gray-300"
               >
                 <span className="mr-1.5" role="img" aria-hidden="true">📄</span>
                 PDF Tasks

@@ -87,8 +87,8 @@ class ListeningTaskService:
         try:
             audio = elevenlabs_client.text_to_speech.convert(
                 text=transcript,
-                voice_id="hIssydxXZ1WuDorjx6Ic", 
-                model_id='eleven_flash_v2_5'
+                voice_id="JBFqnCBsd6RMkjVDRZzb",
+                model_id='eleven_multilingual_v2'
             )
         except Exception as e:
              print(f"Error calling ElevenLabs: {e}")

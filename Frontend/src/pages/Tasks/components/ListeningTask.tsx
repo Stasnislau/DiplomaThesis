@@ -77,24 +77,24 @@ const ListeningTask = () => {
   return (
     <div className="space-y-6">
       {/* Language Selection */}
-      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-6 border border-indigo-100">
+      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/50 dark:to-purple-950/50 rounded-2xl p-6 border border-indigo-100 dark:border-indigo-900/50">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
             <span className="text-lg">🌍</span>
           </div>
-          <label className="text-sm font-semibold text-gray-800">
+          <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">
             Choose Language
           </label>
         </div>
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
           {LANGUAGES.map((lang) => (
             <button
               key={lang.code}
               onClick={() => setLanguage(lang.code)}
-              className={`py-3 px-4 rounded-xl text-sm font-medium transition-all duration-200 flex flex-col items-center gap-1 ${
+              className={`flex-1 min-w-[90px] py-3 px-4 rounded-xl text-sm font-medium transition-all duration-200 flex flex-col items-center gap-1 ${
                 language === lang.code
                   ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30 scale-105"
-                  : "bg-white text-gray-700 border border-gray-200 hover:bg-indigo-50 hover:border-indigo-200"
+                  : "bg-white dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-gray-700 hover:border-indigo-200 dark:hover:border-gray-600"
               }`}
             >
               <span className="text-xl">{lang.flag}</span>
@@ -105,24 +105,24 @@ const ListeningTask = () => {
       </div>
 
       {/* Level Selection */}
-      <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center">
             <span className="text-lg">📊</span>
           </div>
-          <label className="text-sm font-semibold text-gray-800">
+          <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">
             Proficiency Level
           </label>
         </div>
-        <div className="grid grid-cols-6 gap-2">
+        <div className="flex flex-wrap gap-2">
           {LEVELS.map((lvl) => (
             <button
               key={lvl}
               onClick={() => setLevel(lvl)}
-              className={`py-3 px-4 rounded-xl text-sm font-bold transition-all duration-200 ${
+              className={`flex-1 min-w-[60px] py-3 px-4 rounded-xl text-sm font-bold transition-all duration-200 ${
                 level === lvl
                   ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/30"
-                  : "bg-gray-100 text-gray-700 hover:bg-purple-50 hover:text-purple-700"
+                  : "bg-gray-100 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-gray-700 hover:text-purple-700 dark:hover:text-purple-300"
               }`}
             >
               {lvl}
@@ -143,9 +143,9 @@ const ListeningTask = () => {
       </Button>
 
       {error && error.message && (
-        <div className="p-4 bg-red-50 rounded-2xl border border-red-200">
+        <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-2xl border border-red-200 dark:border-red-900/50">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-900/50 flex items-center justify-center">
               <span className="text-lg">⚠️</span>
             </div>
             <p className="text-sm text-red-600 font-medium">{error.message}</p>
@@ -170,16 +170,16 @@ const ListeningTask = () => {
           </div>
 
           {/* Transcript Toggle */}
-          <div className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm transition-colors duration-300">
             <button
               onClick={() => setShowTranscript(!showTranscript)}
               className="w-full flex items-center justify-between py-2 text-left"
             >
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-yellow-100 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-yellow-100 dark:bg-yellow-900/50 flex items-center justify-center">
                   <span className="text-lg">📜</span>
                 </div>
-                <span className="font-semibold text-gray-700">
+                <span className="font-semibold text-gray-700 dark:text-gray-300">
                   {showTranscript ? "Hide Transcript" : "Show Transcript"}
                 </span>
               </div>
@@ -194,22 +194,22 @@ const ListeningTask = () => {
             </button>
             
             {showTranscript && (
-              <div className="mt-4 p-4 bg-yellow-50 rounded-xl border border-yellow-200">
-                <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{currentTaskData.transcript}</p>
+              <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800">
+                <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">{currentTaskData.transcript}</p>
               </div>
             )}
           </div>
 
           {/* Question Card */}
           {currentQuestion && (
-            <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-lg">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-lg">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
                     <span className="text-white font-bold">{currentQuestionIndex + 1}</span>
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-900">Question {currentQuestionIndex + 1}</h3>
+                    <h3 className="font-bold text-gray-900 dark:text-gray-100">Question {currentQuestionIndex + 1}</h3>
                     <p className="text-xs text-gray-500">of {currentTaskData.questions.length} questions</p>
                   </div>
                 </div>
@@ -225,7 +225,7 @@ const ListeningTask = () => {
                           : isCorrect[idx] === true
                           ? "bg-green-500"
                           : isCorrect[idx] === false
-                          ? "bg-red-500"
+                          ? "bg-red-50 dark:bg-red-900/200"
                           : "bg-gray-300"
                       }`}
                     />

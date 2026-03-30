@@ -263,12 +263,19 @@ export class AchievementService {
     achievementName: string,
     incrementBy: number = 1,
   ) {
-    const achievement = await this.prisma.achievement.findFirst({
+    let achievement = await this.prisma.achievement.findFirst({
       where: { name: achievementName },
     });
 
     if (!achievement) {
-      throw new NotFoundException(`Achievement "${achievementName}" not found`);
+      await this.seedAchievements();
+      achievement = await this.prisma.achievement.findFirst({
+        where: { name: achievementName },
+      });
+      
+      if (!achievement) {
+        throw new NotFoundException(`Achievement "${achievementName}" not found`);
+      }
     }
 
     const existing = await this.prisma.userAchievement.findUnique({
