@@ -89,7 +89,7 @@ const TestResults = () => {
           predicate: (q) => q.queryKey[0] === "learning-path",
         });
       } catch {
-        // Non-fatal — the map will still show correct statuses via level_index logic
+        console.error("Failed to complete learning path");
       }
     }
 

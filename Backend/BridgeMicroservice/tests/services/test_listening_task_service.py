@@ -23,7 +23,6 @@ def listening_service(mock_ai_service: MagicMock) -> ListeningTaskService:
 
 @pytest.mark.asyncio
 async def test_create_listening_task_success(listening_service: ListeningTaskService, mock_ai_service: MagicMock, mock_elevenlabs: MagicMock) -> None:
-    # Mock AI response
     mock_ai_service.get_ai_response.return_value = json.dumps({
         "transcript": "Once upon a time...",
         "questions": [
@@ -36,17 +35,13 @@ async def test_create_listening_task_success(listening_service: ListeningTaskSer
         ]
     })
     
-    # Mock ElevenLabs response (iterator of bytes)
     mock_elevenlabs.text_to_speech.convert.return_value = [b"chunk1", b"chunk2"]
 
-    # Mock file writing
     m = mock_open()
     with patch("aiofiles.open") as mock_aio_open:
-        # The object returned by open()
         context_manager = MagicMock()
         mock_aio_open.return_value = context_manager
         
-        # The file handle returned by __aenter__
         file_handle = AsyncMock()
         context_manager.__aenter__.return_value = file_handle
         context_manager.__aexit__.return_value = None
@@ -60,7 +55,6 @@ async def test_create_listening_task_success(listening_service: ListeningTaskSer
         assert result.questions[0].type == "multiple_choice"
         assert "static/audio" in result.audioUrl
 
-        # Verify calls
         mock_ai_service.get_ai_response.assert_called_once()
         mock_elevenlabs.text_to_speech.convert.assert_called_once()
         file_handle.write.assert_any_call(b"chunk1")

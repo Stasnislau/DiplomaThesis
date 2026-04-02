@@ -6,11 +6,10 @@ from services.learning_path_service import LearningPathService
 def service() -> LearningPathService:
     """Fresh service instance with clean in-memory state."""
     svc = LearningPathService()
-    svc._completed = {}  # reset class-level state between tests
+    svc._completed = {}  
     return svc
 
 
-# ── complete_lesson ─────────────────────────────────────────────────────────
 
 
 class TestCompleteLesson:
@@ -21,7 +20,6 @@ class TestCompleteLesson:
 
     def test_unlocks_next_lesson_in_module(self, service: LearningPathService) -> None:
         result = service.complete_lesson("l1", user_id="user1")
-        # l1 is the first lesson → l2 should be unlocked
         assert result["next_lesson_unlocked"] == "l2"
 
     def test_module_not_completed_after_first_lesson(self, service: LearningPathService) -> None:
@@ -29,8 +27,6 @@ class TestCompleteLesson:
         assert result["module_completed"] is False
 
     def test_module_completed_after_all_lessons(self, service: LearningPathService) -> None:
-        # Complete all lessons in the first module (first unit of A1)
-        # We need to find how many lessons are in module 1.
         path = service.get_learning_path("english", "A1", user_id="user1")
         first_module = path.modules[0]
         lesson_ids = [lesson.id for lesson in first_module.lessons]
@@ -38,9 +34,8 @@ class TestCompleteLesson:
         for lid in lesson_ids:
             result = service.complete_lesson(lid, user_id="user1")
 
-        # After completing all lessons, module should be complete
         assert result["module_completed"] is True
-        assert result["next_lesson_unlocked"] is None  # no more lessons
+        assert result["next_lesson_unlocked"] is None
 
     def test_per_user_isolation(self, service: LearningPathService) -> None:
         service.complete_lesson("l1", user_id="alice")
@@ -53,7 +48,6 @@ class TestCompleteLesson:
         assert len([x for x in service._user_completed("user1") if x == "l1"]) == 1
 
 
-# ── bulk_complete_levels ────────────────────────────────────────────────────
 
 
 class TestBulkCompleteLevels:
@@ -75,7 +69,6 @@ class TestBulkCompleteLevels:
         service.bulk_complete_levels("B1", user_id="user1")
         path = service.get_learning_path("english", "B1", user_id="user1")
 
-        # All A1 + A2 modules should have 100% progress
         for module in path.modules:
             if module.level in ("A1", "A2"):
                 assert module.progress == 100, (
@@ -104,7 +97,6 @@ class TestBulkCompleteLevels:
         assert len(bob_completed) == 0
 
 
-# ── get_learning_path ───────────────────────────────────────────────────────
 
 
 class TestGetLearningPath:
@@ -144,7 +136,6 @@ class TestGetLearningPath:
         first_module = path.modules[0]
         total = len(first_module.lessons)
 
-        # Complete first lesson
         service.complete_lesson(first_module.lessons[0].id, user_id="user1")
         path = service.get_learning_path("english", "A1", user_id="user1")
         expected = int((1 / total) * 100)

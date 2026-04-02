@@ -8,7 +8,6 @@ from typing import List, Dict, Any
 from dotenv import load_dotenv
 from tqdm import tqdm
 
-# Import YOUR project prompts
 import sys
 from pathlib import Path
 
@@ -16,7 +15,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from constants.prompts import writing_multiple_choice_task_prompt, writing_fill_in_the_blank_task_prompt
 from constants.constants import LEVEL_EMBEDDINGS
 
-# --- CONFIG ---
 BASE_DIR = Path(__file__).resolve().parent
 ENV_PATH = BASE_DIR / "benchmark.env"
 load_dotenv(dotenv_path=ENV_PATH)
@@ -37,7 +35,7 @@ JUDGE_MODEL = "google/gemini-2.5-pro-preview"
 
 LANGUAGES = ["English", "Polish", "Russian"]
 TEST_LEVELS = ["A1", "B2"]
-ITERATIONS_PER_SCENARIO = 15  # For statistical significance
+ITERATIONS_PER_SCENARIO = 15
 
 ERROR_LOG_FILE = "benchmark_errors.log"
 if not os.path.exists(ERROR_LOG_FILE):
@@ -153,7 +151,6 @@ async def main():
 
     for lang in LANGUAGES:
         for level in TEST_LEVELS:
-            # MANUAL SKIP: English A1 is already done
             if lang == "English" and level == "A1":
                 print(f"⏩ Skipping {lang} {level} (Already Completed)")
                 continue
@@ -203,7 +200,6 @@ async def main():
 
                     detailed_log["scenarios"].append(scenario_entry)
 
-                    # APPEND MODE SAVING
                     df_step = pd.DataFrame(iteration_results)
                     df_step.to_csv(results_file, mode="a", header=not os.path.exists(results_file), index=False)
                     with open(log_file, "w", encoding="utf-8") as f:

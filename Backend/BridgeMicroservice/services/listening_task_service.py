@@ -10,7 +10,6 @@ from elevenlabs.client import ElevenLabs
 import aiofiles
 from pydantic import TypeAdapter
 
-# Ensure ELEVENLABS_API_KEY is set in your environment variables.
 elevenlabs_client = ElevenLabs(api_key=os.getenv("ELEVENLABS_API_KEY"))
 
 BASE_URL = "http://localhost:3003"
@@ -28,7 +27,6 @@ class ListeningTaskService:
         language = request.language
         level = request.level
 
-        # Step 1: Generate story and questions with AI_Service
         prompt = f"""
         You are an expert in language education. Your task is to create a listening exercise for a student learning {language} at the {level} level.
 
@@ -72,7 +70,6 @@ class ListeningTaskService:
             transcript = content_json.get("transcript", "")
             raw_questions = content_json.get("questions", [])
             
-            # Validate questions using TypeAdapter
             question_adapter = TypeAdapter(List[Union[MultipleChoiceQuestion, FillInTheBlankQuestion]])
             questions = question_adapter.validate_python(raw_questions)
 
@@ -83,7 +80,6 @@ class ListeningTaskService:
         if not transcript:
              raise ValueError("Generated transcript is empty")
 
-        # Step 3: Generate Audio with ElevenLabs
         try:
             audio = elevenlabs_client.text_to_speech.convert(
                 text=transcript,
@@ -92,7 +88,6 @@ class ListeningTaskService:
             )
         except Exception as e:
              print(f"Error calling ElevenLabs: {e}")
-             # Fallback or re-raise? Re-raising for now as audio is critical
              raise e
 
         audio_dir = "static/audio"
@@ -100,12 +95,9 @@ class ListeningTaskService:
         file_name = f"{uuid.uuid4()}.mp3"
         file_path = os.path.join(audio_dir, file_name)
 
-        # Use aiofiles for async file writing
         async with aiofiles.open(file_path, "wb") as f:
             for chunk in audio:
                 await f.write(chunk) 
-
-        # Step 4: Construct the response object
         audio_url = f"{BASE_URL}/static/audio/{file_name}"
 
         return ListeningTaskResponse(

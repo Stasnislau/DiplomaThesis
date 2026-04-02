@@ -1,10 +1,5 @@
 from models.dtos.learning_path_dtos import LearningPathDto, ModuleDto, LessonDto
 
-# ──────────────────────────────────────────────────────────────────────────────
-# CEFR CURRICULUM  A1 → C2
-# Schema per lesson: (topic, lesson_type, description, keywords, duration_minutes)
-# lesson_type: vocabulary | grammar | theory | practice | listening | speaking
-# ──────────────────────────────────────────────────────────────────────────────
 
 CURRICULUM: dict[str, list[dict]] = {
     "A1": [
@@ -416,7 +411,6 @@ CURRICULUM: dict[str, list[dict]] = {
 
 
 class LearningPathService:
-    # In-memory store: { user_id: set of lesson_ids }
     _completed: dict[str, set[str]] = {}
 
     def _user_completed(self, user_id: str) -> set[str]:
@@ -470,7 +464,7 @@ class LearningPathService:
         for level in levels:
             level_index = levels.index(level)
             if level_index >= target_index:
-                break  # stop before the user's actual level
+                break
             levels_done.append(level)
             for unit_data in CURRICULUM.get(level, []):
                 for _ in unit_data["lessons"]:
@@ -479,7 +473,6 @@ class LearningPathService:
                     completed_ids.append(lid)
                     lesson_id_counter += 1
         else:
-            # Keep the counter accurate even for levels we skipped
             pass
 
         return {
@@ -519,17 +512,13 @@ class LearningPathService:
                         status = "COMPLETED"
                         completed_count += 1
                     elif level_index < user_level_index:
-                        # Past levels: default COMPLETED
                         status = "COMPLETED"
                         completed_count += 1
                     elif level_index == user_level_index and unit_index == 0 and i == 0:
-                        # Always unlock the very first lesson of the current level
                         status = "UNLOCKED"
                     elif i > 0 and lesson_ids_in_module[i - 1] in completed:
-                        # Previous lesson completed → unlock this one
                         status = "UNLOCKED"
                     elif level_index == user_level_index and unit_index == 0:
-                        # First module of current level: unlock all (legacy behaviour)
                         status = "UNLOCKED"
                     else:
                         status = "LOCKED"

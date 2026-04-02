@@ -3,7 +3,6 @@ from sentence_transformers import SentenceTransformer
 import pandas as pd
 from constants.constants import LEVEL_EMBEDDINGS
 
-# Import new DTOs and typing helpers
 from models.dtos.vector_db_dtos import SpecificSkillContext, FullLevelContext, SimilarLevel, LevelSkills, MaterialChunk, TaskTemplate
 from models.dtos.material_dtos import ChunkMetadata
 from typing import List, Union, Optional, Dict, Any
@@ -45,7 +44,6 @@ class VectorDBService:
                 self.db.create_table(self.table_name, data=df)
                 print(f"Table {self.table_name} created successfully")
 
-            # Initialize materials table if needed
             if self.materials_table_name not in self.db.table_names():
                 pass
             if self.templates_table_name not in self.db.table_names():
@@ -203,7 +201,6 @@ class VectorDBService:
                 .to_pandas()
             )
             records = results.to_dict("records")
-            # Convert to models, Pydantic handles _distance if defined or extra fields
             return [TaskTemplate(**rec) for rec in records]
         except Exception as e:
             print(f"Error searching templates: {e}")
