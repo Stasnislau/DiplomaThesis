@@ -31,7 +31,7 @@ describe('ListeningTask Component', () => {
     expect(screen.getByText('Spanish')).toBeInTheDocument();
     expect(screen.getByText('A1')).toBeInTheDocument();
 
-    const generateBtn = screen.getByRole('button', { name: 'Generate Listening Task' });
+    const generateBtn = screen.getByRole('button', { name: /Generate Listening Task/i });
     expect(generateBtn).toBeDisabled();
   });
 
@@ -44,7 +44,7 @@ describe('ListeningTask Component', () => {
     // Select level
     fireEvent.click(screen.getByText('B1'));
 
-    const generateBtn = screen.getByRole('button', { name: 'Generate Listening Task' });
+    const generateBtn = screen.getByRole('button', { name: /Generate Listening Task/i });
     expect(generateBtn).not.toBeDisabled();
     
     // Click generate

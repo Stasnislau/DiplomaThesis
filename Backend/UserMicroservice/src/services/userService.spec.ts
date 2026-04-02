@@ -238,6 +238,7 @@ describe("UserService", () => {
 
   describe("setNativeLanguage", () => {
     it("should set native language for user", async () => {
+      (prisma.language.findUnique as jest.Mock).mockResolvedValue({ id: "lang-1" });
       (prisma.user.findUnique as jest.Mock).mockResolvedValue({
         ...mockUser,
         languages: [],
@@ -259,6 +260,7 @@ describe("UserService", () => {
     });
 
     it("should throw NotFoundException when user not found", async () => {
+      (prisma.language.findUnique as jest.Mock).mockResolvedValue({ id: "lang-1" });
       (prisma.user.findUnique as jest.Mock).mockResolvedValue(null);
 
       await expect(
@@ -267,6 +269,7 @@ describe("UserService", () => {
     });
 
     it("should throw BadRequestException when language already added", async () => {
+      (prisma.language.findUnique as jest.Mock).mockResolvedValue({ id: "lang-1" });
       (prisma.user.findUnique as jest.Mock).mockResolvedValue({
         ...mockUser,
         languages: [{ languageId: "lang-1" }],
