@@ -59,6 +59,7 @@ describe('PlacementTaskContainer', () => {
       nextTask: null,
       addAnswer: mockAddAnswer,
       setTasks: mockSetTasks,
+      setNextTask: vi.fn(),
       advanceTasks: mockAdvanceTasks,
       setLanguage: vi.fn(),
       resetTest: vi.fn(),

@@ -13,3 +13,6 @@ yarn.lock
 *.mp3
 *.env
 DiplomaText
+*playwright-report/
+*coverage/
+frontend/test-results/

@@ -42,7 +42,7 @@ describe("TaskComponent", () => {
   it("renders fill in the blank input correctly", () => {
     render(<TaskComponent taskData={mockFillInTheBlankTask} {...defaultProps} />);
     
-    expect(screen.getByText("The capital of Poland is ____.")).toBeInTheDocument();
+    expect(screen.getByText("This is a ___.")).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/tasks.fillInBlank/)).toBeInTheDocument();
   });
 
