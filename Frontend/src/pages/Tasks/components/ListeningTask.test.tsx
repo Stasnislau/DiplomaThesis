@@ -7,7 +7,6 @@ import { fireEvent, render, screen } from '@testing-library/react';
 
 import ListeningTask from './ListeningTask';
 
-// Mock Audio element behavior minimally
 window.HTMLMediaElement.prototype.play = vi.fn();
 window.HTMLMediaElement.prototype.pause = vi.fn();
 
@@ -38,16 +37,13 @@ describe('ListeningTask Component', () => {
   it('enables generate button when language and level are selected', () => {
     render(<ListeningTask />);
     
-    // Select language
     fireEvent.click(screen.getByText('Spanish'));
     
-    // Select level
     fireEvent.click(screen.getByText('B1'));
 
     const generateBtn = screen.getByRole('button', { name: /Generate Listening Task/i });
     expect(generateBtn).not.toBeDisabled();
     
-    // Click generate
     fireEvent.click(generateBtn);
     expect(mockCreateTask).toHaveBeenCalledWith({ language: 'Spanish', level: 'B1' });
   });
@@ -76,10 +72,8 @@ describe('ListeningTask Component', () => {
 
     render(<ListeningTask />);
 
-    // Transcript toggle should be available
     expect(screen.getByText('Show Transcript')).toBeInTheDocument();
     
-    // Toggle transcript
     const toggleBtn = screen.getByText('Show Transcript');
     fireEvent.click(toggleBtn);
     expect(screen.getByText('Hola amigo')).toBeInTheDocument();

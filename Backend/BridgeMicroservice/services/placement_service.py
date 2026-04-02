@@ -16,7 +16,7 @@ class PlacementService:
         self.ai_service = ai_service
         self.vector_db_service = vector_db_service
         self.writing_task_service = WritingTaskService(vector_db_service, ai_service)
-        self.current_level = "A1"  # Default starting level
+        self.current_level = "A1"
 
     async def generate_placement_task(
         self,
@@ -69,7 +69,6 @@ class PlacementService:
             total_questions = len(answers)
             percentage = (correct_answers / total_questions) * 100
 
-            # Build a readable Q&A list for the AI to re-verify each answer
             qa_lines = []
             for i, a in enumerate(answers, 1):
                 status = "✓" if a.is_correct else "✗"

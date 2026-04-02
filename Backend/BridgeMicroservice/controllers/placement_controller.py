@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Request, status, HTTPException
 from services.placement_service import PlacementService
-# from services.bielik_service import Bielik_Service
 from constants.constants import AVAILABLE_LANGUAGES
 from models.dtos.task_dto import MultipleChoiceTask, FillInTheBlankTask
 from models.base_response import BaseResponse

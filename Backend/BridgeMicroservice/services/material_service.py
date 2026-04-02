@@ -22,7 +22,6 @@ class MaterialService:
 
     async def process_pdf(self, file_content: bytes, filename: str, user_context: Optional[object] = None) -> ProcessPdfResponse:
         try:
-            # 1. Parse PDF
             logger.info(f"Parsing PDF: {filename}")
             pdf_file = io.BytesIO(file_content)
             reader = PdfReader(pdf_file)
@@ -35,20 +34,14 @@ class MaterialService:
             
             logger.info(f"Extracted {len(text)} characters from PDF.")
 
-            # 2. Split Text
             chunks = self.text_splitter.split_text(text)
             logger.info(f"Split text into {len(chunks)} chunks.")
             
-            # 3. Prepare Metadata
             metadatas = [ChunkMetadata(source=filename, chunk_index=i) for i in range(len(chunks))]
-
-            # 4. Save to Vector DB
             logger.info("Saving chunks to Vector DB...")
             self.vector_db_service.save_chunks(chunks, metadatas)
 
-            # 5. Analyze Question Types using AI
             logger.info("Analyzing question types using AI...")
-            # We take a subset of chunks (e.g., beginning, middle, end) to identify types
             total_chunks = len(chunks)
             if total_chunks <= 5:
                 selected_chunks = chunks
@@ -85,10 +78,8 @@ class MaterialService:
             
             analyzed_types: Union[List[Dict[str, Any]], List[Any]] = []
             
-            # Parse the response to ensure it's valid JSON
             try:
                 analyzed_data = json.loads(response_json_str)
-                # Normalize if wrapped in a key
                 if isinstance(analyzed_data, dict):
                     analyzed_types = analyzed_data.get("types", [])
                 elif isinstance(analyzed_data, list):
@@ -115,7 +106,6 @@ class MaterialService:
     async def generate_quiz(self, selected_types: Optional[List[str]] = None, user_context: Optional[object] = None) -> GenerateQuizResponse:
         try:
             logger.info(f"Generating quiz. Selected types: {selected_types}")
-            # 1. Search for potential existing questions/exercises in the document
             relevant_docs = self.vector_db_service.search_materials(
                 "exercises questions tasks complete the sentences multiple choice match true false", 
                 limit=8
@@ -127,7 +117,6 @@ class MaterialService:
 
             context_text = "\n\n".join([str(doc.text) for doc in relevant_docs])
 
-            # 2. Prompt to generate tasks
             type_instruction = ""
             if selected_types and len(selected_types) > 0:
                 type_instruction = f"Focus ONLY on generating questions of the following types: {', '.join(selected_types)}."
@@ -180,13 +169,10 @@ class MaterialService:
             
             try:
                 parsed_quiz = json.loads(response_json_str)
-                # Ensure it matches QuizContent structure or fallback
                 quiz_content = QuizContent(**parsed_quiz)
                 return GenerateQuizResponse(quiz=quiz_content)
             except Exception as e:
                  logger.warning(f"Could not parse quiz into strict model, returning raw JSON string: {e}")
-                 # Fallback to returning the JSON string or a partial object?
-                 # GenerateQuizResponse allows quiz to be str as fallback
                  return GenerateQuizResponse(quiz=response_json_str)
 
         except Exception as e:

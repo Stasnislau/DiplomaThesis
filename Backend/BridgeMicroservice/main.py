@@ -27,18 +27,15 @@ import uvicorn
 
 load_dotenv()
 
-# Configure application logger
 logger = logging.getLogger("bridge_microservice")
 logger.setLevel(logging.INFO)
 
-# Create console handler with formatting
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
-# FastAPI app with Swagger/OpenAPI configuration
 app = FastAPI(
     title="Language Learning Bridge API",
     description="""
@@ -129,7 +126,6 @@ app.include_router(
     prefix="/api",
 )
 
-# Suppress noisy third-party loggers
 logging.getLogger("litellm.llms").setLevel(logging.ERROR)
 logging.getLogger("litellm.utils").setLevel(logging.ERROR)
 logging.getLogger("openai").setLevel(logging.ERROR)
@@ -144,16 +140,13 @@ logging.getLogger("fastapi").setLevel(logging.WARNING)
 logging.getLogger("uvicorn").setLevel(logging.WARNING)
 
 
-# Exception handler for validation errors
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
-    # Reuse the logic from our middleware
     return error_handler_middleware_instance.handle_validation_error(exc)
 
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next: Callable[[Request], Awaitable[JSONResponse]]) -> JSONResponse:
-    # Avoid reading request body here to prevent consuming the stream before validation
     logger.info(f"Request: {request.method} {request.url.path}")
     response = await call_next(request)
     logger.info(f"Response: {response.status_code}")

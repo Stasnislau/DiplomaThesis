@@ -20,14 +20,12 @@ def material_service(mock_vector_db: MagicMock, mock_ai_service: MagicMock) -> M
 
 @pytest.mark.asyncio
 async def test_process_pdf_success(material_service: MaterialService, mock_vector_db: MagicMock, mock_ai_service: MagicMock) -> None:
-    # We patch PdfReader where it is imported in material_service
     with patch("services.material_service.PdfReader") as MockPdfReader:
         mock_pdf = MockPdfReader.return_value
         page = MagicMock()
         page.extract_text.return_value = "Chunk of text."
         mock_pdf.pages = [page]
         
-        # Mock AI response (stringified JSON)
         mock_ai_service.get_ai_response.return_value = '{"types": [{"type": "multiple_choice", "example": "ex"}]}'
 
         content = b"%PDF-1.4..."
@@ -37,16 +35,13 @@ async def test_process_pdf_success(material_service: MaterialService, mock_vecto
         assert result.filename == "test.pdf"
         assert result.status == "success"
         
-        # Verify vector db save called
         mock_vector_db.save_chunks.assert_called_once()
-        # Verify call args
         args, _ = mock_vector_db.save_chunks.call_args
         assert len(args[0]) >= 1 
         assert isinstance(args[1][0], ChunkMetadata)
 
 @pytest.mark.asyncio
 async def test_generate_quiz_success(material_service: MaterialService, mock_vector_db: MagicMock, mock_ai_service: MagicMock) -> None:
-    # Mock search results
     mock_vector_db.search_materials.return_value = [
         MaterialChunk(text="content", source="doc", chunk_index=0, vector=[0.1])
     ]

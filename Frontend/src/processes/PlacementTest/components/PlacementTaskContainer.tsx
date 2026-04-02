@@ -70,8 +70,6 @@ export const PlacementTaskContainer = () => {
             setNextTask(task);
           }
         } else if (!currentTask && nextTask) {
-          // If the user answered faster than nextTask could load, 
-          // we now have nextTask but no currentTask.
           setTasks({ current: nextTask, next: null });
         }
       } finally {

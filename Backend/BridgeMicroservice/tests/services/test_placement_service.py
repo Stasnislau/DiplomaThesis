@@ -21,11 +21,9 @@ def placement_service(mock_ai_service: MagicMock, mock_vector_db: MagicMock) -> 
 
 @pytest.mark.asyncio
 async def test_generate_placement_task(placement_service: PlacementService, mock_ai_service: MagicMock) -> None:
-    # Mock writing task service which is initialized inside
     mock_writing_service = AsyncMock()
     placement_service.writing_task_service = mock_writing_service
     
-    # Mock return value
     mock_task = MultipleChoiceTask(id="1", type="multiple_choice", question="Q?", options=[], correct_answer="A")
     mock_writing_service.generate_writing_multiple_choice_task.return_value = mock_task
     
@@ -33,7 +31,6 @@ async def test_generate_placement_task(placement_service: PlacementService, mock
         result = await placement_service.generate_placement_task("English")
     
     assert result == mock_task
-    # Verify difficulty adjustment didn't crash
     
 @pytest.mark.asyncio
 async def test_adjust_difficulty(placement_service: PlacementService) -> None:

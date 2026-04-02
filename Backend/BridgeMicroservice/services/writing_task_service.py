@@ -50,8 +50,6 @@ class WritingTaskService:
         json_response = await self._process_ai_response_and_validate(response)
         logger.debug("Multiple choice task generated successfully")
 
-        # Note: Verification pipeline is currently disabled for performance
-        # TODO: Re-enable when verification latency is acceptable
         verification_result = VerificationResult(is_valid=True)
 
         try:
@@ -115,8 +113,6 @@ class WritingTaskService:
     async def _process_ai_response_and_validate(self, response_str: str, is_fill_in_blank: bool = False) -> Dict[str, Any]:
         try:
             json_data = json.loads(response_str)
-            # If it's a list, we keep it as a list to support multiple correct answers (synonyms)
-            # Frontend now supports array of correct answers
             return json_data  # type: ignore
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse AI response JSON: {e}")

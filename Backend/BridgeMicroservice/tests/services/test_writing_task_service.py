@@ -25,11 +25,8 @@ def mock_ai_service() -> MagicMock:
 @pytest.fixture
 def writing_service(mock_vector_db: MagicMock, mock_ai_service: MagicMock) -> WritingTaskService:
     service = WritingTaskService(mock_vector_db, mock_ai_service)
-    # Mock the verification pipeline to always return valid
     service.verification_pipeline = MagicMock()
     service.verification_pipeline.verify_task = AsyncMock()
-    # Mocking return value for verification_pipeline.verify_task
-    # The return value should be an object with is_valid=True
     verification_result = MagicMock(spec=VerificationResult)
     verification_result.is_valid = True
     service.verification_pipeline.verify_task.return_value = verification_result
@@ -37,12 +34,10 @@ def writing_service(mock_vector_db: MagicMock, mock_ai_service: MagicMock) -> Wr
 
 @pytest.mark.asyncio
 async def test_generate_writing_multiple_choice_task(writing_service: WritingTaskService, mock_vector_db: MagicMock, mock_ai_service: MagicMock) -> None:
-    # Mock context
     mock_vector_db.get_level_context.return_value = SpecificSkillContext(
         level="A1", skill_type="writing", description="desc"
     )
     
-    # Mock AI response
     mock_ai_service.get_ai_response.return_value = """
     {
         "question": "What is it?",
@@ -78,7 +73,6 @@ async def test_generate_writing_fill_in_the_blank_task(writing_service: WritingT
 
 @pytest.mark.asyncio
 async def test_explain_answer(writing_service: WritingTaskService, mock_ai_service: MagicMock) -> None:
-    # Mock AI response
     mock_ai_service.get_ai_response.return_value = """
     {
         "isCorrect": false,
