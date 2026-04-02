@@ -1,7 +1,7 @@
 # 🔬 Scientific LLM Benchmark Full Report (December 2025)
 
 ## 1. Executive Summary
-Этот отчет содержит полный аудит производительности SOTA моделей (GPT-5.2, Llama 4, Mistral Large 3, Qwen 3 Max, Gemini 3 Flash).
+This report contains a full audit of the performance of SOTA models (GPT-5.2, Llama 4, Mistral Large 3, Qwen 3 Max, Gemini 3 Flash).
 
 ## 2. Methodology & Parameters
 | Parameter | Value |
@@ -30,7 +30,7 @@
 | ('Russian', 'B2') |      8.10 |             9.07 |      6.00 |              5.97 |         7.57 |
 
 ## 5. Full Audit Log
-Ниже приведены результаты каждого отдельного запуска. Рекомендуется для ручной проверки аномалий.
+Below are the results of each individual run. Recommended for manual anomaly checking.
 
 ### 🌐 Language: ENGLISH | Level: B2
 |   iteration | model           | task_type       |   score |   latency | reason                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
