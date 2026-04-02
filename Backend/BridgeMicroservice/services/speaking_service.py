@@ -1,5 +1,6 @@
 import json
 import io
+import os
 import whisper
 import asyncio
 import numpy as np
@@ -24,7 +25,6 @@ load_dotenv()
 
 logger = logging.getLogger("bridge_microservice")
 
-# Lazy loading of Whisper model
 _whisper_model = None
 
 
@@ -33,7 +33,9 @@ def get_whisper_model() -> Any:
     if _whisper_model is None:
         logger.info("Loading Whisper model...")
         try:
-            _whisper_model = whisper.load_model("turbo")
+            model_name = os.getenv("WHISPER_MODEL", "turbo")
+            logger.info(f"Using Whisper model: {model_name}")
+            _whisper_model = whisper.load_model(model_name)
         except Exception as e:
             logger.error(f"Error loading Whisper model: {e}")
             raise e
@@ -62,7 +64,7 @@ class SpeakingService:
                 lambda: model.transcribe(
                     samples,
                     language=language_code,
-                    fp16=False,  # CPU does not support FP16
+                    fp16=False,
                     word_timestamps=True,
                 ),
             )
@@ -111,17 +113,13 @@ class SpeakingService:
         segments = transcription.segments or []
         words = transcription.words or []
 
-        # --- Overall confidence from segment avg_logprob ---
         logprobs = [s.avg_logprob for s in segments if s.avg_logprob is not None]
         if logprobs:
-            # avg_logprob is typically between -1.0 (bad) and 0.0 (perfect)
-            # Convert to 0-1 scale: confidence = 1 + avg_logprob (clamped)
             avg_logprob = sum(logprobs) / len(logprobs)
             overall_confidence = round(max(0.0, min(1.0, 1.0 + avg_logprob)), 3)
         else:
-            overall_confidence = 0.5  # fallback
+            overall_confidence = 0.5
 
-        # --- Words per minute ---
         words_per_minute: Optional[float] = None
         if words and len(words) >= 2:
             first_word = words[0]
@@ -131,7 +129,6 @@ class SpeakingService:
                 if duration_seconds > 0:
                     words_per_minute = round((len(words) / duration_seconds) * 60, 1)
 
-        # --- Average pause duration between words ---
         avg_pause: float = 0.0
         pauses: List[float] = []
         for i in range(1, len(words)):
@@ -139,13 +136,10 @@ class SpeakingService:
             curr_start = words[i].start
             if prev_end is not None and curr_start is not None:
                 gap = curr_start - prev_end
-                if gap > 0.05:  # ignore tiny gaps (< 50ms)
+                if gap > 0.05:
                     pauses.append(gap)
         if pauses:
             avg_pause = round(sum(pauses) / len(pauses), 3)
-
-        # --- Low confidence words ---
-        # Use segment-level confidence to flag words from low-confidence segments
         low_conf_segment_ids = set()
         for seg in segments:
             if seg.avg_logprob is not None and seg.avg_logprob < -0.7:
@@ -156,39 +150,32 @@ class SpeakingService:
         if low_conf_segment_ids and segments:
             for seg in segments:
                 if seg.id in low_conf_segment_ids:
-                    # Get individual words from this segment's text
                     seg_words = seg.text.strip().split()
-                    low_confidence_words.extend(seg_words[:5])  # cap per segment
+                    low_confidence_words.extend(seg_words[:5])
 
-        # Also check for high no_speech_prob segments
         for seg in segments:
             if seg.no_speech_prob is not None and seg.no_speech_prob > 0.5:
                 logger.debug(f"High no_speech_prob ({seg.no_speech_prob}) in segment: {seg.text[:50]}")
 
-        # --- Fluency score (0-100) ---
-        # Composite of confidence, WPM (ideal: 100-160 for most languages), and pause consistency
-        fluency = overall_confidence * 50  # confidence contributes 50 points max
+        fluency = overall_confidence * 50
 
         if words_per_minute is not None:
-            # Ideal WPM range: 100-160
             if 100 <= words_per_minute <= 160:
                 fluency += 30
             elif 80 <= words_per_minute < 100 or 160 < words_per_minute <= 200:
                 fluency += 20
             elif 60 <= words_per_minute < 80 or 200 < words_per_minute <= 250:
                 fluency += 10
-            # else: too slow or too fast, 0 points
         else:
-            fluency += 15  # neutral if we can't measure
+            fluency += 15
 
         if avg_pause is not None:
             if avg_pause < 0.5:
-                fluency += 20  # natural pauses
+                fluency += 20
             elif avg_pause < 1.0:
-                fluency += 10  # slightly hesitant
-            # else: long pauses, 0 points
+                fluency += 10
         else:
-            fluency += 10  # neutral
+            fluency += 10
 
         fluency_score = round(min(100.0, max(0.0, fluency)), 1)
 
@@ -196,7 +183,7 @@ class SpeakingService:
             overall_confidence=overall_confidence,
             words_per_minute=words_per_minute,
             avg_pause_duration=avg_pause,
-            low_confidence_words=low_confidence_words[:10],  # cap at 10
+            low_confidence_words=low_confidence_words[:10],
             fluency_score=fluency_score,
         )
 
@@ -268,7 +255,6 @@ class SpeakingService:
         effective_filename = filename if filename else "recording.webm"
         language_code = convert_to_language_code(language) if language else "en"
 
-        # Step 1: Transcribe with Whisper
         transcription = await self._transcribe_audio_with_whisper(
             audio_file_bytes, effective_filename, language_code
         )
@@ -288,17 +274,12 @@ class SpeakingService:
                 ),
             )
 
-        # Step 2: Compute pronunciation metrics from Whisper data
         pronunciation = self._compute_pronunciation_metrics(transcription)
         logger.info(f"Pronunciation metrics: confidence={pronunciation.overall_confidence}, fluency={pronunciation.fluency_score}")
-
-        # Step 3: Get AI feedback on text content
         ai_feedback = await self._get_ai_feedback(
             transcription.text, user_context=user_context
         )
         logger.info("AI feedback received successfully")
-
-        # Step 4: Build structured response
         errors = []
         for err_data in ai_feedback.get("identified_errors", []):
             try:
