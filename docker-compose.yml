@@ -128,6 +128,7 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY:-}
+      WHISPER_MODEL: ${WHISPER_MODEL:-turbo}
     depends_on:
       - user
 
