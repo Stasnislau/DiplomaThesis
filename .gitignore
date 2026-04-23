@@ -14,7 +14,6 @@ venv
 !.env.example
 .env.*
 
-package-lock.json
 yarn.lock
 
 *.mp3
