@@ -1,3 +1,10 @@
+from typing import Any
+
+from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
+
+from database.models import LessonCompletion
 from models.dtos.learning_path_dtos import LearningPathDto, ModuleDto, LessonDto
 
 
@@ -411,15 +418,36 @@ CURRICULUM: dict[str, list[dict]] = {
 
 
 class LearningPathService:
-    _completed: dict[str, set[str]] = {}
+    def __init__(self, session_factory: async_sessionmaker[AsyncSession] | None = None) -> None:
+        self._session_factory = session_factory
 
-    def _user_completed(self, user_id: str) -> set[str]:
-        return self._completed.setdefault(user_id, set())
+    async def _get_user_completed(self, user_id: str) -> set[str]:
+        """Load completed lesson ids for a user from the database."""
+        if self._session_factory is None:
+            return set()
+        async with self._session_factory() as session:
+            rows = await session.execute(
+                select(LessonCompletion.lesson_id).where(
+                    LessonCompletion.user_id == user_id
+                )
+            )
+            return {row[0] for row in rows.all()}
 
-    def complete_lesson(self, lesson_id: str, user_id: str) -> dict:
+    async def _mark_completed(self, user_id: str, lesson_ids: list[str]) -> None:
+        """Insert lesson completions, skipping duplicates (ON CONFLICT DO NOTHING)."""
+        if self._session_factory is None or not lesson_ids:
+            return
+        async with self._session_factory() as session:
+            stmt = pg_insert(LessonCompletion).values(
+                [{"user_id": user_id, "lesson_id": lid} for lid in lesson_ids]
+            ).on_conflict_do_nothing(constraint="uq_user_lesson")
+            await session.execute(stmt)
+            await session.commit()
+
+    async def complete_lesson(self, lesson_id: str, user_id: str) -> dict[str, Any]:
         """Mark a lesson COMPLETED and unlock the next one in the same module."""
-        completed = self._user_completed(user_id)
-        completed.add(lesson_id)
+        await self._mark_completed(user_id, [lesson_id])
+        completed = await self._get_user_completed(user_id)
 
         levels = ["A1", "A2", "B1", "B2", "C1", "C2"]
         lesson_id_counter = 1
@@ -445,7 +473,7 @@ class LearningPathService:
             "next_lesson_unlocked": next_lesson_unlocked,
         }
 
-    def bulk_complete_levels(self, up_to_level: str, user_id: str) -> dict:
+    async def bulk_complete_levels(self, up_to_level: str, user_id: str) -> dict[str, Any]:
         """
         Mark every lesson in all levels BELOW up_to_level as completed.
         Called right after placement test saves the user's level.
@@ -456,7 +484,6 @@ class LearningPathService:
             return {"completed_lesson_ids": [], "levels_completed": []}
 
         target_index = levels.index(up_to_level)
-        completed = self._user_completed(user_id)
         lesson_id_counter = 1
         completed_ids: list[str] = []
         levels_done: list[str] = []
@@ -469,11 +496,10 @@ class LearningPathService:
             for unit_data in CURRICULUM.get(level, []):
                 for _ in unit_data["lessons"]:
                     lid = f"l{lesson_id_counter}"
-                    completed.add(lid)
                     completed_ids.append(lid)
                     lesson_id_counter += 1
-        else:
-            pass
+
+        await self._mark_completed(user_id, completed_ids)
 
         return {
             "completed_lesson_ids": completed_ids,
@@ -481,12 +507,10 @@ class LearningPathService:
             "total": len(completed_ids),
         }
 
-
-
-    def get_learning_path(self, language: str, user_level: str, user_id: str = "") -> LearningPathDto:
+    async def get_learning_path(self, language: str, user_level: str, user_id: str = "") -> LearningPathDto:
         levels = ["A1", "A2", "B1", "B2", "C1", "C2"]
         user_level_index = levels.index(user_level) if user_level in levels else 0
-        completed = self._user_completed(user_id)
+        completed = await self._get_user_completed(user_id)
 
         modules: list[ModuleDto] = []
         module_id_counter = 1

@@ -13,9 +13,12 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe());
   app.setGlobalPrefix("api");
   app.enableCors({
-    origin: "*",
-    methods: "*",
-    allowedHeaders: "*",
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://localhost:5173",
+    ],
+    credentials: true,
   });
   const configService = app.get(ConfigService);
 

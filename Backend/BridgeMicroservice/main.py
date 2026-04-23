@@ -1,3 +1,6 @@
+from contextlib import asynccontextmanager
+from collections.abc import AsyncIterator
+
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -20,6 +23,7 @@ from services.speaking_service import SpeakingService
 from controllers.listening_controller import ListeningController
 from services.listening_task_service import ListeningTaskService
 from controllers.material_controller import router as material_router
+from database.init_db import init_db, close_db
 import logging
 import litellm
 from typing import Awaitable, Callable
@@ -36,7 +40,19 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    """Initialise the database on startup and dispose of pools on shutdown."""
+    await init_db()
+    logger.info("Bridge database ready.")
+    yield
+    await close_db()
+    logger.info("Bridge database shut down.")
+
+
 app = FastAPI(
+    lifespan=lifespan,
     title="Language Learning Bridge API",
     description="""
 ## Bridge Microservice for AI-Powered Language Learning Platform
@@ -82,10 +98,14 @@ app.add_middleware(ErrorHandlingMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:5173",
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-User-Id", "X-User-Email", "X-User-Role", "X-Internal-Service-Key"],
 )
 
 # Instantiate common services
@@ -116,7 +136,8 @@ listening_controller = ListeningController(listening_task_service)
 app.include_router(listening_controller.get_router(), prefix="/api")
 
 # LEARNING PATH #
-learning_path_service = LearningPathService()
+from database.connection import async_session
+learning_path_service = LearningPathService(session_factory=async_session)
 learning_path_controller = LearningPathController(learning_path_service)
 app.include_router(learning_path_controller.get_router(), prefix="/api")
 

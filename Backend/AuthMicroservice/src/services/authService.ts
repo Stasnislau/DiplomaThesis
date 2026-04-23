@@ -9,15 +9,18 @@ import {
   Injectable,
   BadRequestException,
   UnauthorizedException,
-  ForbiddenException,
   NotFoundException,
+  Logger,
 } from "@nestjs/common";
 import { LoginDto } from "src/dtos/loginDto";
 import { Inject } from "@nestjs/common";
 import { ClientProxy } from "@nestjs/microservices";
+import { lastValueFrom } from "rxjs";
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
@@ -79,14 +82,16 @@ export class AuthService {
         },
       },
     });
-    this.eventService.emit("user.created", {
-      id: user.id,
-      email: user.email,
-      name: userDto.name,
-      surname: userDto.surname,
-      role: user.role,
-      createdAt: user.createdAt,
-    });
+    await lastValueFrom(
+      this.eventService.emit("user.created", {
+        id: user.id,
+        email: user.email,
+        name: userDto.name,
+        surname: userDto.surname,
+        role: user.role,
+        createdAt: user.createdAt,
+      })
+    );
 
     return true;
   }
@@ -174,10 +179,12 @@ export class AuthService {
       data: { role: userData.role },
     });
 
-    this.eventService.emit("user.updatedRole", {
-      id: userData.id,
-      role: userData.role,
-    });
+    await lastValueFrom(
+      this.eventService.emit("user.updatedRole", {
+        id: userData.id,
+        role: userData.role,
+      })
+    );
   }
 
   async resetPassword(email: string) {
@@ -192,11 +199,13 @@ export class AuthService {
       data: { password: hashedPassword },
     });
 
-    this.eventService.emit("password.reset", {
-      id: user.id,
-      email: user.email,
-      newPassword: newPassword,
-    });
+    await lastValueFrom(
+      this.eventService.emit("password.reset", {
+        id: user.id,
+        email: user.email,
+        newPassword: newPassword,
+      })
+    );
 
     return newPassword;
   }
@@ -205,15 +214,20 @@ export class AuthService {
     const payload = this.jwtService.verify(refreshToken, {
       secret: config().refreshToken.secret,
     });
-    return payload.exp < Date.now() / 1000;
+    // Rotate when less than half the lifetime remains (< 3.5 days of 7)
+    const halfLife = 7 * 24 * 60 * 60 * 0.5;
+    const remaining = payload.exp - Date.now() / 1000;
+    return remaining < halfLife;
   }
 
   async deleteUser(userData: { id: string }) {
     await this.prisma.user.delete({ where: { id: userData.id } });
 
-    this.eventService.emit("user.deleted", {
-      id: userData.id,
-    });
+    await lastValueFrom(
+      this.eventService.emit("user.deleted", {
+        id: userData.id,
+      })
+    );
   }
 
   async getAllUsers() {
@@ -229,11 +243,8 @@ export class AuthService {
     if (!user) {
       throw new NotFoundException("User not found");
     }
-    if (userId !== user.id || user.role !== "ADMIN") {
-      throw new ForbiddenException(
-        "You are not allowed to update this password"
-      );
-    }
+    // Authorization: JWT guard ensures userId === requesting user's id.
+    // Old-password check below prevents unauthorized changes.
     const credentials = await this.prisma.credentials.findUnique({
       where: { userId: userId },
     });
