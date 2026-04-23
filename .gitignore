@@ -26,6 +26,7 @@ language_levels.db*
 Frontend/test-results/
 
 DiplomaText
+archive/
 analyze_benchmark_detailed.py
 explore_questions.py
 generate_comparison_charts.py

@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import uuid
@@ -5,12 +6,13 @@ from typing import List, Union
 from models.dtos.listening_task_dto import ListeningTaskRequest
 from models.responses.listening_task_response import ListeningTaskResponse, MultipleChoiceQuestion, FillInTheBlankQuestion
 from services.ai_service import AI_Service
+from services.tts_service import TTSService
 from utils.user_context import UserContext
-from elevenlabs.client import ElevenLabs
+from constants.variety import variety_picker
 import aiofiles
 from pydantic import TypeAdapter
 
-elevenlabs_client = ElevenLabs(api_key=os.getenv("ELEVENLABS_API_KEY"))
+tts_service = TTSService()
 
 BASE_URL = "http://localhost:3003"
 
@@ -27,12 +29,22 @@ class ListeningTaskService:
         language = request.language
         level = request.level
 
+        session_key = user_context.user_id if user_context else "listening_global"
+        variety = variety_picker.pick_bundle(level, session_key=session_key)
+        seed = str(uuid.uuid4())[:8]
+
         prompt = f"""
         You are an expert in language education. Your task is to create a listening exercise for a student learning {language} at the {level} level.
 
+        Variation constraints (MUST be followed):
+        - Topic: {variety['topic']}
+        - Tone: {variety['tone']}
+        - Format: {variety['format']}
+        - Uniqueness seed: {seed}
+
         Please perform the following two steps:
-        1. Generate a short, engaging story or dialogue of about 100-150 words in {language}. The content should be appropriate for a {level} learner.
-        2. Based on the story, create 3-4 comprehension questions. The questions should be a mix of "multiple_choice" and "fill_in_the_blank" types.
+        1. Generate a short, engaging {variety['format']} of about 100-150 words in {language} on the topic of "{variety['topic']}" with a {variety['tone']} tone. The content must be appropriate for a {level} learner.
+        2. Based on the content, create 3-4 comprehension questions. The questions should be a mix of "multiple_choice" and "fill_in_the_blank" types.
 
         Provide the final output in a single JSON object format. The JSON object should have two keys: "transcript" (containing the story) and "questions" (containing a list of question objects).
 
@@ -81,14 +93,13 @@ class ListeningTaskService:
              raise ValueError("Generated transcript is empty")
 
         try:
-            audio = elevenlabs_client.text_to_speech.convert(
-                text=transcript,
-                voice_id="JBFqnCBsd6RMkjVDRZzb",
-                model_id='eleven_multilingual_v2'
+            loop = asyncio.get_running_loop()
+            audio_bytes = await loop.run_in_executor(
+                None, tts_service.synthesize, transcript, language
             )
         except Exception as e:
-             print(f"Error calling ElevenLabs: {e}")
-             raise e
+            print(f"Error calling Google Cloud TTS: {e}")
+            raise e
 
         audio_dir = "static/audio"
         os.makedirs(audio_dir, exist_ok=True)
@@ -96,8 +107,7 @@ class ListeningTaskService:
         file_path = os.path.join(audio_dir, file_name)
 
         async with aiofiles.open(file_path, "wb") as f:
-            for chunk in audio:
-                await f.write(chunk) 
+            await f.write(audio_bytes)
         audio_url = f"{BASE_URL}/static/audio/{file_name}"
 
         return ListeningTaskResponse(
