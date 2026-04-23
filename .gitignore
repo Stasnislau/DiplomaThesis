@@ -17,7 +17,6 @@ venv
 yarn.lock
 
 *.mp3
-migrations
 language_levels.db*
 
 *playwright-report/

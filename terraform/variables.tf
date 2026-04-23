@@ -32,3 +32,9 @@ variable "ssh_user" {
   type        = string
   default     = "deploy"
 }
+
+variable "disk_size_gb" {
+  description = "Boot disk size in GB"
+  type        = number
+  default     = 60
+}
