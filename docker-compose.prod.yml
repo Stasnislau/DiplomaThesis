@@ -1,9 +1,7 @@
 name: diploma-thesis
 
 services:
-  # ── Infrastructure ──────────────────────────────────────────────────────────
-
-  postgres-auth:
+  postgres:
     image: postgres:15
     restart: always
     environment:
@@ -11,43 +9,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-12345}
       POSTGRES_DB: authdb
     volumes:
-      - postgres_auth_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  postgres-user:
-    image: postgres:15
-    restart: always
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-12345}
-      POSTGRES_DB: userdb
-    volumes:
-      - postgres_user_data:/var/lib/postgresql/data
-    ports:
-      - "5433:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  postgres-bridge:
-    image: postgres:15
-    restart: always
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-12345}
-      POSTGRES_DB: bridgedb
-    volumes:
-      - postgres_bridge_data:/var/lib/postgresql/data
-    ports:
-      - "5434:5432"
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
       interval: 5s
@@ -57,9 +20,6 @@ services:
   rabbitmq:
     image: rabbitmq:3-management
     restart: always
-    ports:
-      - "5672:5672"
-      - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
@@ -71,15 +31,11 @@ services:
       timeout: 10s
       retries: 5
 
-  # ── Backend Services ────────────────────────────────────────────────────────
-
   auth:
     build:
       context: ./Backend/AuthMicroservice
       dockerfile: Dockerfile
     restart: always
-    ports:
-      - "3002:3002"
     environment:
       PORT: 3002
       JWT_SECRET: ${JWT_SECRET:-MYSECRET}
@@ -88,9 +44,9 @@ services:
       REFRESH_TOKEN_EXPIRES_IN: ${REFRESH_TOKEN_EXPIRES_IN:-7d}
       RABBITMQ_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672
       RABBITMQ_QUEUE: user_data
-      PRISMA_DATABASE_AUTH_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-12345}@postgres-auth:5432/authdb?schema=public
+      PRISMA_DATABASE_AUTH_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-12345}@postgres:5432/authdb?schema=public
     depends_on:
-      postgres-auth:
+      postgres:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
@@ -100,16 +56,14 @@ services:
       context: ./Backend/UserMicroservice
       dockerfile: Dockerfile
     restart: always
-    ports:
-      - "3004:3004"
     environment:
       PORT: 3004
       RABBITMQ_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672
       RABBITMQ_QUEUE: user_data
       INTERNAL_SERVICE_KEY: ${INTERNAL_SERVICE_KEY:-supersecretbridgekey}
-      PRISMA_DATABASE_USER_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-12345}@postgres-user:5432/userdb?schema=public
+      PRISMA_DATABASE_USER_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-12345}@postgres:5432/userdb?schema=public
     depends_on:
-      postgres-user:
+      postgres:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
@@ -137,23 +91,19 @@ services:
       context: ./Backend/BridgeMicroservice
       dockerfile: Dockerfile
     restart: always
-    ports:
-      - "3003:3003"
     environment:
       USER_MICROSERVICE_URL: http://user:3004/api
       INTERNAL_SERVICE_KEY: ${INTERNAL_SERVICE_KEY:-supersecretbridgekey}
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-12345}@postgres-bridge:5432/bridgedb
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-12345}@postgres:5432/bridgedb
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY:-}
       WHISPER_MODEL: ${WHISPER_MODEL:-turbo}
     depends_on:
-      postgres-bridge:
+      postgres:
         condition: service_healthy
       user:
         condition: service_started
-
-  # ── Frontend ────────────────────────────────────────────────────────────────
 
   frontend:
     build:
@@ -168,7 +118,5 @@ services:
       - gateway
 
 volumes:
-  postgres_auth_data:
-  postgres_user_data:
-  postgres_bridge_data:
+  postgres_data:
   rabbitmq_data:

@@ -1,9 +1,12 @@
 __pycache__
 *.pyc
 .git
-.env
+.env*
 .mypy_cache
 .pytest_cache
 .ruff_cache
 *.log
 benchmarks/
+tests/
+venv/
+coverage/

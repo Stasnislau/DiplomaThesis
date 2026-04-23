@@ -59,6 +59,8 @@ export class AuthController {
     };
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("ADMIN")
   @Post("resetPassword")
   async resetPassword(@Body("email") email: string) {
     await this.authService.resetPassword(email);
@@ -82,7 +84,7 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("admin")
+  @Roles("ADMIN")
   @Get("allUsers")
   async getAllUsers() {
     const response = await this.authService.getAllUsers();
@@ -91,8 +93,7 @@ export class AuthController {
       payload: response,
     };
   }
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("CHECK_USER_IN_SERVICE", "ADMIN")
+  @UseGuards(JwtAuthGuard)
   @Put("updatePassword")
   async updatePassword(
     @Request() req: AuthenticatedRequest,

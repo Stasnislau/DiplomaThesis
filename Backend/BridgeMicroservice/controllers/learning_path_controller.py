@@ -46,7 +46,7 @@ class LearningPathController:
             """Get the learning path for a specific language and user level."""
             ctx = extract_user_context(request)
             user_id = ctx.user_id if ctx else ""
-            result = self.learning_path_service.get_learning_path(language, level, user_id=user_id)
+            result = await self.learning_path_service.get_learning_path(language, level, user_id=user_id)
             return BaseResponse(success=True, payload=result, errors=None)
 
         @self.router.post("/learning-path/complete")
@@ -64,7 +64,7 @@ class LearningPathController:
             ctx = extract_user_context(request)
             user_id = ctx.user_id if ctx else ""
 
-            result = self.learning_path_service.complete_lesson(
+            result = await self.learning_path_service.complete_lesson(
                 lesson_id=body.lesson_id,
                 user_id=user_id,
             )
@@ -99,7 +99,7 @@ class LearningPathController:
             ctx = extract_user_context(request)
             user_id = ctx.user_id if ctx else ""
 
-            result = self.learning_path_service.bulk_complete_levels(
+            result = await self.learning_path_service.bulk_complete_levels(
                 up_to_level=body.user_level,
                 user_id=user_id,
             )

@@ -29,12 +29,11 @@ run_in_new_terminal() {
     echo "${GREEN}Starting $service_name...${NC}"
 
     local escaped_target_dir=$(printf %q "$target_dir")
-
-    local applescript_safe_shell_command=$(osascript -e "return quoted form of \"$full_shell_command\"")
+    local full_shell_command="cd $escaped_target_dir && $command_to_run"
 
     osascript <<EOF
 tell application "Terminal"
-    do script $applescript_safe_shell_command
+    do script "$full_shell_command"
 end tell
 EOF
 }
