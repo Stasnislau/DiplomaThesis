@@ -40,9 +40,7 @@ export class UserAITokensController {
   async findAll(@Request() req: AuthenticatedRequest) {
     const internalKey = req.headers["x-internal-service-key"];
     const isInternal =
-      !!internalKey &&
-      (internalKey === process.env.INTERNAL_SERVICE_KEY ||
-        internalKey === "supersecretbridgekey");
+      !!internalKey && internalKey === process.env.INTERNAL_SERVICE_KEY;
 
     const result = await this.userAITokensService.findAllForUser(
       req.user.id,

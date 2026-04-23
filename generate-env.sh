@@ -34,7 +34,7 @@ INTERNAL_SERVICE_KEY=$(rand_hex 24)
 # ── AI API Keys (users bring their own — leave blank for prod) ───
 OPENAI_API_KEY=
 OPENROUTER_API_KEY=
-ELEVENLABS_API_KEY=
+GOOGLE_TTS_API_KEY=
 
 WHISPER_MODEL=turbo
 

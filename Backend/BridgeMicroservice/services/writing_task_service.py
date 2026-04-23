@@ -7,6 +7,7 @@ from services.ai_service import AI_Service
 from utils.user_context import UserContext
 from dotenv import load_dotenv
 from constants.prompts import writing_multiple_choice_task_prompt, writing_fill_in_the_blank_task_prompt, explain_answer_prompt
+from constants.variety import variety_picker
 from models.dtos.task_dto import MultipleChoiceTask, FillInTheBlankTask
 from models.dtos.vector_db_dtos import SpecificSkillContext, FullLevelContext
 from models.request.explain_answer_request import ExplainAnswerRequest
@@ -39,6 +40,10 @@ class WritingTaskService:
         )
         if not level_context:
             raise ValueError(f"Invalid level: {effective_level}")
+
+        if topic is None:
+            session_key = user_context.user_id if user_context else "writing_mc_global"
+            topic = variety_picker.pick_topic(effective_level, session_key=session_key)
 
         seed = str(uuid.uuid4())
         prompt = writing_multiple_choice_task_prompt(
@@ -76,6 +81,10 @@ class WritingTaskService:
 
         if not level_context:
             raise ValueError(f"Invalid level: {effective_level}")
+
+        if topic is None:
+            session_key = user_context.user_id if user_context else "writing_fib_global"
+            topic = variety_picker.pick_topic(effective_level, session_key=session_key)
 
         seed = str(uuid.uuid4())
         prompt = writing_fill_in_the_blank_task_prompt(

@@ -2,6 +2,7 @@ from services.writing_task_service import WritingTaskService
 from .vector_db_service import VectorDBService
 from .ai_service import AI_Service
 from utils.user_context import UserContext
+from constants.variety import variety_picker
 import random
 import json
 from typing import List, Optional
@@ -27,9 +28,9 @@ class PlacementService:
         if previous_answer:
             self.adjust_difficulty(previous_answer.is_correct)
 
-        topics = ["travel", "food", "work", "hobbies", "shopping", "family", "education", "technology", "nature", "sports", "daily routine", "friends", "movies", "music", "books", "health", "weather", "clothes"]
-        random_topic = random.choice(topics)
-        
+        session_key = user_context.user_id if user_context else "placement_global"
+        random_topic = variety_picker.pick_topic(self.current_level, session_key=session_key)
+
         task_type = random.choice(["multiple_choice", "fill_in_the_blank"])
         task: MultipleChoiceTask | FillInTheBlankTask
         try:
