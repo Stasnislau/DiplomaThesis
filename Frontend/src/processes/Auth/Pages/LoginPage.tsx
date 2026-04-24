@@ -36,7 +36,11 @@ export const LoginPage: React.FC = () => {
       setLoading(true);
       const result = await login(input);
       if (!result.success) {
-        setError(result.message ?? t('common.error'));
+        const msg =
+          result.errors?.join("\n") ||
+          result.message ||
+          t('common.error');
+        setError(msg);
         return;
       }
       navigate("/");
@@ -106,7 +110,15 @@ export const LoginPage: React.FC = () => {
                 </Button>
               </div>
             </form>
-            {error && <p className="mt-4 text-center text-red-500 dark:text-red-400" role="alert">{error}</p>}
+            {error && (
+              <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md" role="alert">
+                {error.split("\n").map((line, i) => (
+                  <p key={i} className="text-sm text-red-600 dark:text-red-400">
+                    {line}
+                  </p>
+                ))}
+              </div>
+            )}
             <div className="mt-6 text-center">
               <Link
                 to="/register"

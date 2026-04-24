@@ -20,7 +20,11 @@ export async function updatePassword(
   const result = await response.json();
 
   if (!result.success) {
-    throw new Error(result.payload.message || "Failed to update password");
+    const errors = result.payload?.errors as string[] | undefined;
+    const message = result.payload?.message as string | undefined;
+    throw new Error(
+      errors?.join("\n") || message || "Failed to update password"
+    );
   }
 
   return result.payload;

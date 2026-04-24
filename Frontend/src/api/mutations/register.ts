@@ -24,9 +24,12 @@ export const register = async (input: RegisterUserRequest) => {
   const data = (await response.json()) as BaseResponse<boolean>;
 
   if (!data.success) {
+    const payloadErrors = (data.payload as any)?.errors as string[] | undefined;
+    const payloadMessage = (data.payload as any)?.message as string | undefined;
     const errorMsg =
-      (data.payload as any)?.message ||
-      data.errors?.join(", ") ||
+      payloadErrors?.join("\n") ||
+      payloadMessage ||
+      data.errors?.join("\n") ||
       "Failed to register";
     throw new Error(errorMsg);
   }
