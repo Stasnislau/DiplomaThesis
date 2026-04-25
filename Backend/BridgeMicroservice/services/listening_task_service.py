@@ -14,7 +14,7 @@ from pydantic import TypeAdapter
 
 tts_service = TTSService()
 
-BASE_URL = "http://localhost:3003"
+PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "")
 
 
 class ListeningTaskService:
@@ -108,7 +108,7 @@ class ListeningTaskService:
 
         async with aiofiles.open(file_path, "wb") as f:
             await f.write(audio_bytes)
-        audio_url = f"{BASE_URL}/static/audio/{file_name}"
+        audio_url = f"{PUBLIC_BASE_URL}/static/audio/{file_name}"
 
         return ListeningTaskResponse(
             type="listening",

@@ -41,6 +41,7 @@ WHISPER_MODEL=turbo
 # ── Frontend ──────────────────────────────────────────────────────
 # Replace YOUR_SERVER_IP with the actual VM public IP (terraform output instance_ip)
 VITE_API_URL=http://YOUR_SERVER_IP:3001
+PUBLIC_BASE_URL=https://YOUR_DOMAIN
 
 # ── CORS ──────────────────────────────────────────────────────────
 ALLOWED_ORIGINS=http://YOUR_SERVER_IP:3000
