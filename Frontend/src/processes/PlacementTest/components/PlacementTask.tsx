@@ -79,6 +79,13 @@ export const PlacementTask: React.FC<PlacementTaskComponentProps> = ({
             type="text"
             value={userAnswer}
             onChange={(e) => setUserAnswer(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && userAnswer) {
+                e.preventDefault();
+                handleSubmit();
+              }
+            }}
+            autoFocus
             className="w-full p-4 border-2 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
             placeholder="Type your answer here..."
           />

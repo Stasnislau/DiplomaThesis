@@ -97,7 +97,7 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       GOOGLE_TTS_API_KEY: ${GOOGLE_TTS_API_KEY:-}
-      WHISPER_MODEL: ${WHISPER_MODEL:-turbo}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
     depends_on:
       postgres:
         condition: service_healthy

@@ -1,11 +1,8 @@
 import json
-import io
 import os
-import whisper
 import asyncio
-import numpy as np
 import logging
-from pydub import AudioSegment
+import httpx
 from typing import Optional, Any, List
 
 from fastapi import HTTPException
@@ -25,21 +22,8 @@ load_dotenv()
 
 logger = logging.getLogger("bridge_microservice")
 
-_whisper_model = None
-
-
-def get_whisper_model() -> Any:
-    global _whisper_model
-    if _whisper_model is None:
-        logger.info("Loading Whisper model...")
-        try:
-            model_name = os.getenv("WHISPER_MODEL", "turbo")
-            logger.info(f"Using Whisper model: {model_name}")
-            _whisper_model = whisper.load_model(model_name)
-        except Exception as e:
-            logger.error(f"Error loading Whisper model: {e}")
-            raise e
-    return _whisper_model
+GROQ_TRANSCRIPTION_URL = "https://api.groq.com/openai/v1/audio/transcriptions"
+GROQ_WHISPER_MODEL = os.getenv("GROQ_WHISPER_MODEL", "whisper-large-v3-turbo")
 
 
 class SpeakingService:
@@ -49,61 +33,75 @@ class SpeakingService:
     async def _transcribe_audio_with_whisper(
         self, audio_file_bytes: bytes, filename: str, language_code: str
     ) -> WhisperTranscriptionResult:
-        model = get_whisper_model()
-        if not model:
-            raise HTTPException(status_code=500, detail="Whisper model is not loaded.")
-
-        try:
-            audio = AudioSegment.from_file(io.BytesIO(audio_file_bytes))
-            audio = audio.set_channels(1).set_frame_rate(16000)
-            samples = np.array(audio.get_array_of_samples()).astype(np.float32) / 32768.0
-
-            loop = asyncio.get_running_loop()
-            response = await loop.run_in_executor(
-                None,
-                lambda: model.transcribe(
-                    samples,
-                    language=language_code,
-                    fp16=False,
-                    word_timestamps=True,
-                ),
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            raise HTTPException(
+                status_code=500,
+                detail="GROQ_API_KEY is not configured for speech transcription.",
             )
 
-            logger.debug("Whisper transcription response received")
+        try:
+            async with httpx.AsyncClient(timeout=120.0) as client:
+                response = await client.post(
+                    GROQ_TRANSCRIPTION_URL,
+                    headers={"Authorization": f"Bearer {api_key}"},
+                    files={"file": (filename, audio_file_bytes, "audio/webm")},
+                    data={
+                        "model": GROQ_WHISPER_MODEL,
+                        "language": language_code,
+                        "response_format": "verbose_json",
+                        "timestamp_granularities[]": "segment",
+                    },
+                )
 
-            transcribed_text = response.get("text", "")
-            language = response.get("language")
+            if response.status_code != 200:
+                logger.error(
+                    f"Groq Whisper transcription failed ({response.status_code}): {response.text}"
+                )
+                raise HTTPException(
+                    status_code=502,
+                    detail=f"Speech transcription provider error: {response.text}",
+                )
 
-            segments_data = response.get("segments", [])
+            payload = response.json()
+            transcribed_text = payload.get("text", "")
+            language = payload.get("language")
 
             parsed_words: List[WhisperWord] = []
             parsed_segments: List[WhisperSegment] = []
 
-            if segments_data and isinstance(segments_data, list):
-                for seg_data in segments_data:
-                    if isinstance(seg_data, dict):
-                        segment_words_data = seg_data.get("words", [])
-                        if segment_words_data and isinstance(segment_words_data, list):
-                            parsed_words.extend(
-                                [WhisperWord(**word) for word in segment_words_data if isinstance(word, dict)]
-                            )
+            for seg_data in payload.get("segments") or []:
+                if not isinstance(seg_data, dict):
+                    continue
+                segment_words = seg_data.get("words", [])
+                if isinstance(segment_words, list):
+                    parsed_words.extend(
+                        WhisperWord(**word)
+                        for word in segment_words
+                        if isinstance(word, dict)
+                    )
+                seg_copy = {k: v for k, v in seg_data.items() if k != "words"}
+                parsed_segments.append(WhisperSegment(**seg_copy))
 
-                        seg_data_copy = {k: v for k, v in seg_data.items() if k != "words"}
-                        parsed_segments.append(WhisperSegment(**seg_data_copy))
+            for word in payload.get("words") or []:
+                if isinstance(word, dict):
+                    parsed_words.append(WhisperWord(**word))
 
             return WhisperTranscriptionResult(
                 text=transcribed_text,
                 language=language,
                 segments=parsed_segments,
                 words=parsed_words,
-                raw_response=response,
+                raw_response=payload,
             )
 
+        except HTTPException:
+            raise
         except Exception as e:
-            logger.error(f"Error during local Whisper transcription (using filename {filename}): {e}")
+            logger.error(f"Error during Groq Whisper transcription ({filename}): {e}")
             raise HTTPException(
                 status_code=500,
-                detail=f"Failed to transcribe audio locally. Error: {str(e)}",
+                detail=f"Failed to transcribe audio. Error: {str(e)}",
             )
 
     def _compute_pronunciation_metrics(
