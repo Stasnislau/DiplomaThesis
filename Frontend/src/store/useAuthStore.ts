@@ -44,7 +44,10 @@ export const useAuthStore = create<AuthState>((set, _get) => ({
           data.payload.refreshToken !== undefined &&
           data.payload.refreshToken !== ""
         ) {
-          Cookies.set("refreshToken", data.payload.refreshToken);
+          Cookies.set("refreshToken", data.payload.refreshToken, {
+            secure: window.location.protocol === "https:",
+            sameSite: "lax",
+          });
         }
 
         let userRole = null;

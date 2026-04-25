@@ -25,7 +25,10 @@ export const refresh = async () => {
     throw new Error((data.payload as unknown as string) || "Failed to refresh");
   }
   if (data.payload.refreshToken) {
-    Cookies.set("refreshToken", data.payload.refreshToken);
+    Cookies.set("refreshToken", data.payload.refreshToken, {
+      secure: window.location.protocol === "https:",
+      sameSite: "lax",
+    });
   }
   if (data.payload.accessToken) {
     localStorage.setItem("accessToken", data.payload.accessToken);
