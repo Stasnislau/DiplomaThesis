@@ -1,0 +1,32 @@
+{$DOMAIN:34-158-230-78.sslip.io} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(self), geolocation=()"
+		-Server
+	}
+
+	@api path /api/*
+	handle @api {
+		reverse_proxy gateway:3001
+	}
+
+	root * /srv
+	file_server
+
+	@spa {
+		not path /api/*
+		not file
+	}
+	rewrite @spa /index.html
+
+	@assets path_regexp \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+
+	@indexHtml path /index.html /
+	header @indexHtml Cache-Control "no-cache"
+}
