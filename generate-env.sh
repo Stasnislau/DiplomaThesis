@@ -36,7 +36,7 @@ OPENAI_API_KEY=
 OPENROUTER_API_KEY=
 GOOGLE_TTS_API_KEY=
 
-WHISPER_MODEL=turbo
+GROQ_API_KEY=
 
 # ── Frontend ──────────────────────────────────────────────────────
 # Replace YOUR_SERVER_IP with the actual VM public IP (terraform output instance_ip)
