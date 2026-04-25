@@ -94,8 +94,8 @@ def writing_multiple_choice_task_prompt(
         12. Return the task in JSON format, including these fields:
         {{
             "question": "The sentence and question for the user, without any instructions or options",
-            "options": ["Option A", "Option B", "Option C", "Option D"] as the missing word/phrase,
-            "correctAnswer": "The correct option in array" as the missing word/phrase
+            "options": ["Option A", "Option B", "Option C", "Option D"],
+            "correctAnswer": "<EXACT TEXT of the correct option, must match one entry in options verbatim. NEVER an index or number — always the literal string.>"
         }}
 
         Examples of task contexts include:
