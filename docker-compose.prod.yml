@@ -92,6 +92,7 @@ services:
     environment:
       USER_MICROSERVICE_URL: http://user:3004/api
       INTERNAL_SERVICE_KEY: ${INTERNAL_SERVICE_KEY:-supersecretbridgekey}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-12345}@postgres:5432/bridgedb
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
