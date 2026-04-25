@@ -12,7 +12,13 @@
 
 	@api path /api/*
 	handle @api {
-		reverse_proxy gateway:3001
+		reverse_proxy gateway:3001 {
+			transport http {
+				dial_timeout 10s
+				read_timeout 5m
+				write_timeout 5m
+			}
+		}
 	}
 
 	root * /srv
