@@ -61,6 +61,7 @@ export const useAuthStore = create<AuthState>((set, _get) => ({
         set({
           isAuthenticated: true,
           initialized: true,
+          isLoading: false,
           userRole: userRole,
         });
         return { success: true };
@@ -74,7 +75,7 @@ export const useAuthStore = create<AuthState>((set, _get) => ({
       }
     } catch (error: unknown) {
       console.error("Login error:", error);
-      set({ initialized: true });
+      set({ initialized: true, isLoading: false });
       const errorMessage =
         error instanceof Error ? error.message : "An unknown error occurred";
       return { success: false, message: errorMessage };

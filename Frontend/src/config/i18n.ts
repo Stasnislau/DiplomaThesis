@@ -64,6 +64,10 @@ const en = {
       createFreeAccount: "Create Free Account",
       alreadyHaveAccount: "Already have an account?",
       login: "Log in",
+      startLearning: "Start learning {{language}} today!",
+      continueLearning: "Continue Learning",
+      lessonsCompleted: "{{completed}} of {{total}} lessons completed",
+      nativeSpeaker: "Native Speaker",
       stats: {
         languages: "Languages Available",
         questions: "Practice Questions",
@@ -232,6 +236,10 @@ const pl = {
       createFreeAccount: "Utwórz darmowe konto",
       alreadyHaveAccount: "Masz już konto?",
       login: "Zaloguj się",
+      startLearning: "Zacznij uczyć się {{language}} już dziś!",
+      continueLearning: "Kontynuuj naukę",
+      lessonsCompleted: "Ukończono {{completed}} z {{total}} lekcji",
+      nativeSpeaker: "Język ojczysty",
       stats: {
         languages: "Dostępne języki",
         questions: "Pytania ćwiczeniowe",
@@ -400,6 +408,10 @@ const es = {
       createFreeAccount: "Crear cuenta gratuita",
       alreadyHaveAccount: "¿Ya tienes una cuenta?",
       login: "Iniciar sesión",
+      startLearning: "¡Empieza a aprender {{language}} hoy!",
+      continueLearning: "Continuar aprendiendo",
+      lessonsCompleted: "{{completed}} de {{total}} lecciones completadas",
+      nativeSpeaker: "Hablante nativo",
       stats: {
         languages: "Idiomas disponibles",
         questions: "Preguntas de práctica",
