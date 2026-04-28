@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/store/useAuthStore";
 import { DropdownMenu } from "./DropdownMenu";
 import { ChevronDownIcon, PersonIcon, ExitIcon } from "@radix-ui/react-icons";
@@ -14,6 +15,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
   username = "User",
 }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { logout } = useAuthStore();
 
   return (
@@ -40,7 +42,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
             className="cursor-pointer"
           >
             <PersonIcon className="mr-2 h-4 w-4" />
-            <span>Profile</span>
+            <span>{t("nav.profile")}</span>
           </DropdownMenu.Item>
 
           <DropdownMenu.Separator />
@@ -50,7 +52,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
             className="text-red-600 focus:text-red-700 focus:bg-red-50 cursor-pointer"
           >
             <ExitIcon className="mr-2 h-4 w-4" />
-            <span>Logout</span>
+            <span>{t("nav.logout")}</span>
           </DropdownMenu.Item>
         </DropdownMenu.Content>
       </DropdownMenu>
