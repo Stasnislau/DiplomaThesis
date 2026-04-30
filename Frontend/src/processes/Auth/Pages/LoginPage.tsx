@@ -36,11 +36,12 @@ export const LoginPage: React.FC = () => {
       setLoading(true);
       const result = await login(input);
       if (!result.success) {
-        const msg =
-          result.errors?.join("\n") ||
-          result.message ||
-          t('common.error');
-        setError(msg);
+        const errorList = Array.isArray(result.errors)
+          ? result.errors.join("\n")
+          : typeof result.errors === "string"
+            ? (result.errors as string)
+            : "";
+        setError(errorList || result.message || t('common.error'));
         return;
       }
       navigate("/");

@@ -1,5 +1,6 @@
 import { BRIDGE_MICROSERVICE_URL } from "../consts";
 import { BaseResponse } from "@/types/responses/BaseResponse";
+import { extractApiError } from "../extractApiError";
 import { fetchWithAuth } from "../fetchWithAuth";
 
 interface AnalyzedType {
@@ -31,7 +32,7 @@ export const uploadMaterial = async (
 
   const data = (await response.json()) as BaseResponse<UploadMaterialResponse>;
   if (!data.success) {
-    throw new Error(data?.errors?.[0] || "Failed to upload material");
+    throw new Error(extractApiError(data, "Failed to upload material"));
   }
 
   return data.payload;

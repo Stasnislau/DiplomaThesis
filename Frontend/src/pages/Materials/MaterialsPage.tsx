@@ -9,6 +9,7 @@ import cn from "@/utils/cn";
 import { useGenerateQuiz } from "@/api/hooks/useGenerateQuiz";
 import { useGetUserMaterials } from "@/api/hooks/useGetUserMaterials";
 import { useSaveMaterial } from "@/api/hooks/useSaveMaterial";
+import { useTranslation } from "react-i18next";
 import { useUploadMaterial } from "@/api/hooks/useUploadMaterial";
 
 interface AnalyzedType {
@@ -48,6 +49,7 @@ const isAnswerCorrect = (user: string, correct: string) => {
 };
 
 export const MaterialsPage: React.FC = () => {
+  const { t } = useTranslation();
   const [file, setFile] = useState<File | null>(null);
   const [view, setView] = useState<"upload" | "ready" | "quiz">("upload");
   const [analyzedTypes, setAnalyzedTypes] = useState<AnalyzedType[]>([]);
@@ -201,7 +203,7 @@ export const MaterialsPage: React.FC = () => {
             <TabsContent value="saved">
                 {view === "upload" && (
                     <div className="space-y-4">
-                        {isMaterialsLoading && <p className="text-center text-gray-500">Loading your materials...</p>}
+                        {isMaterialsLoading && <p className="text-center text-gray-500">{t("materials.loadingMaterials")}</p>}
                         {userMaterials?.length === 0 && <p className="text-center text-gray-500">No saved materials yet.</p>}
                         {userMaterials?.map((material) => (
                             <Card 

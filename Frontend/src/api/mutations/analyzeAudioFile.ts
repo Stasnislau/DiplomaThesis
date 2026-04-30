@@ -1,5 +1,6 @@
 import { BRIDGE_MICROSERVICE_URL } from "../consts";
 import { BaseResponse } from "@/types/responses/BaseResponse";
+import { extractApiError } from "../extractApiError";
 import { fetchWithAuth } from "../fetchWithAuth";
 
 export interface IdentifiedError {
@@ -53,8 +54,7 @@ export async function analyzeSpeech(
   const data = (await response.json()) as BaseResponse<SpeakingAnalysisResult>;
 
   if (!data.success) {
-    const errorMessage = data.errors?.join(", ") || "Failed to analyze speech";
-    throw new Error(errorMessage);
+    throw new Error(extractApiError(data, "Failed to analyze speech"));
   }
 
   return data.payload;

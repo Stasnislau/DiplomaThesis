@@ -6,6 +6,7 @@ import LoadingPage from "./Loading";
 import { Modal } from "../common/Modal";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useGetUserAITokens } from "@/api/hooks/useGetUserAITokens";
+import { useTranslation } from "react-i18next";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -13,6 +14,7 @@ interface ProtectedRouteProps {
 }
 
 function ProtectedRoute({ children, accessLevel }: ProtectedRouteProps) {
+  const { t } = useTranslation();
   const { isAuthenticated, isLoading, userRole } = useAuthStore();
   const location = useLocation();
   const navigate = useNavigate();
@@ -44,8 +46,8 @@ function ProtectedRoute({ children, accessLevel }: ProtectedRouteProps) {
           setTokenModalOpen(false);
           navigate("/settings/ai-tokens");
         }}
-        title="Add your AI token"
-        description="To generate tasks and analyses, add at least one AI provider token."
+        title={t("aiTokens.tokenModalTitle")}
+        description={t("aiTokens.tokenModalBody")}
       >
         <div className="mt-4 flex justify-end">
           <Button
@@ -55,7 +57,7 @@ function ProtectedRoute({ children, accessLevel }: ProtectedRouteProps) {
               navigate("/settings/ai-tokens");
             }}
           >
-            Go to configuration
+            {t("aiTokens.goToConfiguration")}
           </Button>
         </div>
       </Modal>

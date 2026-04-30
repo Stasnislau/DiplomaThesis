@@ -6,6 +6,7 @@ import { Modal } from "@/components/common/Modal";
 import Spinner from "@/components/common/Spinner";
 import TextField from "@/components/common/TextField";
 import { useMe } from "@/api/hooks/useMe";
+import { useTranslation } from "react-i18next";
 import { useUpdateUser } from "@/api/hooks/useUpdateUser";
 
 interface EditProfileModalProps {
@@ -22,6 +23,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   isOpen,
   onClose,
 }) => {
+  const { t } = useTranslation();
   const { me } = useMe();
   const { updateUser, isLoading, error, reset: resetMutation } = useUpdateUser();
   const { register, handleSubmit, reset: resetForm } = useForm<IFormInput>({
@@ -55,29 +57,29 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Edit Profile">
+    <Modal isOpen={isOpen} onClose={onClose} title={t("profile.editProfile")}>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {error && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
-            {error.message || "Failed to update profile."}
+            {error.message || t("profile.updateFailed")}
           </div>
         )}
         <TextField
-          label="Name"
-          {...register("name", { required: "Name is required" })}
-          placeholder="Your name"
+          label={t("auth.name")}
+          {...register("name", { required: t("profile.nameRequired") })}
+          placeholder={t("profile.yourName")}
         />
         <TextField
-          label="Surname"
-          {...register("surname", { required: "Surname is required" })}
-          placeholder="Your surname"
+          label={t("profile.surname")}
+          {...register("surname", { required: t("profile.surnameRequired") })}
+          placeholder={t("profile.yourSurname")}
         />
         <div className="flex justify-end space-x-3 mt-6">
           <Button variant="secondary" onClick={onClose} type="button" disabled={isLoading}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button type="submit" variant="primary" disabled={isLoading}>
-            {isLoading ? <Spinner size={4} color="white" /> : "Save Changes"}
+            {isLoading ? <Spinner size={4} color="white" /> : t("profile.saveChanges")}
           </Button>
         </div>
       </form>

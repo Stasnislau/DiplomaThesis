@@ -222,7 +222,7 @@ const LearningPathPage = () => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         <div className="w-12 h-12 border-4 border-indigo-300 border-t-indigo-600 rounded-full animate-spin" />
-        <p className="text-gray-600 dark:text-gray-400 font-medium">Loading your journey...</p>
+        <p className="text-gray-600 dark:text-gray-400 font-medium">{t("learningPath.loadingJourney")}</p>
       </div>
     );
   }
@@ -232,8 +232,8 @@ const LearningPathPage = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         <div className="text-center">
           <p className="text-4xl mb-4">😕</p>
-          <p className="text-xl font-semibold text-red-600 dark:text-red-400">Failed to load learning path.</p>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Please make sure the Bridge service is running.</p>
+          <p className="text-xl font-semibold text-red-600 dark:text-red-400">{t("learningPath.loadFailed")}</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">{t("learningPath.bridgeOffline")}</p>
         </div>
       </div>
     );
@@ -271,7 +271,7 @@ const LearningPathPage = () => {
             {/* Overall progress */}
             <div className="w-full sm:w-48 flex-shrink-0">
               <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1.5">
-                <span>Overall progress</span>
+                <span>{t("learningPath.overallProgress")}</span>
                 <span className="font-bold text-indigo-600 dark:text-indigo-400">{overallProgress}%</span>
               </div>
               <div className="h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">

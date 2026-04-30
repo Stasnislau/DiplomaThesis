@@ -6,6 +6,7 @@ import { useGenerateQuiz } from "@/api/hooks/useGenerateQuiz";
 import { useGetUserMaterials } from "@/api/hooks/useGetUserMaterials";
 import { useSaveMaterial } from "@/api/hooks/useSaveMaterial";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useUploadMaterial } from "@/api/hooks/useUploadMaterial";
 
 interface AnalyzedType {
@@ -14,6 +15,7 @@ interface AnalyzedType {
 }
 
 const MaterialsTask = () => {
+  const { t } = useTranslation();
   const [file, setFile] = useState<File | null>(null);
   const [view, setView] = useState<"upload" | "history" | "ready" | "quiz">("upload");
   const [analyzedTypes, setAnalyzedTypes] = useState<AnalyzedType[]>([]);
@@ -137,7 +139,7 @@ const MaterialsTask = () => {
               )}
             >
               <span className="text-2xl">📤</span>
-              <span>Upload New PDF</span>
+              <span>{t("tasks.uploadNewPdf")}</span>
             </button>
             <button
               onClick={() => setView("history")}
@@ -149,7 +151,7 @@ const MaterialsTask = () => {
               )}
             >
               <span className="text-2xl">📁</span>
-              <span>My Materials</span>
+              <span>{t("tasks.myMaterials")}</span>
             </button>
           </div>
         </div>
@@ -488,7 +490,7 @@ const MaterialsTask = () => {
                     <textarea 
                       className="w-full bg-transparent resize-none outline-none text-gray-700 dark:text-gray-300 placeholder-gray-400"
                       rows={3}
-                      placeholder="Type your answer here..."
+                      placeholder={t("tasks.typeAnswer")}
                       value={selectedAnswer[idx] || ''}
                       onChange={(e) => handleSelectAnswer(idx, e.target.value)}
                     />

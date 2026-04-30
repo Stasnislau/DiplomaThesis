@@ -19,6 +19,7 @@ import { useCreateUserAIToken } from "@/api/hooks/useCreateUserAIToken";
 import { useDeleteUserAIToken } from "@/api/hooks/useDeleteUserAIToken";
 import { useGetUserAITokens } from "@/api/hooks/useGetUserAITokens";
 import { useSetDefaultUserAIToken } from "@/api/hooks/useSetDefaultUserAIToken";
+import { useTranslation } from "react-i18next";
 
 interface IFormInput {
   aiProviderId: string;
@@ -64,6 +65,7 @@ const getProviderStyle = (providerId: string) => {
 };
 
 const AITokensPage: React.FC = () => {
+  const { t } = useTranslation();
   const { data: aiTokens, isLoading } = useGetUserAITokens();
   const { mutate: createToken, isPending: isCreating } = useCreateUserAIToken();
   const { mutate: deleteToken } = useDeleteUserAIToken();
@@ -93,7 +95,7 @@ const AITokensPage: React.FC = () => {
           className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200 mb-6 group"
         >
           <span className="text-lg transition-transform duration-200 group-hover:-translate-x-1">←</span>
-          <span className="font-medium">Back to Profile</span>
+          <span className="font-medium">{t("aiTokens.backToProfile")}</span>
         </Link>
 
         {/* Header Card */}
@@ -105,19 +107,48 @@ const AITokensPage: React.FC = () => {
               </svg>
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">AI Providers</h1>
-              <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base">Connect your API keys to unlock advanced AI features</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{t("aiTokens.heading")}</h1>
+              <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base">{t("aiTokens.headingSubtitle")}</p>
             </div>
           </div>
         </div>
 
+        {/* Disclaimer Card */}
+        <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/50 rounded-3xl p-6 mb-6">
+          <h2 className="text-base font-semibold text-indigo-900 dark:text-indigo-200 mb-2">
+            {t("aiTokens.disclaimerTitle")}
+          </h2>
+          <p className="text-sm text-indigo-800 dark:text-indigo-300 mb-4 leading-relaxed">
+            {t("aiTokens.disclaimerBody")}
+          </p>
+          <p className="text-xs font-semibold text-indigo-900 dark:text-indigo-200 uppercase tracking-wide mb-2">
+            {t("aiTokens.whereToGetKey")}
+          </p>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {AI_PROVIDERS.map((provider) => (
+              <a
+                key={provider.value}
+                href={provider.keyUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs px-3 py-1.5 rounded-full bg-white dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-700/50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors"
+              >
+                {provider.label} ↗
+              </a>
+            ))}
+          </div>
+          <p className="text-xs text-indigo-700 dark:text-indigo-400 italic">
+            🔒 {t("aiTokens.privacyNote")}
+          </p>
+        </div>
+
         {/* Form Card */}
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg dark:shadow-gray-900/50 p-8 mb-6 transition-colors duration-300">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Add New Provider</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t("aiTokens.addNewProvider")}</h2>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-12">
               <div className="md:col-span-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Provider</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("aiTokens.provider")}</label>
                 <Controller
                   name="aiProviderId"
                   control={control}
@@ -125,7 +156,7 @@ const AITokensPage: React.FC = () => {
                   render={({ field }) => (
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <SelectTrigger className="h-12 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-lg focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400">
-                        <SelectValue placeholder="Select provider" />
+                        <SelectValue placeholder={t("aiTokens.selectProvider")} />
                       </SelectTrigger>
                       <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
                         {AI_PROVIDERS.map((provider) => (
@@ -143,10 +174,10 @@ const AITokensPage: React.FC = () => {
                 />
               </div>
               <div className="md:col-span-5">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">API Key</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("aiTokens.apiKey")}</label>
                 <TextField
                   {...register("token", { required: true })}
-                  placeholder="sk-••••••••••••••••••••"
+                  placeholder={t("aiTokens.apiKeyPlaceholder")}
                   type="password"
                   className="h-12"
                 />
@@ -158,7 +189,7 @@ const AITokensPage: React.FC = () => {
                   {...register("isDefault")}
                   className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 rounded accent-indigo-600"
                 />
-                <label htmlFor="isDefault" className="text-sm text-gray-700 dark:text-gray-300">Set as default provider</label>
+                <label htmlFor="isDefault" className="text-sm text-gray-700 dark:text-gray-300">{t("aiTokens.setAsDefault")}</label>
               </div>
               <div className="md:col-span-3 flex items-end">
                 <Button
@@ -167,7 +198,7 @@ const AITokensPage: React.FC = () => {
                   variant="primary"
                   className="h-12 w-full bg-indigo-600 hover:bg-indigo-700 rounded-lg font-semibold"
                 >
-                  {isCreating ? "Adding..." : "Add Key"}
+                  {isCreating ? t("aiTokens.adding") : t("aiTokens.addKey")}
                 </Button>
               </div>
             </div>
@@ -177,10 +208,10 @@ const AITokensPage: React.FC = () => {
         {/* Tokens List Card */}
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg dark:shadow-gray-900/50 p-8 transition-colors duration-300">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Connected Providers</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t("aiTokens.connectedProviders")}</h2>
             {aiTokens && aiTokens.length > 0 && (
               <span className="text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full">
-                {aiTokens.length} active
+                {t("aiTokens.activeCount", { count: aiTokens.length })}
               </span>
             )}
           </div>
@@ -188,7 +219,7 @@ const AITokensPage: React.FC = () => {
           {isLoading && (
             <div className="flex flex-col items-center justify-center py-12">
               <Spinner size={32} color="#4F46E5" />
-              <p className="text-gray-500 dark:text-gray-400 mt-4">Loading providers...</p>
+              <p className="text-gray-500 dark:text-gray-400 mt-4">{t("aiTokens.loadingProviders")}</p>
             </div>
           )}
 
@@ -199,8 +230,8 @@ const AITokensPage: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">No providers connected</h3>
-              <p className="text-gray-500 dark:text-gray-400 max-w-sm mx-auto">Add your first AI provider API key above to start using advanced language features.</p>
+              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">{t("aiTokens.noProvidersTitle")}</h3>
+              <p className="text-gray-500 dark:text-gray-400 max-w-sm mx-auto">{t("aiTokens.noProvidersBody")}</p>
             </div>
           )}
 
@@ -236,7 +267,7 @@ const AITokensPage: React.FC = () => {
                     <div className="flex items-center gap-4">
                       {token.isDefault && (
                         <span className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 text-xs font-semibold px-2.5 py-0.5 rounded border border-yellow-200 dark:border-yellow-700/50 flex items-center gap-1">
-                          <span role="img" aria-label="star">⭐</span> Default
+                          <span role="img" aria-label="star">⭐</span> {t("aiTokens.defaultBadge")}
                         </span>
                       )}
 
@@ -247,7 +278,7 @@ const AITokensPage: React.FC = () => {
                           disabled={isSettingDefault}
                           className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 px-2 py-1 rounded"
                         >
-                          Make Default
+                          {t("aiTokens.makeDefault")}
                         </Button>
                       )}
 

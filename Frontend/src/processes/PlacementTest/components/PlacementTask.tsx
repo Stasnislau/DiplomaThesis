@@ -9,6 +9,7 @@ import { UserAnswer } from "@/store/usePlacementTestStore";
 import { isAnswerCorrect } from "@/utils/answerValidation";
 import { isMultipleChoice } from "@/types/typeGuards/isMultipleChoice";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 interface PlacementTaskComponentProps {
   task: MultipleChoiceTask | FillInTheBlankTask;
@@ -21,6 +22,7 @@ export const PlacementTask: React.FC<PlacementTaskComponentProps> = ({
   onAnswer,
   currentQuestion,
 }) => {
+  const { t } = useTranslation();
   const [userAnswer, setUserAnswer] = useState("");
 
   const handleSubmit = () => {
@@ -87,7 +89,7 @@ export const PlacementTask: React.FC<PlacementTaskComponentProps> = ({
             }}
             autoFocus
             className="w-full p-4 border-2 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
-            placeholder="Type your answer here..."
+            placeholder={t("tasks.typeAnswer")}
           />
         </div>
       );
@@ -106,8 +108,8 @@ export const PlacementTask: React.FC<PlacementTaskComponentProps> = ({
             }`}
           >
             {task.type === "multiple_choice"
-              ? "Multiple Choice"
-              : "Fill in the Blank"}
+              ? t("tasks.multipleChoice")
+              : t("tasks.fillInBlank")}
           </span>
         </div>
         <p className="text-xl font-medium text-gray-900 dark:text-white">{task.question}</p>
@@ -121,7 +123,7 @@ export const PlacementTask: React.FC<PlacementTaskComponentProps> = ({
           disabled={!userAnswer}
           variant="secondary"
         >
-          Submit Answer
+          {t("common.submit")}
         </Button>
       </div>
     </div>
