@@ -43,17 +43,19 @@ const SpeakingTask = () => {
       if (audioURL) URL.revokeObjectURL(audioURL);
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      let chosenMimeType = "audio/webm";
-      const mediaRecorderOptions: MediaRecorderOptions = { mimeType: chosenMimeType };
-
-      if (!MediaRecorder.isTypeSupported(chosenMimeType)) {
-        if (MediaRecorder.isTypeSupported("audio/ogg; codecs=opus")) {
-          chosenMimeType = "audio/ogg; codecs=opus";
-          mediaRecorderOptions.mimeType = chosenMimeType;
-        } else {
-          delete mediaRecorderOptions.mimeType;
-        }
-      }
+      const candidateMimeTypes = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/ogg;codecs=opus",
+        "audio/mp4",
+        "audio/mp4;codecs=mp4a.40.2",
+      ];
+      const supportedMimeType = candidateMimeTypes.find((m) =>
+        MediaRecorder.isTypeSupported(m)
+      );
+      const mediaRecorderOptions: MediaRecorderOptions = supportedMimeType
+        ? { mimeType: supportedMimeType }
+        : {};
 
       try {
         mediaRecorderRef.current = new MediaRecorder(stream, mediaRecorderOptions);
@@ -68,10 +70,13 @@ const SpeakingTask = () => {
       };
 
       mediaRecorderRef.current.onstop = () => {
-        const actualMimeType = mediaRecorderRef.current?.mimeType || "audio/webm";
+        const actualMimeType =
+          mediaRecorderRef.current?.mimeType || supportedMimeType || "audio/webm";
         let fileExtension = "webm";
-        if (actualMimeType.includes("webm")) fileExtension = "webm";
+        if (actualMimeType.includes("mp4")) fileExtension = "mp4";
         else if (actualMimeType.includes("ogg")) fileExtension = "ogg";
+        else if (actualMimeType.includes("wav")) fileExtension = "wav";
+        else if (actualMimeType.includes("webm")) fileExtension = "webm";
 
         const audioBlob = new Blob(audioChunksRef.current, { type: actualMimeType });
         const recordedFile = new File([audioBlob], `recorded_audio.${fileExtension}`, { type: actualMimeType });
@@ -88,7 +93,7 @@ const SpeakingTask = () => {
       setErrorMessage("");
     } catch (err) {
       console.error("Error accessing microphone:", err);
-      setErrorMessage("Could not access microphone. Please check permissions.");
+      setErrorMessage(t("tasks.micError"));
     }
   };
 
@@ -117,7 +122,7 @@ const SpeakingTask = () => {
 
   const handleAnalyzeClick = async () => {
     if (!audioFile) {
-      setErrorMessage("Please upload or record an audio file first.");
+      setErrorMessage(t("tasks.uploadAudioFirst"));
       return;
     }
 
@@ -132,7 +137,7 @@ const SpeakingTask = () => {
       });
       setAnalysisResult(result);
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : "Analysis failed");
+      setErrorMessage(err instanceof Error ? err.message : t("tasks.analysisFailed"));
     }
   };
 
@@ -143,10 +148,10 @@ const SpeakingTask = () => {
   };
 
   const getFluencyLabel = (score: number): { label: string; color: string } => {
-    if (score >= 80) return { label: "Excellent", color: "bg-emerald-500" };
-    if (score >= 60) return { label: "Good", color: "bg-blue-500" };
-    if (score >= 40) return { label: "Fair", color: "bg-amber-500" };
-    return { label: "Needs Work", color: "bg-red-500" };
+    if (score >= 80) return { label: t("tasks.fluencyExcellent"), color: "bg-emerald-500" };
+    if (score >= 60) return { label: t("tasks.fluencyGood"), color: "bg-blue-500" };
+    if (score >= 40) return { label: t("tasks.fluencyFair"), color: "bg-amber-500" };
+    return { label: t("tasks.fluencyNeedsWork"), color: "bg-red-500" };
   };
 
   const getErrorTypeColor = (errorType: string) => {
@@ -299,7 +304,7 @@ const SpeakingTask = () => {
         isLoading={isAnalyzingAudioFile}
         className="w-full h-14 text-lg font-semibold rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {isAnalyzingAudioFile ? "Analyzing Speech..." : "🎯 Analyze My Speech"}
+        {isAnalyzingAudioFile ? t("tasks.analyzingSpeech") : t("tasks.analyzeSpeech")}
       </Button>
 
       {/* Error Message */}

@@ -1,5 +1,6 @@
 import { AUTH_MICROSERVICE_URL } from "../consts";
 import { BaseResponse } from "../../types/responses/BaseResponse";
+import { extractApiError } from "../extractApiError";
 import { fetchWithAuth } from "../fetchWithAuth";
 import { userSchema } from "../../types/models/User";
 import { z } from "zod";
@@ -24,14 +25,7 @@ export const register = async (input: RegisterUserRequest) => {
   const data = (await response.json()) as BaseResponse<boolean>;
 
   if (!data.success) {
-    const payloadErrors = (data.payload as any)?.errors as string[] | undefined;
-    const payloadMessage = (data.payload as any)?.message as string | undefined;
-    const errorMsg =
-      payloadErrors?.join("\n") ||
-      payloadMessage ||
-      data.errors?.join("\n") ||
-      "Failed to register";
-    throw new Error(errorMsg);
+    throw new Error(extractApiError(data, "Failed to register"));
   }
 
   return data.payload;

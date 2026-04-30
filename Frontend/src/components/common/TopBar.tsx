@@ -14,10 +14,10 @@ export const TopBar: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   const navOptions = [
-    { label: t('nav.home'), value: "home", path: "/" },
-    { label: t('nav.tasks') || "Tasks", value: "tasks", path: "/tasks" },
-    { label: "Quiz", value: "quiz", path: "/quiz" },
-    { label: "Speech Analysis", value: "speech-analysis", path: "/speech-analysis" },
+    { label: t("nav.home"), value: "home", path: "/" },
+    { label: t("nav.tasks"), value: "tasks", path: "/tasks" },
+    { label: t("nav.quiz"), value: "quiz", path: "/quiz" },
+    { label: t("nav.speechAnalysis"), value: "speech-analysis", path: "/speech-analysis" },
   ];
 
   useEffect(() => {
@@ -41,13 +41,13 @@ export const TopBar: React.FC = () => {
                 to="/admin"
                 className="text-white hover:bg-white/20 px-3 py-2 rounded-md text-sm font-medium transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-white"
               >
-                Admin
+                {t("nav.admin")}
               </Link>
             )}
             {isAuthenticated && (
               <NavBar
                 options={navOptions}
-                defaultLabel={t('common.next')}
+                defaultLabel={t("nav.menu")}
                 className="text-white hover:bg-white/20 focus:ring-2 focus:ring-white"
               />
             )}

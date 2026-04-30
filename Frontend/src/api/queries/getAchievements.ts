@@ -1,5 +1,6 @@
 import { BaseResponse } from "@/types/responses/BaseResponse";
 import { USER_MICROSERVICE_URL } from "../consts";
+import { extractApiError } from "../extractApiError";
 import { fetchWithAuth } from "../fetchWithAuth";
 
 export interface Achievement {
@@ -25,7 +26,7 @@ export async function getAchievements(): Promise<Achievement[]> {
   const data = (await response.json()) as BaseResponse<Achievement[]>;
 
   if (!data.success) {
-    throw new Error(data.errors?.join(", ") || "Failed to fetch achievements");
+    throw new Error(extractApiError(data, "Failed to fetch achievements"));
   }
 
   return data.payload;

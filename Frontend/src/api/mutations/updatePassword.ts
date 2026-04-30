@@ -1,4 +1,5 @@
 import { AUTH_MICROSERVICE_URL } from "../consts";
+import { extractApiError } from "../extractApiError";
 import { fetchWithAuth } from "../fetchWithAuth";
 
 export interface UpdatePasswordRequest {
@@ -20,11 +21,7 @@ export async function updatePassword(
   const result = await response.json();
 
   if (!result.success) {
-    const errors = result.payload?.errors as string[] | undefined;
-    const message = result.payload?.message as string | undefined;
-    throw new Error(
-      errors?.join("\n") || message || "Failed to update password"
-    );
+    throw new Error(extractApiError(result, "Failed to update password"));
   }
 
   return result.payload;

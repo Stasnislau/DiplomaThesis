@@ -1,5 +1,6 @@
 import { BRIDGE_MICROSERVICE_URL } from "../consts";
 import { BaseResponse } from "@/types/responses/BaseResponse";
+import { extractApiError } from "../extractApiError";
 import { fetchWithAuth } from "../fetchWithAuth";
 
 export interface ExplainAnswerRequest {
@@ -39,9 +40,7 @@ export async function explainAnswer(
     (await response.json()) as BaseResponse<ExplainAnswerResponse>;
 
   if (!responseData.success) {
-    const errorMessage =
-      responseData.errors?.join(", ") || "Failed to explain answer";
-    throw new Error(errorMessage);
+    throw new Error(extractApiError(responseData, "Failed to explain answer"));
   }
 
   return responseData.payload;

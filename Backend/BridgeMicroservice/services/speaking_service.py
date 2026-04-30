@@ -40,12 +40,23 @@ class SpeakingService:
                 detail="GROQ_API_KEY is not configured for speech transcription.",
             )
 
+        ext = (filename or "recording.webm").rsplit(".", 1)[-1].lower()
+        content_type_map = {
+            "mp4": "audio/mp4",
+            "m4a": "audio/mp4",
+            "mp3": "audio/mpeg",
+            "ogg": "audio/ogg",
+            "wav": "audio/wav",
+            "webm": "audio/webm",
+        }
+        content_type = content_type_map.get(ext, "audio/webm")
+
         try:
             async with httpx.AsyncClient(timeout=120.0) as client:
                 response = await client.post(
                     GROQ_TRANSCRIPTION_URL,
                     headers={"Authorization": f"Bearer {api_key}"},
-                    files={"file": (filename, audio_file_bytes, "audio/webm")},
+                    files={"file": (filename, audio_file_bytes, content_type)},
                     data={
                         "model": GROQ_WHISPER_MODEL,
                         "language": language_code,

@@ -1,3 +1,16 @@
+function normalizeErrors(value: unknown): string {
+  if (Array.isArray(value)) {
+    const filtered = value.filter(
+      (item): item is string => typeof item === "string" && item.trim().length > 0
+    );
+    return filtered.join("\n");
+  }
+  if (typeof value === "string" && value.trim().length > 0) {
+    return value;
+  }
+  return "";
+}
+
 export function extractApiError(
   apiResult: unknown,
   fallback = "Request failed"
@@ -7,21 +20,15 @@ export function extractApiError(
   const result = apiResult as Record<string, unknown>;
   const payload = result.payload as Record<string, unknown> | undefined;
 
-  if (Array.isArray(payload?.errors) && payload.errors.length > 0) {
-    return payload.errors.join("\n");
-  }
-
-  if (typeof payload?.message === "string" && payload.message.trim()) {
-    return payload.message;
-  }
-
-  if (Array.isArray(result.errors) && result.errors.length > 0) {
-    return (result.errors as string[]).join("\n");
-  }
-
-  if (typeof result.message === "string" && result.message.trim()) {
-    return result.message as string;
-  }
-
-  return fallback;
+  return (
+    normalizeErrors(payload?.errors) ||
+    (typeof payload?.message === "string" && payload.message.trim()
+      ? (payload.message as string)
+      : "") ||
+    normalizeErrors(result.errors) ||
+    (typeof result.message === "string" && result.message.trim()
+      ? (result.message as string)
+      : "") ||
+    fallback
+  );
 }

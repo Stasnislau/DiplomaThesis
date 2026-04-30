@@ -120,11 +120,11 @@ export const ProfilePage: React.FC = () => {
   const achievementsCount = achievements.filter((a: Achievement) => a.isUnlocked).length;
 
   const CATEGORY_LABELS: Record<string, { label: string; icon: string }> = {
-    learning: { label: "Learning", icon: "📚" },
-    speaking: { label: "Speaking", icon: "🎙️" },
-    streak: { label: "Streak & Habits", icon: "🔥" },
-    exploration: { label: "Exploration", icon: "🧭" },
-    mastery: { label: "Mastery", icon: "🌟" },
+    learning: { label: t("profile.categoryLearning"), icon: "📚" },
+    speaking: { label: t("profile.categorySpeaking"), icon: "🎙️" },
+    streak: { label: t("profile.categoryStreak"), icon: "🔥" },
+    exploration: { label: t("profile.categoryExploration"), icon: "🧭" },
+    mastery: { label: t("profile.categoryMastery"), icon: "🌟" },
   };
 
   const groupedAchievements = achievements.reduce(
@@ -167,7 +167,7 @@ export const ProfilePage: React.FC = () => {
                 </DropdownMenu.Item>
                 <DropdownMenu.Separator />
                 <DropdownMenu.Item asChild className="cursor-pointer">
-                  <Link to="/settings/ai-tokens">Manage AI Providers</Link>
+                  <Link to="/settings/ai-tokens">{t("profile.manageAITokens")}</Link>
                 </DropdownMenu.Item>
               </DropdownMenu.Content>
             </DropdownMenu>
@@ -258,10 +258,10 @@ export const ProfilePage: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 transition-colors duration-300">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Achievements
+              {t("profile.achievementsTitle")}
             </h2>
             <span className="text-sm text-gray-500 dark:text-gray-400">
-              {achievementsCount} / {achievements.length} unlocked
+              {t("profile.achievementsCount", { unlocked: achievementsCount, total: achievements.length })}
             </span>
           </div>
           {isLoadingAchievements ? (
@@ -272,7 +272,7 @@ export const ProfilePage: React.FC = () => {
             <div className="text-center py-12">
               <p className="text-4xl mb-3">🏆</p>
               <p className="text-gray-500 dark:text-gray-400 text-sm">
-                No achievements yet. Seed them via the API first.
+                {t("profile.noAchievements")}
               </p>
             </div>
           ) : (
