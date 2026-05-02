@@ -92,6 +92,12 @@ All responses follow the `BaseResponse` schema:
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+
+@app.get("/health", include_in_schema=False)
+@app.get("/api/health", include_in_schema=False)
+async def health() -> dict:
+    return {"status": "ok", "service": "bridge"}
+
 error_handler_middleware_instance = ErrorHandlingMiddleware(app)
 
 app.add_middleware(ErrorHandlingMiddleware)
