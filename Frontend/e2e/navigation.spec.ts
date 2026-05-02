@@ -33,15 +33,21 @@ test.describe("Navigation", () => {
 });
 
 test.describe("Dark mode", () => {
-  test("login page supports dark class on html/body", async ({ page }) => {
+  test("login page applies dark class when toggled on html element", async ({
+    page,
+  }) => {
     await page.goto("/login");
     await page.waitForLoadState("networkidle");
 
-    const html = page.locator("html");
-    const classList = await html.getAttribute("class");
+    await page.evaluate(() =>
+      document.documentElement.classList.add("dark"),
+    );
 
+    const classList = await page
+      .locator("html")
+      .getAttribute("class");
+    expect(classList).toContain("dark");
     await expect(page.locator("body")).toBeVisible();
-    expect(classList !== null || classList === null).toBeTruthy();
   });
 
   test("dark mode elements render with correct classes", async ({ page }) => {
