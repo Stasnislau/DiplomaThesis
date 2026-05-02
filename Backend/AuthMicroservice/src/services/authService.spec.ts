@@ -16,6 +16,7 @@ import { ClientProxy } from "@nestjs/microservices";
 import { JwtService } from "@nestjs/jwt";
 import { PrismaService } from "../../prisma/prismaService";
 import { Role } from "@prisma/client";
+import { of } from "rxjs";
 
 jest.mock("bcrypt");
 
@@ -54,7 +55,7 @@ describe("AuthService", () => {
     };
 
     const mockEventService = {
-      emit: jest.fn(),
+      emit: jest.fn().mockReturnValue(of(undefined)),
       connect: jest.fn().mockResolvedValue(undefined),
     };
 
@@ -309,14 +310,15 @@ describe("AuthService", () => {
   });
 
   describe("refreshToken", () => {
-    it("should return new access token with valid refresh token", async () => {
+    it("should return only access token when refresh is fresh (no rotation)", async () => {
       const validRefreshToken = "valid.refresh.token";
       prismaService.refreshToken.findUnique.mockResolvedValue(
         mockRefreshToken as any,
       );
+      // exp ~6 days out — more than halfLife (3.5d), so no rotation
       jwtService.verify.mockReturnValue({
         sub: mockUser.id,
-        exp: Math.floor(Date.now() / 1000) + 3600, // Valid for 1 hour
+        exp: Math.floor(Date.now() / 1000) + 6 * 24 * 60 * 60,
       });
       prismaService.user.findUnique.mockResolvedValue(mockUser as any);
       jwtService.sign.mockReturnValue("new.access.token");
@@ -331,6 +333,34 @@ describe("AuthService", () => {
         where: { token: validRefreshToken },
       });
       expect(jwtService.verify).toHaveBeenCalled();
+      expect(prismaService.refreshToken.create).not.toHaveBeenCalled();
+    });
+
+    it("should rotate refresh token when less than half its lifetime remains", async () => {
+      const oldRefreshToken = "old.refresh.token";
+      prismaService.refreshToken.findUnique.mockResolvedValue(
+        mockRefreshToken as any,
+      );
+      // exp 1h ahead — well below halfLife (3.5d), so rotation kicks in
+      jwtService.verify.mockReturnValue({
+        sub: mockUser.id,
+        exp: Math.floor(Date.now() / 1000) + 3600,
+      });
+      prismaService.user.findUnique.mockResolvedValue(mockUser as any);
+      jwtService.sign
+        .mockReturnValueOnce("new.access.token")
+        .mockReturnValueOnce("rotated.refresh.token");
+      prismaService.refreshToken.create.mockResolvedValue(
+        mockRefreshToken as any,
+      );
+
+      const result = await service.refreshToken(oldRefreshToken);
+
+      expect(result).toEqual({
+        accessToken: "new.access.token",
+        refreshToken: "rotated.refresh.token",
+      });
+      expect(prismaService.refreshToken.create).toHaveBeenCalledTimes(1);
     });
 
     it("should throw BadRequestException when refresh token is missing", async () => {
