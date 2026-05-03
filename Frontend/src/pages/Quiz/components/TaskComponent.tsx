@@ -49,7 +49,7 @@ export const TaskComponent: React.FC<TaskComponentProps> = ({
                 aria-pressed={userAnswer === option}
               >
                 <span className={`block text-xs mb-0.5 font-semibold ${userAnswer === option ? "text-blue-100" : "text-gray-500 dark:text-gray-400"}`}>
-                  Option {String.fromCharCode(65 + index)}
+                  {t("tasks.optionLabel", { letter: String.fromCharCode(65 + index) })}
                 </span>
                 <span className="font-medium text-sm">{option}</span>
               </button>
@@ -65,7 +65,7 @@ export const TaskComponent: React.FC<TaskComponentProps> = ({
               value={userAnswer}
               onChange={(e) => setUserAnswer(e.target.value)}
               className="w-full p-4 pl-5 border-2 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-200 dark:border-gray-700 placeholder-gray-400 dark:placeholder-gray-500"
-              aria-label="Answer input"
+              aria-label={t("tasks.answerInputAria")}
               placeholder={t('tasks.fillInBlank') + "..."}
             />
             <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
@@ -157,8 +157,8 @@ export const TaskComponent: React.FC<TaskComponentProps> = ({
               <div className="text-gray-700 dark:text-gray-300">
                 <span className="font-medium">
                   {Array.isArray(taskData.correctAnswer) && taskData.correctAnswer.length > 1
-                    ? "Accepted answers: "
-                    : "Correct answer: "}
+                    ? t("tasks.acceptedAnswers")
+                    : t("tasks.correctAnswerLabel")}
                 </span>
                 {Array.isArray(taskData.correctAnswer) ? (
                   <span className="font-semibold text-gray-900 dark:text-white">
@@ -186,7 +186,7 @@ export const TaskComponent: React.FC<TaskComponentProps> = ({
       )}
 
       {isExplaining && (
-        <div className="animate-pulse space-y-4 py-4" aria-label="Loading explanation">
+        <div className="animate-pulse space-y-4 py-4" aria-label={t("tasks.loadingExplanation")}>
           <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
           <div className="space-y-2">
             <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
@@ -200,14 +200,14 @@ export const TaskComponent: React.FC<TaskComponentProps> = ({
           <div className="flex items-center gap-2 mb-3">
              <span className="text-xl" role="img" aria-hidden="true">💡</span>
              <h3 className="text-lg font-bold text-indigo-900 dark:text-indigo-300">
-               Explanation
+               {t("tasks.explanationTitle")}
              </h3>
           </div>
           <p className="text-indigo-800 dark:text-indigo-200 leading-relaxed">{explanationData.explanation}</p>
           {explanationData.topics_to_review && (
             <div className="mt-4 border-t border-indigo-200 dark:border-indigo-800/50 pt-4">
               <h4 className="text-sm font-semibold text-indigo-900 dark:text-indigo-300 mb-2 uppercase tracking-wide">
-                Topics to Review:
+                {t("tasks.topicsToReviewLabel")}
               </h4>
               <div className="flex flex-wrap gap-2">
                 {explanationData.topics_to_review.map((topic) => (

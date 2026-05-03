@@ -3,6 +3,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from pypdf import PdfReader
 import io
 from typing import List, Dict, Any, Optional, Union
+from fastapi import HTTPException
 from services.ai_service import AI_Service
 from services.user_service import UserService
 from utils.user_context import UserContext
@@ -33,8 +34,45 @@ class MaterialService:
                 text += page.extract_text() + "\n"
 
             if not text.strip():
-                raise ValueError("PDF content is empty or not extractable")
-            
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        "PDF_NO_TEXT: No selectable text found. The PDF is "
+                        "likely a scan or has its text encoded with a custom "
+                        "font. Try a text-based PDF or run OCR on the file first."
+                    ),
+                )
+
+            # Detect garbled text from custom-font / encrypted-encoding PDFs.
+                        # pypdf still 'extracts' something, but it comes out as
+            # high-bit nonsense like '\x03URWRNRĄ\x03' that no LLM can
+            # parse and that triggers Groq's json_validate_failed when
+            # asked for a structured response. Cheap heuristic: count
+            # the share of characters that aren't word characters,
+            # whitespace, or basic punctuation. Above 30% means the
+            # extraction is garbage.
+            import re as _re
+            non_text = sum(
+                1 for c in text
+                if not _re.match(r"[\w\s.,;:!?\"'()\[\]{}\-—–‑/\\]", c, _re.UNICODE)
+            )
+            non_text_share = non_text / max(len(text), 1)
+            if non_text_share > 0.30:
+                logger.warning(
+                    "PDF text appears garbled (non-text share %.1f%%) for %s",
+                    non_text_share * 100,
+                    filename,
+                )
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        "PDF_GARBLED_TEXT: The PDF's text could not be read "
+                        "cleanly — most likely a scanned document or one with "
+                        "a custom embedded font. Try a different PDF, or run "
+                        "OCR on this one before uploading."
+                    ),
+                )
+
             logger.info(f"Extracted {len(text)} characters from PDF.")
 
             chunks = self.text_splitter.split_text(text)
@@ -98,22 +136,60 @@ class MaterialService:
             {analysis_context}
             """
 
-            response_json_str = await self.ai_service.get_ai_response(
-                prompt=prompt,
-                response_format={"type": "json_object"},
-                system_prompt="You are an expert pedagogue analyzing educational materials.",
-                user_context=user_context
-            )
-            
-            analyzed_types: Union[List[Dict[str, Any]], List[Any]] = []
-            
             try:
-                analyzed_data = json.loads(response_json_str)
+                response_json_str = await self.ai_service.get_ai_response(
+                    prompt=prompt,
+                    response_format={"type": "json_object"},
+                    system_prompt="You are an expert pedagogue analyzing educational materials.",
+                    user_context=user_context
+                )
+            except HTTPException as exc:
+                # Groq sometimes returns 400 json_validate_failed on borderline
+                # PDFs (the prompt produces a string with characters that
+                # don't pass strict JSON validation, e.g. unescaped Unicode
+                # control characters). Retry once WITHOUT strict mode and
+                # parse loosely; if that still fails, surface a friendly
+                # message instead of bubbling a raw 502.
+                if exc.status_code in (400, 502):
+                    logger.warning(
+                        "Strict JSON mode failed on type analysis (%s); "
+                        "retrying without response_format.",
+                        exc.detail,
+                    )
+                    try:
+                        response_json_str = await self.ai_service.get_ai_response(
+                            prompt=prompt + "\n\nIMPORTANT: Respond with raw JSON only, no markdown fences.",
+                            response_format=None,
+                            system_prompt="You are an expert pedagogue analyzing educational materials.",
+                            user_context=user_context,
+                        )
+                    except HTTPException:
+                        raise HTTPException(
+                            status_code=422,
+                            detail=(
+                                "PDF_AI_REJECTED: The AI couldn't produce a "
+                                "valid analysis from this PDF — its text is "
+                                "probably too noisy or short. Try a cleaner "
+                                "or longer document."
+                            ),
+                        )
+                else:
+                    raise
+
+            analyzed_types: Union[List[Dict[str, Any]], List[Any]] = []
+
+            try:
+                # Tolerate models that wrap JSON in ``` fences when strict mode is off.
+                cleaned = response_json_str.strip()
+                if cleaned.startswith("```"):
+                    cleaned = cleaned.strip("`")
+                    cleaned = cleaned.lstrip("json").strip()
+                analyzed_data = json.loads(cleaned)
                 if isinstance(analyzed_data, dict):
                     analyzed_types = analyzed_data.get("types", [])
                 elif isinstance(analyzed_data, list):
                     analyzed_types = analyzed_data
-                else: 
+                else:
                      analyzed_types = []
 
                 logger.info(f"AI identified question types: {analyzed_types}")

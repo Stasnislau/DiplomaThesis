@@ -236,14 +236,41 @@ const MaterialsTask = () => {
             )}
           </div>
 
-          {uploadError && (
-            <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-900/50">
-              <div className="flex items-center gap-3">
-                <span className="text-lg">⚠️</span>
-                <p className="text-sm text-red-600 font-medium">{uploadError.message}</p>
+          {uploadError && (() => {
+            // The mutation rejects with an UploadMaterialError carrying a
+            // structured `code` (PDF_NO_TEXT / PDF_GARBLED_TEXT / etc).
+            // Map it to an i18n key so the user sees a friendly localized
+            // explanation instead of the raw backend English message.
+            const errAny = uploadError as unknown as { code?: string; message: string };
+            const code = errAny.code;
+            const codeKeyMap: Record<string, string> = {
+              PDF_NO_TEXT: "tasks.uploadError.noText",
+              PDF_GARBLED_TEXT: "tasks.uploadError.garbled",
+              PDF_AI_REJECTED: "tasks.uploadError.aiRejected",
+            };
+            const titleKey = code ? codeKeyMap[code] : undefined;
+            const friendly = titleKey ? t(titleKey) : null;
+            return (
+              <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800/50">
+                <div className="flex items-start gap-3">
+                  <span className="text-xl shrink-0" aria-hidden="true">⚠️</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                      {t("tasks.uploadError.title")}
+                    </p>
+                    <p className="text-sm text-amber-800 dark:text-amber-300 mt-1 leading-relaxed">
+                      {friendly ?? errAny.message}
+                    </p>
+                    {code && (
+                      <p className="text-xs text-amber-700 dark:text-amber-400 mt-2 font-mono">
+                        {code}
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       )}
 

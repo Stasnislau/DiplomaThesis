@@ -1,5 +1,6 @@
 import React from 'react';
 import cn from 'classnames';
+import { useTranslation } from 'react-i18next';
 
 interface SkeletonProps {
   className?: string;
@@ -24,6 +25,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   variant = 'text',
   animation = 'pulse',
 }) => {
+  const { t } = useTranslation();
   const baseClasses = 'bg-gray-200 dark:bg-gray-700';
   
   const variantClasses = {
@@ -53,7 +55,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
         className
       )}
       role="status"
-      aria-label="Loading..."
+      aria-label={t("common.loading")}
       aria-busy="true"
     />
   );
@@ -66,8 +68,9 @@ export const SkeletonText: React.FC<{
   lines?: number;
   className?: string;
 }> = ({ lines = 3, className }) => {
+  const { t } = useTranslation();
   return (
-    <div className={cn('space-y-2', className)} role="status" aria-label="Loading text...">
+    <div className={cn('space-y-2', className)} role="status" aria-label={t("common.loading")}>
       {Array.from({ length: lines }).map((_, index) => (
         <Skeleton
           key={index}
@@ -83,6 +86,7 @@ export const SkeletonText: React.FC<{
  * Skeleton for card content
  */
 export const SkeletonCard: React.FC<{ className?: string }> = ({ className }) => {
+  const { t } = useTranslation();
   return (
     <div
       className={cn(
@@ -90,7 +94,7 @@ export const SkeletonCard: React.FC<{ className?: string }> = ({ className }) =>
         className
       )}
       role="status"
-      aria-label="Loading card..."
+      aria-label={t("common.loading")}
     >
       <div className="flex items-center space-x-4 mb-4">
         <Skeleton variant="circular" width="w-12" height="h-12" />
@@ -108,11 +112,12 @@ export const SkeletonCard: React.FC<{ className?: string }> = ({ className }) =>
  * Skeleton for task/quiz content
  */
 export const SkeletonTask: React.FC<{ className?: string }> = ({ className }) => {
+  const { t } = useTranslation();
   return (
     <div
       className={cn('space-y-6', className)}
       role="status"
-      aria-label="Loading task..."
+      aria-label={t("common.loading")}
     >
       {/* Question */}
       <Skeleton variant="rounded" height="h-16" />

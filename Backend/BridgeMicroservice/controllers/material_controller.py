@@ -43,6 +43,11 @@ async def upload_pdf(request: Request, file: UploadFile = File(...), service: Ma
         result = await service.process_pdf(content, file.filename, user_context=user_context)
         logger.info("PDF processed successfully.")
         return BaseResponse[ProcessPdfResponse](success=True, payload=result)
+    except HTTPException:
+        # process_pdf raises HTTPException with structured detail codes
+        # (PDF_NO_TEXT / PDF_GARBLED_TEXT / PDF_AI_REJECTED). Pass them
+        # through unchanged so the frontend can branch on the prefix.
+        raise
     except Exception as e:
         logger.error(f"Error uploading/processing PDF: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

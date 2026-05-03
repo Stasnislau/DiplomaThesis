@@ -141,7 +141,7 @@ const ListeningTask = () => {
         isLoading={isLoading}
         className="w-full h-14 text-lg font-semibold rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg shadow-indigo-500/25"
       >
-        {isLoading ? "Generating..." : "🎧 Generate Listening Task"}
+        {isLoading ? t("common.generating") : t("tasks.generateListeningTask")}
       </Button>
 
       {error && error.message && (
@@ -182,7 +182,7 @@ const ListeningTask = () => {
                   <span className="text-lg">📜</span>
                 </div>
                 <span className="font-semibold text-gray-700 dark:text-gray-300">
-                  {showTranscript ? "Hide Transcript" : "Show Transcript"}
+                  {showTranscript ? t("tasks.hideTranscript") : t("tasks.showTranscript")}
                 </span>
               </div>
               <svg 
