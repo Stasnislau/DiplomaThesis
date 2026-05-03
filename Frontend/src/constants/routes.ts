@@ -14,4 +14,5 @@ export const ROUTES = {
   ADMIN: "/admin",
   PLACEMENT_TEST: "/placement/test/:languageCode",
   LEARNING_PATH: "/learning-path",
+  HISTORY: "/history",
 } as const;

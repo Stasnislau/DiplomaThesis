@@ -4,6 +4,8 @@ from pypdf import PdfReader
 import io
 from typing import List, Dict, Any, Optional, Union
 from services.ai_service import AI_Service
+from services.user_service import UserService
+from utils.user_context import UserContext
 import json
 import logging
 from models.dtos.material_dtos import ProcessPdfResponse, GenerateQuizResponse, ChunkMetadata, QuizContent
@@ -14,6 +16,7 @@ class MaterialService:
     def __init__(self, vector_db_service: VectorDBService, ai_service: AI_Service) -> None:
         self.vector_db_service = vector_db_service
         self.ai_service = ai_service
+        self.user_service = UserService()
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000,
             chunk_overlap=200,
@@ -50,21 +53,30 @@ class MaterialService:
                 selected_chunks = [chunks[i] for i in sorted(list(set(indices))) if i < total_chunks]
             
             analysis_context = "\n--CHUNK SEPARATOR--\n".join(selected_chunks)
-            
+
+            ui_lang = (
+                getattr(user_context, "ui_locale_label", None) or "English"
+            )
+            type_locale_clause = (
+                f"\n\nWrite the `type` field in {ui_lang}. "
+                "Keep the `example` field verbatim from the source text — do not translate it."
+            )
+
             prompt = f"""
-            Analyze the following text segments from an educational document. 
+            Analyze the following text segments from an educational document.
             Identify distinct types of exercises, questions, or learning activities present (e.g., "Multiple Choice", "Reading Comprehension", "True/False", "Essay Writing").
-            
+
             Ignore instructional text (e.g., "Read the instructions", "Copyright"). Focus on the actual learning content.
-            
+
             For each identified type, extract (or if necessary, summarize) ONE short example from the text.
-            
+
             Return the result strictly as a JSON object with a key "types", containing a list of objects. Each object must have:
             - "type": A short, descriptive name of the question/activity type (e.g., "Multiple Choice").
             - "example": A short example text from the document representing this type.
-            
+
             If specific exercises are not found, identify the *potential* types of questions that would fit this content (e.g., "Reading Comprehension" for a text passage).
-            
+            {type_locale_clause}
+
             Text Segments:
             {analysis_context}
             """
@@ -123,6 +135,15 @@ class MaterialService:
             else:
                 type_instruction = "Generate a variety of question types suitable for the content."
 
+            ui_lang = (
+                getattr(user_context, "ui_locale_label", None) or "English"
+            )
+            type_locale_clause = (
+                f"\n            - Write the `type` field in {ui_lang} (e.g. `Wybór wielokrotny` for Polish, "
+                "`Opción múltiple` for Spanish). Question content (`question`, `options`, "
+                "`correct_answer`, `context_text`) stays in the language of the source material."
+            )
+
             prompt = f"""
             You are an expert language teacher creating practice materials for a student.
             
@@ -153,8 +174,8 @@ class MaterialService:
             - "question": The question text.
             - "options": A list of 3-4 strings (for multiple choice). Empty list [] for open questions.
             - "correct_answer": The correct answer string.
-            - "type": "Multiple Choice" | "Open" | "Fill-in-Blank" | "True/False"
-            - "context_text": The NEW text you wrote (if applicable, e.g., for Reading Comprehension). Otherwise null.
+            - "type": One of: Multiple Choice | Open | Fill-in-Blank | True/False (translate the label per the locale rule below).
+            - "context_text": The NEW text you wrote (if applicable, e.g., for Reading Comprehension). Otherwise null.{type_locale_clause}
             
             **Source Context:**
             {context_text}
@@ -170,6 +191,21 @@ class MaterialService:
             try:
                 parsed_quiz = json.loads(response_json_str)
                 quiz_content = QuizContent(**parsed_quiz)
+
+                if user_context and isinstance(user_context, UserContext):
+                    await self.user_service.log_task_history(
+                        user_context,
+                        {
+                            "taskType": "materials",
+                            "title": "Materials quiz",
+                            "score": None,
+                            "language": None,
+                            "metadata": {
+                                "questionCount": len(quiz_content.questions or []),
+                                "selectedTypes": selected_types or [],
+                            },
+                        },
+                    )
                 return GenerateQuizResponse(quiz=quiz_content)
             except Exception as e:
                  logger.warning(f"Could not parse quiz into strict model, returning raw JSON string: {e}")

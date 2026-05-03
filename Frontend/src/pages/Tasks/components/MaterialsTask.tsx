@@ -15,7 +15,7 @@ interface AnalyzedType {
 }
 
 const MaterialsTask = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [file, setFile] = useState<File | null>(null);
   const [view, setView] = useState<"upload" | "history" | "ready" | "quiz">("upload");
   const [analyzedTypes, setAnalyzedTypes] = useState<AnalyzedType[]>([]);
@@ -238,7 +238,7 @@ const MaterialsTask = () => {
               <span className="text-lg">📁</span>
             </div>
             <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-              Previously Analyzed Materials
+              {t("tasks.previouslyAnalyzed")}
             </label>
           </div>
           
@@ -273,13 +273,13 @@ const MaterialsTask = () => {
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-rose-700 transition-colors">{material.filename}</h4>
-                      <p className="text-sm text-gray-500">
-                        {new Date(material.createdAt).toLocaleDateString('en-US', { 
-                          month: 'short', 
-                          day: 'numeric', 
-                          year: 'numeric' 
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {new Date(material.createdAt).toLocaleDateString(i18n.language || "en", {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
                         })}
-                        {material.analyzedTypes && ` • ${(material.analyzedTypes as AnalyzedType[]).length} task types`}
+                        {material.analyzedTypes && ` • ${t("tasks.taskTypeCount", { count: (material.analyzedTypes as AnalyzedType[]).length })}`}
                       </p>
                     </div>
                   </div>
@@ -302,7 +302,7 @@ const MaterialsTask = () => {
           isLoading={isUploading}
           className="w-full h-14 text-lg font-semibold rounded-2xl bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 shadow-lg shadow-rose-500/25"
         >
-          {isUploading ? t("tasks.analyzingDocument") : "📊 Analyze & Extract Task Types"}
+          {isUploading ? t("tasks.analyzingDocument") : `📊 ${t("tasks.analyzeAndExtract")}`}
         </Button>
       )}
 
@@ -335,45 +335,45 @@ const MaterialsTask = () => {
                   {t("tasks.selectTaskTypes")}
                 </label>
               </div>
-              <button 
+              <button
                 onClick={resetToUpload}
-                className="text-sm text-gray-500 hover:text-rose-600 transition-colors"
+                className="text-sm text-gray-500 dark:text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
               >
-                ← New File
+                {t("tasks.newFile")}
               </button>
             </div>
             
             {analyzedTypes.length > 0 ? (
               <div className="grid gap-3">
-                {analyzedTypes.map((t, idx) => (
-                  <div 
-                    key={idx} 
-                    onClick={() => toggleType(t.type)}
+                {analyzedTypes.map((entry, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => toggleType(entry.type)}
                     className={cn(
                       "p-4 rounded-xl cursor-pointer transition-all duration-200 border-2",
-                      selectedTypes.includes(t.type) 
-                        ? "border-indigo-500 bg-indigo-50 shadow-md" 
-                        : "border-gray-200 hover:border-indigo-300 hover:bg-gray-50 dark:bg-gray-800"
+                      selectedTypes.includes(entry.type)
+                        ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 shadow-md"
+                        : "border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600 hover:bg-gray-50 dark:hover:bg-gray-700/40 dark:bg-gray-800"
                     )}
                   >
                     <div className="flex items-start gap-3">
                       <div className={cn(
                         "w-6 h-6 rounded-lg border-2 mt-0.5 flex items-center justify-center flex-shrink-0 transition-all",
-                        selectedTypes.includes(t.type)
+                        selectedTypes.includes(entry.type)
                           ? "bg-indigo-600 border-indigo-600 text-white"
-                          : "border-gray-300 bg-white"
+                          : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800"
                       )}>
-                        {selectedTypes.includes(t.type) && (
+                        {selectedTypes.includes(entry.type) && (
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                           </svg>
                         )}
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900 dark:text-gray-100">{t.type}</h4>
-                        {t.example && (
-                          <p className="text-sm text-gray-500 mt-1 italic line-clamp-2">
-                            Example: "{t.example}"
+                        <h4 className="font-semibold text-gray-900 dark:text-gray-100">{entry.type}</h4>
+                        {entry.example && (
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 italic line-clamp-2">
+                            {t("tasks.exampleLabel")} "{entry.example}"
                           </p>
                         )}
                       </div>
@@ -398,7 +398,7 @@ const MaterialsTask = () => {
             isLoading={isGeneratingQuiz}
             className="w-full h-14 text-lg font-semibold rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg shadow-indigo-500/25"
           >
-            {isGeneratingQuiz ? "Generating Tasks..." : "⚡ Generate Similar Tasks"}
+            {isGeneratingQuiz ? t("tasks.generatingTasks") : t("tasks.generateSimilar")}
           </Button>
 
           {/* Quiz generation error (e.g. "No relevant material found...") */}
@@ -424,8 +424,8 @@ const MaterialsTask = () => {
                   <span className="text-3xl">🎓</span>
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-white">Generated Tasks</h2>
-                  <p className="text-violet-100 text-sm">{quiz.length} questions based on your document</p>
+                  <h2 className="text-xl font-bold text-white">{t("tasks.generatedTasks")}</h2>
+                  <p className="text-violet-100 text-sm">{t("tasks.questionsBasedOn", { count: quiz.length })}</p>
                 </div>
               </div>
               <Button 

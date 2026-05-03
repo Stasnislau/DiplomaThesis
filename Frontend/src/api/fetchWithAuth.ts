@@ -1,4 +1,5 @@
 import { getAccessToken } from "@/utils/getAccessToken";
+import i18n from "@/config/i18n";
 import { useAuthStore } from "@/store/useAuthStore";
 
 type FetchOptions = {
@@ -16,6 +17,10 @@ function buildHeaders(
 ): Record<string, string> {
   const headers: Record<string, string> = {
     Authorization: `Bearer ${token}`,
+    // Tell the backend which UI locale to use for AI-generated user-facing
+    // text (explanations, feedback, hints). Picked up by Bridge's
+    // extract_user_context and threaded into every prompt.
+    "X-UI-Locale": (i18n.language || "en").split("-")[0].toLowerCase(),
   };
 
   if (!(options.body instanceof FormData)) {

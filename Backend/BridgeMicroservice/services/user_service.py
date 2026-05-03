@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Any, Dict, List, Optional, TypedDict
 
@@ -6,6 +7,8 @@ from fastapi import HTTPException, status
 
 from utils.user_context import UserContext
 
+logger = logging.getLogger("bridge_microservice")
+
 
 class UserAIToken(TypedDict, total=False):
     id: str
@@ -13,6 +16,14 @@ class UserAIToken(TypedDict, total=False):
     token: str
     aiProviderId: str
     isDefault: bool
+
+
+class TaskHistoryEntry(TypedDict, total=False):
+    taskType: str
+    title: str
+    score: Optional[int]
+    language: Optional[str]
+    metadata: Optional[Dict[str, Any]]
 
 
 class UserService:
@@ -85,6 +96,30 @@ class UserService:
             )
 
         return payload
+
+    async def log_task_history(
+        self, ctx: UserContext, entry: TaskHistoryEntry
+    ) -> None:
+        """Best-effort POST to /api/history. Never raises — history logging
+        must not block or fail the actual user-facing operation.
+        """
+        try:
+            url = f"{self.base_url}/history"
+            headers = ctx.to_forward_headers()
+            headers["x-internal-service-key"] = os.getenv(
+                "INTERNAL_SERVICE_KEY", "supersecretbridgekey"
+            )
+            headers["content-type"] = "application/json"
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                response = await client.post(url, headers=headers, json=entry)
+            if response.status_code >= 400:
+                logger.warning(
+                    "history log failed status=%s body=%s",
+                    response.status_code,
+                    response.text[:200],
+                )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("history log exception: %s", exc)
 
     async def get_default_ai_token(
         self, ctx: UserContext, ai_provider_id: Optional[str] = None

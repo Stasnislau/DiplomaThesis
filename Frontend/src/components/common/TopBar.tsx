@@ -18,6 +18,7 @@ export const TopBar: React.FC = () => {
     { label: t("nav.tasks"), value: "tasks", path: "/tasks" },
     { label: t("nav.quiz"), value: "quiz", path: "/quiz" },
     { label: t("nav.speechAnalysis"), value: "speech-analysis", path: "/speech-analysis" },
+    { label: t("nav.history"), value: "history", path: "/history" },
   ];
 
   useEffect(() => {

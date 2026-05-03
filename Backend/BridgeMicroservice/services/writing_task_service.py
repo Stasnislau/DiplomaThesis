@@ -47,7 +47,9 @@ class WritingTaskService:
 
         seed = str(uuid.uuid4())
         prompt = writing_multiple_choice_task_prompt(
-            language, level, level_context.model_dump(), topic=topic, keywords=keywords, seed=seed
+            language, level, level_context.model_dump(),
+            topic=topic, keywords=keywords, seed=seed,
+            ui_locale_label=user_context.ui_locale_label if user_context else None,
         )
         response = await self.ai_service.get_ai_response(
             prompt, user_context=user_context, temperature=0.8
@@ -88,7 +90,9 @@ class WritingTaskService:
 
         seed = str(uuid.uuid4())
         prompt = writing_fill_in_the_blank_task_prompt(
-            language, level, level_context.model_dump(), topic=topic, keywords=keywords, seed=seed
+            language, level, level_context.model_dump(),
+            topic=topic, keywords=keywords, seed=seed,
+            ui_locale_label=user_context.ui_locale_label if user_context else None,
         )
         response = await self.ai_service.get_ai_response(
             prompt, user_context=user_context, temperature=0.8
@@ -107,7 +111,10 @@ class WritingTaskService:
         task = explain_answer_request.task
         correct_answer = explain_answer_request.correct_answer
         user_answer = explain_answer_request.user_answer
-        prompt = explain_answer_prompt(language, level, task, correct_answer, user_answer)
+        prompt = explain_answer_prompt(
+            language, level, task, correct_answer, user_answer,
+            ui_locale_label=user_context.ui_locale_label if user_context else None,
+        )
         response = await self.ai_service.get_ai_response(
             prompt, user_context=user_context
         )

@@ -9,6 +9,7 @@ from fastapi import HTTPException
 from dotenv import load_dotenv
 
 from .ai_service import AI_Service
+from .user_service import UserService
 from utils.user_context import UserContext
 from models.dtos.speaking_analysis_dtos import WhisperTranscriptionResult, WhisperSegment, WhisperWord
 from models.responses.speaking_analysis_response import (
@@ -29,6 +30,7 @@ GROQ_WHISPER_MODEL = os.getenv("GROQ_WHISPER_MODEL", "whisper-large-v3-turbo")
 class SpeakingService:
     def __init__(self, ai_service: AI_Service):
         self.ai_service = ai_service
+        self.user_service = UserService()
 
     async def _transcribe_audio_with_whisper(
         self, audio_file_bytes: bytes, filename: str, language_code: str
