@@ -1,21 +1,31 @@
+# syntax=docker/dockerfile:1.6
+# User microservice: NestJS with Prisma.
+# tsx is needed at runtime (for prisma seed); we install it in the prod
+# stage with a cache mount so a re-deploy doesn't re-pull from npm.
+
 FROM node:20-alpine AS builder
-RUN apk add --no-cache openssl
+RUN --mount=type=cache,target=/var/cache/apk \
+    apk add --no-cache openssl
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci
 
 COPY . .
 
 # Generate Prisma client
-RUN npx prisma generate
+RUN --mount=type=cache,target=/root/.cache/prisma \
+    npx prisma generate
 
 RUN npm run build
 
 # ── Production ──────────────────────────────────────────────────────────────
 FROM node:20-alpine AS production
-RUN apk add --no-cache openssl
-RUN npm install -g tsx
+RUN --mount=type=cache,target=/var/cache/apk \
+    apk add --no-cache openssl
+RUN --mount=type=cache,target=/root/.npm \
+    npm install -g tsx
 WORKDIR /app
 
 COPY --from=builder --chown=node:node /app/dist ./dist
