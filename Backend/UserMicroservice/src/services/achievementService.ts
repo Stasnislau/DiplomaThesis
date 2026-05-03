@@ -1,6 +1,10 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { HttpStatus, Injectable } from "@nestjs/common";
 
 import { PrismaService } from "prisma/prismaService";
+import {
+  USER_ACHIEVEMENT_NOT_FOUND,
+  throwWithCode,
+} from "../utils/errorCodes";
 
 export interface AchievementDefinition {
   name: string;
@@ -274,7 +278,11 @@ export class AchievementService {
       });
       
       if (!achievement) {
-        throw new NotFoundException(`Achievement "${achievementName}" not found`);
+        throwWithCode(
+          USER_ACHIEVEMENT_NOT_FOUND,
+          HttpStatus.NOT_FOUND,
+          `Achievement "${achievementName}" not found`,
+        );
       }
     }
 

@@ -7,15 +7,23 @@ import { UserDto } from "src/dtos/userDto";
 import { v4 as uuidv4 } from "uuid";
 import {
   Injectable,
-  BadRequestException,
-  UnauthorizedException,
-  NotFoundException,
+  HttpStatus,
   Logger,
 } from "@nestjs/common";
 import { LoginDto } from "src/dtos/loginDto";
 import { Inject } from "@nestjs/common";
 import { ClientProxy } from "@nestjs/microservices";
 import { lastValueFrom } from "rxjs";
+import {
+  AUTH_EMAIL_TAKEN,
+  AUTH_INVALID_CREDENTIALS,
+  AUTH_INVALID_OLD_PASSWORD,
+  AUTH_REFRESH_TOKEN_EXPIRED,
+  AUTH_REFRESH_TOKEN_INVALID,
+  AUTH_REFRESH_TOKEN_REQUIRED,
+  AUTH_USER_NOT_FOUND,
+  throwWithCode,
+} from "../utils/errorCodes";
 
 @Injectable()
 export class AuthService {
@@ -53,7 +61,11 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const user = await this.validateUser(loginDto.email, loginDto.password);
     if (!user) {
-      throw new UnauthorizedException("Invalid credentials");
+      throwWithCode(
+        AUTH_INVALID_CREDENTIALS,
+        HttpStatus.UNAUTHORIZED,
+        "Invalid email or password",
+      );
     }
     const accessToken = this.generateAccessToken(user);
     const refreshToken = await this.createRefreshToken(user);
@@ -69,7 +81,11 @@ export class AuthService {
       where: { email: userDto.email },
     });
     if (emailExists) {
-      throw new BadRequestException("User with this email already exists");
+      throwWithCode(
+        AUTH_EMAIL_TAKEN,
+        HttpStatus.CONFLICT,
+        "User with this email already exists",
+      );
     }
     const user = await this.prisma.user.create({
       data: {
@@ -132,28 +148,44 @@ export class AuthService {
 
   async refreshToken(refreshToken: string) {
     if (!refreshToken) {
-      throw new BadRequestException("Refresh token is required");
+      throwWithCode(
+        AUTH_REFRESH_TOKEN_REQUIRED,
+        HttpStatus.BAD_REQUEST,
+        "Refresh token is required",
+      );
     }
     const refreshTokenRecord = await this.prisma.refreshToken.findUnique({
       where: { token: refreshToken },
     });
 
     if (!refreshTokenRecord) {
-      throw new BadRequestException("Invalid refresh token");
+      throwWithCode(
+        AUTH_REFRESH_TOKEN_INVALID,
+        HttpStatus.BAD_REQUEST,
+        "Invalid refresh token",
+      );
     }
 
     const payload = this.jwtService.verify(refreshToken, {
       secret: config().refreshToken.secret,
     });
     if (payload.exp < Date.now() / 1000) {
-      throw new BadRequestException("Refresh token expired");
+      throwWithCode(
+        AUTH_REFRESH_TOKEN_EXPIRED,
+        HttpStatus.BAD_REQUEST,
+        "Refresh token expired",
+      );
     }
 
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
     });
     if (!user) {
-      throw new UnauthorizedException();
+      throwWithCode(
+        AUTH_USER_NOT_FOUND,
+        HttpStatus.UNAUTHORIZED,
+        "User not found for this token",
+      );
     }
 
     const accessToken = this.generateAccessToken(user);
@@ -190,7 +222,11 @@ export class AuthService {
   async resetPassword(email: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
-      throw new UnauthorizedException();
+      throwWithCode(
+        AUTH_USER_NOT_FOUND,
+        HttpStatus.NOT_FOUND,
+        "No account found for that email",
+      );
     }
     const newPassword = uuidv4();
     const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -241,7 +277,11 @@ export class AuthService {
   ) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
-      throw new NotFoundException("User not found");
+      throwWithCode(
+        AUTH_USER_NOT_FOUND,
+        HttpStatus.NOT_FOUND,
+        "User not found",
+      );
     }
     // Authorization: JWT guard ensures userId === requesting user's id.
     // Old-password check below prevents unauthorized changes.
@@ -252,7 +292,11 @@ export class AuthService {
       !credentials ||
       !(await bcrypt.compare(oldPassword, credentials.password))
     ) {
-      throw new BadRequestException("Invalid old password");
+      throwWithCode(
+        AUTH_INVALID_OLD_PASSWORD,
+        HttpStatus.BAD_REQUEST,
+        "Invalid old password",
+      );
     }
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
     await this.prisma.credentials.update({

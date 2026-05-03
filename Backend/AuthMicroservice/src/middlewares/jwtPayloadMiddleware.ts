@@ -1,7 +1,8 @@
-import { Injectable, NestMiddleware, UnauthorizedException } from '@nestjs/common';
+import { HttpStatus, Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import config from '../config/configuration';
+import { AUTH_AUTHORIZATION_FAILED, throwWithCode } from '../utils/errorCodes';
 
 @Injectable()
 export class JwtPayloadMiddleware implements NestMiddleware {
@@ -18,9 +19,13 @@ export class JwtPayloadMiddleware implements NestMiddleware {
         role: payload.role,
       }
       if (!payload) {
-        throw new UnauthorizedException("Authorization failed");
+        throwWithCode(
+          AUTH_AUTHORIZATION_FAILED,
+          HttpStatus.UNAUTHORIZED,
+          "Authorization failed",
+        );
       }
     }
     next();
   }
-} 
+}

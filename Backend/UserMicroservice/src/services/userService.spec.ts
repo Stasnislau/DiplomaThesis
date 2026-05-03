@@ -1,4 +1,8 @@
-import { BadRequestException, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 
 import { LanguageLevel } from "@prisma/client";
@@ -268,7 +272,7 @@ describe("UserService", () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it("should throw BadRequestException when language already added", async () => {
+    it("should throw ConflictException when language already added", async () => {
       (prisma.language.findUnique as jest.Mock).mockResolvedValue({ id: "lang-1" });
       (prisma.user.findUnique as jest.Mock).mockResolvedValue({
         ...mockUser,
@@ -277,7 +281,10 @@ describe("UserService", () => {
 
       await expect(
         service.setNativeLanguage("user-123", "lang-1"),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(ConflictException);
+      await expect(
+        service.setNativeLanguage("user-123", "lang-1"),
+      ).rejects.toThrow("USER_LANGUAGE_ALREADY_ADDED");
     });
   });
 

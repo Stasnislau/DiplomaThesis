@@ -2,6 +2,7 @@ import React, { useState } from "react";
 
 import type { Achievement } from "@/api/queries/getAchievements";
 import { AchievementCard } from "@/pages/User/components/achievementCard";
+import { getLocalizedAchievement } from "@/utils/localizeContent";
 import Avatar from "@/components/common/Avatar";
 import { ChangePasswordModal } from "./components/modals/ChangePasswordModal";
 import { DropdownMenu } from "@/components/common/DropdownMenu";
@@ -286,17 +287,23 @@ export const ProfilePage: React.FC = () => {
                     </h3>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                    {(categoryAchievements as Achievement[]).map((ach: Achievement) => (
-                      <AchievementCard
-                        key={ach.id}
-                        title={ach.name}
-                        description={ach.description}
-                        icon={ach.icon}
-                        progress={ach.progress}
-                        maxProgress={ach.maxProgress}
-                        isUnlocked={ach.isUnlocked}
-                      />
-                    ))}
+                    {(categoryAchievements as Achievement[]).map((ach: Achievement) => {
+                      const localized = getLocalizedAchievement(
+                        ach.name,
+                        ach.description,
+                      );
+                      return (
+                        <AchievementCard
+                          key={ach.id}
+                          title={localized.name}
+                          description={localized.description}
+                          icon={ach.icon}
+                          progress={ach.progress}
+                          maxProgress={ach.maxProgress}
+                          isUnlocked={ach.isUnlocked}
+                        />
+                      );
+                    })}
                   </div>
                 </div>
               ))}

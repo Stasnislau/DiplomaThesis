@@ -7,12 +7,16 @@ import {
   Delete,
   Param,
   Patch,
-  NotFoundException,
-  BadRequestException,
+  HttpStatus,
 } from "@nestjs/common";
 import { UserAITokensService } from "../services/user-ai-tokens.service";
 import { AuthenticatedRequest } from "src/types/AuthenticatedRequest";
 import { CreateUserAITokenDto } from "../dtos/createUserAIToken.dto";
+import {
+  USER_AI_TOKEN_CREATE_FAILED,
+  USER_AI_TOKEN_NOT_FOUND,
+  throwWithCode,
+} from "../utils/errorCodes";
 
 @Controller("ai-tokens")
 export class UserAITokensController {
@@ -28,7 +32,11 @@ export class UserAITokensController {
       createUserAITokenDto,
     );
     if (result === null) {
-      throw new BadRequestException("Failed to create AI token");
+      throwWithCode(
+        USER_AI_TOKEN_CREATE_FAILED,
+        HttpStatus.BAD_REQUEST,
+        "Failed to create AI token",
+      );
     }
     return {
       success: true,
@@ -56,7 +64,11 @@ export class UserAITokensController {
   async remove(@Request() req: AuthenticatedRequest, @Param("id") id: string) {
     const result = await this.userAITokensService.remove(id, req.user.id);
     if (result === null) {
-      throw new NotFoundException(`Token with ID #${id} not found`);
+      throwWithCode(
+        USER_AI_TOKEN_NOT_FOUND,
+        HttpStatus.NOT_FOUND,
+        `Token with ID #${id} not found`,
+      );
     }
     return {
       success: true,
@@ -71,7 +83,11 @@ export class UserAITokensController {
   ) {
     const result = await this.userAITokensService.setDefault(id, req.user.id);
     if (result === null) {
-      throw new NotFoundException(`Token with ID #${id} not found`);
+      throwWithCode(
+        USER_AI_TOKEN_NOT_FOUND,
+        HttpStatus.NOT_FOUND,
+        `Token with ID #${id} not found`,
+      );
     }
     return {
       success: true,

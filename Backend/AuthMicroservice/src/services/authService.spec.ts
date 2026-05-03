@@ -2,6 +2,7 @@ import * as bcrypt from "bcrypt";
 
 import {
   BadRequestException,
+  ConflictException,
   NotFoundException,
   UnauthorizedException,
 } from "@nestjs/common";
@@ -198,7 +199,7 @@ describe("AuthService", () => {
         UnauthorizedException,
       );
       await expect(service.login(loginDto)).rejects.toThrow(
-        "Invalid credentials",
+        "AUTH_INVALID_CREDENTIALS",
       );
     });
   });
@@ -239,7 +240,7 @@ describe("AuthService", () => {
       );
     });
 
-    it("should throw BadRequestException when email already exists", async () => {
+    it("should throw ConflictException when email already exists", async () => {
       const userDto = {
         email: "existing@example.com",
         password: "password123",
@@ -249,10 +250,10 @@ describe("AuthService", () => {
       prismaService.user.findUnique.mockResolvedValue(mockUser as any);
 
       await expect(service.register(userDto)).rejects.toThrow(
-        BadRequestException,
+        ConflictException,
       );
       await expect(service.register(userDto)).rejects.toThrow(
-        "User with this email already exists",
+        "AUTH_EMAIL_TAKEN",
       );
       expect(prismaService.user.create).not.toHaveBeenCalled();
     });
@@ -368,7 +369,7 @@ describe("AuthService", () => {
         BadRequestException,
       );
       await expect(service.refreshToken("")).rejects.toThrow(
-        "Refresh token is required",
+        "AUTH_REFRESH_TOKEN_REQUIRED",
       );
     });
 
@@ -379,7 +380,7 @@ describe("AuthService", () => {
         BadRequestException,
       );
       await expect(service.refreshToken("invalid.token")).rejects.toThrow(
-        "Invalid refresh token",
+        "AUTH_REFRESH_TOKEN_INVALID",
       );
     });
 
@@ -395,6 +396,9 @@ describe("AuthService", () => {
 
       await expect(service.refreshToken("valid.token")).rejects.toThrow(
         UnauthorizedException,
+      );
+      await expect(service.refreshToken("valid.token")).rejects.toThrow(
+        "AUTH_USER_NOT_FOUND",
       );
     });
   });
@@ -440,12 +444,15 @@ describe("AuthService", () => {
       );
     });
 
-    it("should throw UnauthorizedException when user not found", async () => {
+    it("should throw NotFoundException when user not found", async () => {
       prismaService.user.findUnique.mockResolvedValue(null);
 
       await expect(
         service.resetPassword("nonexistent@example.com"),
-      ).rejects.toThrow(UnauthorizedException);
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        service.resetPassword("nonexistent@example.com"),
+      ).rejects.toThrow("AUTH_USER_NOT_FOUND");
     });
   });
 

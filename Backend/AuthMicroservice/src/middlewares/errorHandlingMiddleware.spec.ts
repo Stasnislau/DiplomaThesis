@@ -45,7 +45,7 @@ describe("ErrorHandlingMiddleware", () => {
         expect.objectContaining({
           success: false,
           payload: expect.objectContaining({
-            message: "Token has expired",
+            message: expect.stringContaining("AUTH_TOKEN_EXPIRED"),
           }),
         }),
       );
@@ -61,7 +61,7 @@ describe("ErrorHandlingMiddleware", () => {
         expect.objectContaining({
           success: false,
           payload: expect.objectContaining({
-            message: "Invalid token",
+            message: expect.stringContaining("AUTH_INVALID_TOKEN"),
           }),
         }),
       );
@@ -121,7 +121,7 @@ describe("ErrorHandlingMiddleware", () => {
         expect.objectContaining({
           success: false,
           payload: expect.objectContaining({
-            message: "Something unexpected happened",
+            message: expect.stringContaining("AUTH_INTERNAL_ERROR"),
           }),
         }),
       );
