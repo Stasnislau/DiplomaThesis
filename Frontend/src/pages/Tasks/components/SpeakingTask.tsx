@@ -16,7 +16,7 @@ const LANGUAGES = [
 ];
 
 const SpeakingTask = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [analysisResult, setAnalysisResult] = useState<SpeakingAnalysisResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>("");
@@ -134,6 +134,7 @@ const SpeakingTask = () => {
         audioFile,
         filename: audioFile.name,
         language: backendLanguage,
+        uiLocale: i18n.language,
       });
       setAnalysisResult(result);
     } catch (err) {
@@ -162,6 +163,17 @@ const SpeakingTask = () => {
       case "fluency": return "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400";
       default: return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400";
     }
+  };
+
+  const localizeErrorType = (errorType: string): string => {
+    const key = errorType.toLowerCase();
+    const map: Record<string, string> = {
+      grammar: "speakingResults.errorTypeGrammar",
+      vocabulary: "speakingResults.errorTypeVocabulary",
+      phrasing: "speakingResults.errorTypePhrasing",
+      fluency: "speakingResults.errorTypeFluency",
+    };
+    return map[key] ? t(map[key]) : errorType;
   };
 
   return (
@@ -202,7 +214,7 @@ const SpeakingTask = () => {
           <div className="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-900/50 flex items-center justify-center">
             <span className="text-lg" role="img" aria-hidden="true">🎙️</span>
           </div>
-          <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Record or Upload Audio</h3>
+          <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">{t("tasks.recordOrUpload")}</h3>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
@@ -220,7 +232,7 @@ const SpeakingTask = () => {
             <div className={`relative w-5 h-5 rounded-full ${isRecording ? "bg-white animate-pulse" : "bg-red-500"}`}>
               {isRecording && <div className="absolute inset-0 rounded-full bg-white animate-ping" />}
             </div>
-            <span className="relative">{isRecording ? "Stop Recording" : "Start Recording"}</span>
+            <span className="relative">{isRecording ? t("tasks.stopRecording") : t("tasks.startRecording")}</span>
           </button>
 
           <div>
@@ -243,7 +255,7 @@ const SpeakingTask = () => {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
-              Upload Audio File
+              {t("tasks.uploadAudioFile")}
             </label>
           </div>
         </div>
@@ -262,7 +274,7 @@ const SpeakingTask = () => {
                 />
               ))}
             </div>
-            <span className="text-red-600 dark:text-red-400 font-medium">Recording in progress...</span>
+            <span className="text-red-600 dark:text-red-400 font-medium">{t("tasks.recordingInProgress")}</span>
           </div>
         )}
       </div>
@@ -278,7 +290,7 @@ const SpeakingTask = () => {
                 </svg>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white">Your Recording</h3>
+                <h3 className="font-semibold text-gray-900 dark:text-white">{t("tasks.yourRecording")}</h3>
                 {audioFile && <p className="text-xs text-indigo-600 dark:text-indigo-400">{audioFile.name}</p>}
               </div>
             </div>
@@ -289,7 +301,7 @@ const SpeakingTask = () => {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
-              Remove
+              {t("speakingResults.removeRecording")}
             </button>
           </div>
           <audio src={audioURL} controls className="w-full rounded-xl dark:bg-gray-700" />
@@ -321,7 +333,7 @@ const SpeakingTask = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {/* Fluency Score */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
-              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">Fluency</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">{t("speakingResults.fluencyLabel")}</p>
               <div className="flex items-end gap-2">
                 <span className="text-2xl font-bold text-gray-900 dark:text-white">
                   {analysisResult.pronunciation.fluencyScore}
@@ -341,33 +353,33 @@ const SpeakingTask = () => {
 
             {/* Confidence */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
-              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">Clarity</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">{t("speakingResults.clarityLabel")}</p>
               <span className={`text-2xl font-bold ${getConfidenceColor(analysisResult.pronunciation.overallConfidence)}`}>
                 {Math.round(analysisResult.pronunciation.overallConfidence * 100)}%
               </span>
-              <p className="text-xs text-gray-400 mt-1">pronunciation confidence</p>
+              <p className="text-xs text-gray-400 mt-1">{t("speakingResults.confidenceCaption")}</p>
             </div>
 
             {/* WPM */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
-              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">Speed</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">{t("speakingResults.speedLabel")}</p>
               <span className="text-2xl font-bold text-gray-900 dark:text-white">
                 {analysisResult.pronunciation.wordsPerMinute
                   ? `${analysisResult.pronunciation.wordsPerMinute}`
                   : "—"}
               </span>
-              <p className="text-xs text-gray-400 mt-1">words/min</p>
+              <p className="text-xs text-gray-400 mt-1">{t("speakingResults.wpmCaption")}</p>
             </div>
 
             {/* Avg Pause */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
-              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">Pauses</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">{t("speakingResults.pausesLabel")}</p>
               <span className="text-2xl font-bold text-gray-900 dark:text-white">
                 {analysisResult.pronunciation.avgPauseDuration
                   ? `${analysisResult.pronunciation.avgPauseDuration}s`
                   : "—"}
               </span>
-              <p className="text-xs text-gray-400 mt-1">avg duration</p>
+              <p className="text-xs text-gray-400 mt-1">{t("speakingResults.avgDurationCaption")}</p>
             </div>
           </div>
 
@@ -377,7 +389,7 @@ const SpeakingTask = () => {
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-amber-500">⚠️</span>
                 <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">
-                  Unclear Pronunciation Detected
+                  {t("tasks.unclearPronunciation")}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -397,7 +409,7 @@ const SpeakingTask = () => {
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
             <div className="bg-gradient-to-r from-indigo-500 to-purple-500 px-5 py-3 flex items-center gap-2">
               <span className="text-white">📝</span>
-              <h3 className="text-sm font-semibold text-white">Transcription</h3>
+              <h3 className="text-sm font-semibold text-white">{t("speakingResults.transcriptionTitle")}</h3>
               {analysisResult.detectedLanguage && (
                 <span className="ml-auto text-xs text-white/70 bg-white/20 px-2 py-0.5 rounded-full">
                   {analysisResult.detectedLanguage}
@@ -415,7 +427,7 @@ const SpeakingTask = () => {
           <div className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/10 dark:to-teal-900/10 rounded-2xl border border-emerald-200 dark:border-emerald-800 p-5">
             <div className="flex items-center gap-2 mb-3">
               <span className="text-emerald-500">📊</span>
-              <h3 className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Overall Assessment</h3>
+              <h3 className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">{t("speakingResults.overallAssessmentTitle")}</h3>
             </div>
             <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
               {analysisResult.overallAssessment}
@@ -428,10 +440,10 @@ const SpeakingTask = () => {
               <div className="bg-gradient-to-r from-red-500 to-rose-500 px-5 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-white">⚠️</span>
-                  <h3 className="text-sm font-semibold text-white">Identified Errors</h3>
+                  <h3 className="text-sm font-semibold text-white">{t("speakingResults.identifiedErrorsTitle")}</h3>
                 </div>
                 <span className="text-xs text-white/80 bg-white/20 px-2 py-0.5 rounded-full">
-                  {analysisResult.identifiedErrors.length} found
+                  {t("speakingResults.errorsFound", { count: analysisResult.identifiedErrors.length })}
                 </span>
               </div>
               <div className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -439,7 +451,7 @@ const SpeakingTask = () => {
                   <div key={index} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
                     <div className="flex items-start gap-3">
                       <span className={`inline-flex px-2 py-0.5 rounded-md text-xs font-semibold shrink-0 mt-0.5 ${getErrorTypeColor(error.errorType)}`}>
-                        {error.errorType}
+                        {localizeErrorType(error.errorType)}
                       </span>
                       <div className="space-y-1.5 min-w-0">
                         <p className="text-sm font-mono text-red-600 dark:text-red-400 break-words">
@@ -468,7 +480,7 @@ const SpeakingTask = () => {
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-5">
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-emerald-500">✅</span>
-                  <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">Positive Points</h3>
+                  <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t("speakingResults.positivePointsTitle")}</h3>
                 </div>
                 <ul className="space-y-2">
                   {analysisResult.positivePoints.map((point, i) => (
@@ -485,7 +497,7 @@ const SpeakingTask = () => {
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-5">
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-amber-500">📈</span>
-                  <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">Areas for Improvement</h3>
+                  <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t("speakingResults.areasForImprovementTitle")}</h3>
                 </div>
                 <ul className="space-y-2">
                   {analysisResult.areasForImprovement.map((area, i) => (

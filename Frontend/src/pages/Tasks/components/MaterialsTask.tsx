@@ -21,9 +21,10 @@ const MaterialsTask = () => {
   const [analyzedTypes, setAnalyzedTypes] = useState<AnalyzedType[]>([]);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [quiz, setQuiz] = useState<QuizQuestion[]>([]);
+  const [quizError, setQuizError] = useState<string | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<Record<number, string>>({});
   const [revealedAnswers, setRevealedAnswers] = useState<Record<number, boolean>>({});
-  
+
   const { mutate: upload, isPending: isUploading, error: uploadError } = useUploadMaterial();
   const { mutate: generateQuizMutation, isPending: isGeneratingQuiz } = useGenerateQuiz();
   const { mutate: saveMaterial } = useSaveMaterial();
@@ -67,16 +68,28 @@ const MaterialsTask = () => {
   };
 
   const handleGenerateQuiz = () => {
+    setQuizError(null);
     generateQuizMutation(selectedTypes, {
       onSuccess: (data) => {
-        if (data.quiz && Array.isArray(data.quiz.questions)) {
-          setQuiz(data.quiz.questions);
+        const payload = data.quiz;
+        if (
+          payload &&
+          typeof payload === "object" &&
+          Array.isArray((payload as { questions?: unknown }).questions)
+        ) {
+          setQuiz((payload as { questions: QuizQuestion[] }).questions);
           setSelectedAnswer({});
           setRevealedAnswers({});
           setView("quiz");
-        } else {
-          console.error("Unexpected quiz format", data);
+          return;
         }
+        // Backend returned a string explanation (e.g. "No relevant material...")
+        // or an unexpected shape. Surface a friendly i18n'd message.
+        const backendMessage =
+          typeof payload === "string" ? payload : "";
+        setQuizError(
+          backendMessage || t("materialsErrors.noRelevantMaterial"),
+        );
       }
     });
   };
@@ -111,6 +124,7 @@ const MaterialsTask = () => {
     setAnalyzedTypes([]);
     setSelectedTypes([]);
     setQuiz([]);
+    setQuizError(null);
     setSelectedAnswer({});
     setRevealedAnswers({});
     setView("upload");
@@ -386,6 +400,16 @@ const MaterialsTask = () => {
           >
             {isGeneratingQuiz ? "Generating Tasks..." : "⚡ Generate Similar Tasks"}
           </Button>
+
+          {/* Quiz generation error (e.g. "No relevant material found...") */}
+          {quizError && (
+            <div className="mt-2 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800 flex items-start gap-3">
+              <span className="text-xl shrink-0" aria-hidden="true">⚠️</span>
+              <p className="text-sm text-amber-800 dark:text-amber-300 leading-relaxed">
+                {quizError}
+              </p>
+            </div>
+          )}
         </div>
       )}
 

@@ -37,6 +37,7 @@ interface LessonCardProps {
 }
 
 const LessonCard = ({ lesson, onStart }: LessonCardProps) => {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const isLocked = lesson.status === "LOCKED";
   const isCompleted = lesson.status === "COMPLETED";
@@ -103,7 +104,7 @@ const LessonCard = ({ lesson, onStart }: LessonCardProps) => {
           {/* Keywords */}
           <div className="mb-3">
             <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-              Key Words & Concepts
+              {t("learningPath.lessonCard.keywordsTitle")}
             </p>
             <div className="flex flex-wrap gap-1.5">
               {lesson.keywords.map((kw, i) => (
@@ -122,7 +123,7 @@ const LessonCard = ({ lesson, onStart }: LessonCardProps) => {
             onClick={onStart}
             className="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors duration-200 shadow-sm hover:shadow"
           >
-            {isCompleted ? "📖 Review Lesson" : "▶ Start Lesson"}
+            {isCompleted ? t("learningPath.lessonCard.reviewButton") : t("learningPath.lessonCard.startButton")}
           </button>
         </div>
       )}
@@ -258,13 +259,13 @@ const LearningPathPage = () => {
           <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-indigo-500 dark:text-indigo-400 mb-1">
-                Learning Path
+                {t("learningPath.header.title")}
               </p>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white capitalize">
                 {userLanguage} — {userLevel}
               </h1>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Your structured journey from {userLevel} to mastery.
+                {t("learningPath.header.subtitle", { userLevel })}
               </p>
             </div>
 
@@ -280,7 +281,7 @@ const LearningPathPage = () => {
                   style={{ width: `${overallProgress}%` }}
                 />
               </div>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{completedLessons} / {totalLessons} lessons</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{t("learningPath.header.lessonsCount", { completed: completedLessons, total: totalLessons })}</p>
             </div>
           </div>
         </div>

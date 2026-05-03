@@ -32,6 +32,7 @@ export interface AnalyzeSpeechRequest {
   audioFile: File;
   filename?: string;
   language: string;
+  uiLocale?: string;
 }
 
 /**
@@ -45,6 +46,9 @@ export async function analyzeSpeech(
   formData.append("audio_file", input.audioFile, input.filename);
   const url = new URL(BRIDGE_MICROSERVICE_URL + "/speaking/analyze");
   url.searchParams.set("language", input.language);
+  if (input.uiLocale) {
+    url.searchParams.set("uiLocale", input.uiLocale);
+  }
 
   const response = await fetchWithAuth(url.toString(), {
     method: "POST",

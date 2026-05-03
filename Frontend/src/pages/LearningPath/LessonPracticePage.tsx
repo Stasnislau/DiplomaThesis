@@ -9,6 +9,7 @@ import { isMultipleChoice } from "@/types/typeGuards/isMultipleChoice";
 import { useCompleteLesson } from "@/api/hooks/useCompleteLesson";
 import { useCreateBlankSpaceTask } from "@/api/hooks/useCreateBlankSpaceTask";
 import { useCreateMultipleChoiceTask } from "@/api/hooks/useCreateMultipleChoiceTask";
+import { useTranslation } from "react-i18next";
 import { useExplainAnswer } from "@/api/hooks/useExplainAnswer";
 
 const CORRECT_TO_COMPLETE = 5;
@@ -52,6 +53,7 @@ interface CompletionScreenProps {
 const CompletionScreen = ({
   lesson, correctCount, taskCount, gradient, icon, onContinue, onRetry,
 }: CompletionScreenProps) => {
+  const { t } = useTranslation();
   const accuracy = taskCount > 0 ? Math.round((correctCount / taskCount) * 100) : 0;
   const stars = accuracy >= 90 ? 3 : accuracy >= 70 ? 2 : 1;
 
@@ -69,7 +71,7 @@ const CompletionScreen = ({
 
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8 border border-gray-100 dark:border-gray-700">
           <p className="text-xs font-bold uppercase tracking-widest text-indigo-500 dark:text-indigo-400 mb-1">
-            Lesson Complete!
+            {t("learningPath.practice.completionTitle")}
           </p>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
             {lesson.title}
@@ -80,9 +82,9 @@ const CompletionScreen = ({
 
           <div className="grid grid-cols-3 gap-3 mb-6">
             {[
-              { label: "Correct",  value: correctCount,           color: "text-green-600 dark:text-green-400"  },
-              { label: "Total",    value: taskCount,              color: "text-indigo-600 dark:text-indigo-400" },
-              { label: "Accuracy", value: `${accuracy}%`,        color: "text-amber-600 dark:text-amber-400"   },
+              { label: t("learningPath.practice.correctLabel"),  value: correctCount,    color: "text-green-600 dark:text-green-400"  },
+              { label: t("learningPath.practice.totalLabel"),    value: taskCount,       color: "text-indigo-600 dark:text-indigo-400" },
+              { label: t("learningPath.practice.accuracyLabel"), value: `${accuracy}%`,  color: "text-amber-600 dark:text-amber-400"   },
             ].map(({ label, value, color }) => (
               <div key={label} className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3">
                 <p className={`text-xl font-extrabold ${color}`}>{value}</p>
@@ -93,7 +95,7 @@ const CompletionScreen = ({
 
           <div className="mb-6">
             <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">
-              Words you practised
+              {t("learningPath.practice.practisedWordsTitle")}
             </p>
             <div className="flex flex-wrap justify-center gap-1.5">
               {lesson.keywords.map((kw, i) => (
@@ -112,13 +114,13 @@ const CompletionScreen = ({
               onClick={onContinue}
               className={`w-full py-3 rounded-xl font-bold text-white bg-gradient-to-r ${gradient} hover:opacity-90 transition shadow`}
             >
-              ← Back to Learning Path
+              {t("learningPath.practice.backButton")}
             </button>
             <button
               onClick={onRetry}
               className="w-full py-3 rounded-xl font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition"
             >
-              ⟳ Practise Again
+              {t("learningPath.practice.retryButton")}
             </button>
           </div>
         </div>
@@ -150,6 +152,7 @@ const LessonPracticePage = () => {
 interface ContentProps { lesson: Lesson; language: string; level: string; }
 
 const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const [currentTask,     setCurrentTask]     = useState<MultipleChoiceTask | FillInTheBlankTask | null>(null);
@@ -262,7 +265,7 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         <div className="flex flex-col items-center gap-4">
           <div className="w-16 h-16 border-4 border-indigo-300 border-t-indigo-600 rounded-full animate-spin" />
-          <p className="text-gray-600 dark:text-gray-300 font-semibold">Saving your progress…</p>
+          <p className="text-gray-600 dark:text-gray-300 font-semibold">{t("learningPath.practice.savingMessage")}</p>
         </div>
       </div>
     );
@@ -279,7 +282,7 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
           state={{ language: language.toLowerCase(), level }}
           className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
         >
-          ← Back to Learning Path
+          {t("learningPath.practice.backLink")}
         </Link>
 
         <div className={`bg-gradient-to-r ${gradient} rounded-3xl p-6 text-white shadow-xl`}>
@@ -315,9 +318,12 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
 
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm">
           <div className="flex justify-between text-xs font-semibold mb-2">
-            <span className="text-gray-500 dark:text-gray-400">Lesson progress</span>
+            <span className="text-gray-500 dark:text-gray-400">{t("learningPath.practice.progressLabel")}</span>
             <span className="text-indigo-600 dark:text-indigo-400">
-              {correctCount} / {CORRECT_TO_COMPLETE} correct
+              {t("learningPath.practice.progressStats", {
+                correctCount,
+                target: CORRECT_TO_COMPLETE,
+              })}
             </span>
           </div>
           <div className="h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
@@ -327,16 +333,18 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
             />
           </div>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
-            Get {CORRECT_TO_COMPLETE - correctCount} more correct answer{CORRECT_TO_COMPLETE - correctCount !== 1 ? "s" : ""} to complete this lesson
+            {t("learningPath.practice.completionMessage", {
+              count: CORRECT_TO_COMPLETE - correctCount,
+            })}
           </p>
         </div>
 
         <div className="grid grid-cols-3 gap-4">
           {[
-            { label: "Tasks Done", value: taskCount,    color: "text-indigo-600 dark:text-indigo-400" },
-            { label: "Correct",    value: correctCount,  color: "text-green-600 dark:text-green-400"   },
+            { label: t("learningPath.practice.tasksLabel"), value: taskCount,    color: "text-indigo-600 dark:text-indigo-400" },
+            { label: t("learningPath.practice.correctLabel"),  value: correctCount,  color: "text-green-600 dark:text-green-400"   },
             {
-              label: "Accuracy",
+              label: t("learningPath.practice.accuracyLabel"),
               value: taskCount > 0 ? `${Math.round((correctCount / taskCount) * 100)}%` : "—",
               color: "text-amber-600 dark:text-amber-400",
             },
@@ -350,12 +358,14 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
 
         <div className="flex items-center gap-2 px-1">
           <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">
-            Exercise type:
+            {t("learningPath.practice.exerciseTypeLabel")}
           </span>
           <span className="text-xs font-bold px-3 py-1 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 shadow-sm">
-            {activeFlavour === "multiple-choice" ? "🔘 Multiple Choice" : "📝 Fill in the Blank"}
+            {activeFlavour === "multiple-choice"
+              ? t("learningPath.practice.exerciseTypeMC")
+              : t("learningPath.practice.exerciseTypeFB")}
           </span>
-          <span className="text-xs text-gray-400 dark:text-gray-500 italic">randomised each round</span>
+          <span className="text-xs text-gray-400 dark:text-gray-500 italic">{t("learningPath.practice.exerciseRandom")}</span>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
@@ -363,8 +373,10 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
             <div className="flex flex-col items-center gap-3 py-10">
               <div className="w-10 h-10 border-4 border-indigo-300 border-t-indigo-600 rounded-full animate-spin" />
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Generating a <span className="font-semibold">{activeFlavour}</span> question about{" "}
-                <span className="font-semibold italic">{lesson.topic}</span>…
+                {t("learningPath.practice.generatingMessage", {
+                  flavour: activeFlavour,
+                  topic: lesson.topic,
+                })}
               </p>
             </div>
           )}
@@ -372,7 +384,7 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
           {!isLoading && !currentTask && (
             <div className="text-center py-10">
               <p className="text-4xl mb-3">🎯</p>
-              <p className="text-gray-600 dark:text-gray-300 font-medium">Ready? Press generate to start.</p>
+              <p className="text-gray-600 dark:text-gray-300 font-medium">{t("learningPath.practice.readyMessage")}</p>
             </div>
           )}
 
@@ -406,7 +418,11 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
           disabled={isLoading}
           className={`w-full py-4 rounded-2xl font-bold text-white text-base transition-all shadow-lg bg-gradient-to-r ${gradient} hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed`}
         >
-          {isLoading ? "Generating…" : currentTask ? "⟳ Next Exercise" : "▶ Generate Exercise"}
+          {isLoading
+            ? t("learningPath.practice.generating")
+            : currentTask
+              ? t("learningPath.practice.nextExercise")
+              : t("learningPath.practice.generateExercise")}
         </button>
       </div>
     </div>
