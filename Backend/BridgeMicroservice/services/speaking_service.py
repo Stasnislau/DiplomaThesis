@@ -77,9 +77,11 @@ class SpeakingService:
     ) -> WhisperTranscriptionResult:
         api_key = os.getenv("GROQ_API_KEY")
         if not api_key:
-            raise HTTPException(
-                status_code=500,
-                detail="GROQ_API_KEY is not configured for speech transcription.",
+            from utils.error_codes import SPEAKING_GROQ_KEY_MISSING, raise_with_code
+            raise_with_code(
+                SPEAKING_GROQ_KEY_MISSING,
+                500,
+                "GROQ_API_KEY is not configured for speech transcription.",
             )
 
         ext = (filename or "recording.webm").rsplit(".", 1)[-1].lower()
@@ -111,9 +113,11 @@ class SpeakingService:
                 logger.error(
                     f"Groq Whisper transcription failed ({response.status_code}): {response.text}"
                 )
-                raise HTTPException(
-                    status_code=502,
-                    detail=f"Speech transcription provider error: {response.text}",
+                from utils.error_codes import SPEAKING_TRANSCRIBE_PROVIDER_ERROR, raise_with_code
+                raise_with_code(
+                    SPEAKING_TRANSCRIBE_PROVIDER_ERROR,
+                    502,
+                    f"Speech transcription provider error: {response.text}",
                 )
 
             payload = response.json()
@@ -151,10 +155,12 @@ class SpeakingService:
         except HTTPException:
             raise
         except Exception as e:
+            from utils.error_codes import SPEAKING_TRANSCRIBE_FAILED, raise_with_code
             logger.error(f"Error during Groq Whisper transcription ({filename}): {e}")
-            raise HTTPException(
-                status_code=500,
-                detail=f"Failed to transcribe audio. Error: {str(e)}",
+            raise_with_code(
+                SPEAKING_TRANSCRIBE_FAILED,
+                500,
+                f"Failed to transcribe audio. Error: {str(e)}",
             )
 
     def _compute_pronunciation_metrics(
@@ -320,16 +326,22 @@ class SpeakingService:
             )
             return json.loads(ai_response_str)
         except json.JSONDecodeError as e:
+            from utils.error_codes import SPEAKING_FEEDBACK_PARSE_FAILED, raise_with_code
             logger.error(f"Failed to parse AI feedback JSON: {e}")
-            raise HTTPException(
-                status_code=500,
-                detail="Failed to parse AI feedback into expected JSON structure.",
+            raise_with_code(
+                SPEAKING_FEEDBACK_PARSE_FAILED,
+                500,
+                "Failed to parse AI feedback into expected JSON structure.",
             )
+        except HTTPException:
+            raise
         except Exception as e:
+            from utils.error_codes import SPEAKING_FEEDBACK_FAILED, raise_with_code
             logger.error(f"Error getting AI feedback: {e}")
-            raise HTTPException(
-                status_code=500,
-                detail=f"Failed to get AI feedback: {str(e)}",
+            raise_with_code(
+                SPEAKING_FEEDBACK_FAILED,
+                500,
+                f"Failed to get AI feedback: {str(e)}",
             )
 
     async def analyze_user_audio(
@@ -342,7 +354,8 @@ class SpeakingService:
     ) -> SpeakingAnalysisResponse:
         logger.info(f"Received audio file of size: {len(audio_file_bytes)} bytes for analysis.")
         if not audio_file_bytes:
-            raise HTTPException(status_code=400, detail="No audio file provided.")
+            from utils.error_codes import SPEAKING_NO_AUDIO, raise_with_code
+            raise_with_code(SPEAKING_NO_AUDIO, 400, "No audio file provided.")
 
         effective_filename = filename if filename else "recording.webm"
         language_code = convert_to_language_code(language) if language else "en"

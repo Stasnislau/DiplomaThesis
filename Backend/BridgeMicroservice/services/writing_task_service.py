@@ -127,22 +127,36 @@ class WritingTaskService:
         )
 
     async def _process_ai_response_and_validate(self, response_str: str, is_fill_in_blank: bool = False) -> Dict[str, Any]:
+        from utils.error_codes import AI_RESPONSE_PARSE_FAILED, raise_with_code
         try:
             json_data = json.loads(response_str)
             return json_data  # type: ignore
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse AI response JSON: {e}")
-            raise HTTPException(status_code=500, detail="Failed to parse AI response into expected JSON structure.")
+            raise_with_code(
+                AI_RESPONSE_PARSE_FAILED,
+                500,
+                "Failed to parse AI response into expected JSON structure.",
+            )
         except Exception as e:
             logger.error(f"Error processing AI response: {e}")
-            raise HTTPException(status_code=500, detail=f"Failed to process AI response: {str(e)}")
+            raise_with_code(
+                AI_RESPONSE_PARSE_FAILED,
+                500,
+                f"Failed to process AI response: {str(e)}",
+            )
 
     def _finalize_task_generation(self, json_response: Dict[str, Any], task_type: str, model_class: Type[TaskModelType]) -> TaskModelType:
+        from utils.error_codes import TASK_VALIDATION_FAILED, raise_with_code
         json_response["id"] = str(uuid.uuid4())
         json_response["type"] = task_type
         try:
             return model_class(**json_response)
         except Exception as e:
             logger.error(f"Pydantic validation failed for {model_class.__name__}: {e}")
-            raise HTTPException(status_code=500, detail=f"Failed to create valid {model_class.__name__}: {e}")
+            raise_with_code(
+                TASK_VALIDATION_FAILED,
+                500,
+                f"Failed to create valid {model_class.__name__}: {e}",
+            )
 

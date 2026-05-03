@@ -68,6 +68,11 @@ class AITokenVerifyController:
             return payload.ai_provider_id, payload.token.strip()
 
         if payload.token_id:
+            from utils.error_codes import (
+                INPUT_VALIDATION_FAILED,
+                USER_SERVICE_BAD_RESPONSE,
+                raise_with_code,
+            )
             ctx = extract_user_context(request)
             tokens = await self.user_service.get_ai_tokens(ctx)
             for tok in tokens:
@@ -75,19 +80,23 @@ class AITokenVerifyController:
                     raw_token = tok.get("token")
                     provider = tok.get("aiProviderId")
                     if not raw_token or not provider:
-                        raise HTTPException(
-                            status_code=400,
-                            detail="Token row is missing token or provider",
+                        raise_with_code(
+                            USER_SERVICE_BAD_RESPONSE,
+                            400,
+                            "Token row is missing token or provider",
                         )
                     return provider, raw_token
-            raise HTTPException(
-                status_code=404,
-                detail=f"Token id {payload.token_id} not found for this user",
+            raise_with_code(
+                INPUT_VALIDATION_FAILED,
+                404,
+                f"Token id {payload.token_id} not found for this user",
             )
 
-        raise HTTPException(
-            status_code=400,
-            detail="Provide either tokenId, or aiProviderId + token",
+        from utils.error_codes import INPUT_VALIDATION_FAILED, raise_with_code
+        raise_with_code(
+            INPUT_VALIDATION_FAILED,
+            400,
+            "Provide either tokenId, or aiProviderId + token",
         )
 
     def _setup_routes(self) -> None:

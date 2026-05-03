@@ -34,13 +34,11 @@ class MaterialService:
                 text += page.extract_text() + "\n"
 
             if not text.strip():
-                raise HTTPException(
-                    status_code=400,
-                    detail=(
-                        "PDF_NO_TEXT: No selectable text found. The PDF is "
-                        "likely a scan or has its text encoded with a custom "
-                        "font. Try a text-based PDF or run OCR on the file first."
-                    ),
+                from utils.error_codes import PDF_NO_TEXT, raise_with_code
+                raise_with_code(
+                    PDF_NO_TEXT,
+                    400,
+                    "No selectable text found. The PDF is likely a scan or has its text encoded with a custom font.",
                 )
 
             # Detect garbled text from custom-font / encrypted-encoding PDFs.
@@ -63,14 +61,11 @@ class MaterialService:
                     non_text_share * 100,
                     filename,
                 )
-                raise HTTPException(
-                    status_code=400,
-                    detail=(
-                        "PDF_GARBLED_TEXT: The PDF's text could not be read "
-                        "cleanly — most likely a scanned document or one with "
-                        "a custom embedded font. Try a different PDF, or run "
-                        "OCR on this one before uploading."
-                    ),
+                from utils.error_codes import PDF_GARBLED_TEXT, raise_with_code
+                raise_with_code(
+                    PDF_GARBLED_TEXT,
+                    400,
+                    "PDF text could not be read cleanly — likely a scan or custom embedded font.",
                 )
 
             logger.info(f"Extracted {len(text)} characters from PDF.")
@@ -164,14 +159,11 @@ class MaterialService:
                             user_context=user_context,
                         )
                     except HTTPException:
-                        raise HTTPException(
-                            status_code=422,
-                            detail=(
-                                "PDF_AI_REJECTED: The AI couldn't produce a "
-                                "valid analysis from this PDF — its text is "
-                                "probably too noisy or short. Try a cleaner "
-                                "or longer document."
-                            ),
+                        from utils.error_codes import PDF_AI_REJECTED, raise_with_code
+                        raise_with_code(
+                            PDF_AI_REJECTED,
+                            422,
+                            "The AI couldn't produce a valid analysis from this PDF.",
                         )
                 else:
                     raise
