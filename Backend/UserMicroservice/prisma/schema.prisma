@@ -35,8 +35,30 @@ model User {
     placementTestResults PlacementTestResult[]
     userErrors           UserError[]
     userLessonProgresses UserLessonProgress[]
+    taskHistory          TaskHistoryEntry[]
 
     @@map("users")
+}
+
+model TaskHistoryEntry {
+    id        String   @id @default(uuid()) @map("id")
+    userId    String   @map("user_id")
+    /// One of: placement | speaking | listening | writing | materials | lesson
+    taskType  String   @map("task_type")
+    /// Free-form short title (e.g. "Polish placement test", "Speaking analysis (Russian)")
+    title     String   @map("title")
+    /// Optional 0-100 score (placement %, lesson accuracy, etc). Nullable for analyses.
+    score     Int?     @map("score")
+    /// Two-letter language code the activity was practising. Nullable for cross-language activities.
+    language  String?  @map("language")
+    /// Free-form payload — whatever the source service wants to surface in the UI.
+    metadata  Json?    @map("metadata")
+    createdAt DateTime @default(now()) @map("created_at")
+
+    user User @relation(fields: [userId], references: [id])
+
+    @@index([userId, createdAt(sort: Desc)])
+    @@map("task_history")
 }
 
 model Language {

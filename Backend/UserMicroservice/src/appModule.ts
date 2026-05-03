@@ -5,6 +5,7 @@ import { AiProvidersModule } from "./modules/ai-providers.module";
 import { ConfigModule } from "@nestjs/config";
 import { MaterialModule } from "./modules/materialModule";
 import { PlacementTestModule } from "./modules/placementTestModule";
+import { TaskHistoryModule } from "./modules/task-history.module";
 import { UserAITokensModule } from "./modules/user-ai-tokens.module";
 import { UserDataMiddleware } from "./middlewares/userDataMiddleware";
 import { UserModule } from "./modules/userModule";
@@ -23,6 +24,7 @@ import configuration from "./config/configuration";
     MaterialModule,
     AchievementModule,
     PlacementTestModule,
+    TaskHistoryModule,
   ],
 
   controllers: [],

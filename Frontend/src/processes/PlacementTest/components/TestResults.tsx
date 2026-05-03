@@ -10,8 +10,10 @@ import { useEffect } from "react";
 import { useEvaluatePlacementTest } from "../api/hooks/useEvaluatePlacementTest";
 import { usePlacementTestStore } from "@/store/usePlacementTestStore";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 
 const TestResults = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { userAnswers, cachedTasks, resetTest, language: storeLanguage } = usePlacementTestStore();
@@ -114,7 +116,7 @@ const TestResults = () => {
         className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 transition-colors duration-200"
       >
         <h1 className="text-3xl font-bold text-center mb-8 text-gray-900 dark:text-white">
-          Your Placement Test Results
+          {t("placementTest.resultsTitle")}
         </h1>
 
         <div className="space-y-8">
@@ -132,16 +134,16 @@ const TestResults = () => {
             {evaluation && (
               <>
                 <h2 className="text-2xl font-semibold mb-2 text-gray-900 dark:text-white">
-                  Recommended Level: {evaluation.level}
+                  {t("placementTest.recommendedLevel")} {evaluation.level}
                 </h2>
                 <div className="text-gray-600 dark:text-gray-400 mb-4">
-                  Confidence: {evaluation.confidence}%
+                  {t("placementTest.confidence", { value: evaluation.confidence })}
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6 mt-8">
                   <div className="bg-green-50 dark:bg-green-900/20 p-6 rounded-lg">
                     <h3 className="font-semibold text-green-800 dark:text-green-300 mb-3">
-                      Strengths
+                      {t("placementTest.strengths")}
                     </h3>
                     <ul className="space-y-2">
                       {evaluation.strengths.map(
@@ -156,7 +158,7 @@ const TestResults = () => {
 
                   <div className="bg-red-50 dark:bg-red-900/20 p-6 rounded-lg">
                     <h3 className="font-semibold text-red-800 dark:text-red-300 mb-3">
-                      Areas to Improve
+                      {t("placementTest.areasToImprove")}
                     </h3>
                     <ul className="space-y-2">
                       {evaluation.weaknesses.map(
@@ -172,7 +174,7 @@ const TestResults = () => {
 
                 <div className="mt-8 p-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                   <h3 className="font-semibold text-blue-800 dark:text-blue-300 mb-3">
-                    Recommendation
+                    {t("placementTest.recommendation")}
                   </h3>
                   <p className="text-blue-700 dark:text-blue-400">{evaluation.recommendation}</p>
                 </div>
@@ -181,7 +183,7 @@ const TestResults = () => {
           </div>
 
           <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-            <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Question Analysis</h3>
+            <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">{t("placementTest.questionAnalysis")}</h3>
             <div className="space-y-4">
               {userAnswers.map((answer, index) => (
                 <motion.div
@@ -196,14 +198,14 @@ const TestResults = () => {
                   }`}
                 >
                   <p className="font-medium mb-2 text-gray-900 dark:text-gray-100">
-                    Question {index + 1}: {cachedTasks[index].question}
+                    {t("placementTest.questionLabel", { num: index + 1 })} {cachedTasks[index].question}
                   </p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Your answer: {answer.userAnswer}
+                    {t("placementTest.yourAnswer")} {answer.userAnswer}
                   </p>
                   {!answer.isCorrect && (
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Correct answer: {cachedTasks[index].correctAnswer}
+                      {t("placementTest.correctAnswer")} {cachedTasks[index].correctAnswer}
                     </p>
                   )}
                 </motion.div>
@@ -221,7 +223,7 @@ const TestResults = () => {
               }}
               className="px-6 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
             >
-              Take Test Again
+              {t("placementTest.takeTestAgain")}
             </motion.button>
 
             <motion.button
@@ -231,7 +233,7 @@ const TestResults = () => {
               disabled={isLoadingCompleteTest}
               className="px-6 py-3 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors disabled:bg-gray-400"
             >
-              {isLoadingCompleteTest ? "Saving..." : "Save Language Level"}
+              {isLoadingCompleteTest ? t("placementTest.saving") : t("placementTest.saveLevelButton")}
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -239,7 +241,7 @@ const TestResults = () => {
               onClick={() => navigate("/")}
               className="px-6 py-3 bg-gray-500 text-white rounded-lg font-medium hover:bg-gray-600 transition-colors"
             >
-              Go to Dashboard
+              {t("placementTest.goDashboard")}
             </motion.button>
           </div>
         </div>

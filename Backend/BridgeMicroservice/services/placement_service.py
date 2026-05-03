@@ -1,6 +1,7 @@
 from services.writing_task_service import WritingTaskService
 from .vector_db_service import VectorDBService
 from .ai_service import AI_Service
+from .user_service import UserService
 from utils.user_context import UserContext
 from constants.variety import variety_picker
 import random
@@ -17,6 +18,7 @@ class PlacementService:
         self.ai_service = ai_service
         self.vector_db_service = vector_db_service
         self.writing_task_service = WritingTaskService(vector_db_service, ai_service)
+        self.user_service = UserService()
         self.current_level = "A1"
 
     async def generate_placement_task(
@@ -78,6 +80,9 @@ class PlacementService:
                     f"       User answered: \"{a.user_answer}\"  [{status}]"
                 )
             qa_block = "\n".join(qa_lines)
+            ui_lang = (
+                getattr(user_context, "ui_locale_label", None) or "English"
+            )
 
             prompt = f"""You are a language proficiency evaluator.
 Evaluate the following {language} placement test.
@@ -100,6 +105,11 @@ Based on the above, return ONLY a JSON object (no markdown fences) with these fi
     "weaknesses": ["<area to improve 1>", "..."],
     "recommendation": "<personalised learning path recommendation>"
 }}
+
+LOCALIZATION (HARD RULE):
+  - Write `strengths`, `weaknesses` and `recommendation` in {ui_lang}.
+  - `level` stays the literal CEFR code (A1/A2/B1/B2/C1/C2).
+  - `confidence` stays a number.
 """
 
 
@@ -138,7 +148,26 @@ Based on the above, return ONLY a JSON object (no markdown fences) with these fi
             if not isinstance(parsed_result["weaknesses"], list):
                 parsed_result["weaknesses"] = [parsed_result["weaknesses"]]
 
-            return EvaluateTestDto(**parsed_result)
+            evaluation = EvaluateTestDto(**parsed_result)
+
+            if user_context:
+                await self.user_service.log_task_history(
+                    user_context,
+                    {
+                        "taskType": "placement",
+                        "title": f"Placement test ({language})",
+                        "score": int(percentage),
+                        "language": (language or "").lower()[:5] or None,
+                        "metadata": {
+                            "level": evaluation.level,
+                            "confidence": evaluation.confidence,
+                            "totalQuestions": total_questions,
+                            "correctAnswers": correct_answers,
+                        },
+                    },
+                )
+
+            return evaluation
 
         except json.JSONDecodeError as e:
             raise ValueError(f"Failed to parse AI response: {e}")

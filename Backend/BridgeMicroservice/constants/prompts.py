@@ -1,4 +1,23 @@
-from typing import Dict, Any
+from typing import Dict, Any, Optional
+
+
+def _ui_lang_clause(ui_locale_label: Optional[str], fields: list[str]) -> str:
+    """Build a 'write the following fields in <UI language>' clause.
+
+    Empty / English UI returns no clause so the prompt stays unchanged for the
+    default case. Anything else gets a strict instruction listing which JSON
+    keys must be in the UI language.
+    """
+    if not ui_locale_label or ui_locale_label.strip().lower() == "english":
+        return ""
+    field_list = ", ".join(f"`{f}`" for f in fields)
+    return (
+        f"\n\nLOCALIZATION (HARD RULE):\n"
+        f"        - Write these fields in {ui_locale_label}: {field_list}.\n"
+        f"        - All other fields stay in the target practice language.\n"
+        f"        - Do not translate proper nouns, code, or quoted target-language text inside those fields."
+    )
+
 
 def writing_fill_in_the_blank_task_prompt(
     language: str,
@@ -7,6 +26,7 @@ def writing_fill_in_the_blank_task_prompt(
     topic: str | None = None,
     keywords: list[str] | None = None,
     seed: str | None = None,
+    ui_locale_label: Optional[str] = None,
 ) -> str:
     lesson_hint = ""
     if topic or keywords:
@@ -16,6 +36,9 @@ def writing_fill_in_the_blank_task_prompt(
         - Key words / phrases to test: {', '.join(keywords) if keywords else 'any relevant to the topic'}
         The missing word in the blank MUST be one of the key words or phrases listed above.
         """
+    # The English-translation hint inside the question is part of the answer key —
+    # we leave that gloss in English regardless of UI locale, since it's a
+    # learner aid, not a localized label. No fields here that need re-localizing.
     return f"""
         Generate a **fill-in-the-blank task** for language learners in {language} at {level} level.
         FOLLOW STRICTLY ALL THE GUIDELINES BELOW.
@@ -61,6 +84,7 @@ def writing_multiple_choice_task_prompt(
     topic: str | None = None,
     keywords: list[str] | None = None,
     seed: str | None = None,
+    ui_locale_label: Optional[str] = None,
 ) -> str:
     lesson_hint = ""
     if topic or keywords:
@@ -70,6 +94,8 @@ def writing_multiple_choice_task_prompt(
         - Key words / phrases to include or test: {', '.join(keywords) if keywords else 'any relevant to the topic'}
         Build the sentence and options around the above words/phrases.
         """
+    # No user-facing strings need localizing here — question/options/correctAnswer
+    # are all in the target practice language by design.
     return f"""
         Generate a language learning task in {language} at {level} level. FOLLOW STRICTLY ALL THE GUIDELINES BELOW.
 
@@ -107,7 +133,17 @@ def writing_multiple_choice_task_prompt(
         """
 
 
-def explain_answer_prompt(language: str, level: str, task: str, correct_answer: str, user_answer: str) -> str:
+def explain_answer_prompt(
+    language: str,
+    level: str,
+    task: str,
+    correct_answer: str,
+    user_answer: str,
+    ui_locale_label: Optional[str] = None,
+) -> str:
+    locale_for_explanation = (
+        ui_locale_label if ui_locale_label and ui_locale_label.strip() else "English"
+    )
     return f"""
         Analyze the following task in {language} at {level} level. FOLLOW STRICTLY ALL THE GUIDELINES BELOW.
 
@@ -120,7 +156,8 @@ def explain_answer_prompt(language: str, level: str, task: str, correct_answer: 
         2. If the answer is incorrect, provide a short explanation and suggest 1-2 topics to review.
         3. Keep explanations clear, specific, and tailored to the level.
         4. Avoid overloading the user with complex terminology.
-        5. The explanation should be in English.
+        5. Write `explanation` and every entry in `topics_to_review` in {locale_for_explanation}.
+           Quoted target-language fragments inside the explanation stay in the target language.
 
         Return the response in JSON format:
         {{
