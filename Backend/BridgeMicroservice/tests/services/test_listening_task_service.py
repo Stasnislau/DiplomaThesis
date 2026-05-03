@@ -65,7 +65,7 @@ async def test_create_listening_task_success(
 
         mock_ai_service.get_ai_response.assert_awaited_once()
         mock_synthesize.assert_called_once_with(
-            "Once upon a time...", "English"
+            "Once upon a time...", "English", "A1"
         )
         mock_makedirs.assert_called_once()
         file_handle.write.assert_called_once_with(audio_bytes)

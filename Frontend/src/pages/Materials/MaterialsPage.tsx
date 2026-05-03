@@ -101,10 +101,15 @@ export const MaterialsPage: React.FC = () => {
   };
 
   const handleGenerateQuiz = () => {
-      generateQuizMutation(selectedTypes, {
+      generateQuizMutation({ selectedTypes }, {
           onSuccess: (data) => {
-              if (data.quiz && Array.isArray(data.quiz.questions)) {
-                  setQuiz(data.quiz.questions);
+              const payload = data.quiz;
+              if (
+                  payload &&
+                  typeof payload === "object" &&
+                  Array.isArray((payload as { questions?: unknown }).questions)
+              ) {
+                  setQuiz((payload as { questions: typeof quiz }).questions);
                   setUserAnswers({});
                   setIsSubmitted(false);
                   setView("quiz");

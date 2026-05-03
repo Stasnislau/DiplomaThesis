@@ -1,9 +1,11 @@
 import json
 import os
 import asyncio
+import hashlib
 import logging
+import time
 import httpx
-from typing import Optional, Any, List
+from typing import Optional, Any, List, Dict, Tuple
 
 from fastapi import HTTPException
 from dotenv import load_dotenv
@@ -27,10 +29,48 @@ GROQ_TRANSCRIPTION_URL = "https://api.groq.com/openai/v1/audio/transcriptions"
 GROQ_WHISPER_MODEL = os.getenv("GROQ_WHISPER_MODEL", "whisper-large-v3-turbo")
 
 
+_SPEAKING_CACHE_TTL = 60 * 60  # 1h
+_SPEAKING_CACHE_MAX = 64
+
+
 class SpeakingService:
     def __init__(self, ai_service: AI_Service):
         self.ai_service = ai_service
         self.user_service = UserService()
+        # (cache_key) -> (expires_at, response). cache_key is sha256 of
+        # (audio bytes, language, ui_locale) — so re-clicking 'Analyze' on
+        # the same recording doesn't bill the provider twice. Tiny LRU,
+        # bounded; first cache miss after eviction simply re-pays.
+        self._analyze_cache: Dict[str, Tuple[float, "SpeakingAnalysisResponse"]] = {}
+
+    def _cache_key(
+        self, audio_bytes: bytes, language: Optional[str], ui_locale: Optional[str]
+    ) -> str:
+        h = hashlib.sha256()
+        h.update(audio_bytes)
+        h.update(b"\0")
+        h.update((language or "").encode("utf-8"))
+        h.update(b"\0")
+        h.update((ui_locale or "").encode("utf-8"))
+        return h.hexdigest()
+
+    def _cache_get(self, key: str) -> Optional["SpeakingAnalysisResponse"]:
+        entry = self._analyze_cache.get(key)
+        if not entry:
+            return None
+        expires_at, value = entry
+        if time.time() > expires_at:
+            self._analyze_cache.pop(key, None)
+            return None
+        return value
+
+    def _cache_put(self, key: str, value: "SpeakingAnalysisResponse") -> None:
+        if len(self._analyze_cache) >= _SPEAKING_CACHE_MAX:
+            # Evict the oldest entry — cheap O(n) on tiny dict, no need
+            # for an OrderedDict here.
+            oldest = min(self._analyze_cache.items(), key=lambda kv: kv[1][0])[0]
+            self._analyze_cache.pop(oldest, None)
+        self._analyze_cache[key] = (time.time() + _SPEAKING_CACHE_TTL, value)
 
     async def _transcribe_audio_with_whisper(
         self, audio_file_bytes: bytes, filename: str, language_code: str
@@ -307,6 +347,12 @@ class SpeakingService:
         effective_filename = filename if filename else "recording.webm"
         language_code = convert_to_language_code(language) if language else "en"
 
+        cache_key = self._cache_key(audio_file_bytes, language, ui_locale)
+        cached = self._cache_get(cache_key)
+        if cached is not None:
+            logger.info("speaking analysis cache hit")
+            return cached
+
         transcription = await self._transcribe_audio_with_whisper(
             audio_file_bytes, effective_filename, language_code
         )
@@ -328,6 +374,34 @@ class SpeakingService:
 
         pronunciation = self._compute_pronunciation_metrics(transcription)
         logger.info(f"Pronunciation metrics: confidence={pronunciation.overall_confidence}, fluency={pronunciation.fluency_score}")
+
+        # Guard: if Whisper itself is unsure about what was said, the
+        # downstream AI 'language analysis' is just hallucinating errors
+        # against garbage transcription. Short-circuit with a clear
+        # message instead of charging the user's API key for noise.
+        if pronunciation.overall_confidence < 0.4:
+            logger.info(
+                "Skipping AI feedback — overall_confidence=%.2f below threshold",
+                pronunciation.overall_confidence,
+            )
+            return SpeakingAnalysisResponse(
+                transcription=transcription.text.strip(),
+                detected_language=transcription.language,
+                overall_assessment=(
+                    "The audio was too unclear to analyse reliably. "
+                    "Re-record in a quieter environment, closer to the mic, "
+                    "and speak a few full sentences."
+                ),
+                identified_errors=[],
+                positive_points=[],
+                areas_for_improvement=[
+                    "Reduce background noise.",
+                    "Move closer to the microphone.",
+                    "Aim for 15–60 seconds of continuous speech.",
+                ],
+                pronunciation=pronunciation,
+            )
+
         ai_feedback = await self._get_ai_feedback(
             transcription.text,
             user_context=user_context,
@@ -342,7 +416,7 @@ class SpeakingService:
             except Exception as e:
                 logger.warning(f"Skipping malformed error entry: {e}")
 
-        return SpeakingAnalysisResponse(
+        result = SpeakingAnalysisResponse(
             transcription=transcription.text.strip(),
             detected_language=transcription.language,
             overall_assessment=ai_feedback.get("overall_assessment", "Analysis complete."),
@@ -351,3 +425,22 @@ class SpeakingService:
             areas_for_improvement=ai_feedback.get("areas_for_improvement", []),
             pronunciation=pronunciation,
         )
+
+        if user_context:
+            await self.user_service.log_task_history(
+                user_context,
+                {
+                    "taskType": "speaking",
+                    "title": f"Speaking analysis ({language or 'unknown'})",
+                    "score": int(round(pronunciation.fluency_score)) if pronunciation else None,
+                    "language": (language or "").lower()[:5] or None,
+                    "metadata": {
+                        "transcriptionPreview": result.transcription[:120],
+                        "errorCount": len(errors),
+                        "fluencyScore": pronunciation.fluency_score if pronunciation else None,
+                        "wpm": pronunciation.words_per_minute if pronunciation else None,
+                    },
+                },
+            )
+        self._cache_put(cache_key, result)
+        return result

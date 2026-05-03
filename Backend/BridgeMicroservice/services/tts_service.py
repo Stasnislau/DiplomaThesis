@@ -82,6 +82,26 @@ LANGUAGE_VOICE_POOLS = {
 FALLBACK_LANGUAGE = "english"
 
 
+# Per-level speaking-rate multipliers for Google TTS. 1.0 = native pace.
+# Sub-1.0 stretches the audio without pitching it (speaking_rate is
+# duration-based, not pitch-shift), which is exactly what beginners need.
+_LEVEL_RATE = {
+    "A0": 0.70,
+    "A1": 0.80,
+    "A2": 0.85,
+    "B1": 0.92,
+    "B2": 1.00,
+    "C1": 1.05,
+    "C2": 1.05,
+}
+
+
+def _speaking_rate_for_level(level: str | None) -> float:
+    if not level:
+        return 1.0
+    return _LEVEL_RATE.get(level.upper().strip(), 1.0)
+
+
 class TTSService:
     def __init__(self) -> None:
         api_key = os.getenv("GOOGLE_TTS_API_KEY")
@@ -92,12 +112,24 @@ class TTSService:
         else:
             self.client = texttospeech.TextToSpeechClient()
 
-    def synthesize(self, text: str, language: str) -> bytes:
+    def synthesize(
+        self, text: str, language: str, level: str | None = None
+    ) -> bytes:
+        """Synthesize speech for a listening exercise.
+
+        `level` is the CEFR level of the listener. Lower levels get a
+        slower speaking rate so beginners can actually parse the audio
+        — the previous fixed 1.0 rate produced ~180 wpm Polish, which
+        is unintelligible at A1/A2. Mapping is conservative; native-
+        speed listening only kicks in at C1+.
+        """
         language_key = language.lower()
         pool = LANGUAGE_VOICE_POOLS.get(language_key) or LANGUAGE_VOICE_POOLS[FALLBACK_LANGUAGE]
 
         voice_name = random.choice(pool["voices"])
         language_code = pool["code"]
+
+        rate = _speaking_rate_for_level(level)
 
         synthesis_input = texttospeech.SynthesisInput(text=text)
         voice = texttospeech.VoiceSelectionParams(
@@ -106,7 +138,7 @@ class TTSService:
         )
         audio_config = texttospeech.AudioConfig(
             audio_encoding=texttospeech.AudioEncoding.MP3,
-            speaking_rate=1.0,
+            speaking_rate=rate,
             pitch=0.0,
         )
 

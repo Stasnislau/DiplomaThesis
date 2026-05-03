@@ -114,9 +114,19 @@ class VectorDBService:
         except Exception as e:
             raise e
 
-    def save_chunks(self, chunks: List[str], metadatas: List[ChunkMetadata]) -> None:
+    def save_chunks(
+        self,
+        chunks: List[str],
+        metadatas: List[ChunkMetadata],
+        user_id: Optional[str] = None,
+    ) -> None:
         """
         Saves text chunks and their metadata to the materials table.
+
+        user_id is stored alongside each chunk so that search_materials
+        can filter results to a single owner. Without it the previous
+        implementation pooled all users' uploads into one search index,
+        meaning user A's quiz could be generated from user B's PDF.
         """
         try:
             embeddings = self.model.encode(chunks)
@@ -126,7 +136,11 @@ class VectorDBService:
                     "text": chunk,
                     "vector": embeddings[i].tolist(),
                     "source": metadatas[i].source,
-                    "chunk_index": metadatas[i].chunk_index
+                    "chunk_index": metadatas[i].chunk_index,
+                    # Empty string instead of None — LanceDB schema needs
+                    # a stable column type, and an empty string still
+                    # disambiguates pre-multitenant rows from post.
+                    "user_id": user_id or "",
                 }
                 data.append(record)
 
@@ -142,9 +156,19 @@ class VectorDBService:
             print(f"Error saving chunks: {e}")
             raise e
 
-    def search_materials(self, query: str, limit: int = 5) -> List[MaterialChunk]:
+    def search_materials(
+        self,
+        query: str,
+        limit: int = 5,
+        user_id: Optional[str] = None,
+    ) -> List[MaterialChunk]:
         """
         Searches for materials similar to the query.
+
+        If user_id is provided, results are restricted to chunks that
+        belong to that user. Pre-multitenant rows have user_id="" and
+        are NEVER returned in a scoped query — they're effectively
+        invisible until backfilled.
         """
         try:
             if self.materials_table_name not in self.db.table_names():
@@ -153,9 +177,27 @@ class VectorDBService:
             query_embedding = self.model.encode(query)
             table = self.db.open_table(self.materials_table_name)
 
-            results_df = table.search(query_embedding.tolist()).limit(limit).to_pandas()
+            search = table.search(query_embedding.tolist())
+            if user_id:
+                # LanceDB SQL where-clause filter; falls back to a
+                # post-filter if the column is missing on legacy rows.
+                try:
+                    search = search.where(f"user_id = '{user_id}'")
+                except Exception:  # noqa: BLE001
+                    pass
+            results_df = search.limit(limit).to_pandas()
+
+            # Defensive post-filter: even if the where-clause can't be
+            # applied (older table schema), drop foreign-user rows here.
             records = results_df.to_dict("records")
-            
+            if user_id and "user_id" in results_df.columns:
+                records = [r for r in records if r.get("user_id") == user_id]
+
+            # Strip the user_id field before constructing MaterialChunk
+            # so we don't have to widen the dto for an internal-only key.
+            for r in records:
+                r.pop("user_id", None)
+
             return [MaterialChunk(**record) for record in records]
 
         except Exception as e:

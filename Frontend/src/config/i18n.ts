@@ -1207,6 +1207,13 @@ i18n.use(initReactI18next).init({
   },
   lng: "en",
   fallbackLng: "en",
+  // Strip region tags so navigator.language="en-US" isn't persisted in
+  // localStorage as "en-US" (which then bleeds into our X-UI-Locale
+  // header and would force the AI prompt's locale_label fallback).
+  // Match against the language part only and never load region resources.
+  load: "languageOnly",
+  supportedLngs: ["en", "pl", "es"],
+  nonExplicitSupportedLngs: true,
   interpolation: {
     escapeValue: false,
   },
@@ -1215,5 +1222,25 @@ i18n.use(initReactI18next).init({
     caches: ["localStorage"],
   },
 });
+
+// Hard-normalize the persisted localStorage value once at boot. If a
+// previous session saved "en-US" / "pl-PL" / etc, rewrite it to the
+// short code so the very next request out of fetchWithAuth uses the
+// canonical form even before any user interaction.
+try {
+  const stored =
+    typeof window !== "undefined" && window.localStorage
+      ? window.localStorage.getItem("i18nextLng")
+      : null;
+  if (stored && stored.includes("-")) {
+    const short = stored.split("-")[0].toLowerCase();
+    window.localStorage.setItem("i18nextLng", short);
+    if (i18n.language !== short) {
+      void i18n.changeLanguage(short);
+    }
+  }
+} catch {
+  // localStorage may be unavailable (SSR, sandboxed iframes) — skip silently.
+}
 
 export default i18n;

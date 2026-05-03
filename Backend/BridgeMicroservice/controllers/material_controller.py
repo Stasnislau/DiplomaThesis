@@ -23,6 +23,7 @@ def get_material_service() -> MaterialService:
 
 class GenerateQuizRequest(BaseModel):
     selected_types: Optional[List[str]] = None
+    target_language: Optional[str] = None
 
 
 @router.post("/upload", response_model=BaseResponse[ProcessPdfResponse])
@@ -56,8 +57,12 @@ async def generate_quiz(
     user_context = extract_user_context(request)
     logger.info(f"Received quiz generation request. Selected types: {body.selected_types}")
     try:
-        result = await service.generate_quiz(body.selected_types, user_context=user_context)
-        
+        result = await service.generate_quiz(
+            body.selected_types,
+            user_context=user_context,
+            target_language=body.target_language,
+        )
+
         logger.info("Quiz generated successfully.")
         return BaseResponse[GenerateQuizResponse](success=True, payload=result)
     except Exception as e:
