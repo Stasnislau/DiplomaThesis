@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 import { PrismaService } from "prisma/prismaService";
 
 export interface CreateTaskHistoryDto {
@@ -6,7 +7,7 @@ export interface CreateTaskHistoryDto {
   title: string;
   score?: number | null;
   language?: string | null;
-  metadata?: Record<string, unknown> | null;
+  metadata?: Prisma.InputJsonValue | null;
 }
 
 export interface ListHistoryQuery {
@@ -27,7 +28,7 @@ export class TaskHistoryService {
         title: dto.title,
         score: dto.score ?? null,
         language: dto.language ?? null,
-        metadata: dto.metadata ?? undefined,
+        ...(dto.metadata ? { metadata: dto.metadata } : {}),
       },
     });
   }
