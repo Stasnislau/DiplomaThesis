@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Dict, Optional
 
-from fastapi import HTTPException, Request, status
+from fastapi import Request, status
 
 
 # Codes the frontend may send via X-UI-Locale → label we paste into prompts.
