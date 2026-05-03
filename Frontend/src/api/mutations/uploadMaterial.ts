@@ -1,7 +1,7 @@
 import { BRIDGE_MICROSERVICE_URL } from "../consts";
-import { BaseResponse } from "@/types/responses/BaseResponse";
-import { extractApiError } from "../extractApiError";
+import { ApiError } from "../extractApiError";
 import { fetchWithAuth } from "../fetchWithAuth";
+import { parseApiPayload } from "../parseApiResponse";
 
 interface AnalyzedType {
   type: string;
@@ -17,17 +17,12 @@ interface UploadMaterialResponse {
 }
 
 /**
- * Error thrown by uploadMaterial. `code` is the structured prefix from
- * the backend (PDF_NO_TEXT / PDF_GARBLED_TEXT / PDF_AI_REJECTED), or
- * undefined for ad-hoc failures. The UI uses it to pick a friendly
- * localized explanation instead of dumping the raw English message.
+ * Backwards-compatible re-export: old call sites still import
+ * `UploadMaterialError` from this module, but the thrown value is
+ * just an ApiError now (the structured `code` was always the point
+ * of this class — and ApiError has it).
  */
-export class UploadMaterialError extends Error {
-  constructor(public code: string | undefined, message: string) {
-    super(message);
-    this.name = "UploadMaterialError";
-  }
-}
+export { ApiError as UploadMaterialError };
 
 export const uploadMaterial = async (
   file: File,
@@ -43,27 +38,8 @@ export const uploadMaterial = async (
     },
   );
 
-  // Try to parse JSON; if the body isn't JSON (e.g. an HTML error page
-  // from the gateway), fall through to a generic failure.
-  let parsed: unknown = null;
-  try {
-    parsed = await response.json();
-  } catch {
-    // ignore — handled below
-  }
-
-  if (!response.ok || !(parsed as BaseResponse<unknown> | null)?.success) {
-    // FastAPI shape:    { detail: "PDF_NO_TEXT: ..." }
-    // Gateway shape:    { success: false, payload: { message: "..." } }
-    // Either way, fish out the "<CODE>: rest" prefix when present.
-    const raw =
-      (parsed as { detail?: string } | null)?.detail ??
-      extractApiError(parsed, "Failed to upload material");
-    const match = /^([A-Z_]+):\s*(.*)$/.exec(raw);
-    const code = match ? match[1] : undefined;
-    const message = match ? match[2] : raw;
-    throw new UploadMaterialError(code, message);
-  }
-
-  return (parsed as BaseResponse<UploadMaterialResponse>).payload;
+  return parseApiPayload<UploadMaterialResponse>(
+    response,
+    "Failed to upload material",
+  );
 };

@@ -1,5 +1,6 @@
 import { AUTH_MICROSERVICE_URL } from "../consts";
 import { fetchWithAuth } from "../fetchWithAuth";
+import { parseApiResponse } from "../parseApiResponse";
 
 export async function updateUserRole(data: {
   id: string;
@@ -10,11 +11,6 @@ export async function updateUserRole(data: {
     body: JSON.stringify(data),
   });
 
-  const result = await response.json();
-
-  if (!result.success) {
-    throw new Error(result.payload?.message || "Failed to update user role");
-  }
-
+  await parseApiResponse(response, "Failed to update user role");
   return true;
 }

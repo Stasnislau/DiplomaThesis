@@ -1,12 +1,12 @@
-import { BaseResponse } from "../../types/responses/BaseResponse";
 import { USER_MICROSERVICE_URL } from "../consts";
 import { fetchWithAuth } from "../fetchWithAuth";
+import { parseApiResponse } from "../parseApiResponse";
 
 export interface CompletePlacementTestRequest {
   languageId: string;
   level: string;
   score: number;
-  feedback: any;
+  feedback: unknown;
 }
 
 export const completePlacementTest = async (
@@ -20,13 +20,6 @@ export const completePlacementTest = async (
     },
   );
 
-  const data = (await response.json()) as BaseResponse<any>;
-
-  if (!data.success) {
-    throw new Error(
-      data.errors?.join(", ") || "Failed to complete placement test",
-    );
-  }
-
+  await parseApiResponse(response, "Failed to complete placement test");
   return true;
 };

@@ -1,6 +1,6 @@
-import { BaseResponse } from "@/types/responses/BaseResponse";
 import { USER_MICROSERVICE_URL } from "../consts";
 import { fetchWithAuth } from "../fetchWithAuth";
+import { parseApiPayload } from "../parseApiResponse";
 
 interface AnalyzedType {
   type: string;
@@ -29,11 +29,6 @@ export const saveMaterial = async (input: SaveMaterialRequest): Promise<UserMate
     body: JSON.stringify(input),
   });
 
-  const data = (await response.json()) as BaseResponse<UserMaterial>;
-  if (!data.success) {
-    throw new Error(data?.errors?.[0] || "Failed to save material");
-  }
-
-  return data.payload;
+  return parseApiPayload<UserMaterial>(response, "Failed to save material");
 };
 

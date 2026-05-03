@@ -1,5 +1,6 @@
 import { BRIDGE_MICROSERVICE_URL } from "../consts";
 import { ListeningTaskResponse } from "@/types/responses/TaskResponse";
+import { asApiError } from "../extractApiError";
 import { fetchWithAuth } from "../fetchWithAuth";
 
 export interface CreateListeningTaskRequest {
@@ -18,17 +19,17 @@ export async function createListeningTask(
     },
   );
 
+  // The listening endpoint historically returned either a wrapped
+  // BaseResponse or the raw task object on success. Keep the
+  // dual-shape handling but funnel failures through asApiError so
+  // a structured `code` survives all the way to the UI.
   const data = await response.json();
 
-  if (!response.ok || data.success === false) {
-    const errorMessage =
-      data?.payload?.message ||
-      data?.detail ||
-      "Failed to create listening task";
-    throw new Error(errorMessage);
+  if (!response.ok || data?.success === false) {
+    throw asApiError(data, "Failed to create listening task");
   }
 
-  if ("payload" in data) {
+  if (data && typeof data === "object" && "payload" in data) {
     return data.payload as ListeningTaskResponse;
   }
 

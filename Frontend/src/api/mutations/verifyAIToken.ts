@@ -1,6 +1,6 @@
 import { BRIDGE_MICROSERVICE_URL } from "../consts";
-import { asApiError } from "../extractApiError";
 import { fetchWithAuth } from "../fetchWithAuth";
+import { parseApiPayload } from "../parseApiResponse";
 
 export interface VerifyAITokenResponse {
   valid: boolean;
@@ -29,13 +29,8 @@ export const verifyAIToken = async (
     },
   );
 
-  const data = await response.json();
-  // Bridge returns FastAPI `{detail: "CODE: msg"}` on 4xx and the gateway
-  // sometimes wraps it as `{success: false, payload: {...}}`. asApiError
-  // handles both shapes and preserves the structured code so the UI can
-  // localize via useLocalizedError.
-  if (!response.ok || data?.success === false) {
-    throw asApiError(data, "Failed to verify AI token");
-  }
-  return data.payload as VerifyAITokenResponse;
+  return parseApiPayload<VerifyAITokenResponse>(
+    response,
+    "Failed to verify AI token",
+  );
 };

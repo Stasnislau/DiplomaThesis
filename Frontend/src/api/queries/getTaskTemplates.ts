@@ -1,6 +1,6 @@
 import { fetchWithAuth } from "../fetchWithAuth";
 import { BRIDGE_MICROSERVICE_URL } from "../consts";
-import { BaseResponse } from "@/types/responses/BaseResponse";
+import { parseApiPayload } from "../parseApiResponse";
 import { TaskTemplate } from "@/types/models/TaskTemplate";
 
 export const getTaskTemplates = async (
@@ -19,14 +19,8 @@ export const getTaskTemplates = async (
     }
   );
 
-  if (!response.ok) {
-    throw new Error("Failed to fetch task templates");
-  }
-
-  const data = (await response.json()) as BaseResponse<TaskTemplate[]>;
-  if (!data.success || !data.payload) {
-    throw new Error("Failed to fetch task templates");
-  }
-
-  return data.payload;
+  return parseApiPayload<TaskTemplate[]>(
+    response,
+    "Failed to fetch task templates",
+  );
 };

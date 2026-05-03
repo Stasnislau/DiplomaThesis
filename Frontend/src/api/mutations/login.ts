@@ -1,7 +1,7 @@
 import { AUTH_MICROSERVICE_URL } from "../consts";
-import { BaseResponse } from "../../types/responses/BaseResponse";
 import { z } from "zod";
 import { fetchWithAuth } from "../fetchWithAuth";
+import { parseApiResponse } from "../parseApiResponse";
 
 interface LoginResponse {
   accessToken: string;
@@ -26,10 +26,5 @@ export const login = async (input: LoginUserRequest) => {
     }
   );
 
-  const data = (await response.json()) as BaseResponse<LoginResponse>;
-  if (!data.success) {
-    throw new Error(data?.payload?.message || "Failed to login");
-  }
-
-  return data;
+  return parseApiResponse<LoginResponse>(response, "Failed to login");
 };

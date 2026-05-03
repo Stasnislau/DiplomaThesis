@@ -1,5 +1,6 @@
 import { AUTH_MICROSERVICE_URL } from "../consts";
 import { fetchWithAuth } from "../fetchWithAuth";
+import { parseApiResponse } from "../parseApiResponse";
 
 export async function resetPassword(email: string): Promise<boolean> {
   const response = await fetchWithAuth(
@@ -10,11 +11,6 @@ export async function resetPassword(email: string): Promise<boolean> {
     }
   );
 
-  const result = await response.json();
-
-  if (!result.success) {
-    throw new Error(result.payload?.message || "Failed to reset password");
-  }
-
+  await parseApiResponse(response, "Failed to reset password");
   return true;
 }

@@ -1,7 +1,6 @@
 import { BRIDGE_MICROSERVICE_URL } from "../consts";
-import { BaseResponse } from "@/types/responses/BaseResponse";
-import { extractApiError } from "../extractApiError";
 import { fetchWithAuth } from "../fetchWithAuth";
+import { parseApiPayload } from "../parseApiResponse";
 
 export interface ExplainAnswerRequest {
   language: string;
@@ -32,16 +31,8 @@ export async function explainAnswer(
     },
   );
 
-  if (!response.ok) {
-    throw new Error("An error occurred while explaining the answer");
-  }
-
-  const responseData =
-    (await response.json()) as BaseResponse<ExplainAnswerResponse>;
-
-  if (!responseData.success) {
-    throw new Error(extractApiError(responseData, "Failed to explain answer"));
-  }
-
-  return responseData.payload;
+  return parseApiPayload<ExplainAnswerResponse>(
+    response,
+    "An error occurred while explaining the answer",
+  );
 }

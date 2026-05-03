@@ -1,6 +1,6 @@
-import { BaseResponse } from "@/types/responses/BaseResponse";
 import { USER_MICROSERVICE_URL } from "../consts";
 import { fetchWithAuth } from "../fetchWithAuth";
+import { parseApiPayload } from "../parseApiResponse";
 
 export async function setNativeLanguage(languageId: string): Promise<boolean> {
   const response = await fetchWithAuth(
@@ -11,10 +11,8 @@ export async function setNativeLanguage(languageId: string): Promise<boolean> {
     }
   );
 
-  const data = (await response.json()) as BaseResponse<boolean>;
-  if (!data.success) {
-    throw new Error("An error occurred while setting the native language");
-  }
-
-  return data.payload;
+  return parseApiPayload<boolean>(
+    response,
+    "An error occurred while setting the native language",
+  );
 }

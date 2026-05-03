@@ -93,7 +93,7 @@ describe("explainAnswer", () => {
     );
 
     await expect(explainAnswer(mockRequest)).rejects.toThrow(
-      "AI service unavailable, Rate limit exceeded",
+      "AI service unavailable\nRate limit exceeded",
     );
   });
 

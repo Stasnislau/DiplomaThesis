@@ -1,5 +1,5 @@
-import { BaseResponse } from "@/types/responses/BaseResponse";
 import { fetchWithAuth } from "../fetchWithAuth";
+import { parseApiPayload } from "../parseApiResponse";
 import { USER_MICROSERVICE_URL } from "../consts";
 import { UserLanguage } from "@/types/models/Language";
 
@@ -9,10 +9,8 @@ export async function getMyLanguages(): Promise<UserLanguage[]> {
     method: "GET",
   });
 
-  const data = (await response.json()) as BaseResponse<UserLanguage[]>;
-  if (!data.success) {
-    throw new Error("Failed to fetch available languages");
-  }
-
-  return data.payload;
+  return parseApiPayload<UserLanguage[]>(
+    response,
+    "Failed to fetch available languages",
+  );
 }

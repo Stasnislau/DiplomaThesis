@@ -1,8 +1,9 @@
 import { AUTH_MICROSERVICE_URL } from "../consts";
-import { BaseResponse } from "../../types/responses/BaseResponse";
 import Cookies from "js-cookie";
 import { getRefreshToken } from "../../utils/getRefreshToken";
 import { fetchWithAuth } from "../fetchWithAuth";
+import { parseApiPayload } from "../parseApiResponse";
+
 interface RefreshResponse {
   accessToken: string;
   refreshToken?: string;
@@ -19,19 +20,19 @@ export const refresh = async () => {
     }
   );
 
-  const data = (await response.json()) as BaseResponse<RefreshResponse>;
+  const payload = await parseApiPayload<RefreshResponse>(
+    response,
+    "Failed to refresh",
+  );
 
-  if (!data.success) {
-    throw new Error((data.payload as unknown as string) || "Failed to refresh");
-  }
-  if (data.payload.refreshToken) {
-    Cookies.set("refreshToken", data.payload.refreshToken, {
+  if (payload.refreshToken) {
+    Cookies.set("refreshToken", payload.refreshToken, {
       secure: window.location.protocol === "https:",
       sameSite: "lax",
     });
   }
-  if (data.payload.accessToken) {
-    localStorage.setItem("accessToken", data.payload.accessToken);
+  if (payload.accessToken) {
+    localStorage.setItem("accessToken", payload.accessToken);
   }
-  return data.payload.accessToken;
+  return payload.accessToken;
 };

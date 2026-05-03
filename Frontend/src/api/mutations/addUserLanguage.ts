@@ -1,5 +1,6 @@
 import { USER_MICROSERVICE_URL } from "../consts";
 import { fetchWithAuth } from "../fetchWithAuth";
+import { parseApiPayload } from "../parseApiResponse";
 
 export interface AddUserLanguageRequest {
   languageId: string;
@@ -12,11 +13,5 @@ export async function addUserLanguage(data: AddUserLanguageRequest): Promise<boo
     body: JSON.stringify(data),
   });
 
-  const result = await response.json();
-
-  if (!result.success) {
-    throw new Error("Failed to add language level");
-  }
-
-  return result.payload;
-} 
+  return parseApiPayload<boolean>(response, "Failed to add language level");
+}
