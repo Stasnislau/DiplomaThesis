@@ -11,7 +11,6 @@ from constants.variety import variety_picker
 from models.dtos.task_dto import MultipleChoiceTask, FillInTheBlankTask
 from models.dtos.vector_db_dtos import SpecificSkillContext, FullLevelContext
 from models.request.explain_answer_request import ExplainAnswerRequest
-from fastapi import HTTPException
 from models.responses.explain_answer_response import ExplainAnswerResponse
 from pipelines.verification_pipeline import VerificationPipeline
 from models.dtos.verification_dtos import VerificationResult

@@ -12,7 +12,7 @@ exception-handling for an expected-no-result case.
 import logging
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field
 from litellm import acompletion
 from litellm.exceptions import (

@@ -3,7 +3,7 @@ import os
 from typing import Any, Dict, List, Optional, TypedDict
 
 import httpx
-from fastapi import HTTPException, status
+from fastapi import status
 
 from utils.user_context import UserContext
 
