@@ -75,11 +75,19 @@ const AITokensPage: React.FC = () => {
   const { verifyTokenAsync } = useVerifyAIToken();
   const addToast = useToastsStore((s) => s.addToast);
   const [verifyingId, setVerifyingId] = React.useState<string | null>(null);
+  // Per-token last verify status: 'valid' | 'invalid' — drives inline badge.
+  const [verifyStatus, setVerifyStatus] = React.useState<
+    Record<string, "valid" | "invalid">
+  >({});
 
   const handleVerify = async (tokenId: string) => {
     setVerifyingId(tokenId);
     try {
       const result = await verifyTokenAsync({ tokenId });
+      setVerifyStatus((s) => ({
+        ...s,
+        [tokenId]: result.valid ? "valid" : "invalid",
+      }));
       addToast({
         title: result.valid
           ? t("aiTokens.verifyValidTitle")
@@ -89,6 +97,7 @@ const AITokensPage: React.FC = () => {
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : t("common.error");
+      setVerifyStatus((s) => ({ ...s, [tokenId]: "invalid" }));
       addToast({
         title: t("aiTokens.verifyInvalidTitle"),
         content: msg,
@@ -146,9 +155,12 @@ const AITokensPage: React.FC = () => {
           <h2 className="text-base font-semibold text-indigo-900 dark:text-indigo-200 mb-2">
             {t("aiTokens.disclaimerTitle")}
           </h2>
-          <p className="text-sm text-indigo-800 dark:text-indigo-300 mb-4 leading-relaxed">
+          <p className="text-sm text-indigo-800 dark:text-indigo-300 mb-3 leading-relaxed">
             {t("aiTokens.disclaimerBody")}
           </p>
+          <div className="text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-xl px-3 py-2 mb-4 leading-relaxed">
+            {t("aiTokens.billingNotice")}
+          </div>
           <p className="text-xs font-semibold text-indigo-900 dark:text-indigo-200 uppercase tracking-wide mb-2">
             {t("aiTokens.whereToGetKey")}
           </p>
@@ -292,34 +304,55 @@ const AITokensPage: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 sm:gap-4">
+                    <div className="flex items-center gap-2 sm:gap-3">
                       {token.isDefault && (
-                        <span className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 text-xs font-semibold px-2.5 py-0.5 rounded border border-yellow-200 dark:border-yellow-700/50 flex items-center gap-1">
+                        <span className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 text-xs font-semibold px-2.5 py-0.5 rounded border border-yellow-200 dark:border-yellow-700/50 flex items-center gap-1">
                           <span role="img" aria-label="star">⭐</span> {t("aiTokens.defaultBadge")}
                         </span>
                       )}
 
                       {!token.isDefault && (
-                        <Button
-                          variant="secondary"
+                        <button
+                          type="button"
                           onClick={() => setDefaultToken(token.id)}
                           disabled={isSettingDefault}
-                          className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 px-2 py-1 rounded"
+                          className="text-xs font-medium px-3 py-1.5 rounded-lg border border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 bg-white dark:bg-gray-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 disabled:opacity-50 transition-colors"
                         >
                           {t("aiTokens.makeDefault")}
-                        </Button>
+                        </button>
                       )}
 
-                      <Button
-                        variant="secondary"
+                      <button
+                        type="button"
                         onClick={() => handleVerify(token.id)}
                         disabled={verifyingId === token.id}
-                        className="text-xs text-emerald-700 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 px-2 py-1 rounded"
+                        className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-50 inline-flex items-center gap-1.5 ${
+                          verifyStatus[token.id] === "valid"
+                            ? "border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/50"
+                            : verifyStatus[token.id] === "invalid"
+                            ? "border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50"
+                            : "border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 bg-white dark:bg-gray-800 hover:bg-emerald-50 dark:hover:bg-emerald-900/40"
+                        }`}
                       >
-                        {verifyingId === token.id
-                          ? t("aiTokens.verifying")
-                          : t("aiTokens.verify")}
-                      </Button>
+                        {verifyingId === token.id ? (
+                          <>
+                            <span className="inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                            {t("aiTokens.verifying")}
+                          </>
+                        ) : verifyStatus[token.id] === "valid" ? (
+                          <>
+                            <span aria-hidden="true">✓</span>
+                            {t("aiTokens.verify")}
+                          </>
+                        ) : verifyStatus[token.id] === "invalid" ? (
+                          <>
+                            <span aria-hidden="true">✗</span>
+                            {t("aiTokens.verify")}
+                          </>
+                        ) : (
+                          t("aiTokens.verify")
+                        )}
+                      </button>
 
                       <IconButton
                         onClick={() => deleteToken(token.id)}

@@ -204,13 +204,6 @@ const en = {
       account: "Account",
     },
 
-    learningPath: {
-      loadingJourney: "Loading your journey...",
-      loadFailed: "Failed to load learning path.",
-      bridgeOffline: "Please make sure the Bridge service is running.",
-      overallProgress: "Overall progress",
-    },
-
     materials: {
       loadingMaterials: "Loading your materials...",
     },
@@ -245,6 +238,8 @@ const en = {
       disclaimerTitle: "Why do I need an API key?",
       disclaimerBody:
         "This platform does not include a built-in AI subscription. To generate exercises, evaluate answers and produce audio, you need to provide your own key from one of the supported providers below. Most providers offer a free tier sufficient for testing.",
+      billingNotice:
+        "⚠️ Heads-up: every action that calls the AI (generating tasks, evaluating answers, speaking analysis, listening transcripts) is billed against the API key you provide. We don't add any markup, but you do pay the provider directly.",
       whereToGetKey: "Where to get a key",
       privacyNote:
         "Your keys are stored only in your account on this server and are never shared with anyone else.",
@@ -270,6 +265,74 @@ const en = {
       verifyValidTitle: "API key is valid",
       verifyInvalidTitle: "API key check failed",
       keysEncrypted: "Your API keys are encrypted and stored securely",
+    },
+
+    speakingResults: {
+      fluencyLabel: "Fluency",
+      clarityLabel: "Clarity",
+      speedLabel: "Speed",
+      pausesLabel: "Pauses",
+      confidenceCaption: "pronunciation confidence",
+      wpmCaption: "words/min",
+      avgDurationCaption: "avg duration",
+      transcriptionTitle: "Transcription",
+      overallAssessmentTitle: "Overall Assessment",
+      identifiedErrorsTitle: "Identified Errors",
+      errorsFound: "{{count}} found",
+      positivePointsTitle: "Positive Points",
+      areasForImprovementTitle: "Areas for Improvement",
+      removeRecording: "Remove",
+      errorTypeGrammar: "Grammar",
+      errorTypeVocabulary: "Vocabulary",
+      errorTypePhrasing: "Phrasing",
+      errorTypeFluency: "Fluency",
+    },
+
+    learningPath: {
+      loadingJourney: "Loading your journey...",
+      loadFailed: "Failed to load learning path.",
+      bridgeOffline: "Please make sure the Bridge service is running.",
+      overallProgress: "Overall progress",
+      header: {
+        title: "Learning Path",
+        subtitle: "Your structured journey from {{userLevel}} to mastery.",
+        lessonsCount: "{{completed}} / {{total}} lessons",
+      },
+      lessonCard: {
+        keywordsTitle: "Key Words & Concepts",
+        startButton: "▶ Start Lesson",
+        reviewButton: "📖 Review Lesson",
+      },
+      practice: {
+        completionTitle: "Lesson Complete!",
+        correctLabel: "Correct",
+        totalLabel: "Total",
+        accuracyLabel: "Accuracy",
+        practisedWordsTitle: "Words you practised",
+        backButton: "← Back to Learning Path",
+        retryButton: "⟳ Practise Again",
+        savingMessage: "Saving your progress…",
+        backLink: "← Back to Learning Path",
+        progressLabel: "Lesson progress",
+        progressStats: "{{correctCount}} / {{target}} correct",
+        completionMessage_one: "Get {{count}} more correct answer to complete this lesson",
+        completionMessage_other: "Get {{count}} more correct answers to complete this lesson",
+        tasksLabel: "Tasks Done",
+        exerciseTypeLabel: "Exercise type:",
+        exerciseTypeMC: "🔘 Multiple Choice",
+        exerciseTypeFB: "📝 Fill in the Blank",
+        exerciseRandom: "randomised each round",
+        generatingMessage: "Generating a {{flavour}} question about {{topic}}…",
+        readyMessage: "Ready? Press generate to start.",
+        generating: "Generating…",
+        nextExercise: "⟳ Next Exercise",
+        generateExercise: "▶ Generate Exercise",
+      },
+    },
+
+    materialsErrors: {
+      noRelevantMaterial:
+        "Couldn't generate a quiz from this PDF — the content didn't yield enough relevant material. Try a different document or upload more content.",
     },
 
     a11y: {
@@ -503,6 +566,68 @@ const pl = {
       loadFailed: "Nie udało się załadować ścieżki nauki.",
       bridgeOffline: "Upewnij się, że usługa Bridge działa.",
       overallProgress: "Ogólny postęp",
+      header: {
+        title: "Ścieżka nauki",
+        subtitle: "Twoja uporządkowana droga od {{userLevel}} do mistrzostwa.",
+        lessonsCount: "{{completed}} / {{total}} lekcji",
+      },
+      lessonCard: {
+        keywordsTitle: "Kluczowe słowa i pojęcia",
+        startButton: "▶ Rozpocznij lekcję",
+        reviewButton: "📖 Powtórz lekcję",
+      },
+      practice: {
+        completionTitle: "Lekcja ukończona!",
+        correctLabel: "Poprawnych",
+        totalLabel: "Łącznie",
+        accuracyLabel: "Dokładność",
+        practisedWordsTitle: "Przećwiczone słowa",
+        backButton: "← Powrót do ścieżki nauki",
+        retryButton: "⟳ Ćwicz ponownie",
+        savingMessage: "Zapisywanie postępu…",
+        backLink: "← Powrót do ścieżki nauki",
+        progressLabel: "Postęp lekcji",
+        progressStats: "{{correctCount}} / {{target}} poprawnych",
+        completionMessage_one: "Odpowiedz poprawnie jeszcze {{count}} raz, aby ukończyć lekcję",
+        completionMessage_few: "Odpowiedz poprawnie jeszcze {{count}} razy, aby ukończyć lekcję",
+        completionMessage_many: "Odpowiedz poprawnie jeszcze {{count}} razy, aby ukończyć lekcję",
+        tasksLabel: "Zadania wykonane",
+        exerciseTypeLabel: "Typ ćwiczenia:",
+        exerciseTypeMC: "🔘 Wybór wielokrotny",
+        exerciseTypeFB: "📝 Uzupełnij lukę",
+        exerciseRandom: "losowane w każdej rundzie",
+        generatingMessage: "Generowanie pytania typu {{flavour}} o {{topic}}…",
+        readyMessage: "Gotowy? Kliknij generuj, aby rozpocząć.",
+        generating: "Generowanie…",
+        nextExercise: "⟳ Następne ćwiczenie",
+        generateExercise: "▶ Wygeneruj ćwiczenie",
+      },
+    },
+
+    speakingResults: {
+      fluencyLabel: "Płynność",
+      clarityLabel: "Wyrazistość",
+      speedLabel: "Tempo",
+      pausesLabel: "Pauzy",
+      confidenceCaption: "pewność wymowy",
+      wpmCaption: "słów/min",
+      avgDurationCaption: "średni czas",
+      transcriptionTitle: "Transkrypcja",
+      overallAssessmentTitle: "Ogólna ocena",
+      identifiedErrorsTitle: "Wykryte błędy",
+      errorsFound: "znaleziono: {{count}}",
+      positivePointsTitle: "Mocne strony",
+      areasForImprovementTitle: "Obszary do poprawy",
+      removeRecording: "Usuń",
+      errorTypeGrammar: "Gramatyka",
+      errorTypeVocabulary: "Słownictwo",
+      errorTypePhrasing: "Frazeologia",
+      errorTypeFluency: "Płynność",
+    },
+
+    materialsErrors: {
+      noRelevantMaterial:
+        "Nie udało się wygenerować quizu z tego PDF — treść nie zawierała wystarczająco istotnego materiału. Spróbuj innego dokumentu lub dodaj więcej treści.",
     },
 
     materials: {
@@ -539,6 +664,8 @@ const pl = {
       disclaimerTitle: "Dlaczego potrzebuję klucza API?",
       disclaimerBody:
         "Platforma nie zawiera własnej subskrypcji AI. Aby generować zadania, oceniać odpowiedzi i tworzyć audio, musisz podać własny klucz od jednego z poniższych dostawców. Większość z nich oferuje darmowy poziom, który wystarczy do testów.",
+      billingNotice:
+        "⚠️ Uwaga: każda akcja korzystająca z AI (generowanie zadań, ocena odpowiedzi, analiza mówienia, transkrypcja słuchania) jest rozliczana z Twojego klucza API. Nie pobieramy żadnej prowizji — płacisz dostawcy bezpośrednio.",
       whereToGetKey: "Gdzie zdobyć klucz",
       privacyNote:
         "Twoje klucze są przechowywane wyłącznie w Twoim koncie na tym serwerze i nie są nikomu udostępniane.",
@@ -795,6 +922,67 @@ const es = {
       loadFailed: "No se pudo cargar la ruta de aprendizaje.",
       bridgeOffline: "Asegúrate de que el servicio Bridge esté en ejecución.",
       overallProgress: "Progreso general",
+      header: {
+        title: "Ruta de aprendizaje",
+        subtitle: "Tu camino estructurado desde {{userLevel}} hasta el dominio.",
+        lessonsCount: "{{completed}} / {{total}} lecciones",
+      },
+      lessonCard: {
+        keywordsTitle: "Palabras y conceptos clave",
+        startButton: "▶ Empezar lección",
+        reviewButton: "📖 Repasar lección",
+      },
+      practice: {
+        completionTitle: "¡Lección completada!",
+        correctLabel: "Correctas",
+        totalLabel: "Total",
+        accuracyLabel: "Precisión",
+        practisedWordsTitle: "Palabras practicadas",
+        backButton: "← Volver a la ruta",
+        retryButton: "⟳ Practicar de nuevo",
+        savingMessage: "Guardando tu progreso…",
+        backLink: "← Volver a la ruta",
+        progressLabel: "Progreso de la lección",
+        progressStats: "{{correctCount}} / {{target}} correctas",
+        completionMessage_one: "Necesitas {{count}} respuesta correcta más para completar esta lección",
+        completionMessage_other: "Necesitas {{count}} respuestas correctas más para completar esta lección",
+        tasksLabel: "Tareas hechas",
+        exerciseTypeLabel: "Tipo de ejercicio:",
+        exerciseTypeMC: "🔘 Opción múltiple",
+        exerciseTypeFB: "📝 Completar el espacio",
+        exerciseRandom: "aleatorio en cada ronda",
+        generatingMessage: "Generando una pregunta de tipo {{flavour}} sobre {{topic}}…",
+        readyMessage: "¿Listo? Pulsa generar para empezar.",
+        generating: "Generando…",
+        nextExercise: "⟳ Siguiente ejercicio",
+        generateExercise: "▶ Generar ejercicio",
+      },
+    },
+
+    speakingResults: {
+      fluencyLabel: "Fluidez",
+      clarityLabel: "Claridad",
+      speedLabel: "Velocidad",
+      pausesLabel: "Pausas",
+      confidenceCaption: "confianza de pronunciación",
+      wpmCaption: "palabras/min",
+      avgDurationCaption: "duración media",
+      transcriptionTitle: "Transcripción",
+      overallAssessmentTitle: "Evaluación general",
+      identifiedErrorsTitle: "Errores identificados",
+      errorsFound: "encontrados: {{count}}",
+      positivePointsTitle: "Puntos positivos",
+      areasForImprovementTitle: "Áreas a mejorar",
+      removeRecording: "Eliminar",
+      errorTypeGrammar: "Gramática",
+      errorTypeVocabulary: "Vocabulario",
+      errorTypePhrasing: "Frase",
+      errorTypeFluency: "Fluidez",
+    },
+
+    materialsErrors: {
+      noRelevantMaterial:
+        "No se pudo generar un cuestionario de este PDF — el contenido no aportó material suficiente. Prueba otro documento o sube más contenido.",
     },
 
     materials: {
@@ -831,6 +1019,8 @@ const es = {
       disclaimerTitle: "¿Por qué necesito una clave API?",
       disclaimerBody:
         "Esta plataforma no incluye una suscripción integrada de IA. Para generar ejercicios, evaluar respuestas y producir audio, debes proporcionar tu propia clave de uno de los proveedores admitidos a continuación. La mayoría ofrecen un nivel gratuito suficiente para pruebas.",
+      billingNotice:
+        "⚠️ Aviso: cada acción que utilice la IA (generar tareas, evaluar respuestas, análisis del habla, transcripción de escucha) se facturará a la clave API que proporciones. No añadimos ningún margen — pagas directamente al proveedor.",
       whereToGetKey: "Dónde obtener una clave",
       privacyNote:
         "Tus claves se almacenan solo en tu cuenta de este servidor y nunca se comparten con nadie.",

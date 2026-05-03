@@ -200,37 +200,77 @@ class SpeakingService:
         self,
         transcription_text: str,
         user_context: Optional[UserContext] = None,
+        ui_locale: Optional[str] = None,
+        spoken_language: Optional[str] = None,
     ) -> dict:
-        """Get structured AI feedback on the transcription."""
+        """Get structured AI feedback on the transcription.
+
+        ui_locale: language to write the human-readable strings in (assessment,
+        explanations, suggestions). Defaults to English.
+        spoken_language: the language the user was speaking — analysis is
+        constrained to errors in THAT language, not against English defaults.
+        """
+        locale_label_map = {
+            "en": "English",
+            "pl": "Polish",
+            "es": "Spanish",
+            "ru": "Russian",
+            "fr": "French",
+            "de": "German",
+            "it": "Italian",
+        }
+        feedback_lang = locale_label_map.get(
+            (ui_locale or "en").split("-")[0].lower(), "English"
+        )
+        spoken_lang_clause = (
+            f"The user was speaking {spoken_language}. "
+            "Evaluate ONLY against the norms of that language. "
+            "Do NOT flag perfectly natural phrasing as an error just because a more formal "
+            "rephrase exists."
+        ) if spoken_language else ""
+
         prompt = f"""
-        The following text was transcribed from an audio recording of a user speaking:
+        Below is a transcription of a casual, spoken language sample.
+        {spoken_lang_clause}
+
         ---BEGIN TRANSCRIPTION---
         {transcription_text}
         ---END TRANSCRIPTION---
 
-        Analyze this text for language errors (grammar, vocabulary, phrasing, fluency).
-        Do NOT focus on pronunciation — only analyze the text content.
+        Be a SUPPORTIVE teacher, not a pedant. Spoken language is naturally less formal
+        than written language. Apply these strict thresholds before flagging anything:
+
+        1. Only flag errors that are objectively WRONG — broken grammar, wrong word, missing
+           required morphology, ungrammatical word order. Stylistic preferences, optional
+           rephrases and "could-be-shorter" suggestions are NOT errors.
+        2. Filler words ("ну", "так", "you know", "tipo", "no?") are normal in speech, not errors.
+        3. False starts and self-corrections are normal in speech, not errors.
+        4. Repetition is only an error if it produces a genuinely ungrammatical result.
+        5. Do not transliterate or "fix" code-switching unless it produces ungrammatical output.
+        6. If the speaker's intent is clearly understood and the sentence is grammatical,
+           return zero errors for that sentence.
 
         Return your analysis as a JSON object with this EXACT structure:
         {{
-          "overall_assessment": "Brief summary of proficiency",
+          "overall_assessment": "<1–2 sentences>",
           "identified_errors": [
             {{
               "error_type": "Grammar|Vocabulary|Phrasing|Fluency",
-              "erroneous_text": "the problematic text",
-              "explanation": "why it's wrong",
+              "erroneous_text": "the problematic fragment, copied verbatim from the transcription",
+              "explanation": "what is broken (1 sentence)",
               "suggestion": "corrected version"
             }}
           ],
-          "positive_points": ["good things about the speech"],
-          "areas_for_improvement": ["what to work on"]
+          "positive_points": ["concrete things the speaker did well"],
+          "areas_for_improvement": ["1–3 high-leverage areas, no nitpicks"]
         }}
 
-        Rules:
-        - Keep identified_errors to the 10 most important errors maximum
-        - Keep explanations concise (1-2 sentences each)
-        - If no errors found, return an empty identified_errors list
-        - Ensure output is valid JSON
+        Hard rules:
+        - identified_errors length: 0 to 5. Prefer 0 if the speech is grammatical.
+        - All human-readable strings (overall_assessment, explanation, suggestion,
+          positive_points, areas_for_improvement) must be written in {feedback_lang}.
+        - error_type stays in English: one of Grammar, Vocabulary, Phrasing, Fluency.
+        - Output valid JSON. No prose before or after.
         """
         try:
             ai_response_str = await self.ai_service.get_ai_response(
@@ -256,6 +296,7 @@ class SpeakingService:
         filename: Optional[str] = None,
         language: Optional[str] = None,
         user_context: Optional[UserContext] = None,
+        ui_locale: Optional[str] = None,
     ) -> SpeakingAnalysisResponse:
         logger.info(f"Received audio file of size: {len(audio_file_bytes)} bytes for analysis.")
         if not audio_file_bytes:
@@ -286,7 +327,10 @@ class SpeakingService:
         pronunciation = self._compute_pronunciation_metrics(transcription)
         logger.info(f"Pronunciation metrics: confidence={pronunciation.overall_confidence}, fluency={pronunciation.fluency_score}")
         ai_feedback = await self._get_ai_feedback(
-            transcription.text, user_context=user_context
+            transcription.text,
+            user_context=user_context,
+            ui_locale=ui_locale,
+            spoken_language=language,
         )
         logger.info("AI feedback received successfully")
         errors = []

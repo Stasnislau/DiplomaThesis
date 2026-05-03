@@ -20,13 +20,20 @@ class SpeakingController:
             response_model=BaseResponse[SpeakingAnalysisResponse],
         )
         async def analyze_user_audio(
-            request: Request, audio_file: UploadFile = File(...), language: str = Query(...)
+            request: Request,
+            audio_file: UploadFile = File(...),
+            language: str = Query(...),
+            ui_locale: str = Query("en", alias="uiLocale"),
         ) -> BaseResponse[SpeakingAnalysisResponse]:
             audio_bytes = await audio_file.read()
             logger.debug(f"Received audio file: {audio_file.filename}, size: {len(audio_bytes)} bytes")
             user_context = extract_user_context(request)
             result = await self.speaking_service.analyze_user_audio(
-                audio_bytes, audio_file.filename, language, user_context=user_context
+                audio_bytes,
+                audio_file.filename,
+                language,
+                user_context=user_context,
+                ui_locale=ui_locale,
             )
             return BaseResponse(success=True, payload=result)
 
