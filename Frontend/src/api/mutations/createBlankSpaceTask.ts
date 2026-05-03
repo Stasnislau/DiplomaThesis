@@ -1,7 +1,7 @@
 import { BRIDGE_MICROSERVICE_URL } from "../consts";
-import { BaseResponse } from "@/types/responses/BaseResponse";
 import { TaskData } from "@/types/responses/TaskResponse";
 import { fetchWithAuth } from "../fetchWithAuth";
+import { parseApiPayload } from "../parseApiResponse";
 
 export interface createTaskRequest {
   language: string;
@@ -21,10 +21,8 @@ export async function createBlankSpaceTask(
     },
   );
 
-  const data = (await response.json()) as BaseResponse<TaskData>;
-  if (!data.success) {
-    throw new Error("An error occurred while creating the task");
-  }
-
-  return data.payload;
+  return parseApiPayload<TaskData>(
+    response,
+    "An error occurred while creating the task",
+  );
 }

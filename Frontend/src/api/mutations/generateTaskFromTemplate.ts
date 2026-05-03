@@ -1,6 +1,7 @@
 import { BRIDGE_MICROSERVICE_URL } from "../consts";
 import { TaskData } from "@/types/responses/TaskResponse";
 import { fetchWithAuth } from "../fetchWithAuth";
+import { parseApiPayload } from "../parseApiResponse";
 
 export interface GenerateTaskFromTemplateRequest {
   templateId?: string;
@@ -34,15 +35,8 @@ export const generateTaskFromTemplate = async (
     },
   );
 
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || "Failed to generate task");
-  }
-
-  const data = await response.json();
-  if (!data.success) {
-    throw new Error("Failed to generate task");
-  }
-
-  return data.payload as GeneratedTaskResponse;
+  return parseApiPayload<GeneratedTaskResponse>(
+    response,
+    "Failed to generate task",
+  );
 };

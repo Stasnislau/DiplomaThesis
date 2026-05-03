@@ -1,6 +1,6 @@
-import { BaseResponse } from "@/types/responses/BaseResponse";
 import { BRIDGE_MICROSERVICE_URL } from "../consts";
 import { fetchWithAuth } from "../fetchWithAuth";
+import { parseApiPayload } from "../parseApiResponse";
 
 export interface QuizQuestion {
   question: string;
@@ -48,10 +48,8 @@ export const generateQuiz = async (
     },
   );
 
-  const data = (await response.json()) as BaseResponse<GenerateQuizResponse>;
-  if (!data.success) {
-    throw new Error(data?.errors?.[0] || "Failed to generate tasks");
-  }
-
-  return data.payload;
+  return parseApiPayload<GenerateQuizResponse>(
+    response,
+    "Failed to generate tasks",
+  );
 };

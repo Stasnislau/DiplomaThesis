@@ -1,6 +1,6 @@
 import { USER_MICROSERVICE_URL } from "../consts";
-import { extractApiError } from "../extractApiError";
 import { fetchWithAuth } from "../fetchWithAuth";
+import { parseApiPayload } from "../parseApiResponse";
 
 export interface UpdateUserRequest {
   name: string;
@@ -14,11 +14,5 @@ export async function updateUser(data: UpdateUserRequest): Promise<boolean> {
     body: JSON.stringify(data),
   });
 
-  const result = await response.json();
-
-  if (!result.success) {
-    throw new Error(extractApiError(result, "Failed to update user"));
-  }
-
-  return result.payload;
+  return parseApiPayload<boolean>(response, "Failed to update user");
 }

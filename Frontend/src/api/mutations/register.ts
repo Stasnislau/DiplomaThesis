@@ -1,7 +1,6 @@
 import { AUTH_MICROSERVICE_URL } from "../consts";
-import { BaseResponse } from "../../types/responses/BaseResponse";
-import { extractApiError } from "../extractApiError";
 import { fetchWithAuth } from "../fetchWithAuth";
+import { parseApiPayload } from "../parseApiResponse";
 import { userSchema } from "../../types/models/User";
 import { z } from "zod";
 
@@ -22,11 +21,5 @@ export const register = async (input: RegisterUserRequest) => {
     },
   );
 
-  const data = (await response.json()) as BaseResponse<boolean>;
-
-  if (!data.success) {
-    throw new Error(extractApiError(data, "Failed to register"));
-  }
-
-  return data.payload;
+  return parseApiPayload<boolean>(response, "Failed to register");
 };

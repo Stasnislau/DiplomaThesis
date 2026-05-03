@@ -1,5 +1,5 @@
 import { fetchWithAuth } from "@/api/fetchWithAuth";
-import { BaseResponse } from "@/types/responses/BaseResponse";
+import { parseApiPayload } from "@/api/parseApiResponse";
 import { USER_MICROSERVICE_URL } from "@/api/consts";
 import { User } from "@/types/models/User";
 
@@ -10,10 +10,5 @@ export async function getMe(): Promise<User> {
     method: "GET",
   });
 
-  const data = (await response.json()) as BaseResponse<User>;
-  if (!data.success) {
-    throw new Error("Failed to fetch user data");
-  }
-
-  return data.payload;
+  return parseApiPayload<User>(response, "Failed to fetch user data");
 }
