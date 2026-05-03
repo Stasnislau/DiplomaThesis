@@ -1,4 +1,7 @@
+import hashlib
+import json
 import logging
+import time
 
 from dotenv import load_dotenv
 from fastapi import HTTPException, status
@@ -16,6 +19,62 @@ from utils.user_context import UserContext
 logger = logging.getLogger(__name__)
 
 load_dotenv()
+
+
+# In-process AI response cache. Two motivations:
+#   1) Cost — repeated calls with identical inputs don't bill the
+#      provider twice. A user re-clicking 'Generate' or two parallel
+#      requests for the same placement-task-with-same-seed share a
+#      single completion.
+#   2) Latency — Groq cold paths can spike 5-10s; warm cache hit is
+#      microseconds.
+# Notes / caveats:
+#   - This is per-process. With a single bridge replica that's fine;
+#     for multi-replica deploys this should move to Redis.
+#   - We DON'T cache when temperature > 0.5 (the call site asked for
+#     creativity — caching would defeat that).
+#   - The cache key includes the user's API token (because litellm
+#     dispatches requests by it), so two users with different keys
+#     won't share entries even on identical prompts.
+_AI_CACHE_TTL = 60 * 10  # 10 minutes
+_AI_CACHE_MAX = 256
+_ai_cache: Dict[str, Tuple[float, str]] = {}
+
+
+def _ai_cache_key(model: str, prompt: str, system_prompt: str,
+                  api_key: Optional[str], temperature: float,
+                  response_format: Optional[Dict[str, str]]) -> str:
+    h = hashlib.sha256()
+    h.update(model.encode("utf-8"))
+    h.update(b"\0")
+    h.update(prompt.encode("utf-8"))
+    h.update(b"\0")
+    h.update(system_prompt.encode("utf-8"))
+    h.update(b"\0")
+    h.update((api_key or "").encode("utf-8"))
+    h.update(b"\0")
+    h.update(f"{temperature:.3f}".encode("utf-8"))
+    h.update(b"\0")
+    h.update(json.dumps(response_format or {}, sort_keys=True).encode("utf-8"))
+    return h.hexdigest()
+
+
+def _ai_cache_get(key: str) -> Optional[str]:
+    entry = _ai_cache.get(key)
+    if not entry:
+        return None
+    expires_at, value = entry
+    if time.time() > expires_at:
+        _ai_cache.pop(key, None)
+        return None
+    return value
+
+
+def _ai_cache_put(key: str, value: str) -> None:
+    if len(_ai_cache) >= _AI_CACHE_MAX:
+        oldest = min(_ai_cache.items(), key=lambda kv: kv[1][0])[0]
+        _ai_cache.pop(oldest, None)
+    _ai_cache[key] = (time.time() + _AI_CACHE_TTL, value)
 
 
 PROVIDER_CONFIG: Dict[str, Dict[str, Any]] = {
@@ -88,6 +147,25 @@ class AI_Service:
         if model and not user_context and ai_provider_id is None:
             litellm_model = model
 
+        # Cache only deterministic-ish calls. Anything above temp 0.5 is
+        # asking for creative variety (e.g. task generation), which is
+        # exactly the case where a cache hit would hurt.
+        cacheable = temperature <= 0.5
+        cache_key = None
+        if cacheable:
+            cache_key = _ai_cache_key(
+                litellm_model,
+                prompt,
+                system_prompt,
+                litellm_params.get("api_key"),
+                temperature,
+                response_format,
+            )
+            cached = _ai_cache_get(cache_key)
+            if cached is not None:
+                logger.info("ai_service cache hit (model=%s)", litellm_model)
+                return cached
+
         try:
             chat_response = await acompletion(
                 model=litellm_model,
@@ -131,4 +209,6 @@ class AI_Service:
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail="AI provider returned empty content",
             )
+        if cacheable and cache_key is not None:
+            _ai_cache_put(cache_key, content)
         return content

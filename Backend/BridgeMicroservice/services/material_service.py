@@ -42,7 +42,12 @@ class MaterialService:
             
             metadatas = [ChunkMetadata(source=filename, chunk_index=i) for i in range(len(chunks))]
             logger.info("Saving chunks to Vector DB...")
-            self.vector_db_service.save_chunks(chunks, metadatas)
+            owner_id = (
+                user_context.user_id
+                if isinstance(user_context, UserContext)
+                else None
+            )
+            self.vector_db_service.save_chunks(chunks, metadatas, user_id=owner_id)
 
             logger.info("Analyzing question types using AI...")
             total_chunks = len(chunks)
@@ -64,17 +69,29 @@ class MaterialService:
 
             prompt = f"""
             Analyze the following text segments from an educational document.
-            Identify distinct types of exercises, questions, or learning activities present (e.g., "Multiple Choice", "Reading Comprehension", "True/False", "Essay Writing").
+            Identify the genuinely distinct types of exercises, questions, or
+            learning activities present in this material.
 
-            Ignore instructional text (e.g., "Read the instructions", "Copyright"). Focus on the actual learning content.
+            HARD RULES:
+            - DO NOT propose types that aren't actually visible in the text.
+              An empty list is acceptable if the document is prose only.
+            - DO NOT pad the list with generic categories ("Reading
+              Comprehension" is only a valid type if there are actual
+              comprehension questions next to a passage; a passage by
+              itself is just text).
+            - Merge near-duplicates: "Gap fill" and "Fill in the blank"
+              are the same type — pick one canonical name.
+            - Ignore navigational/copyright/instructional boilerplate.
 
-            For each identified type, extract (or if necessary, summarize) ONE short example from the text.
+            For each identified type, extract ONE short example from the
+            text (verbatim, ≤ 200 chars). If you can't quote a real
+            example, leave the `example` field as an empty string rather
+            than inventing one.
 
-            Return the result strictly as a JSON object with a key "types", containing a list of objects. Each object must have:
-            - "type": A short, descriptive name of the question/activity type (e.g., "Multiple Choice").
-            - "example": A short example text from the document representing this type.
-
-            If specific exercises are not found, identify the *potential* types of questions that would fit this content (e.g., "Reading Comprehension" for a text passage).
+            Return the result strictly as a JSON object with a key "types",
+            containing a list of objects. Each object must have:
+            - "type":    Short canonical name of the activity type.
+            - "example": Verbatim quote from the source, or "" if none.
             {type_locale_clause}
 
             Text Segments:
@@ -115,14 +132,25 @@ class MaterialService:
             logger.error(f"Error processing PDF: {e}")
             raise e
 
-    async def generate_quiz(self, selected_types: Optional[List[str]] = None, user_context: Optional[object] = None) -> GenerateQuizResponse:
+    async def generate_quiz(
+        self,
+        selected_types: Optional[List[str]] = None,
+        user_context: Optional[object] = None,
+        target_language: Optional[str] = None,
+    ) -> GenerateQuizResponse:
         try:
             logger.info(f"Generating quiz. Selected types: {selected_types}")
-            relevant_docs = self.vector_db_service.search_materials(
-                "exercises questions tasks complete the sentences multiple choice match true false", 
-                limit=8
+            owner_id = (
+                user_context.user_id
+                if isinstance(user_context, UserContext)
+                else None
             )
-            
+            relevant_docs = self.vector_db_service.search_materials(
+                "exercises questions tasks complete the sentences multiple choice match true false",
+                limit=8,
+                user_id=owner_id,
+            )
+
             if not relevant_docs:
                  logger.warning("No relevant material found in Vector DB.")
                  return GenerateQuizResponse(quiz="No relevant material found to generate tasks.")
@@ -138,10 +166,19 @@ class MaterialService:
             ui_lang = (
                 getattr(user_context, "ui_locale_label", None) or "English"
             )
+            target_lang_clause = (
+                f"\n            - The student is currently studying {target_language}. "
+                f"Write `question`, `options`, `correct_answer` and `context_text` in "
+                f"{target_language} regardless of the source-document language. "
+                f"This is a learning aid, not a translation exercise."
+                if target_language
+                else "\n            - Match the language of the source material for `question`, "
+                "`options`, `correct_answer` and `context_text`."
+            )
             type_locale_clause = (
                 f"\n            - Write the `type` field in {ui_lang} (e.g. `Wybór wielokrotny` for Polish, "
-                "`Opción múltiple` for Spanish). Question content (`question`, `options`, "
-                "`correct_answer`, `context_text`) stays in the language of the source material."
+                "`Opción múltiple` for Spanish)."
+                + target_lang_clause
             )
 
             prompt = f"""

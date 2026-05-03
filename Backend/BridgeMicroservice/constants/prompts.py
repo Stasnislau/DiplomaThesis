@@ -36,9 +36,20 @@ def writing_fill_in_the_blank_task_prompt(
         - Key words / phrases to test: {', '.join(keywords) if keywords else 'any relevant to the topic'}
         The missing word in the blank MUST be one of the key words or phrases listed above.
         """
-    # The English-translation hint inside the question is part of the answer key —
-    # we leave that gloss in English regardless of UI locale, since it's a
-    # learner aid, not a localized label. No fields here that need re-localizing.
+    # The little gloss in parens after the blank is a learner aid, NOT a
+    # label — it should appear in the user's UI language so a Polish UI
+    # learner studying Russian sees "(iść)" rather than "(go)".
+    gloss_lang = (
+        ui_locale_label if ui_locale_label and ui_locale_label.strip() else "English"
+    )
+    seed_letter = (seed or "x")[0].lower() if seed else None
+    seed_constraint = (
+        f"\n        - HARD CONSTRAINT FROM SEED: the first content word of the sentence "
+        f"must start with the letter '{seed_letter}' (case-insensitive). "
+        "This is a forced-randomness lever — do not ignore it."
+        if seed_letter and seed_letter.isalpha()
+        else ""
+    )
     return f"""
         Generate a **fill-in-the-blank task** for language learners in {language} at {level} level.
         FOLLOW STRICTLY ALL THE GUIDELINES BELOW.
@@ -46,34 +57,33 @@ def writing_fill_in_the_blank_task_prompt(
         Level proficiency description:
         {level_context}
         {lesson_hint}
-        RANDOMNESS SEED (Use this to ensure variety): {seed or 'None'}
+        RANDOMNESS SEED: {seed or 'None'}{seed_constraint}
         *GUIDELINES:*
-        1. Create one sentence with in the {language} language.
-        2. Since this is a writing task, the question could be a grammar question or a vocabulary question.
-        3. First create the task in the targeted language and then translate the necessary parts to English.
-        4. The sentence must test a key skill for the level, such as vocabulary, grammar, or sentence structure.
-        5. Choose the word/phrase that is most likely to be used in a sentence in the {language} language.
-        6. Remove the word/phrase from the sentence and leave a blank in its place like this: "I ____ to the park every morning."
-        7. Avoid ambiguity: the missing word/phrase must have **only one correct answer**.
-        8. Pay a lot of attention to the context of the task and the forms of the words.
-        9. Avoid similar-sounding or overly ambiguous options.
-        The answer should be **deterministic**. If there are multiple correct answers, return them in an array.
-        10. Include *the English translation* of the missing word/phrase (in parentheses).
-        11. Use diverse contexts that reflect everyday use or topics relevant to the level (e.g., greetings, work, or daily routines)
-        12. The example in the level context should be used as a reference for the task, but it should not be exactly the same.
-        13. IMPORTANT: Use the provided RANDOMNESS SEED to vary the context. Do not repeat typical examples or sentences if possible. Be creative and diverse in your task generation.
-        14. Do not include any instructions for the task.
-        15. Return the result in JSON format with these fields:
+        1. Write one sentence in {language}. The sentence must test a key skill for {level} —
+           grammar, vocabulary, or sentence structure.
+        2. Choose ONE word or phrase that is genuinely characteristic of {language} at {level}.
+           Remove it; leave a blank ("____") in its place.
+        3. The blank must have **one canonical correct answer**. If equally-correct synonyms
+           exist (e.g. perfective/imperfective pairs that both fit), return them all in
+           `correctAnswer` as an array.
+        4. Avoid ambiguity from the surrounding context: the rest of the sentence must
+           uniquely determine the form (number, gender, tense, aspect…).
+        5. After the blank, include a glossary hint in parentheses translating the
+           missing word into {gloss_lang}, e.g. (go) for English UI, (iść) for Polish UI,
+           (ir) for Spanish UI.
+        6. Use everyday contexts relevant to the level (greetings, work, routines, food…).
+           Don't reuse the example from the level context verbatim.
+        7. Do not include any instructions inside the question — just the sentence.
+
+        Return JSON only:
         {{
-            "question": "The sentence with ____ (MISSING WORD/PHRASE IN ENGLISH) without any instructions or options",
-            "correctAnswer": array of correct answers as the missing word/phrase
+            "question": "The sentence with ____ ({gloss_lang.upper()} GLOSS), no instructions",
+            "correctAnswer": ["primary form", "acceptable variant", ...]
         }}
 
-        Examples:
-        - For vocabulary: "Я ____ в парк каждый день. (go)"
-        - For grammar: "Она ____ в течение трех часов. (has been studying)"
-
-        Ensure the task is concise and matches the level's key skills.
+        Examples (English UI):
+        - Vocabulary: "Я ____ в парк каждый день. (go)"
+        - Grammar:    "Она ____ в течение трех часов. (has been studying)"
         """
 
 
@@ -94,42 +104,45 @@ def writing_multiple_choice_task_prompt(
         - Key words / phrases to include or test: {', '.join(keywords) if keywords else 'any relevant to the topic'}
         Build the sentence and options around the above words/phrases.
         """
-    # No user-facing strings need localizing here — question/options/correctAnswer
-    # are all in the target practice language by design.
+    seed_letter = (seed or "x")[0].lower() if seed else None
+    seed_constraint = (
+        f"\n        - HARD CONSTRAINT FROM SEED: the first content word of the sentence "
+        f"must start with the letter '{seed_letter}' (case-insensitive)."
+        if seed_letter and seed_letter.isalpha()
+        else ""
+    )
     return f"""
         Generate a language learning task in {language} at {level} level. FOLLOW STRICTLY ALL THE GUIDELINES BELOW.
 
         Level proficiency description:
         {level_context}
         {lesson_hint}
-        RANDOMNESS SEED (Use this to ensure variety): {seed or 'None'}
+        RANDOMNESS SEED: {seed or 'None'}{seed_constraint}
         *GUIDELINES:*
-        Create a **multiple-choice task** that matches the level's requirements without using the example in the level context:
-        1. The task must consist of a single sentence with one clear objective.
-        2. Since this is a writing task, the question could be a grammar question or a vocabulary question.
-        3. First create the task in the targeted language and then translate the necessary parts to English.
-        4. Use a mix of familiar and level-appropriate contexts (e.g., daily life, work, or hobbies).
-        5. Pay a lot of attention to the context of the task and the forms of the words.
-        6. Provide **exactly four options**, with only one correct answer.
-        7. Do not translate any parts of the sentence in English.
-        8. Avoid similar-sounding or overly ambiguous options.
-        The answer should be **deterministic** and not allow for multiple correct interpretations.
-        9. Do not include any instructions for the task.
-        10. The example in the level context should be used as a reference for the task, but it should not be exactly the same.
-        11. IMPORTANT: Use the provided RANDOMNESS SEED to vary the context. Do not repeat typical examples or sentences if possible. Be creative and diverse in your task generation.
-        12. Return the task in JSON format, including these fields:
+        1. The task is a SINGLE sentence with ONE clear objective — grammar OR vocabulary.
+        2. Provide exactly 4 options: the correct one and 3 plausible distractors. Distractors
+           must be wrong for a SPECIFIC reason (wrong tense, wrong gender, wrong preposition,
+           false friend) — NOT random unrelated words.
+        3. Avoid options that are visually identical except for an accent/diacritic — those
+           are guess-cheese for the AI evaluator, not a learning signal.
+        4. The correct option must be unambiguous given the surrounding context.
+        5. Use everyday level-appropriate contexts. Don't copy the example from the level
+           context verbatim.
+        6. No instructions inside the sentence — just the sentence with a clear blank-or-pick.
+
+        Return JSON only:
         {{
-            "question": "The sentence and question for the user, without any instructions or options",
+            "question": "The sentence/question for the user, no instructions",
             "options": ["Option A", "Option B", "Option C", "Option D"],
-            "correctAnswer": "<EXACT TEXT of the correct option, must match one entry in options verbatim. NEVER an index or number — always the literal string.>"
+            "correctAnswer": "<verbatim string of the correct option>"
         }}
 
-        Examples of task contexts include:
-        - Choosing the correct verb or adjective in context.
-        - Identifying the most appropriate word for a blank.
-        - Selecting a sentence that best fits the grammar rules.
-
-        Ensure the task tests a specific, meaningful skill aligned with the level.
+        CORRECT-ANSWER FORMAT (this trips models up — read carefully):
+        ✅ "correctAnswer": "идёт"             // literal string from options
+        ❌ "correctAnswer": "B"                // never a letter
+        ❌ "correctAnswer": 1                  // never an index
+        ❌ "correctAnswer": "Option B"         // never a label
+        The value MUST be a verbatim copy of one of the strings inside `options`.
         """
 
 
@@ -145,25 +158,40 @@ def explain_answer_prompt(
         ui_locale_label if ui_locale_label and ui_locale_label.strip() else "English"
     )
     return f"""
-        Analyze the following task in {language} at {level} level. FOLLOW STRICTLY ALL THE GUIDELINES BELOW.
+        You are tutoring a student studying {language} at {level} level.
+        They just answered a task. Your job is to give SURGICAL feedback
+        on their specific attempt — not a grammar lecture.
 
-        Task: {task}
-        Correct answer: {correct_answer}
-        User's answer: {user_answer}
+        Task            : {task}
+        Correct answer  : {correct_answer}
+        Student's answer: {user_answer}
 
-        *GUIDELINES:*
-        1. Determine if the user's answer is correct.
-        2. If the answer is incorrect, provide a short explanation and suggest 1-2 topics to review.
-        3. Keep explanations clear, specific, and tailored to the level.
-        4. Avoid overloading the user with complex terminology.
-        5. Write `explanation` and every entry in `topics_to_review` in {locale_for_explanation}.
-           Quoted target-language fragments inside the explanation stay in the target language.
+        BEHAVIOUR RULES (HARD):
+        1. If the student's answer is correct (allow minor typos, accents
+           and synonymous variants), set is_correct=true and skip topics.
+        2. If wrong, structure the explanation as TWO sentences max:
+           a) Quote BOTH the student's answer and the correct one in the
+              target language, and name the specific slip in one phrase
+              ("wrong tense", "feminine where masculine is needed",
+              "missing reflexive particle"…).
+           b) ONE sentence on WHY (the underlying rule), tailored to the
+              {level} level. No table of conjugations, no bulleted lists.
+        3. NEVER paste the correct answer wholesale as a sentence on its
+           own line. Use it inline inside the quote-and-compare phrase.
+        4. NEVER lecture about the broader grammar topic. If the student
+           confused two specific tenses, only address those two.
+        5. `topics_to_review` lists 1–2 *very narrow* sub-topics they
+           should drill — not "Russian grammar", but "Present-tense
+           first-person endings of -ть verbs". Empty list if correct.
+        6. Write `explanation` and `topics_to_review` in
+           {locale_for_explanation}. Quoted target-language fragments
+           inside `explanation` stay in the target language.
 
-        Return the response in JSON format:
+        Return JSON only, no prose around it:
         {{
             "is_correct": boolean,
-            "explanation": "A brief explanation of the user's performance",
-            "topics_to_review": ["Topic 1", "Topic 2"] // Optional, only for incorrect answers
+            "explanation": "string, 1–2 sentences",
+            "topics_to_review": ["narrow sub-topic 1", "narrow sub-topic 2"]
         }}
         """
 

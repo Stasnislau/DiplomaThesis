@@ -46,6 +46,18 @@ class ListeningTaskService:
         1. Generate a short, engaging {variety['format']} of about 100-150 words in {language} on the topic of "{variety['topic']}" with a {variety['tone']} tone. The content must be appropriate for a {level} learner.
         2. Based on the content, create 3-4 comprehension questions. The questions should be a mix of "multiple_choice" and "fill_in_the_blank" types.
 
+        QUESTION RULES (HARD — this is a LISTENING task, not a reading test):
+        - Questions and options MUST paraphrase ideas from the transcript, not
+          quote it verbatim. If the transcript says "She left for Madrid on
+          Tuesday morning", the question should be "When did she travel?",
+          not "When did she leave for Madrid?".
+        - The correctAnswer for a multiple_choice question MUST be a
+          paraphrase too, not a literal copy of a phrase from the transcript.
+          Distractors should also be paraphrases (true-but-irrelevant or
+          plausible-but-false), never random unrelated words.
+        - For fill_in_the_blank: the missing word/phrase should be testable
+          from listening, not pickable by glancing at the transcript shape.
+
         Provide the final output in a single JSON object format. The JSON object should have two keys: "transcript" (containing the story) and "questions" (containing a list of question objects).
 
         Each question object in the "questions" list must have:
@@ -95,7 +107,7 @@ class ListeningTaskService:
         try:
             loop = asyncio.get_running_loop()
             audio_bytes = await loop.run_in_executor(
-                None, tts_service.synthesize, transcript, language
+                None, tts_service.synthesize, transcript, language, level
             )
         except Exception as e:
             print(f"Error calling Google Cloud TTS: {e}")

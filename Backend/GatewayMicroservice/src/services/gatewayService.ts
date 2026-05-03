@@ -21,6 +21,59 @@ interface GatewayResponse {
   data: BaseResponse<unknown> | Record<string, unknown>;
 }
 
+/**
+ * Tiny in-process token-bucket rate limiter for AI endpoints.
+ *
+ * Why bridge-only (instead of all routes): the user's API key is
+ * billed per call there, so a runaway client (or accidental retry
+ * loop) can drain real money in seconds. Auth/user routes are
+ * cheap and self-contained — no need to gate them.
+ *
+ * 60 calls/hour/user is roughly one task generation per minute on
+ * average — enough for normal study, far short of an abuse pattern.
+ * For a multi-replica deploy this should move to Redis; with one
+ * gateway replica it's adequate as-is.
+ */
+const AI_LIMIT_PER_HOUR = 60;
+const AI_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+
+interface RateLimitBucket {
+  count: number;
+  windowStart: number;
+}
+
+const aiRateLimits = new Map<string, RateLimitBucket>();
+
+function checkAndIncrementAiQuota(userId: string): {
+  ok: boolean;
+  remaining: number;
+  resetMs: number;
+} {
+  const now = Date.now();
+  const bucket = aiRateLimits.get(userId);
+  if (!bucket || now - bucket.windowStart >= AI_LIMIT_WINDOW_MS) {
+    aiRateLimits.set(userId, { count: 1, windowStart: now });
+    return {
+      ok: true,
+      remaining: AI_LIMIT_PER_HOUR - 1,
+      resetMs: AI_LIMIT_WINDOW_MS,
+    };
+  }
+  if (bucket.count >= AI_LIMIT_PER_HOUR) {
+    return {
+      ok: false,
+      remaining: 0,
+      resetMs: AI_LIMIT_WINDOW_MS - (now - bucket.windowStart),
+    };
+  }
+  bucket.count += 1;
+  return {
+    ok: true,
+    remaining: AI_LIMIT_PER_HOUR - bucket.count,
+    resetMs: AI_LIMIT_WINDOW_MS - (now - bucket.windowStart),
+  };
+}
+
 @Injectable()
 export class GatewayService {
   private readonly logger = new Logger(GatewayService.name);
@@ -30,6 +83,18 @@ export class GatewayService {
     "api/auth/register",
     "api/auth/refresh",
     "api/languages",
+  ];
+
+  // Bridge subpaths that actually call out to an AI provider — these
+  // are the ones we rate-limit. Other bridge paths (e.g. /health,
+  // /ai-tokens/verify) are exempt.
+  private readonly AI_BRIDGE_PREFIXES = [
+    "writing/",
+    "listening/",
+    "speaking/",
+    "placement/",
+    "materials/upload",
+    "materials/quiz",
   ];
 
   constructor(private readonly httpService: HttpService) {}
@@ -126,6 +191,34 @@ export class GatewayService {
 
       if (shouldAuthenticate) {
         userData = await this.validateToken(headers);
+      }
+
+      // After auth, before forwarding: gate AI-billing-bearing bridge
+      // calls behind a per-user-per-hour quota.
+      if (
+        microservice === "bridge" &&
+        userData &&
+        this.AI_BRIDGE_PREFIXES.some((p) => path.startsWith(p))
+      ) {
+        const quota = checkAndIncrementAiQuota(userData.id);
+        if (!quota.ok) {
+          this.logger.warn(
+            `Rate limit hit for user=${userData.id} on ${path}; resetMs=${quota.resetMs}`,
+          );
+          const resetSeconds = Math.ceil(quota.resetMs / 1000);
+          return {
+            status: 429,
+            data: {
+              success: false,
+              payload: {
+                message: `AI usage limit reached. Try again in ${Math.ceil(resetSeconds / 60)} minutes.`,
+                retryAfterSeconds: resetSeconds,
+                limit: AI_LIMIT_PER_HOUR,
+                window: "1 hour",
+              },
+            },
+          };
+        }
       }
 
       this.logger.debug(`userData: ${userData?.id || "anonymous"}`);

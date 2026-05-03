@@ -8,6 +8,8 @@ import { useSaveMaterial } from "@/api/hooks/useSaveMaterial";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useUploadMaterial } from "@/api/hooks/useUploadMaterial";
+import { useUserStore } from "@/store/useUserStore";
+import { useAvailableLanguages } from "@/api/hooks/useAvailableLanguages";
 
 interface AnalyzedType {
   type: string;
@@ -24,6 +26,18 @@ const MaterialsTask = () => {
   const [quizError, setQuizError] = useState<string | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<Record<number, string>>({});
   const [revealedAnswers, setRevealedAnswers] = useState<Record<number, boolean>>({});
+
+  // The user is currently practising whichever non-native language they
+  // have started. UserLanguage only carries languageId, so we resolve the
+  // human-readable name through the languages catalogue.
+  const userLanguages = useUserStore((s) => s.userLanguages);
+  const { languages: availableLanguages } = useAvailableLanguages();
+  const startedLearningLink = userLanguages.find(
+    (l) => !l.isNative && l.isStarted,
+  );
+  const targetLanguage = startedLearningLink
+    ? availableLanguages?.find((lang) => lang.id === startedLearningLink.languageId)?.name
+    : undefined;
 
   const { mutate: upload, isPending: isUploading, error: uploadError } = useUploadMaterial();
   const { mutate: generateQuizMutation, isPending: isGeneratingQuiz } = useGenerateQuiz();
@@ -69,7 +83,10 @@ const MaterialsTask = () => {
 
   const handleGenerateQuiz = () => {
     setQuizError(null);
-    generateQuizMutation(selectedTypes, {
+    generateQuizMutation({
+      selectedTypes,
+      targetLanguage,
+    }, {
       onSuccess: (data) => {
         const payload = data.quiz;
         if (
