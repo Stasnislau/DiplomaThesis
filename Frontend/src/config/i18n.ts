@@ -5,6 +5,7 @@ const en = {
   translation: {
     common: {
       loading: "Loading...",
+      generating: "Generating...",
       error: "An error occurred",
       retry: "Retry",
       cancel: "Cancel",
@@ -184,6 +185,23 @@ const en = {
       taskTypeCount_one: "{{count}} task type",
       taskTypeCount_other: "{{count}} task types",
       analyzeAndExtract: "Analyze & Extract Task Types",
+      // Quiz / TaskComponent labels
+      optionLabel: "Option {{letter}}",
+      answerInputAria: "Answer input",
+      acceptedAnswers: "Accepted answers: ",
+      correctAnswerLabel2: "Correct answer: ",
+      loadingExplanation: "Loading explanation",
+      explanationTitle: "Explanation",
+      topicsToReviewLabel: "Topics to Review:",
+      generateListeningTask: "🎧 Generate Listening Task",
+      hideTranscript: "Hide Transcript",
+      showTranscript: "Show Transcript",
+      uploadError: {
+        title: "Couldn't process this PDF",
+        noText: "No selectable text was found. The PDF is most likely a scan or has its text encoded with a custom font. Try a text-based PDF, or run OCR on the file first.",
+        garbled: "The text in this PDF came out as gibberish — usually a scanned document or a custom embedded font. Try a different PDF, or run OCR before uploading.",
+        aiRejected: "The AI couldn't produce a useful analysis from this PDF — its text is probably too noisy or too short. Try a cleaner or longer document.",
+      },
     },
 
     placementTest: {
@@ -403,6 +421,7 @@ const pl = {
   translation: {
     common: {
       loading: "Ładowanie...",
+      generating: "Generowanie...",
       error: "Wystąpił błąd",
       retry: "Ponów",
       cancel: "Anuluj",
@@ -585,6 +604,22 @@ const pl = {
       taskTypeCount_few: "{{count}} typy zadań",
       taskTypeCount_many: "{{count}} typów zadań",
       analyzeAndExtract: "Analizuj i wyodrębnij typy zadań",
+      optionLabel: "Opcja {{letter}}",
+      answerInputAria: "Pole odpowiedzi",
+      acceptedAnswers: "Akceptowane odpowiedzi: ",
+      correctAnswerLabel2: "Poprawna odpowiedź: ",
+      loadingExplanation: "Ładowanie wyjaśnienia",
+      explanationTitle: "Wyjaśnienie",
+      topicsToReviewLabel: "Tematy do powtórzenia:",
+      generateListeningTask: "🎧 Wygeneruj zadanie ze słuchania",
+      hideTranscript: "Ukryj transkrypcję",
+      showTranscript: "Pokaż transkrypcję",
+      uploadError: {
+        title: "Nie udało się przetworzyć tego PDF",
+        noText: "Nie znaleziono żadnego tekstu do zaznaczenia. PDF to najpewniej skan albo dokument z osadzoną nietypową czcionką. Spróbuj plik z prawdziwym tekstem lub przepuść go przez OCR.",
+        garbled: "Tekst PDF-a po wyciągnięciu okazał się nieczytelny — zwykle to skan albo niestandardowa czcionka. Wybierz inny PDF lub uruchom OCR przed wysyłką.",
+        aiRejected: "AI nie potrafił przygotować sensownej analizy tego PDF — tekst jest prawdopodobnie zbyt zaszumiony lub zbyt krótki. Spróbuj czystszego lub dłuższego dokumentu.",
+      },
     },
 
     placementTest: {
@@ -805,6 +840,7 @@ const es = {
   translation: {
     common: {
       loading: "Cargando...",
+      generating: "Generando...",
       error: "Ocurrió un error",
       retry: "Reintentar",
       cancel: "Cancelar",
@@ -986,6 +1022,22 @@ const es = {
       taskTypeCount_one: "{{count}} tipo de tarea",
       taskTypeCount_other: "{{count}} tipos de tarea",
       analyzeAndExtract: "Analizar y extraer tipos de tarea",
+      optionLabel: "Opción {{letter}}",
+      answerInputAria: "Campo de respuesta",
+      acceptedAnswers: "Respuestas aceptadas: ",
+      correctAnswerLabel2: "Respuesta correcta: ",
+      loadingExplanation: "Cargando explicación",
+      explanationTitle: "Explicación",
+      topicsToReviewLabel: "Temas a repasar:",
+      generateListeningTask: "🎧 Generar tarea de escucha",
+      hideTranscript: "Ocultar transcripción",
+      showTranscript: "Mostrar transcripción",
+      uploadError: {
+        title: "No se pudo procesar este PDF",
+        noText: "No se encontró texto seleccionable. El PDF probablemente es un escaneado o usa una fuente personalizada. Prueba un PDF basado en texto o pásalo por OCR primero.",
+        garbled: "El texto extraído del PDF salió como caracteres incomprensibles — normalmente un escaneado o una fuente embebida personalizada. Prueba con otro PDF o pásalo por OCR antes de subirlo.",
+        aiRejected: "La IA no pudo generar un análisis útil de este PDF — su texto es probablemente demasiado ruidoso o demasiado corto. Prueba con un documento más limpio o más largo.",
+      },
     },
 
     placementTest: {
