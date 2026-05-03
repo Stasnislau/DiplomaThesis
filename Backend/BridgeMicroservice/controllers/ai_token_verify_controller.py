@@ -138,22 +138,46 @@ class AITokenVerifyController:
             except Timeout:
                 return _result(False, provider, "Provider did not respond in time")
             except BadRequestError as exc:
-                logger.warning(
+                # litellm sometimes wraps auth failures (incl. revoked Groq keys)
+                # as BadRequestError. Inspect the message for auth signals; only
+                # treat as 'valid' when the body explicitly says model issue.
+                msg = str(exc).lower()
+                logger.info(
                     "Verify got BadRequest for provider=%s: %s",
                     provider,
-                    str(exc)[:150],
+                    str(exc)[:200],
                 )
-                return _result(
-                    True,
-                    provider,
-                    "Key accepted (model rejected ping but auth passed)",
+                auth_markers = (
+                    "invalid api key",
+                    "incorrect api key",
+                    "unauthorized",
+                    "authentication",
+                    "401",
+                    "expired",
+                    "revoked",
+                    "no auth credentials",
                 )
-            except Exception as exc:
-                logger.exception("Unexpected verify error for provider=%s", provider)
+                if any(m in msg for m in auth_markers):
+                    return _result(
+                        False,
+                        provider,
+                        "Invalid or expired API key",
+                    )
+                # Genuinely a model/parameter issue (not auth) — surface verbatim.
                 return _result(
                     False,
                     provider,
-                    f"Verification failed: {str(exc)[:120]}",
+                    f"Provider rejected the request: {str(exc)[:120]}",
+                )
+            except Exception as exc:
+                # Catch-all: be conservative, mark invalid. False negatives are
+                # better than false positives for a security-sensitive check.
+                logger.exception("Unexpected verify error for provider=%s", provider)
+                msg = str(exc)
+                return _result(
+                    False,
+                    provider,
+                    f"Verification failed: {msg[:150]}",
                 )
 
             return _result(True, provider, "Key is valid")
