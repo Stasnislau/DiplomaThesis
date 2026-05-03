@@ -51,9 +51,13 @@ class UserContext:
 def extract_user_context(request: Request) -> UserContext:
     user_id = request.headers.get("x-user-id")
     if not user_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing user identifier in headers",
+        # Lazy-import to avoid utils -> utils circular if anything else
+        # in error_codes ever imports user_context.
+        from utils.error_codes import AUTH_MISSING_USER, raise_with_code
+        raise_with_code(
+            AUTH_MISSING_USER,
+            status.HTTP_401_UNAUTHORIZED,
+            "Missing user identifier in headers",
         )
 
     raw_locale = (

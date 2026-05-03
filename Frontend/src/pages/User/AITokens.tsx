@@ -20,6 +20,7 @@ import { useDeleteUserAIToken } from "@/api/hooks/useDeleteUserAIToken";
 import { useGetUserAITokens } from "@/api/hooks/useGetUserAITokens";
 import { useSetDefaultUserAIToken } from "@/api/hooks/useSetDefaultUserAIToken";
 import { useVerifyAIToken } from "@/api/hooks/useVerifyAIToken";
+import { useLocalizedError } from "@/utils/useLocalizedError";
 import { useToastsStore } from "@/store/useToastsStore";
 import { useTranslation } from "react-i18next";
 
@@ -74,6 +75,7 @@ const AITokensPage: React.FC = () => {
   const { setDefaultToken, isSettingDefault } = useSetDefaultUserAIToken();
   const { verifyTokenAsync } = useVerifyAIToken();
   const addToast = useToastsStore((s) => s.addToast);
+  const localizeError = useLocalizedError();
   const [verifyingId, setVerifyingId] = React.useState<string | null>(null);
   // Per-token last verify status: 'valid' | 'invalid' — drives inline badge.
   const [verifyStatus, setVerifyStatus] = React.useState<
@@ -96,11 +98,13 @@ const AITokensPage: React.FC = () => {
         severity: result.valid ? "success" : "error",
       });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : t("common.error");
+      // The mutation throws an ApiError when the backend used
+      // raise_with_code(); useLocalizedError() picks up the code and
+      // renders a localized string instead of the raw English fallback.
       setVerifyStatus((s) => ({ ...s, [tokenId]: "invalid" }));
       addToast({
         title: t("aiTokens.verifyInvalidTitle"),
-        content: msg,
+        content: localizeError(e),
         severity: "error",
       });
     } finally {

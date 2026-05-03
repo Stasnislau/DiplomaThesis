@@ -97,11 +97,17 @@ class AI_Service:
     def _resolve_provider_params(
         self, ai_provider_id: str, api_key: Optional[str], require_api_key: bool
     ) -> Tuple[str, Dict[str, Any]]:
+        from utils.error_codes import (
+            AI_PROVIDER_UNSUPPORTED,
+            AI_API_KEY_MISSING,
+            raise_with_code,
+        )
         provider_config = PROVIDER_CONFIG.get(ai_provider_id)
         if not provider_config:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Unsupported AI provider: {ai_provider_id}",
+            raise_with_code(
+                AI_PROVIDER_UNSUPPORTED,
+                status.HTTP_400_BAD_REQUEST,
+                f"Unsupported AI provider: {ai_provider_id}",
             )
 
         model = provider_config["model"]
@@ -109,9 +115,10 @@ class AI_Service:
         if api_key:
             extra_params["api_key"] = api_key
         elif require_api_key:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="AI API key is missing for the selected provider",
+            raise_with_code(
+                AI_API_KEY_MISSING,
+                status.HTTP_400_BAD_REQUEST,
+                "AI API key is missing for the selected provider",
             )
         return model, extra_params
 
@@ -178,36 +185,48 @@ class AI_Service:
                 temperature=temperature,
                 **litellm_params,
             )
+        except HTTPException:
+            raise
         except AuthenticationError:
+            from utils.error_codes import AI_AUTH_FAILED, raise_with_code
             logger.error("Invalid API key for model %s", litellm_model)
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid or expired API key for the selected AI provider",
+            raise_with_code(
+                AI_AUTH_FAILED,
+                status.HTTP_401_UNAUTHORIZED,
+                "Invalid or expired API key for the selected AI provider",
             )
         except RateLimitError:
+            from utils.error_codes import AI_RATE_LIMITED, raise_with_code
             logger.warning("Rate limit hit for model %s", litellm_model)
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="AI provider rate limit exceeded, please try again later",
+            raise_with_code(
+                AI_RATE_LIMITED,
+                status.HTTP_429_TOO_MANY_REQUESTS,
+                "AI provider rate limit exceeded, please try again later",
             )
         except Timeout:
+            from utils.error_codes import AI_TIMEOUT, raise_with_code
             logger.warning("Timeout calling model %s", litellm_model)
-            raise HTTPException(
-                status_code=status.HTTP_504_GATEWAY_TIMEOUT,
-                detail="AI provider did not respond in time",
+            raise_with_code(
+                AI_TIMEOUT,
+                status.HTTP_504_GATEWAY_TIMEOUT,
+                "AI provider did not respond in time",
             )
         except Exception as exc:
+            from utils.error_codes import AI_BAD_GATEWAY, raise_with_code
             logger.exception("Unexpected error from AI provider: %s", exc)
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail="AI provider request failed",
+            raise_with_code(
+                AI_BAD_GATEWAY,
+                status.HTTP_502_BAD_GATEWAY,
+                "AI provider request failed",
             )
 
         content: Optional[str] = chat_response.choices[0].message.content
         if content is None:
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail="AI provider returned empty content",
+            from utils.error_codes import AI_EMPTY_RESPONSE, raise_with_code
+            raise_with_code(
+                AI_EMPTY_RESPONSE,
+                status.HTTP_502_BAD_GATEWAY,
+                "AI provider returned empty content",
             )
         if cacheable and cache_key is not None:
             _ai_cache_put(cache_key, content)

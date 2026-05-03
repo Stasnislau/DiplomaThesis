@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import { useUploadMaterial } from "@/api/hooks/useUploadMaterial";
 import { useUserStore } from "@/store/useUserStore";
 import { useAvailableLanguages } from "@/api/hooks/useAvailableLanguages";
+import { useLocalizedError } from "@/utils/useLocalizedError";
 
 interface AnalyzedType {
   type: string;
@@ -40,6 +41,7 @@ const MaterialsTask = () => {
     : undefined;
 
   const { mutate: upload, isPending: isUploading, error: uploadError } = useUploadMaterial();
+  const localizeError = useLocalizedError();
   const { mutate: generateQuizMutation, isPending: isGeneratingQuiz } = useGenerateQuiz();
   const { mutate: saveMaterial } = useSaveMaterial();
   const { data: userMaterials, isLoading: isMaterialsLoading } = useGetUserMaterials();
@@ -237,19 +239,16 @@ const MaterialsTask = () => {
           </div>
 
           {uploadError && (() => {
-            // The mutation rejects with an UploadMaterialError carrying a
-            // structured `code` (PDF_NO_TEXT / PDF_GARBLED_TEXT / etc).
-            // Map it to an i18n key so the user sees a friendly localized
-            // explanation instead of the raw backend English message.
-            const errAny = uploadError as unknown as { code?: string; message: string };
-            const code = errAny.code;
-            const codeKeyMap: Record<string, string> = {
-              PDF_NO_TEXT: "tasks.uploadError.noText",
-              PDF_GARBLED_TEXT: "tasks.uploadError.garbled",
-              PDF_AI_REJECTED: "tasks.uploadError.aiRejected",
-            };
-            const titleKey = code ? codeKeyMap[code] : undefined;
-            const friendly = titleKey ? t(titleKey) : null;
+            // ApiError carries a `code` parsed from the backend's
+            // `CODE: english fallback` detail. localizeError() looks it
+            // up via t(`errors.codes.${code}`) with the English message
+            // as defaultValue, so any code we forgot to translate still
+            // reads sensibly. The code is also rendered as a small
+            // mono-font badge so support requests can quote it verbatim.
+            const code =
+              uploadError && typeof uploadError === "object" && "code" in uploadError
+                ? (uploadError as { code?: string }).code
+                : undefined;
             return (
               <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800/50">
                 <div className="flex items-start gap-3">
@@ -259,7 +258,7 @@ const MaterialsTask = () => {
                       {t("tasks.uploadError.title")}
                     </p>
                     <p className="text-sm text-amber-800 dark:text-amber-300 mt-1 leading-relaxed">
-                      {friendly ?? errAny.message}
+                      {localizeError(uploadError)}
                     </p>
                     {code && (
                       <p className="text-xs text-amber-700 dark:text-amber-400 mt-2 font-mono">

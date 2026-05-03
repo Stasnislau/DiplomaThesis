@@ -28,14 +28,21 @@ class GenerateQuizRequest(BaseModel):
 
 @router.post("/upload", response_model=BaseResponse[ProcessPdfResponse])
 async def upload_pdf(request: Request, file: UploadFile = File(...), service: MaterialService = Depends(get_material_service)) -> BaseResponse[ProcessPdfResponse]:
+    from utils.error_codes import (
+        FILE_NAME_REQUIRED,
+        FILE_TYPE_PDF_ONLY,
+        FILE_PROCESSING_FAILED,
+        TASK_GENERATION_FAILED,
+        raise_with_code,
+    )
     user_context = extract_user_context(request)
     logger.info(f"Received file upload request: {file.filename}")
     if not file.filename:
-        raise HTTPException(status_code=400, detail="File name is required")
-    
+        raise_with_code(FILE_NAME_REQUIRED, 400, "File name is required")
+
     if not file.filename.lower().endswith(".pdf"):
         logger.warning(f"Rejected non-PDF file: {file.filename}")
-        raise HTTPException(status_code=400, detail="Only PDF files are supported")
+        raise_with_code(FILE_TYPE_PDF_ONLY, 400, "Only PDF files are supported")
 
     try:
         content = await file.read()
@@ -50,7 +57,7 @@ async def upload_pdf(request: Request, file: UploadFile = File(...), service: Ma
         raise
     except Exception as e:
         logger.error(f"Error uploading/processing PDF: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_with_code(FILE_PROCESSING_FAILED, 500, str(e))
 
 
 @router.post("/quiz", response_model=BaseResponse[GenerateQuizResponse])
@@ -59,6 +66,7 @@ async def generate_quiz(
     body: GenerateQuizRequest = Body(...),
     service: MaterialService = Depends(get_material_service)
 ) -> BaseResponse[GenerateQuizResponse]:
+    from utils.error_codes import TASK_GENERATION_FAILED, raise_with_code
     user_context = extract_user_context(request)
     logger.info(f"Received quiz generation request. Selected types: {body.selected_types}")
     try:
@@ -70,6 +78,8 @@ async def generate_quiz(
 
         logger.info("Quiz generated successfully.")
         return BaseResponse[GenerateQuizResponse](success=True, payload=result)
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error generating quiz: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_with_code(TASK_GENERATION_FAILED, 500, str(e))

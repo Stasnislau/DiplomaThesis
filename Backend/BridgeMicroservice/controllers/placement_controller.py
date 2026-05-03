@@ -30,10 +30,16 @@ class PlacementController:
             user_context = extract_user_context(request)
             language = task_request.language
 
+            from utils.error_codes import (
+                INPUT_VALIDATION_FAILED,
+                PLACEMENT_GENERATION_FAILED,
+                raise_with_code,
+            )
             if language.lower() not in [lang.lower() for lang in AVAILABLE_LANGUAGES]:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Language {language} is not supported. Available languages: {', '.join(AVAILABLE_LANGUAGES)}"
+                raise_with_code(
+                    INPUT_VALIDATION_FAILED,
+                    status.HTTP_400_BAD_REQUEST,
+                    f"Language {language} is not supported. Available: {', '.join(AVAILABLE_LANGUAGES)}",
                 )
 
             try:
@@ -43,8 +49,10 @@ class PlacementController:
                     user_context=user_context,
                 )
                 return BaseResponse(payload=task)
+            except HTTPException:
+                raise
             except Exception as e:
-                 raise HTTPException(status_code=500, detail=str(e))
+                raise_with_code(PLACEMENT_GENERATION_FAILED, 500, str(e))
 
         @self.router.post(
             "/evaluate",
@@ -57,10 +65,16 @@ class PlacementController:
             user_context = extract_user_context(request)
             language = eval_request.language
 
+            from utils.error_codes import (
+                INPUT_VALIDATION_FAILED,
+                PLACEMENT_EVALUATION_FAILED,
+                raise_with_code,
+            )
             if language.lower() not in [lang.lower() for lang in AVAILABLE_LANGUAGES]:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Language {language} is not supported. Available languages: {', '.join(AVAILABLE_LANGUAGES)}"
+                raise_with_code(
+                    INPUT_VALIDATION_FAILED,
+                    status.HTTP_400_BAD_REQUEST,
+                    f"Language {language} is not supported. Available: {', '.join(AVAILABLE_LANGUAGES)}",
                 )
 
             try:
@@ -70,8 +84,10 @@ class PlacementController:
                     user_context=user_context
                 )
                 return BaseResponse(payload=result)
+            except HTTPException:
+                raise
             except Exception as e:
-                raise HTTPException(status_code=500, detail=str(e))
+                raise_with_code(PLACEMENT_EVALUATION_FAILED, 500, str(e))
 
     def get_router(self) -> APIRouter:
         return self.router
