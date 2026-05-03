@@ -1,7 +1,11 @@
-import { Controller, Request, Get, Post, Body, Param, NotFoundException } from "@nestjs/common";
+import { Controller, Request, Get, Post, Body, Param, HttpStatus } from "@nestjs/common";
 import { MaterialService } from "../services/materialService";
 import { AuthenticatedRequest } from "src/types/AuthenticatedRequest";
 import { CreateUserMaterialDto } from "../dtos/createMaterial.dto";
+import {
+  USER_MATERIAL_NOT_FOUND,
+  throwWithCode,
+} from "../utils/errorCodes";
 
 @Controller("materials")
 export class MaterialController {
@@ -32,7 +36,11 @@ export class MaterialController {
   async findOne(@Request() req: AuthenticatedRequest, @Param("id") id: string) {
     const result = await this.materialService.findOne(id, req.user.id);
     if (!result) {
-        throw new NotFoundException("Material not found");
+      throwWithCode(
+        USER_MATERIAL_NOT_FOUND,
+        HttpStatus.NOT_FOUND,
+        "Material not found",
+      );
     }
     return {
       success: true,

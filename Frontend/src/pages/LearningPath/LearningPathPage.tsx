@@ -3,6 +3,12 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  getLocalizedLessonType,
+  getLocalizedModuleDescription,
+  getLocalizedModuleTitle,
+  getLocalizedTheme,
+} from "@/utils/localizeContent";
 
 const LEVEL_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   A1: { bg: "bg-green-100 dark:bg-green-900/40", text: "text-green-700 dark:text-green-300", border: "border-green-300 dark:border-green-700" },
@@ -80,7 +86,7 @@ const LessonCard = ({ lesson, onStart }: LessonCardProps) => {
               {lesson.title}
             </h3>
             <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${TYPE_COLORS[lesson.type] || "bg-gray-100 text-gray-600"}`}>
-              {lesson.type}
+              {getLocalizedLessonType(lesson.type)}
             </span>
           </div>
           <p className={`text-xs ${isLocked ? "text-gray-400" : "text-gray-500 dark:text-gray-400"}`}>
@@ -162,11 +168,15 @@ const ModuleCard = ({ module, onLessonStart, language, level }: ModuleCardProps)
                   {module.level}
                 </span>
                 <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">
-                  🎨 {module.theme}
+                  🎨 {getLocalizedTheme(module.theme)}
                 </span>
               </div>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">{module.title}</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{module.description}</p>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                {getLocalizedModuleTitle(module.title)}
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                {getLocalizedModuleDescription(module.description)}
+              </p>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               <span className="text-sm text-gray-400 dark:text-gray-500">{completedCount}/{module.lessons.length}</span>

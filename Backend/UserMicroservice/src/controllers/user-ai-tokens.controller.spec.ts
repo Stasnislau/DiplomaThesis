@@ -96,6 +96,11 @@ describe("UserAITokensController", () => {
     });
 
     it("should return unmasked tokens if internal key is present", async () => {
+      // Tests run without docker-compose env vars; set the expected key
+      // explicitly so the controller's isInternal check matches.
+      const previousKey = process.env.INTERNAL_SERVICE_KEY;
+      process.env.INTERNAL_SERVICE_KEY = "supersecretbridgekey";
+
       const internalRequest = {
         ...mockRequest,
         headers: { "x-internal-service-key": "supersecretbridgekey" },
@@ -103,9 +108,16 @@ describe("UserAITokensController", () => {
 
       service.findAllForUser.mockResolvedValue([mockToken]);
 
-      await controller.findAll(internalRequest);
-
-      expect(service.findAllForUser).toHaveBeenCalledWith("user-123", true);
+      try {
+        await controller.findAll(internalRequest);
+        expect(service.findAllForUser).toHaveBeenCalledWith("user-123", true);
+      } finally {
+        if (previousKey === undefined) {
+          delete process.env.INTERNAL_SERVICE_KEY;
+        } else {
+          process.env.INTERNAL_SERVICE_KEY = previousKey;
+        }
+      }
     });
   });
 

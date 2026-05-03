@@ -11,6 +11,11 @@ import {
 import { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
 
 import { Response } from "express";
+import {
+  USER_INTERNAL_ERROR,
+  USER_INVALID_TOKEN,
+  USER_TOKEN_EXPIRED,
+} from "../utils/errorCodes";
 
 /** Error response payload structure */
 interface ErrorPayload {
@@ -31,12 +36,18 @@ export class ErrorHandlingMiddleware implements ExceptionFilter {
 
   catch(exception: Error, host: ArgumentsHost) {
     if (exception instanceof TokenExpiredError) {
-      this.handleError(new UnauthorizedException("Token has expired"), host);
+      this.handleError(
+        new UnauthorizedException(`${USER_TOKEN_EXPIRED}: Token has expired`),
+        host,
+      );
       return;
     }
 
     if (exception instanceof JsonWebTokenError) {
-      this.handleError(new UnauthorizedException("Invalid token"), host);
+      this.handleError(
+        new UnauthorizedException(`${USER_INVALID_TOKEN}: Invalid token`),
+        host,
+      );
       return;
     }
 
@@ -48,7 +59,9 @@ export class ErrorHandlingMiddleware implements ExceptionFilter {
         exception.stack,
       );
       this.handleError(
-        new InternalServerErrorException(exception.message),
+        new InternalServerErrorException(
+          `${USER_INTERNAL_ERROR}: ${exception.message || "Internal server error"}`,
+        ),
         host,
       );
     }

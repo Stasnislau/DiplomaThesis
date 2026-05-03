@@ -1,12 +1,18 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
+import { HttpStatus, Injectable } from "@nestjs/common";
 import { Language, LanguageLevel, User } from "@prisma/client";
 
 import { BaseResponse } from "src/types/BaseResponse";
 import { PrismaService } from "../../prisma/prismaService";
+import {
+  USER_ID_AND_ROLE_REQUIRED,
+  USER_ID_REQUIRED,
+  USER_INVALID_LEVEL,
+  USER_LANGUAGE_ALREADY_ADDED,
+  USER_LANGUAGE_ID_MISSING,
+  USER_LANGUAGE_NOT_FOUND,
+  USER_NOT_FOUND,
+  throwWithCode,
+} from "../utils/errorCodes";
 
 @Injectable()
 export class UserService {
@@ -23,7 +29,7 @@ export class UserService {
 
   async getUser(id: string): Promise<BaseResponse<User>> {
     if (!id) {
-      throw new BadRequestException("User ID is required");
+      throwWithCode(USER_ID_REQUIRED, HttpStatus.BAD_REQUEST, "User ID is required");
     }
 
     const user = await this.prisma.user.findUnique({
@@ -34,7 +40,7 @@ export class UserService {
     });
 
     if (!user) {
-      throw new NotFoundException("User not found");
+      throwWithCode(USER_NOT_FOUND, HttpStatus.NOT_FOUND, "User not found");
     }
 
     return {
@@ -54,13 +60,21 @@ export class UserService {
 
   async setNativeLanguage(userId: string, languageId: string) {
     if (!languageId) {
-       throw new BadRequestException("Language ID is missing");
+      throwWithCode(
+        USER_LANGUAGE_ID_MISSING,
+        HttpStatus.BAD_REQUEST,
+        "Language ID is missing",
+      );
     }
     const language = await this.prisma.language.findUnique({
       where: { id: languageId },
     });
     if (!language) {
-      throw new NotFoundException(`Language with id ${languageId} not found`);
+      throwWithCode(
+        USER_LANGUAGE_NOT_FOUND,
+        HttpStatus.NOT_FOUND,
+        `Language with id ${languageId} not found`,
+      );
     }
 
     const user = await this.prisma.user.findUnique({
@@ -71,11 +85,15 @@ export class UserService {
     });
 
     if (!user) {
-      throw new NotFoundException("User not found");
+      throwWithCode(USER_NOT_FOUND, HttpStatus.NOT_FOUND, "User not found");
     }
 
     if (user.languages.find((language) => language.languageId === languageId)) {
-      throw new BadRequestException("Language already added");
+      throwWithCode(
+        USER_LANGUAGE_ALREADY_ADDED,
+        HttpStatus.CONFLICT,
+        "Language already added",
+      );
     }
 
     await this.prisma.userLanguage.create({
@@ -100,7 +118,7 @@ export class UserService {
     });
 
     if (!user) {
-      throw new NotFoundException("User not found");
+      throwWithCode(USER_NOT_FOUND, HttpStatus.NOT_FOUND, "User not found");
     }
 
     const language = await this.prisma.language.findUnique({
@@ -108,7 +126,11 @@ export class UserService {
     });
 
     if (!language) {
-      throw new NotFoundException("Language not found");
+      throwWithCode(
+        USER_LANGUAGE_NOT_FOUND,
+        HttpStatus.NOT_FOUND,
+        "Language not found",
+      );
     }
 
     let currentLevel: LanguageLevel;
@@ -133,7 +155,11 @@ export class UserService {
         currentLevel = LanguageLevel.C2;
         break;
       default:
-        throw new BadRequestException("Invalid level");
+        throwWithCode(
+          USER_INVALID_LEVEL,
+          HttpStatus.BAD_REQUEST,
+          "Invalid level",
+        );
     }
 
     await this.prisma.userLanguage.create({
@@ -187,7 +213,7 @@ export class UserService {
       where: { id: userData.id },
     });
     if (!user) {
-      throw new NotFoundException("User not found");
+      throwWithCode(USER_NOT_FOUND, HttpStatus.NOT_FOUND, "User not found");
     }
     await this.prisma.user.update({
       where: { id: userData.id },
@@ -198,7 +224,11 @@ export class UserService {
 
   async updateUserRole(userData: { id: string; role: string }) {
     if (!userData.id || !userData.role) {
-      throw new BadRequestException("User ID and role are required");
+      throwWithCode(
+        USER_ID_AND_ROLE_REQUIRED,
+        HttpStatus.BAD_REQUEST,
+        "User ID and role are required",
+      );
     }
 
     const user = await this.prisma.user.findUnique({
@@ -206,7 +236,7 @@ export class UserService {
     });
 
     if (!user) {
-      throw new NotFoundException("User not found");
+      throwWithCode(USER_NOT_FOUND, HttpStatus.NOT_FOUND, "User not found");
     }
 
     await this.prisma.user.update({
@@ -222,7 +252,11 @@ export class UserService {
 
   async deleteUser(userData: { id: string }) {
     if (!userData.id) {
-      throw new BadRequestException("User ID is required");
+      throwWithCode(
+        USER_ID_REQUIRED,
+        HttpStatus.BAD_REQUEST,
+        "User ID is required",
+      );
     }
 
     await this.prisma.user.delete({ where: { id: userData.id } });

@@ -3,17 +3,21 @@ import {
   Controller,
   Delete,
   Get,
+  HttpStatus,
   Param,
   Post,
   Query,
   Request,
-  UnauthorizedException,
 } from "@nestjs/common";
 import {
   CreateTaskHistoryDto,
   TaskHistoryService,
 } from "../services/task-history.service";
 import { AuthenticatedRequest } from "src/types/AuthenticatedRequest";
+import {
+  USER_HISTORY_MISSING_USER,
+  throwWithCode,
+} from "../utils/errorCodes";
 
 @Controller("history")
 export class TaskHistoryController {
@@ -38,7 +42,11 @@ export class TaskHistoryController {
       : req.user?.id;
 
     if (!userId) {
-      throw new UnauthorizedException("Missing user identifier");
+      throwWithCode(
+        USER_HISTORY_MISSING_USER,
+        HttpStatus.UNAUTHORIZED,
+        "Missing user identifier",
+      );
     }
 
     const entry = await this.historyService.create(userId, dto);
