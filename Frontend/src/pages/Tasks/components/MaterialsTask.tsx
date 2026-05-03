@@ -125,7 +125,7 @@ const MaterialsTask = () => {
               <span className="text-lg">📚</span>
             </div>
             <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-              Choose Source
+              {t("tasks.chooseSource")}
             </label>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -164,7 +164,7 @@ const MaterialsTask = () => {
               <span className="text-lg">📄</span>
             </div>
             <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-              Upload PDF Document
+              {t("tasks.uploadPdfDocument")}
             </label>
           </div>
           
@@ -190,7 +190,7 @@ const MaterialsTask = () => {
                   <span className="text-3xl">📄</span>
                 </div>
                 <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">{file.name}</span>
-                <span className="text-sm text-gray-500 mt-1">Click to change file</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t("tasks.clickChangeFile")}</span>
               </>
             ) : (
               <>
@@ -199,8 +199,8 @@ const MaterialsTask = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
                 </div>
-                <span className="text-lg font-medium text-gray-700 dark:text-gray-300">Click to select PDF file</span>
-                <span className="text-sm text-gray-500 mt-1">Max size 10MB</span>
+                <span className="text-lg font-medium text-gray-700 dark:text-gray-300">{t("tasks.clickSelectPdf")}</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t("tasks.maxSize")}</span>
               </>
             )}
           </div>
@@ -229,19 +229,19 @@ const MaterialsTask = () => {
           </div>
           
           {isMaterialsLoading && (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
               <div className="animate-spin w-8 h-8 border-4 border-rose-500 border-t-transparent rounded-full mx-auto mb-3"></div>
-              Loading your materials...
+              {t("materials.loadingMaterials")}
             </div>
           )}
-          
+
           {!isMaterialsLoading && userMaterials?.length === 0 && (
             <div className="text-center py-8">
-              <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center mx-auto mb-4">
                 <span className="text-3xl">📭</span>
               </div>
-              <p className="text-gray-500 font-medium">No saved materials yet</p>
-              <p className="text-sm text-gray-400 mt-1">Upload a PDF to get started</p>
+              <p className="text-gray-500 dark:text-gray-400 font-medium">{t("tasks.noSavedMaterials")}</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">{t("tasks.uploadPdfGetStarted")}</p>
             </div>
           )}
           
@@ -251,7 +251,7 @@ const MaterialsTask = () => {
                 <div
                   key={material.id}
                   onClick={() => loadMaterial(material)}
-                  className="flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:border-rose-300 hover:bg-rose-50 cursor-pointer transition-all duration-200 group"
+                  className="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-rose-300 dark:hover:border-rose-700 hover:bg-rose-50 dark:hover:bg-rose-900/20 cursor-pointer transition-all duration-200 group"
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-400 to-orange-400 flex items-center justify-center shadow-sm">
@@ -270,7 +270,7 @@ const MaterialsTask = () => {
                     </div>
                   </div>
                   <div className="text-rose-500 font-medium text-sm opacity-0 group-hover:opacity-100 transition-opacity">
-                    Use →
+                    {t("tasks.useAction")}
                   </div>
                 </div>
               ))}
@@ -288,7 +288,7 @@ const MaterialsTask = () => {
           isLoading={isUploading}
           className="w-full h-14 text-lg font-semibold rounded-2xl bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 shadow-lg shadow-rose-500/25"
         >
-          {isUploading ? "Analyzing Document..." : "📊 Analyze & Extract Task Types"}
+          {isUploading ? t("tasks.analyzingDocument") : "📊 Analyze & Extract Task Types"}
         </Button>
       )}
 
@@ -302,7 +302,7 @@ const MaterialsTask = () => {
                 <span className="text-3xl">✅</span>
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">Analysis Complete!</h2>
+                <h2 className="text-xl font-bold text-white">{t("tasks.analysisComplete")}</h2>
                 <p className="text-emerald-100 text-sm">
                   {file?.name} • {analyzedTypes.length} task type{analyzedTypes.length !== 1 ? 's' : ''} found
                 </p>
@@ -318,7 +318,7 @@ const MaterialsTask = () => {
                   <span className="text-lg">🎯</span>
                 </div>
                 <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                  Select Task Types to Practice
+                  {t("tasks.selectTaskTypes")}
                 </label>
               </div>
               <button 
