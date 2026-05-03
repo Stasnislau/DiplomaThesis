@@ -4,6 +4,7 @@ import { useCreateListeningTask } from "@/api/hooks/useCreateListeningTask";
 import { ListeningTaskResponse } from "@/types/responses/TaskResponse";
 import { TaskComponent } from "@/pages/Quiz/components/TaskComponent";
 import { isMultipleChoice } from "@/types/typeGuards/isMultipleChoice";
+import { useTranslation } from "react-i18next";
 
 const LANGUAGES = [
   { code: "English", flag: "🇬🇧" },
@@ -18,6 +19,7 @@ const LANGUAGES = [
 const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
 const ListeningTask = () => {
+  const { t } = useTranslation();
   const [language, setLanguage] = useState("");
   const [level, setLevel] = useState("");
   const [currentTaskData, setCurrentTaskData] = useState<ListeningTaskResponse | null>(null);
@@ -44,7 +46,7 @@ const ListeningTask = () => {
       setCurrentTaskData(null);
       createListeningTask({ language, level });
     } else {
-      alert("Please select both language and level.");
+      alert(t("tasks.selectLanguageAndLevel"));
     }
   };
 
@@ -83,7 +85,7 @@ const ListeningTask = () => {
             <span className="text-lg">🌍</span>
           </div>
           <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-            Choose Language
+            {t("languages.chooseLanguage")}
           </label>
         </div>
         <div className="flex flex-wrap gap-2 sm:gap-3">
@@ -111,7 +113,7 @@ const ListeningTask = () => {
             <span className="text-lg">📊</span>
           </div>
           <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-            Proficiency Level
+            {t("languages.proficiencyLevel")}
           </label>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -162,8 +164,8 @@ const ListeningTask = () => {
                 <span className="text-2xl">🎧</span>
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">Listening Task</h2>
-                <p className="text-indigo-100 text-sm">Listen carefully and answer the questions</p>
+                <h2 className="text-xl font-bold text-white">{t("tasks.listeningTask")}</h2>
+                <p className="text-indigo-100 text-sm">{t("tasks.listenCarefully")}</p>
               </div>
             </div>
             <audio src={currentTaskData.audioUrl} controls className="w-full rounded-xl" />
@@ -246,22 +248,22 @@ const ListeningTask = () => {
               />
               
               {/* Navigation */}
-              <div className="flex justify-between mt-6 pt-4 border-t border-gray-200">
-                <Button 
-                  onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))} 
+              <div className="flex justify-between mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <Button
+                  onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
                   disabled={currentQuestionIndex === 0}
                   variant="secondary"
                   className="h-10 px-6 rounded-xl"
                 >
-                  ← Previous
+                  ← {t("common.previous")}
                 </Button>
-                <Button 
-                  onClick={() => setCurrentQuestionIndex(prev => Math.min(currentTaskData.questions.length - 1, prev + 1))} 
+                <Button
+                  onClick={() => setCurrentQuestionIndex(prev => Math.min(currentTaskData.questions.length - 1, prev + 1))}
                   disabled={currentQuestionIndex === currentTaskData.questions.length - 1}
                   variant="primary"
                   className="h-10 px-6 rounded-xl"
                 >
-                  Next →
+                  {t("common.next")} →
                 </Button>
               </div>
             </div>

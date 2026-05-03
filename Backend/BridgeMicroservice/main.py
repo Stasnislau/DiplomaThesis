@@ -23,6 +23,7 @@ from services.speaking_service import SpeakingService
 from controllers.listening_controller import ListeningController
 from services.listening_task_service import ListeningTaskService
 from controllers.material_controller import router as material_router
+from controllers.ai_token_verify_controller import AITokenVerifyController
 from database.init_db import init_db, close_db
 import logging
 import litellm
@@ -150,6 +151,12 @@ app.include_router(learning_path_controller.get_router(), prefix="/api")
 # MATERIALS #
 app.include_router(
     material_router,
+    prefix="/api",
+)
+
+# AI TOKEN VERIFY #
+app.include_router(
+    AITokenVerifyController().get_router(),
     prefix="/api",
 )
 

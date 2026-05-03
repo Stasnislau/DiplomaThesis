@@ -19,6 +19,8 @@ import { useCreateUserAIToken } from "@/api/hooks/useCreateUserAIToken";
 import { useDeleteUserAIToken } from "@/api/hooks/useDeleteUserAIToken";
 import { useGetUserAITokens } from "@/api/hooks/useGetUserAITokens";
 import { useSetDefaultUserAIToken } from "@/api/hooks/useSetDefaultUserAIToken";
+import { useVerifyAIToken } from "@/api/hooks/useVerifyAIToken";
+import { useToastsStore } from "@/store/useToastsStore";
 import { useTranslation } from "react-i18next";
 
 interface IFormInput {
@@ -70,6 +72,32 @@ const AITokensPage: React.FC = () => {
   const { mutate: createToken, isPending: isCreating } = useCreateUserAIToken();
   const { mutate: deleteToken } = useDeleteUserAIToken();
   const { setDefaultToken, isSettingDefault } = useSetDefaultUserAIToken();
+  const { verifyTokenAsync } = useVerifyAIToken();
+  const addToast = useToastsStore((s) => s.addToast);
+  const [verifyingId, setVerifyingId] = React.useState<string | null>(null);
+
+  const handleVerify = async (tokenId: string) => {
+    setVerifyingId(tokenId);
+    try {
+      const result = await verifyTokenAsync({ tokenId });
+      addToast({
+        title: result.valid
+          ? t("aiTokens.verifyValidTitle")
+          : t("aiTokens.verifyInvalidTitle"),
+        content: result.message,
+        severity: result.valid ? "success" : "error",
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : t("common.error");
+      addToast({
+        title: t("aiTokens.verifyInvalidTitle"),
+        content: msg,
+        severity: "error",
+      });
+    } finally {
+      setVerifyingId(null);
+    }
+  };
 
   const { register, handleSubmit, reset, control } = useForm<IFormInput>({
     defaultValues: {
@@ -264,7 +292,7 @@ const AITokensPage: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 sm:gap-4">
                       {token.isDefault && (
                         <span className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 text-xs font-semibold px-2.5 py-0.5 rounded border border-yellow-200 dark:border-yellow-700/50 flex items-center gap-1">
                           <span role="img" aria-label="star">⭐</span> {t("aiTokens.defaultBadge")}
@@ -282,6 +310,17 @@ const AITokensPage: React.FC = () => {
                         </Button>
                       )}
 
+                      <Button
+                        variant="secondary"
+                        onClick={() => handleVerify(token.id)}
+                        disabled={verifyingId === token.id}
+                        className="text-xs text-emerald-700 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 px-2 py-1 rounded"
+                      >
+                        {verifyingId === token.id
+                          ? t("aiTokens.verifying")
+                          : t("aiTokens.verify")}
+                      </Button>
+
                       <IconButton
                         onClick={() => deleteToken(token.id)}
                         className="h-10 w-10 flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all duration-200 opacity-0 group-hover:opacity-100"
@@ -298,7 +337,7 @@ const AITokensPage: React.FC = () => {
 
         {/* Footer hint */}
         <p className="text-center text-gray-500 dark:text-gray-400 text-sm mt-6">
-          🔒 Your API keys are encrypted and stored securely
+          🔒 {t("aiTokens.keysEncrypted")}
         </p>
       </div>
     </div>
