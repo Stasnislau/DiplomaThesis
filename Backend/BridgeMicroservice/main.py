@@ -180,12 +180,12 @@ app.include_router(placement_controller.get_router(), prefix="/api")
 
 # SPEAKING #
 speaking_service = SpeakingService(ai_service)
-speaking_controller = SpeakingController(speaking_service)
+speaking_controller = SpeakingController(speaking_service, _writing_user_service)
 app.include_router(speaking_controller.get_router(), prefix="/api")
 
 # LISTENING #
 listening_task_service = ListeningTaskService(ai_service)
-listening_controller = ListeningController(listening_task_service)
+listening_controller = ListeningController(listening_task_service, _writing_user_service)
 app.include_router(listening_controller.get_router(), prefix="/api")
 
 # LEARNING PATH #

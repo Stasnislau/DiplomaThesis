@@ -10,6 +10,7 @@ import { useCreateBlankSpaceTask } from "@/api/hooks/useCreateBlankSpaceTask";
 import { useCreateMultipleChoiceTask } from "@/api/hooks/useCreateMultipleChoiceTask";
 import { useExplainAnswer } from "@/api/hooks/useExplainAnswer";
 import { useGenerateAdaptiveTask } from "@/api/hooks/useGenerateAdaptiveTask";
+import { logWritingResult } from "@/api/mutations/logWritingResult";
 import { useTranslation } from "react-i18next";
 
 const LANGUAGES = [
@@ -122,6 +123,26 @@ const WritingTask = ({ initialLanguage, initialLevel, initialTaskType }: Writing
       isAnswerCorrect = checkAnswer(userAnswer, currentTaskData.correctAnswer);
     }
     setIsCorrect(isAnswerCorrect);
+
+    // Persist the outcome so /writing/adaptive can see whether this
+    // task was actually beaten. Best-effort — UI never blocks on it.
+    if (language && level && currentTaskData) {
+      const backendLanguage =
+        language.charAt(0).toUpperCase() + language.slice(1);
+      logWritingResult({
+        language: backendLanguage,
+        level,
+        flavour: isMultipleChoice(currentTaskData)
+          ? "multiple_choice"
+          : "fill_in_the_blank",
+        isCorrect: isAnswerCorrect,
+        targetedWeaknesses: targetedWeaknesses ?? [],
+        questionPreview: currentTaskData.question?.slice(0, 160),
+      }).catch(() => {
+        // Logging is non-critical: a transient error here just means
+        // the next adaptive call has slightly less signal.
+      });
+    }
   };
 
   const handleExplainAnswer = () => {

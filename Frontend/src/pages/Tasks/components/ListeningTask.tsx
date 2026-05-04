@@ -5,6 +5,7 @@ import { ListeningTaskResponse } from "@/types/responses/TaskResponse";
 import { TaskComponent } from "@/pages/Quiz/components/TaskComponent";
 import { isMultipleChoice } from "@/types/typeGuards/isMultipleChoice";
 import { useTranslation } from "react-i18next";
+import { generateAdaptiveListeningTask } from "@/api/mutations/generateAdaptiveListeningTask";
 
 const LANGUAGES = [
   { code: "English", flag: "🇬🇧" },
@@ -29,6 +30,9 @@ const ListeningTask = () => {
   const [showTranscript, setShowTranscript] = useState<boolean>(false);
 
   const { createListeningTask, isLoading, error, data, reset } = useCreateListeningTask();
+  const [adaptiveLoading, setAdaptiveLoading] = useState(false);
+  const [adaptiveTargets, setAdaptiveTargets] = useState<string[]>([]);
+  const [adaptiveError, setAdaptiveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (data) {
@@ -44,6 +48,7 @@ const ListeningTask = () => {
     if (language && level) {
       reset();
       setCurrentTaskData(null);
+      setAdaptiveTargets([]);
       createListeningTask({ language, level });
     } else {
       alert(t("tasks.selectLanguageAndLevel"));
@@ -136,13 +141,58 @@ const ListeningTask = () => {
       {/* Generate Button */}
       <Button
         onClick={handleCreateTask}
-        disabled={!language || !level || isLoading}
+        disabled={!language || !level || isLoading || adaptiveLoading}
         variant="primary"
         isLoading={isLoading}
         className="w-full h-14 text-lg font-semibold rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg shadow-indigo-500/25"
       >
         {isLoading ? t("common.generating") : t("tasks.generateListeningTask")}
       </Button>
+
+      {/* Adaptive — pulls a passage shaped around the user's recent
+          weaknesses. Quietly falls back to the regular generator
+          when there's no signal yet. */}
+      <button
+        type="button"
+        onClick={async () => {
+          if (!language || !level) return;
+          setAdaptiveError(null);
+          setAdaptiveLoading(true);
+          reset();
+          setCurrentTaskData(null);
+          setAdaptiveTargets([]);
+          try {
+            const out = await generateAdaptiveListeningTask({ language, level });
+            setCurrentTaskData(out.task);
+            setCurrentQuestionIndex(0);
+            setUserAnswers(new Array(out.task.questions.length).fill(""));
+            setIsCorrect(new Array(out.task.questions.length).fill(null));
+            setShowTranscript(false);
+            setAdaptiveTargets(out.derivedFromHistory ? out.targetedWeaknesses : []);
+          } catch (e) {
+            setAdaptiveError(e instanceof Error ? e.message : "");
+          } finally {
+            setAdaptiveLoading(false);
+          }
+        }}
+        disabled={!language || !level || isLoading || adaptiveLoading}
+        className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-amber-200 dark:border-amber-700/50 bg-amber-50 dark:bg-amber-900/20 px-4 py-2.5 text-sm font-semibold text-amber-700 dark:text-amber-300 transition-colors hover:bg-amber-100 dark:hover:bg-amber-900/30 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <span role="img" aria-hidden="true">🎯</span>
+        {adaptiveLoading
+          ? t("common.generating")
+          : t("tasks.practiceWeakSpots")}
+      </button>
+      {adaptiveTargets.length > 0 && (
+        <p className="text-xs text-amber-700 dark:text-amber-300">
+          {t("tasks.targetingFromHistory", {
+            focus: adaptiveTargets.slice(0, 3).join(", "),
+          })}
+        </p>
+      )}
+      {adaptiveError && (
+        <p className="text-xs text-red-600 dark:text-red-400">{adaptiveError}</p>
+      )}
 
       {error && error.message && (
         <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-2xl border border-red-200 dark:border-red-900/50">

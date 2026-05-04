@@ -251,6 +251,12 @@ LOCALIZATION (HARD RULE):
                             "confidence": evaluation.confidence,
                             "totalQuestions": total_questions,
                             "correctAnswers": correct_answers,
+                            # Save the structured weakness list — this
+                            # is the primary signal /writing/adaptive,
+                            # /listening/adaptive and the speaking
+                            # practice-phrase generator read from.
+                            "weaknesses": list(evaluation.weaknesses or []),
+                            "strengths": list(evaluation.strengths or []),
                         },
                     },
                 )

@@ -38,10 +38,85 @@ class SpeakingService:
         self.ai_service = ai_service
         self.user_service = UserService()
         # (cache_key) -> (expires_at, response). cache_key is sha256 of
-        # (audio bytes, language, ui_locale) — so re-clicking 'Analyze' on
-        # the same recording doesn't bill the provider twice. Tiny LRU,
-        # bounded; first cache miss after eviction simply re-pays.
+        # (audio bytes, language, ui_locale) — so re-clicking 'Analyze'
+        # on the same recording doesn't bill the provider twice.
         self._analyze_cache: Dict[str, Tuple[float, "SpeakingAnalysisResponse"]] = {}
+
+    async def generate_practice_phrase(
+        self,
+        language: str,
+        level: str,
+        user_context: Optional[UserContext] = None,
+        focus_keywords: Optional[List[str]] = None,
+        focus_weaknesses: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        """Hand the user a single sentence to read aloud, optionally
+        targeted at their recent speaking weaknesses. Designed to
+        chain into /speaking/analyze: the user records themselves
+        saying this sentence, then the analyzer scores it.
+
+        Returns `{phrase, focus, ipaHint?, translation?}`. Phrase is in
+        the target language; translation is in the UI language so the
+        learner can verify meaning at a glance.
+        """
+        ui_locale = (
+            user_context.ui_locale_label if user_context else "English"
+        )
+        focus_clause = ""
+        if focus_keywords or focus_weaknesses:
+            bits: list[str] = []
+            if focus_weaknesses:
+                bits.append(
+                    "areas to drill: " + ", ".join(focus_weaknesses[:3])
+                )
+            if focus_keywords:
+                bits.append(
+                    "incorporate these: "
+                    + ", ".join(focus_keywords[:5])
+                )
+            focus_clause = "Use the learner's recent weaknesses — " + "; ".join(bits) + "."
+
+        prompt = f"""
+You are a pronunciation coach. Produce ONE short sentence (8–18 words)
+in {language} for a {level} learner to read aloud and have analysed.
+
+The sentence MUST:
+- Be natural, conversational, and useful in real life.
+- Be challenging at the {level} level, not trivial.
+- {focus_clause if focus_clause else "Pick a generally useful everyday topic."}
+
+Respond with a single JSON object only, no prose, with these keys:
+- "phrase": the sentence in {language}.
+- "focus": a 3-7 word note describing what makes the sentence
+  practice-worthy (e.g. "past simple irregulars + linking").
+- "translation": a translation of "phrase" into {ui_locale}.
+""".strip()
+
+        raw = await self.ai_service.get_ai_response(
+            prompt, user_context=user_context, temperature=0.6
+        )
+        import json
+
+        try:
+            data = json.loads(raw)
+        except Exception:
+            # Fall back: treat the raw response as the phrase itself.
+            data = {"phrase": raw.strip()[:200], "focus": "", "translation": ""}
+        if not isinstance(data, dict) or not data.get("phrase"):
+            from utils.error_codes import (
+                AI_RESPONSE_PARSE_FAILED,
+                raise_with_code,
+            )
+            raise_with_code(
+                AI_RESPONSE_PARSE_FAILED,
+                500,
+                "Practice-phrase response was not in the expected shape.",
+            )
+        return {
+            "phrase": str(data.get("phrase", "")).strip(),
+            "focus": str(data.get("focus", "")).strip(),
+            "translation": str(data.get("translation", "")).strip(),
+        }
 
     def _cache_key(
         self, audio_bytes: bytes, language: Optional[str], ui_locale: Optional[str]
@@ -442,6 +517,31 @@ class SpeakingService:
         if user_context:
             from utils.language_codes import to_iso_language
 
+            # Top-3 most frequent error categories (e.g. "grammar",
+            # "vocabulary", "phrasing") become reusable adaptive
+            # signals. We also save the raw error list so the speaking
+            # practice-phrase generator can pick a specific issue to
+            # drill — e.g. "you said 'I don't know nothing'" → drill a
+            # phrase on double negation.
+            from collections import Counter
+
+            error_categories = Counter(
+                (e.error_type or "").strip().lower()
+                for e in errors
+                if (e.error_type or "").strip()
+            )
+            top_error_types = [
+                etype for etype, _ in error_categories.most_common(3) if etype
+            ]
+            error_examples = [
+                {
+                    "type": e.error_type,
+                    "text": (e.erroneous_text or "")[:80],
+                    "suggestion": (e.suggestion or "")[:80],
+                }
+                for e in errors[:5]
+            ]
+
             await self.user_service.log_task_history(
                 user_context,
                 {
@@ -452,6 +552,11 @@ class SpeakingService:
                     "metadata": {
                         "transcriptionPreview": result.transcription[:120],
                         "errorCount": len(errors),
+                        "errorTypes": top_error_types,
+                        "errorExamples": error_examples,
+                        "weaknesses": list(
+                            ai_feedback.get("areas_for_improvement", [])
+                        )[:5],
                         "fluencyScore": pronunciation.fluency_score if pronunciation else None,
                         "wpm": pronunciation.words_per_minute if pronunciation else None,
                     },

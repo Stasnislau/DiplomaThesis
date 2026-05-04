@@ -132,7 +132,7 @@ const en = {
 
     tasks: {
       generateTask: "Generate Task",
-      practiceWeakSpots: "🎯 Practice my weak spots",
+      practiceWeakSpots: "Practice my weak spots",
       targetingFromHistory: "Targeting recent weaknesses: {{focus}}",
       multipleChoice: "Multiple Choice",
       fillInBlank: "Fill in the Blank",
@@ -283,6 +283,14 @@ const en = {
       title: "What's your native language?",
       subtitle: "This helps us personalise your learning experience.",
       loadingLanguages: "Loading languages…",
+    },
+
+    speakingPractice: {
+      title: "Practice phrase",
+      subtitle: "Get a sentence to read aloud, biased toward your recent weaknesses. Then record yourself below to be scored.",
+      generate: "Generate phrase",
+      focusLabel: "Focus",
+      hint: "Now record yourself reading this aloud and click Analyse below.",
     },
 
     materials: {
@@ -747,7 +755,7 @@ const pl = {
 
     tasks: {
       generateTask: "Wygeneruj zadanie",
-      practiceWeakSpots: "🎯 Ćwicz moje słabe punkty",
+      practiceWeakSpots: "Ćwicz moje słabe punkty",
       targetingFromHistory: "Skupiamy się na ostatnich słabościach: {{focus}}",
       multipleChoice: "Wybór wielokrotny",
       fillInBlank: "Uzupełnij lukę",
@@ -896,6 +904,14 @@ const pl = {
       title: "Jaki jest Twój język ojczysty?",
       subtitle: "To pomaga nam dopasować Twoją naukę.",
       loadingLanguages: "Ładowanie języków…",
+    },
+
+    speakingPractice: {
+      title: "Fraza do ćwiczenia",
+      subtitle: "Otrzymasz zdanie do przeczytania na głos, dopasowane do Twoich ostatnich słabości. Następnie nagraj się poniżej, aby otrzymać ocenę.",
+      generate: "Wygeneruj frazę",
+      focusLabel: "Cel ćwiczenia",
+      hint: "Nagraj siebie czytającego to zdanie na głos i kliknij Analizuj poniżej.",
     },
 
     learningPath: {
@@ -1357,7 +1373,7 @@ const es = {
 
     tasks: {
       generateTask: "Generar tarea",
-      practiceWeakSpots: "🎯 Practicar mis puntos débiles",
+      practiceWeakSpots: "Practicar mis puntos débiles",
       targetingFromHistory: "Trabajando sobre debilidades recientes: {{focus}}",
       multipleChoice: "Opción múltiple",
       fillInBlank: "Completar el espacio",
@@ -1503,6 +1519,14 @@ const es = {
       title: "¿Cuál es tu idioma nativo?",
       subtitle: "Esto nos ayuda a personalizar tu experiencia de aprendizaje.",
       loadingLanguages: "Cargando idiomas…",
+    },
+
+    speakingPractice: {
+      title: "Frase para practicar",
+      subtitle: "Recibe una frase para leer en voz alta, basada en tus debilidades recientes. Luego grábate abajo para obtener una evaluación.",
+      generate: "Generar frase",
+      focusLabel: "Foco",
+      hint: "Ahora grábate leyendo esto en voz alta y pulsa Analizar abajo.",
     },
 
     learningPath: {

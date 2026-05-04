@@ -29,6 +29,19 @@ class AdaptiveWritingResponse(BaseModel):
     derivedFromHistory: bool = False
 
 
+class WritingResultRequest(BaseModel):
+    language: str
+    level: str
+    flavour: Literal["multiple_choice", "fill_in_the_blank"] = (
+        "fill_in_the_blank"
+    )
+    isCorrect: bool
+    topic: Optional[str] = None
+    targetedWeaknesses: list[str] = []
+    questionPreview: Optional[str] = None
+    model_config = {"populate_by_name": True}
+
+
 class WritingController:
     def __init__(
         self,
@@ -146,6 +159,44 @@ class WritingController:
                     derivedFromHistory=derived,
                 ),
             )
+
+        @self.router.post(
+            "/result",
+            response_model=BaseResponse[bool],
+        )
+        async def log_writing_result(
+            request: Request, body: WritingResultRequest
+        ) -> BaseResponse[bool]:
+            """Record the outcome of a writing task (any flavour) so
+            the next /writing/adaptive call sees what was answered
+            correctly vs not. Without this the adaptive loop is open —
+            we send tasks but never learn whether the user actually
+            beat them."""
+            user_context = extract_user_context(request)
+            from utils.language_codes import to_iso_language
+
+            await self.user_service.log_task_history(
+                user_context,
+                {
+                    "taskType": "writing",
+                    "title": (
+                        f"Writing practice ({body.language})"
+                        if not body.targetedWeaknesses
+                        else f"Adaptive practice ({body.language})"
+                    ),
+                    "score": 100 if body.isCorrect else 0,
+                    "language": to_iso_language(body.language),
+                    "metadata": {
+                        "flavour": body.flavour,
+                        "isCorrect": body.isCorrect,
+                        "topic": body.topic,
+                        "questionPreview": (body.questionPreview or "")[:160],
+                        "adaptive": bool(body.targetedWeaknesses),
+                        "targetedWeaknesses": body.targetedWeaknesses,
+                    },
+                },
+            )
+            return BaseResponse[bool](success=True, payload=True)
 
         @self.router.post(
             "/explainanswer",

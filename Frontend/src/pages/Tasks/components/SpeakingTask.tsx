@@ -4,6 +4,7 @@ import Button from "@/components/common/Button";
 import { SpeakingAnalysisResult } from "@/api/mutations/analyzeAudioFile";
 import { useAnalyzeAudioFile } from "@/api/hooks/useAnalyzeAudioFile";
 import { useTranslation } from "react-i18next";
+import { PracticePhraseBlock } from "@/pages/Tasks/components/PracticePhraseBlock";
 
 const LANGUAGES = [
   { code: "english", flag: "🇬🇧" },
@@ -178,6 +179,8 @@ const SpeakingTask = () => {
 
   return (
     <div className="space-y-6">
+      <PracticePhraseBlock language={language} />
+
       {/* Language Selection */}
       <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 rounded-2xl p-6 border border-indigo-100 dark:border-gray-600 transition-colors duration-300">
         <div className="flex items-center gap-3 mb-4">
