@@ -154,22 +154,50 @@ class WritingTaskService:
         topics: list[str] = []
         for entry in history_entries:
             meta = entry.get("metadata") or {}
-            if entry.get("taskType") == "placement":
-                w = meta.get("weaknesses")
-                if isinstance(w, list):
-                    weaknesses.extend(str(x) for x in w if x)
-                elif isinstance(w, str) and w.strip():
-                    weaknesses.append(w.strip())
+            ttype = entry.get("taskType")
+
+            # Structured weakness list — placement and speaking both
+            # write one. Read it regardless of score because a high
+            # score with one specific weakness still tells us what to
+            # drill next.
+            w = meta.get("weaknesses")
+            if isinstance(w, list):
+                weaknesses.extend(str(x) for x in w if x)
+            elif isinstance(w, str) and w.strip():
+                weaknesses.append(w.strip())
+
+            # Speaking error categories (top-3 from analysis) translate
+            # straight into adaptive keywords — e.g. "grammar",
+            # "vocabulary".
+            etypes = meta.get("errorTypes")
+            if isinstance(etypes, list):
+                keywords.extend(str(x) for x in etypes if x)
+
+            # Concrete erroneous phrases give the AI generator real
+            # text to riff on.
+            ex = meta.get("errorExamples")
+            if isinstance(ex, list):
+                for item in ex[:3]:
+                    if isinstance(item, dict) and item.get("text"):
+                        keywords.append(str(item["text"]))
+
             score = entry.get("score")
             if isinstance(score, (int, float)) and score < 60:
                 t = meta.get("topic")
                 if isinstance(t, str) and t.strip():
                     topics.append(t.strip())
-                # speaking errors come back as a count — when high,
-                # we ask for "review" tasks.
-                ecount = meta.get("errorCount")
-                if isinstance(ecount, int) and ecount >= 3:
-                    weaknesses.append("recent pronunciation issues")
+
+            # An adaptive writing task that came back unanswered or
+            # answered incorrectly: re-target its weaknesses.
+            if (
+                ttype == "writing"
+                and meta.get("adaptive") is True
+                and isinstance(meta.get("targetedWeaknesses"), list)
+                and (score is None or (isinstance(score, (int, float)) and score < 60))
+            ):
+                weaknesses.extend(
+                    str(x) for x in meta["targetedWeaknesses"] if x
+                )
         # Dedupe while preserving order so the latest few weaknesses
         # bubble first.
         def _dedupe(items: list[str]) -> list[str]:

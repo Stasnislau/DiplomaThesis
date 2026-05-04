@@ -25,6 +25,8 @@ class ListeningTaskService:
         self,
         request: ListeningTaskRequest,
         user_context: UserContext | None = None,
+        focus_topic: str | None = None,
+        focus_keywords: list[str] | None = None,
     ) -> ListeningTaskResponse:
         language = request.language
         level = request.level
@@ -32,6 +34,17 @@ class ListeningTaskService:
         session_key = user_context.user_id if user_context else "listening_global"
         variety = variety_picker.pick_bundle(level, session_key=session_key)
         seed = str(uuid.uuid4())[:8]
+        # If the caller has an adaptive focus, override the random
+        # topic with one derived from the user's recent weaknesses so
+        # the listening passage drills exactly that.
+        if focus_topic:
+            variety = {**variety, "topic": focus_topic}
+        focus_clause = ""
+        if focus_keywords:
+            focus_clause = (
+                "\n        - Specifically work in this vocabulary or "
+                f"grammar focus: {', '.join(focus_keywords[:6])}."
+            )
 
         prompt = f"""
         You are an expert in language education. Your task is to create a listening exercise for a student learning {language} at the {level} level.
@@ -40,7 +53,7 @@ class ListeningTaskService:
         - Topic: {variety['topic']}
         - Tone: {variety['tone']}
         - Format: {variety['format']}
-        - Uniqueness seed: {seed}
+        - Uniqueness seed: {seed}{focus_clause}
 
         Please perform the following two steps:
         1. Generate a short, engaging {variety['format']} of about 100-150 words in {language} on the topic of "{variety['topic']}" with a {variety['tone']} tone. The content must be appropriate for a {level} learner.
