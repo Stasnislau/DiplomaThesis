@@ -374,6 +374,12 @@ describe("AuthService", () => {
     });
 
     it("should throw BadRequestException when refresh token is invalid", async () => {
+      // Token signature verifies but no DB row — reuse-detection
+      // path: revoke the family and reject as invalid.
+      jwtService.verify.mockReturnValue({
+        sub: mockUser.id,
+        exp: Math.floor(Date.now() / 1000) + 3600,
+      });
       prismaService.refreshToken.findUnique.mockResolvedValue(null);
 
       await expect(service.refreshToken("invalid.token")).rejects.toThrow(
@@ -382,6 +388,10 @@ describe("AuthService", () => {
       await expect(service.refreshToken("invalid.token")).rejects.toThrow(
         "AUTH_REFRESH_TOKEN_INVALID",
       );
+      // Family revocation must have been triggered.
+      expect(prismaService.refreshToken.deleteMany).toHaveBeenCalledWith({
+        where: { userId: mockUser.id },
+      });
     });
 
     it("should throw UnauthorizedException when user not found", async () => {

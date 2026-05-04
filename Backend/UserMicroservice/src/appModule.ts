@@ -10,6 +10,7 @@ import { UserAITokensModule } from "./modules/user-ai-tokens.module";
 import { UserDataMiddleware } from "./middlewares/userDataMiddleware";
 import { UserModule } from "./modules/userModule";
 import configuration from "./config/configuration";
+import { HealthController } from "./controllers/healthController";
 
 @Module({
   imports: [
@@ -27,11 +28,17 @@ import configuration from "./config/configuration";
     TaskHistoryModule,
   ],
 
-  controllers: [],
+  controllers: [HealthController],
   providers: [],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(UserDataMiddleware).forRoutes("*");
+    // UserDataMiddleware reads x-user-* headers; the /health probe
+    // doesn't need (and shouldn't get) those headers from anyone, so
+    // we exclude it explicitly.
+    consumer
+      .apply(UserDataMiddleware)
+      .exclude({ path: "api/health", method: 0 })
+      .forRoutes("*");
   }
 }

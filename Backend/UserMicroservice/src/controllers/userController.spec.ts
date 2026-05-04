@@ -112,7 +112,10 @@ describe("UserController", () => {
 
       expect(result.success).toBe(true);
       expect(result.payload).toEqual(mockUser);
-      expect(userService.getUser).toHaveBeenCalledWith("user-123");
+      expect(userService.getUser).toHaveBeenCalledWith(
+        "user-123",
+        expect.objectContaining({ email: expect.any(String) }),
+      );
     });
   });
 

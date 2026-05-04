@@ -5,7 +5,6 @@ export const ROUTES = {
   REGISTER: "/register",
   RESET_PASSWORD: "/reset-password",
   MATERIALS: "/materials",
-  MATERIALS_TEMPLATES: "/materials/templates",
   PROFILE: "/profile",
   SPEECH_ANALYSIS: "/speech-analysis",
   TASKS: "/tasks",
