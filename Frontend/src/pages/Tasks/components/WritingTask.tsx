@@ -226,7 +226,7 @@ const WritingTask = ({ initialLanguage, initialLevel, initialTaskType }: Writing
           <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
             <span className="text-lg" role="img" aria-hidden="true">✍️</span>
           </div>
-          <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Task Type</h2>
+          <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-100">{t("tasks.taskTypeHeading")}</h2>
         </div>
         
         <Tabs defaultValue="multiple-choice" onValueChange={(value) => setTaskType(value as "multiple-choice" | "fill-blank")}>
@@ -309,7 +309,7 @@ const WritingTask = ({ initialLanguage, initialLevel, initialTaskType }: Writing
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
               <span className="text-white text-lg" role="img" aria-hidden="true">🎯</span>
             </div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Your Task</h3>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">{t("tasks.yourTask")}</h3>
           </div>
           <TaskComponent
             taskData={currentTaskData}

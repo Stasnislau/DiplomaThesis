@@ -35,6 +35,10 @@ const en = {
       menu: "Menu",
       admin: "Admin",
       history: "Activity history",
+      achievements: "Achievements",
+      streak: "Streak",
+      totalXp: "Total XP",
+      languages: "Languages",
     },
 
     history: {
@@ -134,6 +138,9 @@ const en = {
       generateTask: "Generate Task",
       practiceWeakSpots: "Practice my weak spots",
       targetingFromHistory: "Targeting recent weaknesses: {{focus}}",
+      taskTypeHeading: "Task Type",
+      yourTask: "Your Task",
+      noTaskTypesFallback: "I'll generate varied tasks based on the document content",
       multipleChoice: "Multiple Choice",
       fillInBlank: "Fill in the Blank",
       listening: "Listening",
@@ -283,6 +290,30 @@ const en = {
       title: "What's your native language?",
       subtitle: "This helps us personalise your learning experience.",
       loadingLanguages: "Loading languages…",
+    },
+
+    materialsPage: {
+      title: "Task Generator",
+      subtitle: "Upload a document, and I'll generate similar exercises for you.",
+      uploadNewFile: "Upload New File",
+      newUpload: "New Upload",
+    },
+
+    admin: {
+      panelTitle: "Admin Panel",
+      panelSubtitle: "Manage your application",
+      userDetails: "User Details",
+      fieldId: "ID",
+      fieldRole: "Role",
+      fieldFirstName: "First Name",
+      fieldLastName: "Last Name",
+      fieldEmail: "Email",
+      nav: {
+        dashboard: "Dashboard",
+        users: "Users",
+        statistics: "Statistics",
+        settings: "Settings",
+      },
     },
 
     speakingPractice: {
@@ -757,6 +788,9 @@ const pl = {
       generateTask: "Wygeneruj zadanie",
       practiceWeakSpots: "Ćwicz moje słabe punkty",
       targetingFromHistory: "Skupiamy się na ostatnich słabościach: {{focus}}",
+      taskTypeHeading: "Typ zadania",
+      yourTask: "Twoje zadanie",
+      noTaskTypesFallback: "Wygeneruję różne zadania na podstawie treści dokumentu",
       multipleChoice: "Wybór wielokrotny",
       fillInBlank: "Uzupełnij lukę",
       listening: "Słuchanie",
@@ -904,6 +938,30 @@ const pl = {
       title: "Jaki jest Twój język ojczysty?",
       subtitle: "To pomaga nam dopasować Twoją naukę.",
       loadingLanguages: "Ładowanie języków…",
+    },
+
+    materialsPage: {
+      title: "Generator zadań",
+      subtitle: "Wgraj dokument, a wygeneruję na jego podstawie podobne ćwiczenia.",
+      uploadNewFile: "Wgraj nowy plik",
+      newUpload: "Nowy plik",
+    },
+
+    admin: {
+      panelTitle: "Panel administratora",
+      panelSubtitle: "Zarządzaj swoją aplikacją",
+      userDetails: "Szczegóły użytkownika",
+      fieldId: "ID",
+      fieldRole: "Rola",
+      fieldFirstName: "Imię",
+      fieldLastName: "Nazwisko",
+      fieldEmail: "Email",
+      nav: {
+        dashboard: "Pulpit",
+        users: "Użytkownicy",
+        statistics: "Statystyki",
+        settings: "Ustawienia",
+      },
     },
 
     speakingPractice: {
@@ -1375,6 +1433,9 @@ const es = {
       generateTask: "Generar tarea",
       practiceWeakSpots: "Practicar mis puntos débiles",
       targetingFromHistory: "Trabajando sobre debilidades recientes: {{focus}}",
+      taskTypeHeading: "Tipo de tarea",
+      yourTask: "Tu tarea",
+      noTaskTypesFallback: "Generaré tareas variadas según el contenido del documento",
       multipleChoice: "Opción múltiple",
       fillInBlank: "Completar el espacio",
       listening: "Escucha",
@@ -1494,6 +1555,8 @@ const es = {
     languages: {
       chooseLanguage: "Elegir idioma",
       proficiencyLevel: "Nivel de competencia",
+      nativeLanguage: "Idioma nativo",
+      targetLanguage: "Idioma objetivo",
       spanish: "Español",
       french: "Francés",
       german: "Alemán",
@@ -1519,6 +1582,30 @@ const es = {
       title: "¿Cuál es tu idioma nativo?",
       subtitle: "Esto nos ayuda a personalizar tu experiencia de aprendizaje.",
       loadingLanguages: "Cargando idiomas…",
+    },
+
+    materialsPage: {
+      title: "Generador de tareas",
+      subtitle: "Sube un documento y te generaré ejercicios similares.",
+      uploadNewFile: "Subir un nuevo archivo",
+      newUpload: "Nueva subida",
+    },
+
+    admin: {
+      panelTitle: "Panel de administración",
+      panelSubtitle: "Administra tu aplicación",
+      userDetails: "Detalles del usuario",
+      fieldId: "ID",
+      fieldRole: "Rol",
+      fieldFirstName: "Nombre",
+      fieldLastName: "Apellido",
+      fieldEmail: "Email",
+      nav: {
+        dashboard: "Panel",
+        users: "Usuarios",
+        statistics: "Estadísticas",
+        settings: "Ajustes",
+      },
     },
 
     speakingPractice: {

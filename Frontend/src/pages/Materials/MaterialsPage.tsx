@@ -142,19 +142,19 @@ export const MaterialsPage: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8 flex justify-between items-center">
             <div>
-                <h1 className="text-3xl font-bold text-gray-900">Task Generator</h1>
-                <p className="mt-2 text-gray-600">Upload a document, and I'll generate similar exercises for you.</p>
+                <h1 className="text-3xl font-bold text-gray-900">{t("materialsPage.title")}</h1>
+                <p className="mt-2 text-gray-600">{t("materialsPage.subtitle")}</p>
             </div>
             {view !== "upload" && (
-                 <Button variant="secondary" onClick={() => setView("upload")} className="text-sm">Upload New File</Button>
+                 <Button variant="secondary" onClick={() => setView("upload")} className="text-sm">{t("materialsPage.uploadNewFile")}</Button>
             )}
         </div>
 
         <Tabs defaultValue="new" className="w-full">
             {view === "upload" && (
                 <TabsList className="mb-6 grid w-full grid-cols-2">
-                    <TabsTrigger value="new">New Upload</TabsTrigger>
-                    <TabsTrigger value="saved">My Materials</TabsTrigger>
+                    <TabsTrigger value="new">{t("materialsPage.newUpload")}</TabsTrigger>
+                    <TabsTrigger value="saved">{t("tasks.myMaterials")}</TabsTrigger>
                 </TabsList>
             )}
 

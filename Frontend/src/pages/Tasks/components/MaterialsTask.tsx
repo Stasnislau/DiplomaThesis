@@ -427,8 +427,8 @@ const MaterialsTask = () => {
             ) : (
               <div className="p-6 bg-amber-50 text-amber-800 rounded-xl border border-amber-200 text-center">
                 <span className="text-2xl mb-2 block">🤔</span>
-                <p className="font-medium">No specific task types identified</p>
-                <p className="text-sm mt-1">I'll generate varied tasks based on the document content</p>
+                <p className="font-medium">{t("tasks.noTaskTypesIdentified")}</p>
+                <p className="text-sm mt-1">{t("tasks.noTaskTypesFallback")}</p>
               </div>
             )}
           </div>
