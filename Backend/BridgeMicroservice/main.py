@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
 
@@ -42,14 +43,57 @@ console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
 
+async def _audio_janitor() -> None:
+    """Background task: every hour, delete files in static/audio that
+    are older than AUDIO_TTL_HOURS (default 24). Without this the
+    listening-task generator slowly fills the VM's disk — every task
+    writes a unique <uuid>.mp3 and nothing ever cleans them up."""
+    import asyncio
+    import time
+
+    audio_dir = os.path.join("static", "audio")
+    ttl_hours = float(os.environ.get("AUDIO_TTL_HOURS", "24"))
+    sleep_seconds = 60 * 60  # one sweep per hour
+    while True:
+        try:
+            if os.path.isdir(audio_dir):
+                cutoff = time.time() - ttl_hours * 3600
+                removed = 0
+                for name in os.listdir(audio_dir):
+                    path = os.path.join(audio_dir, name)
+                    try:
+                        if os.path.isfile(path) and os.path.getmtime(path) < cutoff:
+                            os.remove(path)
+                            removed += 1
+                    except OSError:
+                        # File raced with another writer or permissions
+                        # changed underfoot. Skip; we'll catch it next pass.
+                        continue
+                if removed:
+                    logger.info("Audio janitor removed %d expired files", removed)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Audio janitor sweep failed: %s", exc)
+        await asyncio.sleep(sleep_seconds)
+
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     """Initialise the database on startup and dispose of pools on shutdown."""
+    import asyncio
+
     await init_db()
     logger.info("Bridge database ready.")
-    yield
-    await close_db()
-    logger.info("Bridge database shut down.")
+    janitor = asyncio.create_task(_audio_janitor(), name="audio-janitor")
+    try:
+        yield
+    finally:
+        janitor.cancel()
+        try:
+            await janitor
+        except asyncio.CancelledError:
+            pass
+        await close_db()
+        logger.info("Bridge database shut down.")
 
 
 app = FastAPI(

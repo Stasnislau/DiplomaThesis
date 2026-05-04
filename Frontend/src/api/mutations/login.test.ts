@@ -23,7 +23,6 @@ describe("login", () => {
         success: true,
         payload: {
           accessToken: "access-token-123",
-          refreshToken: "refresh-token-456",
         },
       }),
     };
@@ -35,7 +34,8 @@ describe("login", () => {
 
     expect(result.success).toBe(true);
     expect(result.payload.accessToken).toBe("access-token-123");
-    expect(result.payload.refreshToken).toBe("refresh-token-456");
+    // The refresh token now travels in an httpOnly cookie set by Auth,
+    // so it intentionally does not appear in the JSON payload anymore.
   });
 
   it("throws error with message when login fails", async () => {
@@ -80,7 +80,7 @@ describe("login", () => {
       ok: true,
       json: vi.fn().mockResolvedValue({
         success: true,
-        payload: { accessToken: "token", refreshToken: "refresh" },
+        payload: { accessToken: "token" },
       }),
     };
     vi.mocked(fetchWithAuth).mockResolvedValue(

@@ -1,23 +1,24 @@
 import { AUTH_MICROSERVICE_URL } from "../consts";
-import Cookies from "js-cookie";
-import { getRefreshToken } from "../../utils/getRefreshToken";
 import { fetchWithAuth } from "../fetchWithAuth";
 import { parseApiPayload } from "../parseApiResponse";
 
 interface RefreshResponse {
   accessToken: string;
-  refreshToken?: string;
 }
 
+/**
+ * Ask Auth for a new access token. The refresh token rides along in
+ * the `refreshToken` httpOnly cookie set at login — the body is empty
+ * by design. fetchWithAuth uses `credentials: "include"` so the
+ * cookie is sent across origins (gateway → caddy → browser).
+ */
 export const refresh = async () => {
-  const refreshToken = getRefreshToken();
-
   const response = await fetchWithAuth(
     `${AUTH_MICROSERVICE_URL}/auth/refresh`,
     {
       method: "POST",
-      body: JSON.stringify({ refreshToken }),
-    }
+      body: JSON.stringify({}),
+    },
   );
 
   const payload = await parseApiPayload<RefreshResponse>(
@@ -25,12 +26,6 @@ export const refresh = async () => {
     "Failed to refresh",
   );
 
-  if (payload.refreshToken) {
-    Cookies.set("refreshToken", payload.refreshToken, {
-      secure: window.location.protocol === "https:",
-      sameSite: "lax",
-    });
-  }
   if (payload.accessToken) {
     localStorage.setItem("accessToken", payload.accessToken);
   }

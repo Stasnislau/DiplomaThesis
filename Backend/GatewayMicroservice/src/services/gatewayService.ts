@@ -19,6 +19,8 @@ type RequestBody = Record<string, unknown> | string | undefined;
 interface GatewayResponse {
   status: number;
   data: BaseResponse<unknown> | Record<string, unknown>;
+  /** Set-Cookie headers from the upstream service to forward verbatim. */
+  setCookie?: string[];
 }
 
 /**
@@ -272,9 +274,19 @@ export class GatewayService {
           `Response from ${microservice} microservice: Status ${response.status}`,
         );
 
+        // Pass Set-Cookie through verbatim so Auth's httpOnly refresh
+        // cookie reaches the browser. Without this, /auth/login
+        // succeeds upstream but the browser never gets the cookie and
+        // /auth/refresh is permanently broken from the client side.
+        const upstreamSetCookie = response.headers?.["set-cookie"];
         return {
           status: response.status,
           data: response.data as Record<string, unknown>,
+          setCookie: Array.isArray(upstreamSetCookie)
+            ? upstreamSetCookie
+            : upstreamSetCookie
+              ? [upstreamSetCookie as string]
+              : undefined,
         };
       } catch (error: unknown) {
         const axiosError = error as {

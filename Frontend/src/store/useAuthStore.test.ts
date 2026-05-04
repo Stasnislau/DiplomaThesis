@@ -15,14 +15,6 @@ vi.mock("../api/mutations/refresh", () => ({
   refresh: vi.fn(),
 }));
 
-vi.mock("js-cookie", () => ({
-  default: {
-    set: vi.fn(),
-    remove: vi.fn(),
-    get: vi.fn(),
-  },
-}));
-
 vi.mock("@/utils/getAccessToken", () => ({
   getAccessToken: vi.fn(),
 }));
@@ -78,7 +70,6 @@ describe("useAuthStore", () => {
         success: true,
         payload: {
           accessToken: "test-token",
-          refreshToken: "refresh-token",
         },
         errors: [],
       });
@@ -114,7 +105,6 @@ describe("useAuthStore", () => {
         success: true,
         payload: {
           accessToken: "test-access-token",
-          refreshToken: "refresh-token",
         },
         errors: [],
       });
@@ -143,7 +133,6 @@ describe("useAuthStore", () => {
         success: false,
         payload: {
           accessToken: "",
-          refreshToken: "",
           message: "Invalid credentials",
           errors: ["Wrong password"],
         },

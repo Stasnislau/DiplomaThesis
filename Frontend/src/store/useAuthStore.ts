@@ -1,6 +1,5 @@
 import { LoginUserRequest, login as apiLogin } from "../api/mutations/login";
 
-import Cookies from "js-cookie";
 import { logout as apiLogout } from "../api/mutations/logout";
 import { refresh as apiRefresh } from "../api/mutations/refresh";
 import { create } from "zustand";
@@ -40,15 +39,8 @@ export const useAuthStore = create<AuthState>((set, _get) => ({
         const accessToken = data.payload.accessToken;
         localStorage.setItem("accessToken", accessToken);
 
-        if (
-          data.payload.refreshToken !== undefined &&
-          data.payload.refreshToken !== ""
-        ) {
-          Cookies.set("refreshToken", data.payload.refreshToken, {
-            secure: window.location.protocol === "https:",
-            sameSite: "lax",
-          });
-        }
+        // The refresh token is now set server-side as an httpOnly
+        // cookie — JS can't (and shouldn't) touch it.
 
         let userRole = null;
         try {
@@ -82,9 +74,9 @@ export const useAuthStore = create<AuthState>((set, _get) => ({
     }
   },
   logout: () => {
+    // Server clears the refresh-token cookie as part of /auth/logout.
     apiLogout();
     localStorage.removeItem("accessToken");
-    Cookies.remove("refreshToken");
     set({
       isAuthenticated: false,
       isLoading: false,
@@ -129,7 +121,6 @@ export const useAuthStore = create<AuthState>((set, _get) => ({
     } catch (error) {
       console.error("Refresh failed:", error);
       localStorage.removeItem("accessToken");
-      Cookies.remove("refreshToken");
       set({
         isAuthenticated: false,
         initialized: true,

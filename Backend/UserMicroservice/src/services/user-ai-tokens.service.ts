@@ -1,12 +1,26 @@
 import { CreateUserAITokenDto } from "../dtos/createUserAIToken.dto";
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "prisma/prismaService";
+import {
+  decryptSecret,
+  encryptSecret,
+  looksEncrypted,
+} from "../utils/secretCipher";
 
 @Injectable()
 export class UserAITokensService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /** Decrypt the stored envelope to its plaintext token. Rows still
+   *  in plaintext from before encrypt-at-rest landed are detected via
+   *  `looksEncrypted` and passed through, so the service keeps working
+   *  during the migration window. */
+  private readPlaintext(stored: string): string {
+    return looksEncrypted(stored) ? decryptSecret(stored) : stored;
+  }
+
   async create(userId: string, createUserAITokenDto: CreateUserAITokenDto) {
+    const ciphertext = encryptSecret(createUserAITokenDto.token);
     const createdToken = await this.prisma.$transaction(async (tx) => {
       if (createUserAITokenDto.isDefault) {
         await tx.userAIToken.updateMany({
@@ -21,14 +35,17 @@ export class UserAITokensService {
       return tx.userAIToken.create({
         data: {
           userId,
-          token: createUserAITokenDto.token,
+          token: ciphertext,
           aiProviderId: createUserAITokenDto.aiProviderId,
           isDefault: isDefault,
         },
       });
     });
 
-    return { ...createdToken, token: this.maskToken(createdToken.token) };
+    return {
+      ...createdToken,
+      token: this.maskToken(createUserAITokenDto.token),
+    };
   }
 
   async findAllForUser(userId: string, includeToken = false) {
@@ -45,10 +62,13 @@ export class UserAITokensService {
       ],
     });
 
-    return tokens.map((t) => ({
-      ...t,
-      token: includeToken ? t.token : this.maskToken(t.token),
-    }));
+    return tokens.map((t) => {
+      const plain = this.readPlaintext(t.token);
+      return {
+        ...t,
+        token: includeToken ? plain : this.maskToken(plain),
+      };
+    });
   }
 
   async findOne(id: string, userId: string) {
@@ -64,7 +84,10 @@ export class UserAITokensService {
 
     if (!token) return null;
 
-    return { ...token, token: this.maskToken(token.token) };
+    return {
+      ...token,
+      token: this.maskToken(this.readPlaintext(token.token)),
+    };
   }
 
   async remove(id: string, userId: string) {
@@ -82,7 +105,10 @@ export class UserAITokensService {
       },
     });
 
-    return { ...deletedToken, token: this.maskToken(deletedToken.token) };
+    return {
+      ...deletedToken,
+      token: this.maskToken(this.readPlaintext(deletedToken.token)),
+    };
   }
 
   async setDefault(id: string, userId: string) {
@@ -109,7 +135,10 @@ export class UserAITokensService {
 
     if (!updatedToken) return null;
 
-    return { ...updatedToken, token: this.maskToken(updatedToken.token) };
+    return {
+      ...updatedToken,
+      token: this.maskToken(this.readPlaintext(updatedToken.token)),
+    };
   }
 
   private maskToken(token: string): string {

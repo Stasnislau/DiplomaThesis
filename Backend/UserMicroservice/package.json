@@ -76,6 +76,7 @@
     "moduleNameMapper": {
       "^prisma/(.*)$": "<rootDir>/../prisma/$1"
     },
+    "setupFiles": ["<rootDir>/test-env.ts"],
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],

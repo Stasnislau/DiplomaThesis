@@ -67,6 +67,7 @@ services:
       RABBITMQ_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672
       RABBITMQ_QUEUE: user_data
       INTERNAL_SERVICE_KEY: ${INTERNAL_SERVICE_KEY:?INTERNAL_SERVICE_KEY must be set}
+      KEY_ENCRYPTION_KEY: ${KEY_ENCRYPTION_KEY:?KEY_ENCRYPTION_KEY must be set (openssl rand -base64 32)}
       PRISMA_DATABASE_USER_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-12345}@postgres:5432/userdb?schema=public
     depends_on:
       postgres:
@@ -113,6 +114,7 @@ services:
     environment:
       USER_MICROSERVICE_URL: http://user:3004/api
       INTERNAL_SERVICE_KEY: ${INTERNAL_SERVICE_KEY:?INTERNAL_SERVICE_KEY must be set}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set (same value as Auth)}
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-12345}@postgres:5432/bridgedb
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}

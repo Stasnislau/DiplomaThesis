@@ -78,7 +78,7 @@ export class AuthService {
     return null;
   }
 
-  async login(loginDto: LoginDto) {
+  async login(loginDto: LoginDto, fingerprint?: string) {
     const key = failedKey(loginDto.email);
     const now = Date.now();
     const tracked = failedLogins.get(key);
@@ -109,7 +109,7 @@ export class AuthService {
     }
     failedLogins.delete(key);
     const accessToken = this.generateAccessToken(user);
-    const refreshToken = await this.createRefreshToken(user);
+    const refreshToken = await this.createRefreshToken(user, fingerprint);
     return {
       accessToken,
       refreshToken,
@@ -166,9 +166,28 @@ export class AuthService {
     return true;
   }
 
-  async createRefreshToken(user: User): Promise<string> {
+  /**
+   * SHA-256 of (User-Agent ‖ first-IP-from-XFF). Bound into the
+   * refresh token as the `dvc` claim, then re-checked on /refresh —
+   * a token stolen from one machine can't be replayed from another
+   * because the fingerprint won't match.
+   *
+   * It's a heuristic, not a hard guarantee (UA can be spoofed, IP
+   * can change behind NAT) — but it raises the bar from "any
+   * exfiltrated cookie wins" to "you also need to puppet the
+   * victim's exact client headers".
+   */
+  static deviceFingerprint(userAgent: string, ip: string): string {
+    const crypto = require("crypto") as typeof import("crypto");
+    return crypto
+      .createHash("sha256")
+      .update(`${userAgent}${ip}`)
+      .digest("hex");
+  }
+
+  async createRefreshToken(user: User, fingerprint?: string): Promise<string> {
     const token = this.jwtService.sign(
-      { email: user.email, sub: user.id },
+      { email: user.email, sub: user.id, dvc: fingerprint ?? "" },
       {
         secret: config().refreshToken.secret,
         expiresIn: config().refreshToken.expiresIn,
@@ -200,7 +219,7 @@ export class AuthService {
     );
   }
 
-  async refreshToken(refreshToken: string) {
+  async refreshToken(refreshToken: string, fingerprint?: string) {
     if (!refreshToken) {
       throwWithCode(
         AUTH_REFRESH_TOKEN_REQUIRED,
@@ -211,7 +230,7 @@ export class AuthService {
 
     // Verify the JWT signature/exp BEFORE the DB lookup so we never
     // reveal which tokens exist in our store via timing.
-    let payload: { sub: string; email: string; exp: number };
+    let payload: { sub: string; email: string; exp: number; dvc?: string };
     try {
       payload = this.jwtService.verify(refreshToken, {
         secret: config().refreshToken.secret,
@@ -255,6 +274,28 @@ export class AuthService {
       );
     }
 
+    // Device-binding check: if the token was minted with a `dvc`
+    // claim and the current request's fingerprint disagrees, treat
+    // it like a stolen-cookie replay. Empty/legacy claim is
+    // tolerated so existing sessions don't break.
+    if (
+      payload.dvc &&
+      fingerprint &&
+      payload.dvc !== fingerprint
+    ) {
+      await this.prisma.refreshToken.deleteMany({
+        where: { userId: payload.sub },
+      });
+      this.logger.warn(
+        `Refresh-token device mismatch for user=${payload.sub}; revoked all sessions`,
+      );
+      throwWithCode(
+        AUTH_REFRESH_TOKEN_INVALID,
+        HttpStatus.BAD_REQUEST,
+        "Invalid refresh token",
+      );
+    }
+
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
     });
@@ -280,7 +321,7 @@ export class AuthService {
           where: { token: refreshToken },
         });
         const next = this.jwtService.sign(
-          { email: user.email, sub: user.id },
+          { email: user.email, sub: user.id, dvc: fingerprint ?? payload.dvc ?? "" },
           {
             secret: config().refreshToken.secret,
             expiresIn: config().refreshToken.expiresIn,
