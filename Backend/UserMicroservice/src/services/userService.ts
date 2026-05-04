@@ -27,7 +27,10 @@ export class UserService {
     };
   }
 
-  async getUser(id: string): Promise<BaseResponse<User>> {
+  async getUser(
+    id: string,
+    fallback?: { email?: string; role?: string },
+  ): Promise<BaseResponse<User>> {
     if (!id) {
       throwWithCode(USER_ID_REQUIRED, HttpStatus.BAD_REQUEST, "User ID is required");
     }
@@ -39,14 +42,36 @@ export class UserService {
       },
     });
 
-    if (!user) {
+    if (user) {
+      return { success: true, payload: user };
+    }
+
+    // Lazy upsert: the `user.created` event from Auth may not have
+    // landed yet (RabbitMQ outage / message dropped). Auth has
+    // already created the credentials row, so the gateway-validated
+    // `id` in the request is authoritative — synthesise the missing
+    // profile from the headers we just got. Without this, /me 404s
+    // forever for any user whose registration event was lost.
+    if (!fallback?.email) {
       throwWithCode(USER_NOT_FOUND, HttpStatus.NOT_FOUND, "User not found");
     }
 
-    return {
-      success: true,
-      payload: user,
-    };
+    // The user.created event from Auth carries name + surname; in the
+    // rare case where it never arrived (lazy upsert path) we don't
+    // know them. Use an empty string placeholder; the user can fill
+    // their profile via PUT /updateUser. The schema requires non-null
+    // strings, so empty is the cleanest sentinel here.
+    const created = await this.prisma.user.create({
+      data: {
+        id,
+        email: fallback.email,
+        name: "",
+        surname: "",
+        role: fallback.role ?? "USER",
+      },
+      include: { languages: true },
+    });
+    return { success: true, payload: created };
   }
 
   async getUsers(): Promise<BaseResponse<User[]>> {

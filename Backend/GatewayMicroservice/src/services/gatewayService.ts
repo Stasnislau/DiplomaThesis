@@ -44,12 +44,27 @@ interface RateLimitBucket {
 
 const aiRateLimits = new Map<string, RateLimitBucket>();
 
+function pruneExpiredBuckets(now: number): void {
+  // Walk the map periodically and drop buckets whose window has
+  // closed. Without this, every test user / one-shot caller leaves
+  // a bucket sitting in memory until restart — over weeks the map
+  // grows unboundedly. We piggyback on quota-check calls so we
+  // don't need a separate timer.
+  if (aiRateLimits.size < 1024) return; // amortise: only when it matters
+  for (const [k, b] of aiRateLimits) {
+    if (now - b.windowStart >= AI_LIMIT_WINDOW_MS) {
+      aiRateLimits.delete(k);
+    }
+  }
+}
+
 function checkAndIncrementAiQuota(userId: string): {
   ok: boolean;
   remaining: number;
   resetMs: number;
 } {
   const now = Date.now();
+  pruneExpiredBuckets(now);
   const bucket = aiRateLimits.get(userId);
   if (!bucket || now - bucket.windowStart >= AI_LIMIT_WINDOW_MS) {
     aiRateLimits.set(userId, { count: 1, windowStart: now });

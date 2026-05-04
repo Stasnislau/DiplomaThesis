@@ -5,6 +5,7 @@ import configuration from "./config/configuration";
 import { AuthModule } from "./modules/authModule";
 import { JwtPayloadMiddleware } from "./middlewares/jwtPayloadMiddleware";
 import { EventModule } from "./modules/eventModule";
+import { HealthController } from "./controllers/healthController";
 
 @Module({
   imports: [
@@ -20,7 +21,7 @@ import { EventModule } from "./modules/eventModule";
     AuthModule,
     EventModule,
   ],
-  controllers: [],
+  controllers: [HealthController],
   providers: [JwtPayloadMiddleware],
 })
 export class AppModule implements NestModule {

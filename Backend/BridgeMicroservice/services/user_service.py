@@ -10,6 +10,20 @@ from utils.user_context import UserContext
 logger = logging.getLogger("bridge_microservice")
 
 
+def _internal_key() -> str:
+    """Read INTERNAL_SERVICE_KEY at the call site so a fresh container
+    that forgot to set it gets a clear runtime error instead of silently
+    using a published default."""
+    key = os.environ.get("INTERNAL_SERVICE_KEY")
+    if not key:
+        raise RuntimeError(
+            "INTERNAL_SERVICE_KEY is not set. Bridge cannot talk to "
+            "the User microservice without it. Set it in your .env "
+            "before starting the service.",
+        )
+    return key
+
+
 class UserAIToken(TypedDict, total=False):
     id: str
     userId: str
@@ -97,7 +111,7 @@ class UserService:
             raise_with_code,
         )
         headers = ctx.to_forward_headers()
-        headers["x-internal-service-key"] = os.getenv("INTERNAL_SERVICE_KEY", "supersecretbridgekey")
+        headers["x-internal-service-key"] = _internal_key()
         data = await self._get("/ai-tokens", headers)
 
         if not isinstance(data, dict) or not data.get("success"):
@@ -126,9 +140,7 @@ class UserService:
         try:
             url = f"{self.base_url}/history"
             headers = ctx.to_forward_headers()
-            headers["x-internal-service-key"] = os.getenv(
-                "INTERNAL_SERVICE_KEY", "supersecretbridgekey"
-            )
+            headers["x-internal-service-key"] = _internal_key()
             headers["content-type"] = "application/json"
             async with httpx.AsyncClient(timeout=5.0) as client:
                 response = await client.post(url, headers=headers, json=entry)

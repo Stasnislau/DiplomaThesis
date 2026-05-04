@@ -28,7 +28,7 @@ model RefreshToken {
     token     String   @unique @map("token")
     expiresAt DateTime @map("expires_at")
     userId    String   @map("user_id")
-    user      User     @relation(fields: [userId], references: [id])
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
     @@map("refresh_tokens")
 }
@@ -37,7 +37,7 @@ model Credentials {
     id       String @id @default(uuid()) @map("id")
     password String @map("password")
     userId   String @unique @map("user_id")
-    user     User   @relation(fields: [userId], references: [id])
+    user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
     @@map("credentials")
 }

@@ -1,6 +1,16 @@
-import { Controller, Get, Post, Body, Request } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  Post,
+  Request,
+  UseGuards,
+} from "@nestjs/common";
 import { AchievementService } from "../services/achievementService";
 import { AuthenticatedRequest } from "src/types/AuthenticatedRequest";
+import { Roles } from "../guards/roles.decorator";
+import { RolesGuard } from "../guards/rolesGuard";
 
 @Controller("achievements")
 export class AchievementController {
@@ -34,9 +44,12 @@ export class AchievementController {
   }
 
   /**
-   * Seed achievements into the database (admin-only in production).
+   * Seed achievements into the database. ADMIN-only — without the
+   * guard, any authenticated user could upsert/replay rows.
    */
   @Post("seed")
+  @UseGuards(RolesGuard)
+  @Roles("ADMIN")
   async seedAchievements() {
     const count = await this.achievementService.seedAchievements();
     return {
@@ -46,13 +59,27 @@ export class AchievementController {
   }
 
   /**
-   * Update progress for a specific achievement (for testing/manual triggers).
+   * Update progress for a specific achievement. Designed to be
+   * called by Bridge (which awards progress on lesson completion,
+   * speech analysis, etc.) — never by the end user directly. Without
+   * the internal-service-key gate, any USER could just POST
+   * {"achievementName":"Dedicated"} repeatedly to fake-unlock every
+   * achievement on the platform.
    */
   @Post("progress")
   async updateProgress(
     @Request() req: AuthenticatedRequest,
     @Body() body: { achievementName: string; incrementBy?: number },
   ) {
+    const internalKey = req.headers["x-internal-service-key"] as
+      | string
+      | undefined;
+    const expected = process.env.INTERNAL_SERVICE_KEY;
+    if (!expected || internalKey !== expected) {
+      throw new ForbiddenException(
+        "FORBIDDEN_INTERNAL: This endpoint is internal-only.",
+      );
+    }
     const result = await this.achievementService.updateProgress(
       req.user.id,
       body.achievementName,

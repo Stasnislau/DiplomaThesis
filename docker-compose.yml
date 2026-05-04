@@ -106,7 +106,7 @@ services:
       PORT: 3004
       RABBITMQ_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672
       RABBITMQ_QUEUE: user_data
-      INTERNAL_SERVICE_KEY: ${INTERNAL_SERVICE_KEY:-supersecretbridgekey}
+      INTERNAL_SERVICE_KEY: ${INTERNAL_SERVICE_KEY:?INTERNAL_SERVICE_KEY must be set}
       PRISMA_DATABASE_USER_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-12345}@postgres-user:5432/userdb?schema=public
     depends_on:
       postgres-user:
@@ -141,7 +141,7 @@ services:
       - "3003:3003"
     environment:
       USER_MICROSERVICE_URL: http://user:3004/api
-      INTERNAL_SERVICE_KEY: ${INTERNAL_SERVICE_KEY:-supersecretbridgekey}
+      INTERNAL_SERVICE_KEY: ${INTERNAL_SERVICE_KEY:?INTERNAL_SERVICE_KEY must be set}
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-12345}@postgres-bridge:5432/bridgedb
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}

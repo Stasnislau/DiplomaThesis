@@ -25,6 +25,26 @@ import {
   throwWithCode,
 } from "../utils/errorCodes";
 
+/**
+ * In-memory failed-login tracker. Keyed by lowercased email so the
+ * limit applies per account, not per IP — a botnet pivoting across
+ * IPs against the same email still trips it. Counter resets on a
+ * successful login OR after WINDOW_MS of inactivity.
+ *
+ * This is process-local (single Auth replica is the deploy
+ * assumption); a multi-replica deploy needs Redis here.
+ */
+const FAILED_LOGIN_LIMIT = 8;
+const FAILED_LOGIN_WINDOW_MS = 15 * 60 * 1000;
+interface FailedAttempt {
+  count: number;
+  lockedUntil: number;
+}
+const failedLogins = new Map<string, FailedAttempt>();
+function failedKey(email: string): string {
+  return email.trim().toLowerCase();
+}
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -59,14 +79,35 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
+    const key = failedKey(loginDto.email);
+    const now = Date.now();
+    const tracked = failedLogins.get(key);
+    if (tracked && tracked.lockedUntil > now) {
+      throwWithCode(
+        AUTH_INVALID_CREDENTIALS,
+        HttpStatus.TOO_MANY_REQUESTS,
+        "Too many failed attempts; try again later.",
+      );
+    }
+
     const user = await this.validateUser(loginDto.email, loginDto.password);
     if (!user) {
+      const attempt = tracked && tracked.lockedUntil > now - FAILED_LOGIN_WINDOW_MS
+        ? tracked
+        : { count: 0, lockedUntil: 0 };
+      attempt.count += 1;
+      attempt.lockedUntil =
+        attempt.count >= FAILED_LOGIN_LIMIT
+          ? now + FAILED_LOGIN_WINDOW_MS
+          : now + FAILED_LOGIN_WINDOW_MS; // sliding window
+      failedLogins.set(key, attempt);
       throwWithCode(
         AUTH_INVALID_CREDENTIALS,
         HttpStatus.UNAUTHORIZED,
         "Invalid email or password",
       );
     }
+    failedLogins.delete(key);
     const accessToken = this.generateAccessToken(user);
     const refreshToken = await this.createRefreshToken(user);
     return {
@@ -98,8 +139,16 @@ export class AuthService {
         },
       },
     });
-    await lastValueFrom(
-      this.eventService.emit("user.created", {
+
+    // Fire-and-forget the event. Awaiting `lastValueFrom(emit(...))`
+    // here would block the HTTP response on a RabbitMQ ACK — when the
+    // broker is restarting, register hangs for ~200s and the second
+    // retry then sees AUTH_EMAIL_TAKEN. The User microservice does
+    // a lazy upsert on /me when the profile row is missing, so a
+    // dropped event is not catastrophic — the row appears on first
+    // load instead.
+    this.eventService
+      .emit("user.created", {
         id: user.id,
         email: user.email,
         name: userDto.name,
@@ -107,7 +156,12 @@ export class AuthService {
         role: user.role,
         createdAt: user.createdAt,
       })
-    );
+      .subscribe({
+        error: (err) =>
+          this.logger.warn(
+            `user.created event emit failed for ${user.id}: ${err?.message ?? err}`,
+          ),
+      });
 
     return true;
   }
@@ -154,26 +208,50 @@ export class AuthService {
         "Refresh token is required",
       );
     }
-    const refreshTokenRecord = await this.prisma.refreshToken.findUnique({
-      where: { token: refreshToken },
-    });
 
-    if (!refreshTokenRecord) {
+    // Verify the JWT signature/exp BEFORE the DB lookup so we never
+    // reveal which tokens exist in our store via timing.
+    let payload: { sub: string; email: string; exp: number };
+    try {
+      payload = this.jwtService.verify(refreshToken, {
+        secret: config().refreshToken.secret,
+      });
+    } catch {
       throwWithCode(
         AUTH_REFRESH_TOKEN_INVALID,
         HttpStatus.BAD_REQUEST,
         "Invalid refresh token",
       );
     }
-
-    const payload = this.jwtService.verify(refreshToken, {
-      secret: config().refreshToken.secret,
-    });
     if (payload.exp < Date.now() / 1000) {
       throwWithCode(
         AUTH_REFRESH_TOKEN_EXPIRED,
         HttpStatus.BAD_REQUEST,
         "Refresh token expired",
+      );
+    }
+
+    const refreshTokenRecord = await this.prisma.refreshToken.findUnique({
+      where: { token: refreshToken },
+    });
+
+    if (!refreshTokenRecord) {
+      // The JWT verifies but no row exists for it in our store.
+      // That's a re-use of a token that was already rotated away —
+      // either the legitimate user is replaying an old request OR
+      // someone stole the token after rotation. We can't tell, so we
+      // fail safe: revoke the entire token family for this user and
+      // force a fresh login.
+      await this.prisma.refreshToken.deleteMany({
+        where: { userId: payload.sub },
+      });
+      this.logger.warn(
+        `Refresh-token reuse detected for user=${payload.sub}; revoked all sessions`,
+      );
+      throwWithCode(
+        AUTH_REFRESH_TOKEN_INVALID,
+        HttpStatus.BAD_REQUEST,
+        "Invalid refresh token",
       );
     }
 
@@ -189,11 +267,35 @@ export class AuthService {
     }
 
     const accessToken = this.generateAccessToken(user);
+    const shouldRotate = await this.shouldRefreshToken(refreshToken);
 
-    const shouldRefreshToken = await this.shouldRefreshToken(refreshToken);
-    const newRefreshToken = shouldRefreshToken
-      ? await this.createRefreshToken(user)
-      : undefined;
+    let newRefreshToken: string | undefined;
+    if (shouldRotate) {
+      // Atomically delete the old token and create the new one. If
+      // anything in this transaction throws, the old token survives
+      // and the user can retry; what we never want is "old gone, new
+      // also failed to persist" — that bricks the session.
+      newRefreshToken = await this.prisma.$transaction(async (tx) => {
+        await tx.refreshToken.delete({
+          where: { token: refreshToken },
+        });
+        const next = this.jwtService.sign(
+          { email: user.email, sub: user.id },
+          {
+            secret: config().refreshToken.secret,
+            expiresIn: config().refreshToken.expiresIn,
+          },
+        );
+        await tx.refreshToken.create({
+          data: {
+            token: next,
+            userId: user.id,
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          },
+        });
+        return next;
+      });
+    }
 
     return {
       accessToken,

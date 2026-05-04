@@ -22,7 +22,6 @@ const LearningPathPage = lazy(() => import("./pages/LearningPath/LearningPathPag
 const LessonPracticePage = lazy(() => import("./pages/LearningPath/LessonPracticePage"));
 const TaskPage = lazy(() => import("./pages/Quiz/TaskPage").then(module => ({ default: module.TaskPage })));
 const TasksPage = lazy(() => import("./pages/Tasks/TasksPage"));
-const TemplatesPage = lazy(() => import("./pages/Materials/TemplatesPage"));
 const HistoryPage = lazy(() => import("./pages/History/HistoryPage"));
 
 export const router = createBrowserRouter([
@@ -55,16 +54,6 @@ export const router = createBrowserRouter([
           <ProtectedRoute>
             <SuspenseWrapper>
               <MaterialsPage />
-            </SuspenseWrapper>
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: ROUTES.MATERIALS_TEMPLATES,
-        element: (
-          <ProtectedRoute>
-            <SuspenseWrapper>
-              <TemplatesPage />
             </SuspenseWrapper>
           </ProtectedRoute>
         ),

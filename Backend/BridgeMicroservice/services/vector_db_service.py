@@ -1,3 +1,5 @@
+import re
+
 import lancedb
 from sentence_transformers import SentenceTransformer
 import pandas as pd
@@ -6,6 +8,14 @@ from constants.constants import LEVEL_EMBEDDINGS
 from models.dtos.vector_db_dtos import SpecificSkillContext, FullLevelContext, SimilarLevel, LevelSkills, MaterialChunk, TaskTemplate
 from models.dtos.material_dtos import ChunkMetadata
 from typing import List, Union, Optional, Dict, Any
+
+# Strict UUID format check used to gate user_id before it's
+# interpolated into a LanceDB where-clause. Anything that doesn't
+# match short-circuits to "no results" rather than risking a
+# malformed/injected filter expression.
+_UUID_RE = re.compile(
+    r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+)
 
 class VectorDBService:
     def __init__(self) -> None:
@@ -179,8 +189,13 @@ class VectorDBService:
 
             search = table.search(query_embedding.tolist())
             if user_id:
-                # LanceDB SQL where-clause filter; falls back to a
-                # post-filter if the column is missing on legacy rows.
+                # `user_id` arrives via the X-User-Id header (validated
+                # JWT-derived UUID in our flow). Reject anything that
+                # doesn't look like a UUID before pasting it into the
+                # where-clause, so a malformed header can never inject
+                # SQL fragments into the LanceDB query.
+                if not _UUID_RE.match(user_id):
+                    return []
                 try:
                     search = search.where(f"user_id = '{user_id}'")
                 except Exception:  # noqa: BLE001

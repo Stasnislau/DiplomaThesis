@@ -55,7 +55,7 @@ model TaskHistoryEntry {
     metadata  Json?    @map("metadata")
     createdAt DateTime @default(now()) @map("created_at")
 
-    user User @relation(fields: [userId], references: [id])
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
     @@index([userId, createdAt(sort: Desc)])
     @@map("task_history")
@@ -83,7 +83,7 @@ model UserLanguage {
     level      String   @map("level")
     isStarted  Boolean  @map("is_started")
     isNative   Boolean  @map("is_native")
-    user       User     @relation(fields: [userId], references: [id])
+    user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
     language   Language @relation(fields: [languageId], references: [id])
 
     @@map("user_languages")
@@ -96,7 +96,7 @@ model UserAIToken {
     aiProviderId String     @map("ai_provider_id")
     createdAt    DateTime   @default(now()) @map("created_at")
     updatedAt    DateTime   @updatedAt @map("updated_at")
-    user         User       @relation(fields: [userId], references: [id])
+    user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
     aiProvider   AIProvider @relation(fields: [aiProviderId], references: [id])
     isDefault    Boolean    @default(false) @map("is_default")
 
@@ -133,7 +133,7 @@ model UserAchievement {
     progress      Int         @default(0) @map("progress")
     unlockedAt    DateTime?   @map("unlocked_at")
     createdAt     DateTime    @default(now()) @map("created_at")
-    user          User        @relation(fields: [userId], references: [id])
+    user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
     achievement   Achievement @relation(fields: [achievementId], references: [id])
 
     @@unique([userId, achievementId])
@@ -154,7 +154,7 @@ model UserMaterial {
     filename      String   @map("filename")
     analyzedTypes Json     @map("analyzed_types")
     createdAt     DateTime @default(now()) @map("created_at")
-    user          User     @relation(fields: [userId], references: [id])
+    user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
     @@map("user_materials")
 }
@@ -168,7 +168,7 @@ model PlacementTestResult {
     feedback   Json     @map("feedback")
     createdAt  DateTime @default(now()) @map("created_at")
 
-    user     User     @relation(fields: [userId], references: [id])
+    user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
     language Language @relation(fields: [languageId], references: [id])
 
     @@map("placement_test_results")
@@ -186,7 +186,7 @@ model UserError {
     frequency      Int      @default(1) @map("frequency")
     lastOccurredAt DateTime @default(now()) @map("last_occurred_at")
 
-    user     User     @relation(fields: [userId], references: [id])
+    user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
     language Language @relation(fields: [languageId], references: [id])
 
     @@map("user_errors")
@@ -226,7 +226,7 @@ model UserLessonProgress {
     status      String    @default("LOCKED") @map("status") // LOCKED, UNLOCKED, COMPLETED
     completedAt DateTime? @map("completed_at")
 
-    user   User   @relation(fields: [userId], references: [id])
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
     lesson Lesson @relation(fields: [lessonId], references: [id])
 
     @@unique([userId, lessonId])

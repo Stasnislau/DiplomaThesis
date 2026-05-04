@@ -37,7 +37,10 @@ export class UserController {
   async getUser(
     @Request() req: AuthenticatedRequest,
   ): Promise<BaseResponse<User>> {
-    return this.userService.getUser(req.user.id);
+    return this.userService.getUser(req.user.id, {
+      email: req.user.email,
+      role: req.user.role,
+    });
   }
 
   // ADMIN-only — exposes every account's email/name/createdAt. Without

@@ -71,9 +71,7 @@ class LearningPathController:
 
             try:
                 forward_headers = ctx.to_forward_headers() if ctx else {}
-                forward_headers["x-internal-service-key"] = os.getenv(
-                    "INTERNAL_SERVICE_KEY", "supersecretbridgekey"
-                )
+                forward_headers["x-internal-service-key"] = os.environ["INTERNAL_SERVICE_KEY"]
                 um_url = os.getenv("USER_MICROSERVICE_URL", "http://localhost:3004/api")
                 async with httpx.AsyncClient(timeout=5.0) as client:
                     await client.post(

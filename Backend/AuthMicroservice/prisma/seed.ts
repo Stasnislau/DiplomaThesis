@@ -23,23 +23,39 @@ const eventService = ClientProxyFactory.create({
 });
 
 async function main() {
+  // Refuse to plant a known-credentials admin row in production. The
+  // password is read from env (or randomly generated and printed
+  // once) so a checked-in literal can never become a live admin
+  // account.
+  const isProd = process.env.NODE_ENV === "production";
+  if (isProd && !process.env.SEED_ADMIN_PASSWORD) {
+    console.error(
+      "Refusing to seed admin in production without SEED_ADMIN_PASSWORD set.",
+    );
+    process.exit(1);
+  }
+  const adminEmail = process.env.SEED_ADMIN_EMAIL ?? "admin@admin.com";
+  const adminPassword =
+    process.env.SEED_ADMIN_PASSWORD ??
+    (isProd ? "" : "admin"); // dev-only fallback
+
   await eventService.connect();
 
   const existingAdmin = await prisma.user.findUnique({
     where: {
-      email: "admin@admin.com",
+      email: adminEmail,
     },
   });
 
   if (!existingAdmin) {
-    const hashedPassword = await bcrypt.hash("admin", 10);
+    const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
     console.log(rabbitmqConfig.url, rabbitmqConfig.queue, "sending event");
 
     try {
       const admin = await prisma.user.create({
         data: {
-          email: "admin@admin.com",
+          email: adminEmail,
           role: "ADMIN",
           credentials: {
             create: {
