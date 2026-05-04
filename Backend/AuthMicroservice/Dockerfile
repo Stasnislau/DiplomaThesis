@@ -3,7 +3,7 @@
 # Cache mounts on apk, npm, and prisma engine downloads make a re-deploy
 # of unchanged-deps land in ~10 s instead of ~70 s.
 
-FROM node:20-alpine AS builder
+FROM node:25-alpine AS builder
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --no-cache openssl
 WORKDIR /app
@@ -22,7 +22,7 @@ RUN --mount=type=cache,target=/root/.cache/prisma \
 RUN npm run build
 
 # ── Production ──────────────────────────────────────────────────────────────
-FROM node:20-alpine AS production
+FROM node:25-alpine AS production
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --no-cache openssl
 WORKDIR /app
