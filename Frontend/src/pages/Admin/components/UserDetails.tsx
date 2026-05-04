@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import Button from "@/components/common/Button";
 import { useDeleteUser } from "@/api/hooks/useDeleteUser";
 import { useUpdateUserRole } from "@/api/hooks/useUpdateUserRole";
+import { useTranslation } from "react-i18next";
 
 interface User {
   id: string;
@@ -18,6 +19,7 @@ interface UserDetailsProps {
 }
 
 export const UserDetails: React.FC<UserDetailsProps> = ({ user, onUserDeleted }) => {
+  const { t } = useTranslation();
   const { updateRole, isLoading: isRoleLoading } = useUpdateUserRole();
   const { deleteUser, isLoading: isDeleteLoading } = useDeleteUser();
   const [error, setError] = useState<string | null>(null);
@@ -53,19 +55,19 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ user, onUserDeleted })
 
   return (
     <div className="p-6">
-      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">User Details</h2>
+      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">{t("admin.userDetails")}</h2>
 
       <div className="space-y-6">
         {/* User Info */}
         <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">ID</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t("admin.fieldId")}</p>
               <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{user.id}</p>
             </div>
 
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Role</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t("admin.fieldRole")}</p>
               <span
                 className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                   user.role === "ADMIN"
@@ -78,17 +80,17 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ user, onUserDeleted })
             </div>
 
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">First Name</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t("admin.fieldFirstName")}</p>
               <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{user.name}</p>
             </div>
 
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Last Name</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t("admin.fieldLastName")}</p>
               <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{user.surname}</p>
             </div>
 
             <div className="col-span-2">
-              <p className="text-sm text-gray-500 dark:text-gray-400">Email</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t("admin.fieldEmail")}</p>
               <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{user.email}</p>
             </div>
           </div>

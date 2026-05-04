@@ -1,20 +1,22 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export const AdminSidebar: React.FC = () => {
+  const { t } = useTranslation();
   const menuItems = [
-    { name: "Dashboard", path: "/admin", icon: "📊", current: true },
-    { name: "Users", path: "/admin/users", icon: "👥", current: false },
-    { name: "Statistics", path: "/admin/statistics", icon: "📈", current: false },
-    { name: "Settings", path: "/admin/settings", icon: "⚙️", current: false },
+    { key: "dashboard", path: "/admin", icon: "📊", current: true },
+    { key: "users", path: "/admin/users", icon: "👥", current: false },
+    { key: "statistics", path: "/admin/statistics", icon: "📈", current: false },
+    { key: "settings", path: "/admin/settings", icon: "⚙️", current: false },
   ];
 
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden h-full">
       <div className="p-6 bg-gradient-to-r from-indigo-500 to-purple-600">
-        <h2 className="text-xl font-bold text-white">Admin Panel</h2>
+        <h2 className="text-xl font-bold text-white">{t("admin.panelTitle")}</h2>
         <p className="text-indigo-100 text-sm mt-1">
-          Manage your application
+          {t("admin.panelSubtitle")}
         </p>
       </div>
       
@@ -22,7 +24,7 @@ export const AdminSidebar: React.FC = () => {
         <nav className="space-y-1">
           {menuItems.map((item) => (
             <Link
-              key={item.name}
+              key={item.key}
               to={item.path}
               className={`group flex items-center px-6 py-3 text-sm font-medium ${
                 item.current
@@ -31,7 +33,7 @@ export const AdminSidebar: React.FC = () => {
               }`}
             >
               <span className="mr-3 text-lg">{item.icon}</span>
-              {item.name}
+              {t(`admin.nav.${item.key}`)}
             </Link>
           ))}
         </nav>
