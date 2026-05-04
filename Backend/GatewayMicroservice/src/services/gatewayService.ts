@@ -98,6 +98,9 @@ export class GatewayService {
     "api/auth/register",
     "api/auth/refresh",
     "api/languages",
+    // Health probes need to be reachable without a JWT — Docker
+    // healthchecks and any external uptime monitor never have one.
+    "api/health",
   ];
 
   // Bridge subpaths that actually call out to an AI provider — these
@@ -315,14 +318,20 @@ export class GatewayService {
         }
       }
     } catch (error: unknown) {
-      const err = error as { message?: string };
+      const err = error as { message?: string; status?: number };
       this.logger.error(`Unhandled error in gatewayService: ${err.message}`);
+      // Surface UnauthorizedException (and any other HttpException
+      // with an explicit status) instead of pretending every problem
+      // is a 500. Without this, an expired/missing JWT looks like a
+      // server fault to the frontend.
+      const status =
+        err instanceof UnauthorizedException ? 401 : err.status ?? 500;
       return {
-        status: 500,
+        status,
         data: {
           success: false,
           payload: {
-            message: "Internal gateway error",
+            message: err.message ?? "Internal gateway error",
           },
         },
       };
