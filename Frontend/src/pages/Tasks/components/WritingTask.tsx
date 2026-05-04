@@ -9,6 +9,7 @@ import { isMultipleChoice } from "@/types/typeGuards/isMultipleChoice";
 import { useCreateBlankSpaceTask } from "@/api/hooks/useCreateBlankSpaceTask";
 import { useCreateMultipleChoiceTask } from "@/api/hooks/useCreateMultipleChoiceTask";
 import { useExplainAnswer } from "@/api/hooks/useExplainAnswer";
+import { useGenerateAdaptiveTask } from "@/api/hooks/useGenerateAdaptiveTask";
 import { useTranslation } from "react-i18next";
 
 const LANGUAGES = [
@@ -46,6 +47,13 @@ const WritingTask = ({ initialLanguage, initialLevel, initialTaskType }: Writing
 
   const { createTask: createMultipleChoice, isLoading: isLoadingMC, data: dataMC, error: errorMC } = useCreateMultipleChoiceTask();
   const { createTask: createFillBlank, isLoading: isLoadingFB, data: dataFB, error: errorFB } = useCreateBlankSpaceTask();
+  const {
+    generate: generateAdaptive,
+    isLoading: isLoadingAdaptive,
+    data: adaptiveData,
+    error: errorAdaptive,
+    reset: resetAdaptive,
+  } = useGenerateAdaptiveTask();
 
   const {
     explainAnswer,
@@ -53,15 +61,17 @@ const WritingTask = ({ initialLanguage, initialLevel, initialTaskType }: Writing
     data: explanationData,
   } = useExplainAnswer();
 
-  const isLoading = isLoadingMC || isLoadingFB;
-  const error = errorMC || errorFB;
-  const data = dataMC || dataFB;
+  const isLoading = isLoadingMC || isLoadingFB || isLoadingAdaptive;
+  const error = errorMC || errorFB || errorAdaptive;
+  const data = dataMC || dataFB || adaptiveData?.task;
+  const targetedWeaknesses = adaptiveData?.targetedWeaknesses ?? [];
 
   const handleCreateTask = () => {
     if (language && level) {
       setCurrentTaskData(null);
+      resetAdaptive();
       const backendLanguage = language.charAt(0).toUpperCase() + language.slice(1);
-      
+
       if (taskType === "multiple-choice") {
         createMultipleChoice({ language: backendLanguage, level });
       } else {
@@ -70,7 +80,24 @@ const WritingTask = ({ initialLanguage, initialLevel, initialTaskType }: Writing
       setUserAnswer("");
       setShowExplanation(false);
       setIsCorrect(null);
-    } 
+    }
+  };
+
+  const handleAdaptive = () => {
+    if (!language || !level) return;
+    setCurrentTaskData(null);
+    setUserAnswer("");
+    setShowExplanation(false);
+    setIsCorrect(null);
+    const backendLanguage =
+      language.charAt(0).toUpperCase() + language.slice(1);
+    generateAdaptive({
+      language: backendLanguage,
+      level,
+      flavour: taskType === "multiple-choice"
+        ? "multiple_choice"
+        : "fill_in_the_blank",
+    });
   };
 
   useEffect(() => {
@@ -222,6 +249,26 @@ const WritingTask = ({ initialLanguage, initialLevel, initialTaskType }: Writing
             </Button>
           </TabsContent>
         </Tabs>
+        {/* Adaptive — biases the next task toward the user's recent
+            weaknesses (placement misses, low-score topics, speech
+            errors). Falls back to the regular variety picker when
+            there's no history yet. */}
+        <button
+          type="button"
+          onClick={handleAdaptive}
+          disabled={!language || !level || isLoading}
+          className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-xl border border-amber-200 dark:border-amber-700/50 bg-amber-50 dark:bg-amber-900/20 px-4 py-2.5 text-sm font-semibold text-amber-700 dark:text-amber-300 transition-colors hover:bg-amber-100 dark:hover:bg-amber-900/30 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <span role="img" aria-hidden="true">🎯</span>
+          {t("tasks.practiceWeakSpots")}
+        </button>
+        {adaptiveData?.derivedFromHistory && targetedWeaknesses.length > 0 && (
+          <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">
+            {t("tasks.targetingFromHistory", {
+              focus: targetedWeaknesses.slice(0, 3).join(", "),
+            })}
+          </p>
+        )}
       </div>
 
       {error && (

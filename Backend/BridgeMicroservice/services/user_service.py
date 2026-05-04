@@ -153,6 +153,44 @@ class UserService:
         except Exception as exc:  # noqa: BLE001
             logger.warning("history log exception: %s", exc)
 
+    async def get_recent_history(
+        self, ctx: UserContext, limit: int = 20, task_type: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """Pull the user's recent task-history entries.
+
+        Drives /writing/adaptive: we read the user's recent placement
+        weaknesses, low scores and speaking-error counts to bias the
+        next AI-generated task toward what they're actually struggling
+        with, instead of asking them to re-pick a topic.
+
+        Returns [] on any failure — adaptive personalisation is a
+        nice-to-have, never a hard dependency on the user-service
+        being reachable.
+        """
+        from utils.error_codes import (
+            USER_SERVICE_BAD_REQUEST,
+            USER_SERVICE_BAD_RESPONSE,
+            raise_with_code,
+        )
+        headers = ctx.to_forward_headers()
+        headers["x-internal-service-key"] = _internal_key()
+        path = f"/history?limit={int(limit)}"
+        if task_type:
+            path += f"&type={task_type}"
+        try:
+            data = await self._get(path, headers)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("get_recent_history failed: %s", exc)
+            return []
+
+        if not isinstance(data, dict) or not data.get("success"):
+            return []
+
+        payload = data.get("payload", [])
+        if not isinstance(payload, list):
+            return []
+        return payload
+
     async def get_default_ai_token(
         self, ctx: UserContext, ai_provider_id: Optional[str] = None
     ) -> UserAIToken:

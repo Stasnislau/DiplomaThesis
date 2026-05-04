@@ -163,10 +163,12 @@ app.add_middleware(
 ai_service = AI_Service()
 vector_db_service = VectorDBService()
 
+from services.user_service import UserService as BridgeUserService
+_writing_user_service = BridgeUserService()
 app.include_router(
     WritingController(
         WritingTaskService(vector_db_service, ai_service),
-        # Bielik_Service(),
+        _writing_user_service,
     ).get_router(),
     prefix="/api",
 )

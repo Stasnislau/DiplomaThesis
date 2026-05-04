@@ -132,6 +132,8 @@ const en = {
 
     tasks: {
       generateTask: "Generate Task",
+      practiceWeakSpots: "🎯 Practice my weak spots",
+      targetingFromHistory: "Targeting recent weaknesses: {{focus}}",
       multipleChoice: "Multiple Choice",
       fillInBlank: "Fill in the Blank",
       listening: "Listening",
@@ -745,6 +747,8 @@ const pl = {
 
     tasks: {
       generateTask: "Wygeneruj zadanie",
+      practiceWeakSpots: "🎯 Ćwicz moje słabe punkty",
+      targetingFromHistory: "Skupiamy się na ostatnich słabościach: {{focus}}",
       multipleChoice: "Wybór wielokrotny",
       fillInBlank: "Uzupełnij lukę",
       listening: "Słuchanie",
@@ -1353,6 +1357,8 @@ const es = {
 
     tasks: {
       generateTask: "Generar tarea",
+      practiceWeakSpots: "🎯 Practicar mis puntos débiles",
+      targetingFromHistory: "Trabajando sobre debilidades recientes: {{focus}}",
       multipleChoice: "Opción múltiple",
       fillInBlank: "Completar el espacio",
       listening: "Escucha",

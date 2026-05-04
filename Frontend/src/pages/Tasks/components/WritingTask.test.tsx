@@ -3,6 +3,7 @@ import '@testing-library/jest-dom';
 import * as useExplain from '@/api/hooks/useExplainAnswer';
 import * as useFB from '@/api/hooks/useCreateBlankSpaceTask';
 import * as useMC from '@/api/hooks/useCreateMultipleChoiceTask';
+import * as useAdaptive from '@/api/hooks/useGenerateAdaptiveTask';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
@@ -89,6 +90,16 @@ describe('WritingTask', () => {
       isSuccess: false,
       reset: vi.fn(),
     });
+
+    vi.spyOn(useAdaptive, 'useGenerateAdaptiveTask').mockReturnValue({
+      generate: vi.fn(),
+      generateAsync: vi.fn(),
+      isLoading: false,
+      data: undefined,
+      error: null,
+      isSuccess: false,
+      reset: vi.fn(),
+    } as unknown as ReturnType<typeof useAdaptive.useGenerateAdaptiveTask>);
 
     vi.spyOn(useExplain, 'useExplainAnswer').mockReturnValue({
       explainAnswer: mockExplain,
