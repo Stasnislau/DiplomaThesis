@@ -8,14 +8,14 @@ import LoadingSpinner from './LoadingSpinner';
 describe('LoadingSpinner', () => {
   it('renders with accessibility attributes', () => {
     render(<LoadingSpinner />);
-    const spinner = screen.getByLabelText('Loading');
+    const spinner = screen.getByLabelText(/Loading/i);
     expect(spinner).toBeInTheDocument();
     expect(spinner).toHaveAttribute('aria-busy', 'true');
   });
 
   it('applies custom className', () => {
     render(<LoadingSpinner className="custom-test" />);
-    const spinner = screen.getByLabelText('Loading');
+    const spinner = screen.getByLabelText(/Loading/i);
     expect(spinner).toHaveClass('custom-test');
   });
 

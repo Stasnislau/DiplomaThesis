@@ -9,7 +9,13 @@ import { fireEvent, render, screen } from '@testing-library/react';
 
 import WritingTask from './WritingTask';
 
+// Minimal stub of react-i18next that returns canned English strings
+// without going through the real provider. We must still re-export
+// `initReactI18next` because `@/config/i18n` (transitively imported
+// via fetchWithAuth) calls `i18n.use(initReactI18next).init(...)` at
+// module load time and would otherwise crash on undefined.
 vi.mock('react-i18next', () => ({
+  initReactI18next: { type: '3rdParty', init: vi.fn() },
   useTranslation: () => ({
     t: (key: string) => {
       const translations: Record<string, string> = {

@@ -4,7 +4,8 @@ import * as usePlacementTaskHook from '../api/hooks/usePlacementTask';
 import * as usePlacementTestStoreHook from '@/store/usePlacementTestStore';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
+import { renderWithProviders as render } from '@/test/renderWithProviders';
 
 import PlacementTaskContainer from './PlacementTaskContainer';
 import { UserAnswer } from '@/store/usePlacementTestStore';

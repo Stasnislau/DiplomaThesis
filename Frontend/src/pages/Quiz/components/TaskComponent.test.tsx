@@ -43,7 +43,7 @@ describe("TaskComponent", () => {
     render(<TaskComponent taskData={mockFillInTheBlankTask} {...defaultProps} />);
     
     expect(screen.getByText("This is a ___.")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/tasks.fillInBlank/)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/Fill in the Blank/i)).toBeInTheDocument();
   });
 
   it("calls setUserAnswer when clicking an option", () => {
@@ -56,7 +56,7 @@ describe("TaskComponent", () => {
   it("calls setUserAnswer when typing in input", () => {
     render(<TaskComponent taskData={mockFillInTheBlankTask} {...defaultProps} />);
     
-    const input = screen.getByPlaceholderText(/tasks.fillInBlank/);
+    const input = screen.getByPlaceholderText(/Fill in the Blank/i);
     fireEvent.change(input, { target: { value: "Warsaw" } });
     expect(defaultProps.setUserAnswer).toHaveBeenCalledWith("Warsaw");
   });
@@ -64,7 +64,7 @@ describe("TaskComponent", () => {
   it("calls onCheckAnswer when Check Answer button is clicked", () => {
     render(<TaskComponent taskData={mockMultipleChoiceTask} {...defaultProps} userAnswer="Warsaw" />);
     
-    fireEvent.click(screen.getByRole("button", { name: /tasks.checkAnswer/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Check Answer/i }));
     expect(defaultProps.onCheckAnswer).toHaveBeenCalled();
   });
 
@@ -77,8 +77,8 @@ describe("TaskComponent", () => {
       />
     );
     
-    expect(screen.getByText("tasks.correct")).toBeInTheDocument();
-    expect(screen.queryByText("tasks.incorrect")).not.toBeInTheDocument();
+    expect(screen.getByText("Correct!")).toBeInTheDocument();
+    expect(screen.queryByText("Incorrect")).not.toBeInTheDocument();
   });
 
   it("displays error message and correct answer when incorrect", () => {
@@ -90,8 +90,8 @@ describe("TaskComponent", () => {
       />
     );
     
-    expect(screen.getByText("tasks.incorrect")).toBeInTheDocument();
-    expect(screen.getByText(/Correct answer:/)).toBeInTheDocument();
+    expect(screen.getByText("Incorrect")).toBeInTheDocument();
+    expect(screen.getByText(/correct answer:/i)).toBeInTheDocument();
     expect(screen.getAllByText("Warsaw").length).toBeGreaterThan(0);
   });
 
