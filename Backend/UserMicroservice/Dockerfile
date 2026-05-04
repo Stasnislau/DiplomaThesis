@@ -3,7 +3,7 @@
 # tsx is needed at runtime (for prisma seed); we install it in the prod
 # stage with a cache mount so a re-deploy doesn't re-pull from npm.
 
-FROM node:20-alpine AS builder
+FROM node:25-alpine AS builder
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --no-cache openssl
 WORKDIR /app
@@ -21,7 +21,7 @@ RUN --mount=type=cache,target=/root/.cache/prisma \
 RUN npm run build
 
 # ── Production ──────────────────────────────────────────────────────────────
-FROM node:20-alpine AS production
+FROM node:25-alpine AS production
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --no-cache openssl
 RUN --mount=type=cache,target=/root/.npm \
