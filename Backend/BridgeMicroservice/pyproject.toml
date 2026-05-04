@@ -11,7 +11,7 @@ fastapi = {extras = ["all"], version = "^0.115.0"}
 requests = "^2.32.3"
 python-dotenv = "^1.0.1"
 mistral = "^18.0.1"
-mistralai = "^1.0.3"
+mistralai = ">=1.0.3,<3.0.0"
 uvicorn = "^0.30.6"
 openai = "^1.46.1"
 fastapi-cors = "^0.0.6"
