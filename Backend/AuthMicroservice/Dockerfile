@@ -30,8 +30,12 @@ WORKDIR /app
 COPY --from=builder --chown=node:node /app/dist ./dist
 COPY --from=builder --chown=node:node /app/node_modules ./node_modules
 COPY --from=builder --chown=node:node /app/package*.json ./
+COPY --from=builder --chown=node:node /app/prisma ./prisma
 
 USER node
 EXPOSE 3002
 
-CMD ["node", "dist/main"]
+# tsc emits to dist/src because prisma/* sources sit beside src/ and pull
+# the rootDir up to the project root. Run prisma migrate before starting
+# so a fresh DB picks up the schema.
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main"]
