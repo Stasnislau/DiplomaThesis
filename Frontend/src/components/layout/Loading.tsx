@@ -1,20 +1,27 @@
 import { useEffect, useState } from 'react';
 
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 const LoadingPage = () => {
-  const [loadingText, setLoadingText] = useState('Loading');
+  const { t } = useTranslation();
+  // Localised "Loading" base — `common.loading` already exists as
+  // "Loading..." / "Ładowanie..." / "Cargando...". Strip the trailing
+  // dots so we can re-add them in the animation cycle.
+  const baseText = t('common.loading').replace(/\.+$/, '');
+  const [loadingText, setLoadingText] = useState(baseText);
 
   useEffect(() => {
+    setLoadingText(baseText);
     const textInterval = setInterval(() => {
       setLoadingText((prevText) => {
-        if (prevText === 'Loading...') return 'Loading';
+        if (prevText === `${baseText}...`) return baseText;
         return prevText + '.';
       });
     }, 500);
 
     return () => clearInterval(textInterval);
-  }, []);
+  }, [baseText]);
 
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-300">

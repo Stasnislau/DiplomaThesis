@@ -5,6 +5,10 @@ import Spinner from "@/components/common/Spinner";
 import { TaskHistoryType } from "@/api/queries/getHistory";
 import { useGetHistory } from "@/api/hooks/useGetHistory";
 import { useTranslation } from "react-i18next";
+import {
+  getLocalizedLanguageName,
+  languageDisplayCode,
+} from "@/utils/localizeContent";
 
 const TYPE_FILTERS: { value: "" | TaskHistoryType; emoji: string }[] = [
   { value: "", emoji: "📚" },
@@ -132,13 +136,16 @@ const HistoryPage: React.FC = () => {
                           })}
                         </span>
                         {entry.language && (
-                          <span className="text-xs text-gray-400 dark:text-gray-500 font-mono uppercase">
-                            {entry.language}
+                          <span className="text-xs text-gray-400 dark:text-gray-500 font-mono">
+                            {languageDisplayCode(entry.language)}
                           </span>
                         )}
                       </div>
                       <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">
-                        {entry.title}
+                        {t(`history.entryTitle.${entry.taskType}`, {
+                          lang: getLocalizedLanguageName(entry.language),
+                          defaultValue: entry.title,
+                        })}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         {formatDate(entry.createdAt)}

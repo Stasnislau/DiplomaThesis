@@ -9,6 +9,68 @@
 import i18n from "@/config/i18n";
 import { lookupLesson } from "@/config/learningPathLessons";
 
+// Map either an ISO-639-1 code or a legacy "polish"/"polis" string to
+// the i18n key under `languages.<key>`. Legacy entries (history rows
+// written before the backend started normalising) are still in the
+// DB, so we tolerate truncated forms here.
+const ISO_TO_LANG_KEY: Record<string, string> = {
+  en: "english",
+  pl: "polish",
+  es: "spanish",
+  ru: "russian",
+  fr: "french",
+  de: "german",
+  it: "italian",
+};
+const LEGACY_LANG_PREFIX_TO_KEY: Array<[string, string]> = [
+  ["polis", "polish"],
+  ["polish", "polish"],
+  ["spani", "spanish"],
+  ["spanish", "spanish"],
+  ["russi", "russian"],
+  ["russian", "russian"],
+  ["germa", "german"],
+  ["german", "german"],
+  ["frenc", "french"],
+  ["french", "french"],
+  ["itali", "italian"],
+  ["italian", "italian"],
+  ["engli", "english"],
+  ["english", "english"],
+];
+
+export function languageDisplayCode(stored: string | null | undefined): string {
+  if (!stored) return "";
+  const lower = stored.toLowerCase();
+  if (lower.length === 2 && ISO_TO_LANG_KEY[lower]) return lower.toUpperCase();
+  for (const [prefix, key] of LEGACY_LANG_PREFIX_TO_KEY) {
+    if (lower.startsWith(prefix)) {
+      const isoEntry = Object.entries(ISO_TO_LANG_KEY).find(
+        ([, k]) => k === key,
+      );
+      if (isoEntry) return isoEntry[0].toUpperCase();
+    }
+  }
+  return stored.toUpperCase();
+}
+
+export function getLocalizedLanguageName(
+  stored: string | null | undefined,
+): string {
+  if (!stored) return "";
+  const lower = stored.toLowerCase();
+  let key: string | undefined =
+    lower.length === 2 ? ISO_TO_LANG_KEY[lower] : undefined;
+  if (!key) {
+    const legacy = LEGACY_LANG_PREFIX_TO_KEY.find(([prefix]) =>
+      lower.startsWith(prefix),
+    );
+    if (legacy) key = legacy[1];
+  }
+  if (!key) return stored;
+  return i18n.t(`languages.${key}`, { defaultValue: stored });
+}
+
 /** "Grammar Guru" → "grammarGuru". Strips diacritics so French/Polish
  *  themes also produce ASCII-only keys. */
 export function slugifyKey(text: string): string {
