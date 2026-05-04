@@ -43,9 +43,13 @@ function buildHeaders(
 export async function fetchWithAuth(url: URL | string, options: FetchOptions) {
   try {
     let token = getAccessToken();
+    // `credentials: "include"` is required for the httpOnly refresh
+    // cookie to ride along on /auth/refresh and /auth/logout. The
+    // gateway's CORS allows it (`credentials: true`).
     let response = await fetch(url, {
       ...options,
       headers: buildHeaders(token, options),
+      credentials: "include",
     });
 
     if (response.status === 401) {
@@ -63,6 +67,7 @@ export async function fetchWithAuth(url: URL | string, options: FetchOptions) {
       response = await fetch(url, {
         ...options,
         headers: buildHeaders(token, options),
+        credentials: "include",
       });
     }
     return response;

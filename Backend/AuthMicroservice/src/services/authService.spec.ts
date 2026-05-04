@@ -291,10 +291,10 @@ describe("AuthService", () => {
 
       expect(result).toBe("mock.refresh.token");
       expect(jwtService.sign).toHaveBeenCalledWith(
-        {
+        expect.objectContaining({
           email: mockUser.email,
           sub: mockUser.id,
-        },
+        }),
         expect.objectContaining({
           secret: expect.any(String),
           expiresIn: expect.any(String),

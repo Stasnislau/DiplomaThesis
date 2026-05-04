@@ -9,7 +9,10 @@ import {
   Patch,
   Delete,
   Param,
+  Req,
+  Res,
 } from "@nestjs/common";
+import { Request as ExpressRequest, Response } from "express";
 import { AuthService } from "../services/authService";
 import { JwtAuthGuard } from "../guards/jwtAuthGuard";
 import { LoginDto } from "../dtos/loginDto";
@@ -18,32 +21,97 @@ import { RolesGuard } from "../guards/rolesGuard";
 import { Roles } from "../guards/roles.decorator";
 import { UserDto } from "../dtos/userDto";
 
+const REFRESH_COOKIE = "refreshToken";
+const REFRESH_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
+function refreshCookieOptions() {
+  // Production sits behind Caddy with HTTPS, so Secure can be hard-on.
+  // Locally (NODE_ENV !== "production") we fall back to non-Secure so
+  // the cookie still gets set on http://localhost.
+  const isProd = process.env.NODE_ENV === "production";
+  return {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: "lax" as const,
+    path: "/",
+    maxAge: REFRESH_COOKIE_MAX_AGE_MS,
+  };
+}
+
+type CookieRequest = ExpressRequest;
+
+/** Device fingerprint = SHA-256(User-Agent ‖ origin IP). Gateway puts
+ *  the real client IP into X-Forwarded-For — falling back to req.ip
+ *  is fine on direct hits (rare in prod). */
+function fingerprintFor(req: ExpressRequest): string {
+  const ua = (req.headers["user-agent"] as string) ?? "";
+  const xff = (req.headers["x-forwarded-for"] as string) ?? "";
+  const ip = xff ? xff.split(",")[0].trim() : (req.ip ?? "");
+  return AuthService.deviceFingerprint(ua, ip);
+}
+
 @Controller("auth")
 export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post("login")
-  async login(@Body() loginDto: LoginDto) {
-    const response = await this.authService.login(loginDto);
+  async login(
+    @Body() loginDto: LoginDto,
+    @Req() req: CookieRequest,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { accessToken, refreshToken } = await this.authService.login(
+      loginDto,
+      fingerprintFor(req),
+    );
+    // Refresh token never crosses the JS boundary on the frontend —
+    // it lives in an httpOnly cookie so XSS cannot read it. The body
+    // payload now carries only the short-lived access token.
+    res.cookie(REFRESH_COOKIE, refreshToken, refreshCookieOptions());
     return {
       success: true,
-      payload: response,
+      payload: { accessToken },
     };
   }
 
   @Post("refresh")
-  async refreshToken(@Body("refreshToken") refreshToken: string) {
-    const response = await this.authService.refreshToken(refreshToken);
+  async refreshToken(
+    @Req() req: CookieRequest,
+    @Body("refreshToken") bodyRefreshToken: string | undefined,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    // Prefer the cookie. Fall back to the body for clients that
+    // haven't migrated yet (so a partial deploy doesn't break logins).
+    const refreshToken = req.cookies?.[REFRESH_COOKIE] ?? bodyRefreshToken;
+    const response = await this.authService.refreshToken(
+      refreshToken,
+      fingerprintFor(req),
+    );
+    if (response.refreshToken) {
+      res.cookie(REFRESH_COOKIE, response.refreshToken, refreshCookieOptions());
+    }
     return {
       success: true,
-      payload: response,
+      payload: { accessToken: response.accessToken },
     };
   }
 
   @UseGuards(JwtAuthGuard)
   @Post("logout")
-  async logout(@Body("refreshToken") refreshToken: string) {
-    await this.authService.removeRefreshToken(refreshToken);
+  async logout(
+    @Req() req: CookieRequest,
+    @Body("refreshToken") bodyRefreshToken: string | undefined,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const refreshToken = req.cookies?.[REFRESH_COOKIE] ?? bodyRefreshToken;
+    if (refreshToken) {
+      try {
+        await this.authService.removeRefreshToken(refreshToken);
+      } catch {
+        // Token already gone is fine; we still want to clear the cookie.
+      }
+    }
+    res.clearCookie(REFRESH_COOKIE, { path: "/" });
     return {
       success: true,
       payload: "Logged out successfully",

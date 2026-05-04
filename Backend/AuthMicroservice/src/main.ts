@@ -5,6 +5,7 @@ import { AppModule } from "./appModule";
 import { ConfigService } from "@nestjs/config";
 import { ErrorHandlingMiddleware } from "./middlewares/errorHandlingMiddleware";
 import { NestFactory } from "@nestjs/core";
+import * as cookieParser from "cookie-parser";
 
 async function bootstrap() {
   const logger = new Logger("AuthMicroservice");
@@ -12,6 +13,10 @@ async function bootstrap() {
   app.useGlobalFilters(new ErrorHandlingMiddleware());
   app.useGlobalPipes(new ValidationPipe());
   app.setGlobalPrefix("api");
+  // cookie-parser is required for refresh-token cookie reads on
+  // /auth/refresh and /auth/logout. Without it req.cookies is
+  // undefined and refresh silently fails.
+  app.use(cookieParser());
   app.enableCors({
     origin: [
       "http://localhost:3000",
