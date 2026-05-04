@@ -93,7 +93,7 @@ jobs:
       # is enough — no real Auth/User/Bridge needed in CI.
       - run: npx playwright test --project=chromium
       - if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report
           path: Frontend/playwright-report/
