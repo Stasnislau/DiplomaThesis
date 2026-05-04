@@ -125,6 +125,73 @@ class WritingTaskService:
             ExplainAnswerResponse,
         )
 
+    @staticmethod
+    def derive_adaptive_focus(
+        history_entries: list[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """Extract a (topic, keywords, weaknesses) focus from the user's
+        recent history rows. Used by the /writing/adaptive endpoint to
+        bias the next generated task toward what the user is actually
+        struggling with.
+
+        Heuristics:
+          - Placement entries contribute their stored `weaknesses` claim
+            from metadata (the AI's structured assessment).
+          - Speaking entries with `errorCount >= 3` contribute the most
+            common error categories from `metadata.errorTypes` (when
+            present) and lower the topic level toward review.
+          - Low-score writing/listening entries contribute their
+            `metadata.topic` (if any) as a recurring topic to revisit.
+
+        Returns a dict suitable for handing to the standard task
+        generators: `{ topic: Optional[str], keywords: list[str],
+        weaknesses: list[str] }`. Empty fields are fine — the caller
+        falls back to the regular variety picker when nothing useful
+        is extracted.
+        """
+        weaknesses: list[str] = []
+        keywords: list[str] = []
+        topics: list[str] = []
+        for entry in history_entries:
+            meta = entry.get("metadata") or {}
+            if entry.get("taskType") == "placement":
+                w = meta.get("weaknesses")
+                if isinstance(w, list):
+                    weaknesses.extend(str(x) for x in w if x)
+                elif isinstance(w, str) and w.strip():
+                    weaknesses.append(w.strip())
+            score = entry.get("score")
+            if isinstance(score, (int, float)) and score < 60:
+                t = meta.get("topic")
+                if isinstance(t, str) and t.strip():
+                    topics.append(t.strip())
+                # speaking errors come back as a count — when high,
+                # we ask for "review" tasks.
+                ecount = meta.get("errorCount")
+                if isinstance(ecount, int) and ecount >= 3:
+                    weaknesses.append("recent pronunciation issues")
+        # Dedupe while preserving order so the latest few weaknesses
+        # bubble first.
+        def _dedupe(items: list[str]) -> list[str]:
+            seen: set[str] = set()
+            out: list[str] = []
+            for x in items:
+                k = x.lower()
+                if k in seen:
+                    continue
+                seen.add(k)
+                out.append(x)
+            return out
+
+        weaknesses = _dedupe(weaknesses)[:5]
+        keywords = _dedupe(keywords + weaknesses)[:8]
+        topic = topics[0] if topics else None
+        return {
+            "topic": topic,
+            "keywords": keywords,
+            "weaknesses": weaknesses,
+        }
+
     async def _process_ai_response_and_validate(self, response_str: str, is_fill_in_blank: bool = False) -> Dict[str, Any]:
         from utils.error_codes import AI_RESPONSE_PARSE_FAILED, raise_with_code
         try:
