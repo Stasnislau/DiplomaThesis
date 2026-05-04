@@ -1,5 +1,6 @@
 import React from 'react';
 import cn from 'classnames';
+import { useTranslation } from 'react-i18next';
 import { useThemeStore } from '@/store/useThemeStore';
 
 interface ThemeToggleProps {
@@ -13,6 +14,10 @@ interface ThemeToggleProps {
  */
 export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className, showLabel = false }) => {
   const { isDark, toggleTheme } = useThemeStore();
+  const { t } = useTranslation();
+  const switchLabel = isDark
+    ? t('a11y.lightMode')
+    : t('a11y.darkMode');
 
   return (
     <div className={cn('flex items-center gap-2', className)}>
@@ -25,9 +30,9 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className, showLabel =
           'transition-colors duration-200',
           'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900'
         )}
-        aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+        aria-label={switchLabel}
         aria-pressed={isDark}
-        title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+        title={switchLabel}
       >
         {/* Sun Icon */}
         <svg
@@ -70,7 +75,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className, showLabel =
       
       {showLabel && (
         <span className="text-sm text-gray-600 dark:text-gray-300">
-          {isDark ? 'Dark' : 'Light'}
+          {isDark ? t('settings.themeDark') : t('settings.themeLight')}
         </span>
       )}
     </div>
@@ -82,11 +87,12 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className, showLabel =
  */
 export const ThemeSelector: React.FC<{ className?: string }> = ({ className }) => {
   const { theme, setTheme } = useThemeStore();
+  const { t } = useTranslation();
 
   return (
     <div className={cn('flex flex-col gap-2', className)}>
       <label htmlFor="theme-select" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-        Theme
+        {t('settings.theme')}
       </label>
       <select
         id="theme-select"
@@ -99,11 +105,11 @@ export const ThemeSelector: React.FC<{ className?: string }> = ({ className }) =
           'text-gray-900 dark:text-gray-100',
           'focus:outline-none focus:ring-2 focus:ring-blue-500'
         )}
-        aria-label="Select theme"
+        aria-label={t('settings.theme')}
       >
-        <option value="light">Light</option>
-        <option value="dark">Dark</option>
-        <option value="system">System</option>
+        <option value="light">{t('settings.themeLight')}</option>
+        <option value="dark">{t('settings.themeDark')}</option>
+        <option value="system">{t('settings.themeSystem')}</option>
       </select>
     </div>
   );

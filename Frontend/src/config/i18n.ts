@@ -62,6 +62,14 @@ const en = {
         materials: "Materials",
         lesson: "Lesson",
       },
+      entryTitle: {
+        placement: "Placement test ({{lang}})",
+        speaking: "Speech analysis ({{lang}})",
+        listening: "Listening task ({{lang}})",
+        writing: "Writing task ({{lang}})",
+        materials: "Materials quiz",
+        lesson: "Lesson",
+      },
     },
 
     dashboard: {
@@ -260,10 +268,19 @@ const en = {
     settings: {
       title: "Settings",
       theme: "Theme",
+      themeLight: "Light",
+      themeDark: "Dark",
+      themeSystem: "System",
       language: "Language",
       notifications: "Notifications",
       privacy: "Privacy",
       account: "Account",
+    },
+
+    nativeLanguagePicker: {
+      title: "What's your native language?",
+      subtitle: "This helps us personalise your learning experience.",
+      loadingLanguages: "Loading languages…",
     },
 
     materials: {
@@ -658,6 +675,14 @@ const pl = {
         materials: "Materiały",
         lesson: "Lekcja",
       },
+      entryTitle: {
+        placement: "Test poziomujący ({{lang}})",
+        speaking: "Analiza wypowiedzi ({{lang}})",
+        listening: "Zadanie ze słuchania ({{lang}})",
+        writing: "Zadanie pisemne ({{lang}})",
+        materials: "Quiz z materiałów",
+        lesson: "Lekcja",
+      },
     },
 
     dashboard: {
@@ -854,10 +879,19 @@ const pl = {
     settings: {
       title: "Ustawienia",
       theme: "Motyw",
+      themeLight: "Jasny",
+      themeDark: "Ciemny",
+      themeSystem: "Systemowy",
       language: "Język",
       notifications: "Powiadomienia",
       privacy: "Prywatność",
       account: "Konto",
+    },
+
+    nativeLanguagePicker: {
+      title: "Jaki jest Twój język ojczysty?",
+      subtitle: "To pomaga nam dopasować Twoją naukę.",
+      loadingLanguages: "Ładowanie języków…",
     },
 
     learningPath: {
@@ -1249,6 +1283,14 @@ const es = {
         materials: "Materiales",
         lesson: "Lección",
       },
+      entryTitle: {
+        placement: "Prueba de nivel ({{lang}})",
+        speaking: "Análisis de habla ({{lang}})",
+        listening: "Tarea de comprensión auditiva ({{lang}})",
+        writing: "Tarea de escritura ({{lang}})",
+        materials: "Cuestionario de materiales",
+        lesson: "Lección",
+      },
     },
 
     dashboard: {
@@ -1442,10 +1484,19 @@ const es = {
     settings: {
       title: "Configuración",
       theme: "Tema",
+      themeLight: "Claro",
+      themeDark: "Oscuro",
+      themeSystem: "Sistema",
       language: "Idioma",
       notifications: "Notificaciones",
       privacy: "Privacidad",
       account: "Cuenta",
+    },
+
+    nativeLanguagePicker: {
+      title: "¿Cuál es tu idioma nativo?",
+      subtitle: "Esto nos ayuda a personalizar tu experiencia de aprendizaje.",
+      loadingLanguages: "Cargando idiomas…",
     },
 
     learningPath: {

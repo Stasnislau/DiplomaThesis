@@ -237,13 +237,15 @@ LOCALIZATION (HARD RULE):
             evaluation = EvaluateTestDto(**parsed_result)
 
             if user_context:
+                from utils.language_codes import to_iso_language
+
                 await self.user_service.log_task_history(
                     user_context,
                     {
                         "taskType": "placement",
                         "title": f"Placement test ({language})",
                         "score": int(percentage),
-                        "language": (language or "").lower()[:5] or None,
+                        "language": to_iso_language(language),
                         "metadata": {
                             "level": evaluation.level,
                             "confidence": evaluation.confidence,

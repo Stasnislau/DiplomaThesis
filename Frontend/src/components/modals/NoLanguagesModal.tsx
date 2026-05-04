@@ -12,6 +12,7 @@ import React, { useState } from "react";
 
 import { useAvailableLanguages } from "@/api/hooks/useAvailableLanguages";
 import { useSetNativeLanguage } from "@/api/hooks/useSetNativeLanguage";
+import { useTranslation } from "react-i18next";
 
 const flagIcons: Record<string, React.ReactElement> = {
   es: <SpanishFlagIcon className="w-10 h-10" />,
@@ -48,6 +49,7 @@ export const NoLanguagesModal: React.FC = () => {
   const { languages, isLoading } = useAvailableLanguages();
   const { setNativeLanguage } = useSetNativeLanguage();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   const handleSelect = (languageId: string) => {
     setSelectedId(languageId);
@@ -91,7 +93,7 @@ export const NoLanguagesModal: React.FC = () => {
           transition={{ delay: 0.1 }}
           className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-1"
         >
-          What&apos;s your native language?
+          {t("nativeLanguagePicker.title")}
         </motion.h2>
 
         <motion.p
@@ -100,14 +102,14 @@ export const NoLanguagesModal: React.FC = () => {
           transition={{ delay: 0.15 }}
           className="text-sm text-center text-gray-500 dark:text-gray-400 mb-6"
         >
-          This helps us personalize your learning experience
+          {t("nativeLanguagePicker.subtitle")}
         </motion.p>
 
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-10 gap-3">
             <div className="w-10 h-10 rounded-full border-3 border-indigo-200 dark:border-indigo-800 border-t-indigo-500 dark:border-t-indigo-400 animate-spin" />
             <p className="text-sm text-gray-400 dark:text-gray-500">
-              Loading languages...
+              {t("nativeLanguagePicker.loadingLanguages")}
             </p>
           </div>
         ) : (

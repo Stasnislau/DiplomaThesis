@@ -440,13 +440,15 @@ class SpeakingService:
         )
 
         if user_context:
+            from utils.language_codes import to_iso_language
+
             await self.user_service.log_task_history(
                 user_context,
                 {
                     "taskType": "speaking",
                     "title": f"Speaking analysis ({language or 'unknown'})",
                     "score": int(round(pronunciation.fluency_score)) if pronunciation else None,
-                    "language": (language or "").lower()[:5] or None,
+                    "language": to_iso_language(language),
                     "metadata": {
                         "transcriptionPreview": result.transcription[:120],
                         "errorCount": len(errors),
