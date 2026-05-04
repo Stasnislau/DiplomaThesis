@@ -11,6 +11,10 @@ import { useCreateBlankSpaceTask } from "@/api/hooks/useCreateBlankSpaceTask";
 import { useCreateMultipleChoiceTask } from "@/api/hooks/useCreateMultipleChoiceTask";
 import { useTranslation } from "react-i18next";
 import { useExplainAnswer } from "@/api/hooks/useExplainAnswer";
+import {
+  getLocalizedLesson,
+  getLocalizedLessonType,
+} from "@/utils/localizeContent";
 
 const CORRECT_TO_COMPLETE = 5;
 
@@ -56,6 +60,8 @@ const CompletionScreen = ({
   const { t } = useTranslation();
   const accuracy = taskCount > 0 ? Math.round((correctCount / taskCount) * 100) : 0;
   const stars = accuracy >= 90 ? 3 : accuracy >= 70 ? 2 : 1;
+  const localizedLesson = getLocalizedLesson(lesson.title, lesson.description);
+  const localizedType = getLocalizedLessonType(lesson.type);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center px-4 py-10">
@@ -74,10 +80,10 @@ const CompletionScreen = ({
             {t("learningPath.practice.completionTitle")}
           </p>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-            {lesson.title}
+            {localizedLesson.title}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-            {icon} {lesson.type} · {lesson.durationMinutes} min
+            {icon} {localizedType} · {lesson.durationMinutes} min
           </p>
 
           <div className="grid grid-cols-3 gap-3 mb-6">
@@ -154,6 +160,8 @@ interface ContentProps { lesson: Lesson; language: string; level: string; }
 const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const localizedLesson = getLocalizedLesson(lesson.title, lesson.description);
+  const localizedType = getLocalizedLessonType(lesson.type);
 
   const [currentTask,     setCurrentTask]     = useState<MultipleChoiceTask | FillInTheBlankTask | null>(null);
   const [userAnswer,      setUserAnswer]       = useState("");
@@ -293,7 +301,7 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-2 mb-1">
                 <span className="text-xs font-bold uppercase tracking-widest bg-white/20 px-2.5 py-0.5 rounded-full">
-                  {lesson.type}
+                  {localizedType}
                 </span>
                 <span className="text-xs font-bold uppercase tracking-widest bg-white/20 px-2.5 py-0.5 rounded-full">
                   {level}
@@ -302,8 +310,8 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
                   ⏱ {lesson.durationMinutes} min
                 </span>
               </div>
-              <h1 className="text-2xl font-bold">{lesson.title}</h1>
-              <p className="text-white/80 text-sm mt-1">{lesson.description}</p>
+              <h1 className="text-2xl font-bold">{localizedLesson.title}</h1>
+              <p className="text-white/80 text-sm mt-1">{localizedLesson.description}</p>
             </div>
           </div>
 
