@@ -505,6 +505,9 @@ const en = {
     a11y: {
       skipToContent: "Skip to main content",
       loading: "Content is loading",
+      loadingText: "Loading text...",
+      loadingCard: "Loading card...",
+      loadingTask: "Loading task...",
       menuOpen: "Open menu",
       menuClose: "Close menu",
       darkMode: "Switch to dark mode",
@@ -1097,6 +1100,9 @@ const pl = {
     a11y: {
       skipToContent: "Przejdź do głównej treści",
       loading: "Treść się ładuje",
+      loadingText: "Ładowanie tekstu...",
+      loadingCard: "Ładowanie karty...",
+      loadingTask: "Ładowanie zadania...",
       menuOpen: "Otwórz menu",
       menuClose: "Zamknij menu",
       darkMode: "Przełącz na tryb ciemny",
@@ -1681,6 +1687,9 @@ const es = {
     a11y: {
       skipToContent: "Saltar al contenido principal",
       loading: "El contenido se está cargando",
+      loadingText: "Cargando texto...",
+      loadingCard: "Cargando tarjeta...",
+      loadingTask: "Cargando tarea...",
       menuOpen: "Abrir menú",
       menuClose: "Cerrar menú",
       darkMode: "Cambiar a modo oscuro",

@@ -70,7 +70,7 @@ export const SkeletonText: React.FC<{
 }> = ({ lines = 3, className }) => {
   const { t } = useTranslation();
   return (
-    <div className={cn('space-y-2', className)} role="status" aria-label={t("common.loading")}>
+    <div className={cn('space-y-2', className)} role="status" aria-label={t("a11y.loadingText")}>
       {Array.from({ length: lines }).map((_, index) => (
         <Skeleton
           key={index}
@@ -94,7 +94,7 @@ export const SkeletonCard: React.FC<{ className?: string }> = ({ className }) =>
         className
       )}
       role="status"
-      aria-label={t("common.loading")}
+      aria-label={t("a11y.loadingCard")}
     >
       <div className="flex items-center space-x-4 mb-4">
         <Skeleton variant="circular" width="w-12" height="h-12" />
@@ -117,7 +117,7 @@ export const SkeletonTask: React.FC<{ className?: string }> = ({ className }) =>
     <div
       className={cn('space-y-6', className)}
       role="status"
-      aria-label={t("common.loading")}
+      aria-label={t("a11y.loadingTask")}
     >
       {/* Question */}
       <Skeleton variant="rounded" height="h-16" />

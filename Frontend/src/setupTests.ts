@@ -1,4 +1,9 @@
 import "@testing-library/jest-dom";
+// Initialise the real i18next instance for the entire test run so
+// `useTranslation` returns the English fallback strings instead of
+// raw keys like `a11y.loading`. Tests that need a different locale
+// or a custom mock can still override per-suite with vi.mock.
+import "@/config/i18n";
 
 import { vi } from "vitest";
 

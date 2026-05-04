@@ -16,7 +16,10 @@ vi.mock("@/store/useAuthStore", () => ({
 }));
 
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
+// `global` isn't typed in the test compilation by default; cast to
+// `globalThis` so this works under both Node and the jsdom-shaped
+// environment vitest sets up.
+(globalThis as unknown as { fetch: typeof mockFetch }).fetch = mockFetch;
 
 describe("fetchWithAuth", () => {
   beforeEach(() => {

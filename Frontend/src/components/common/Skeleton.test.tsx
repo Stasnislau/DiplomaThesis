@@ -54,7 +54,10 @@ describe('Skeleton', () => {
 
     it('has proper accessibility label', () => {
       render(<Skeleton />);
-      expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'Loading...');
+      expect(screen.getByRole('status')).toHaveAttribute(
+        'aria-label',
+        'Loading...',
+      );
     });
   });
 
