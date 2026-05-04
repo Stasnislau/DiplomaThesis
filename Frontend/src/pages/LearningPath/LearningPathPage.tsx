@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  getLocalizedLesson,
   getLocalizedLessonType,
   getLocalizedModuleDescription,
   getLocalizedModuleTitle,
@@ -47,6 +48,7 @@ const LessonCard = ({ lesson, onStart }: LessonCardProps) => {
   const [expanded, setExpanded] = useState(false);
   const isLocked = lesson.status === "LOCKED";
   const isCompleted = lesson.status === "COMPLETED";
+  const localizedLesson = getLocalizedLesson(lesson.title, lesson.description);
 
   return (
     <div
@@ -83,14 +85,14 @@ const LessonCard = ({ lesson, onStart }: LessonCardProps) => {
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2 mb-1">
             <h3 className={`font-semibold text-sm truncate ${isLocked ? "text-gray-400 dark:text-gray-500" : "text-gray-900 dark:text-gray-100"}`}>
-              {lesson.title}
+              {localizedLesson.title}
             </h3>
             <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${TYPE_COLORS[lesson.type] || "bg-gray-100 text-gray-600"}`}>
               {getLocalizedLessonType(lesson.type)}
             </span>
           </div>
           <p className={`text-xs ${isLocked ? "text-gray-400" : "text-gray-500 dark:text-gray-400"}`}>
-            {lesson.description}
+            {localizedLesson.description}
           </p>
         </div>
 

@@ -7,6 +7,7 @@
  * always safe to call.
  */
 import i18n from "@/config/i18n";
+import { lookupLesson } from "@/config/learningPathLessons";
 
 /** "Grammar Guru" → "grammarGuru". Strips diacritics so French/Polish
  *  themes also produce ASCII-only keys. */
@@ -75,6 +76,22 @@ export function getLocalizedModuleTitle(rawTitle: string): string {
     theme: getLocalizedTheme(englishTheme),
     defaultValue: rawTitle,
   });
+}
+
+/** Translate a lesson card's title + description. The lookup table
+ *  in `learningPathLessons.ts` keys by camelCase slug of the English
+ *  title. If the slug isn't there, the raw English from Bridge is
+ *  returned unchanged so a missing entry never breaks the UI. */
+export function getLocalizedLesson(
+  englishTitle: string,
+  englishDescription: string,
+): { title: string; description: string } {
+  const slug = slugifyKey(englishTitle);
+  const lesson = lookupLesson(slug, i18n.language);
+  return {
+    title: lesson?.title ?? englishTitle,
+    description: lesson?.description ?? englishDescription,
+  };
 }
 
 /** Bridge formats module.description as
