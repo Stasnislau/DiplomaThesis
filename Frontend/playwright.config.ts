@@ -15,6 +15,17 @@ export default defineConfig({
     video: "retain-on-failure",
   },
 
+  // Boot the dev server automatically. Tests mock API routes via
+  // Playwright's `page.route` so they don't depend on a real backend.
+  webServer: {
+    command: "npm run dev",
+    url: "http://localhost:3000",
+    reuseExistingServer: !process.env.CI,
+    timeout: 120_000,
+    stdout: "ignore",
+    stderr: "pipe",
+  },
+
   projects: [
     {
       name: "chromium",

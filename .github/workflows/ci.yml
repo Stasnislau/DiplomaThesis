@@ -1,0 +1,127 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel any in-flight run for the same branch when a new commit lands.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Frontend (tsc + vitest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: Frontend/package-lock.json
+      - run: npm ci --legacy-peer-deps
+      - run: npx tsc -b
+      - run: npx vitest run
+
+  auth:
+    name: Auth microservice (jest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Backend/AuthMicroservice
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: Backend/AuthMicroservice/package-lock.json
+      - run: npm ci
+      # Generate Prisma client so service files that import @prisma/client
+      # have types to compile against in CI.
+      - run: npx prisma generate
+      - run: npx jest
+
+  user:
+    name: User microservice (jest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Backend/UserMicroservice
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: Backend/UserMicroservice/package-lock.json
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npx jest
+
+  e2e:
+    name: Frontend E2E (Playwright)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: Frontend/package-lock.json
+      - run: npm ci --legacy-peer-deps
+      # Cache the Playwright browser binaries between runs.
+      - uses: actions/cache@v4
+        id: pw-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('Frontend/package-lock.json') }}
+      - if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+      # Tests stub all backend routes via page.route, so the dev server
+      # is enough — no real Auth/User/Bridge needed in CI.
+      - run: npx playwright test --project=chromium
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: Frontend/playwright-report/
+          retention-days: 7
+
+  bridge:
+    name: Bridge microservice (pytest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Backend/BridgeMicroservice
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Poetry
+        run: pipx install poetry
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry/virtualenvs
+          key: poetry-${{ runner.os }}-${{ hashFiles('Backend/BridgeMicroservice/poetry.lock') }}
+      - run: poetry install --no-interaction --no-root
+      # Two test files import asyncpg + google.api_core which only exist
+      # inside the Docker image. Skip them in CI — the rest of the suite
+      # still covers the changes we make in this repo.
+      - run: >
+          poetry run pytest -q
+          --ignore=tests/services/test_learning_path_service.py
+          --ignore=tests/services/test_listening_task_service.py

@@ -1,10 +1,20 @@
-import { Body, Controller, Get, Post, Put, Request } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Put,
+  Request,
+  UseGuards,
+} from "@nestjs/common";
 import { Language, User } from "@prisma/client";
 
 import { AuthenticatedRequest } from "src/types/AuthenticatedRequest";
 import { BaseResponse } from "src/types/BaseResponse";
 import { EventPattern } from "@nestjs/microservices";
 import { UserService } from "../services/userService";
+import { Roles } from "../guards/roles.decorator";
+import { RolesGuard } from "../guards/rolesGuard";
 
 @Controller("")
 export class UserController {
@@ -30,7 +40,12 @@ export class UserController {
     return this.userService.getUser(req.user.id);
   }
 
+  // ADMIN-only — exposes every account's email/name/createdAt. Without
+  // the guard, any authenticated USER could list all PII of every user
+  // on the platform.
   @Get("users")
+  @UseGuards(RolesGuard)
+  @Roles("ADMIN")
   async getUsers(): Promise<BaseResponse<User[]>> {
     return this.userService.getUsers();
   }

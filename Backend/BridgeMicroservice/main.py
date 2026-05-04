@@ -187,22 +187,15 @@ async def log_requests(request: Request, call_next: Callable[[Request], Awaitabl
     return response
 
 
-@app.middleware("http")
-async def catch_all_undefined_endpoints(request: Request, call_next: Callable[[Request], Awaitable[JSONResponse]]) -> JSONResponse:
-    logger.debug(f"Checking endpoint: {request.url.path}")
-    response = await call_next(request)
-    if response.status_code == 404:
-        logger.warning(f"404 Not Found: {request.url.path}")
-        return JSONResponse(
-            status_code=404,
-            content={
-                "success": False,
-                "payload": {
-                    "message": "No such endpoint",
-                },
-            },
-        )
-    return response
+# NB: do NOT replace every 404 response here — that would clobber the
+# legitimate `raise_with_code(CODE, 404, "...")` responses our handlers
+# emit (e.g. "INPUT_VALIDATION_FAILED: Token id … not found"), erasing
+# the structured code the frontend's parseApiError relies on.
+#
+# Unmatched-route 404s come from Starlette's default handler with the
+# body `{"detail": "Not Found"}` — that's already a shape our frontend
+# handles (it falls through to the generic translation), so we leave
+# it alone.
 
 
 if __name__ == "__main__":
