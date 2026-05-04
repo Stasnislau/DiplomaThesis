@@ -65,7 +65,7 @@ export async function parseApiResponse<T = unknown>(
   if (!isObject(data)) {
     throw asApiError(null, fallback);
   }
-  return data as BaseResponse<T>;
+  return data as unknown as BaseResponse<T>;
 }
 
 /**
