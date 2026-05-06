@@ -5,6 +5,7 @@ import { refresh as apiRefresh } from "../api/mutations/refresh";
 import { create } from "zustand";
 import { getAccessToken } from "@/utils/getAccessToken";
 import { jwtDecode } from "jwt-decode";
+import { queryClient } from "@/config/queryConfig";
 
 interface DecodedToken {
   role: string;
@@ -77,6 +78,7 @@ export const useAuthStore = create<AuthState>((set, _get) => ({
     // Server clears the refresh-token cookie as part of /auth/logout.
     apiLogout();
     localStorage.removeItem("accessToken");
+    queryClient.clear();
     set({
       isAuthenticated: false,
       isLoading: false,
