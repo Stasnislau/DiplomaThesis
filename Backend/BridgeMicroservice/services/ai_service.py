@@ -1,7 +1,9 @@
+import asyncio
 import hashlib
 import json
 import logging
 import os
+import random
 import time
 
 from dotenv import load_dotenv
@@ -9,6 +11,8 @@ from fastapi import HTTPException, status
 from litellm import acompletion
 from litellm.exceptions import (
     AuthenticationError,
+    BadRequestError,
+    NotFoundError,
     RateLimitError,
     Timeout,
 )
@@ -20,6 +24,42 @@ from utils.user_context import UserContext
 logger = logging.getLogger(__name__)
 
 load_dotenv()
+
+
+# Retry tunables. Free OpenRouter endpoints in particular hand out
+# "no endpoints found" / 502 / timeout when capacity is exhausted —
+# usually transient, gone in a second or two. Three attempts with
+# exp-backoff + jitter is enough to ride out those blips without
+# making the user wait forever.
+_AI_RETRY_MAX_ATTEMPTS = 3
+_AI_RETRY_BASE_DELAY_S = 1.0
+_AI_RETRY_MAX_DELAY_S = 8.0
+
+
+def _is_retryable(exc: BaseException) -> bool:
+    """Decide whether an AI provider error is worth retrying.
+
+    Retry: timeouts, rate-limits, capacity-exhausted (NotFound on free
+    tier endpoints), and generic upstream errors (5xx / network).
+    Never retry: auth failures (key won't change between attempts) and
+    BadRequest unless it's the capacity-style 'no endpoints' marker.
+    """
+    if isinstance(exc, (Timeout, RateLimitError)):
+        return True
+    if isinstance(exc, NotFoundError):
+        # OpenRouter signals "free model at capacity" with a 404 body
+        # like {"error":{"message":"No endpoints found for X"}}. That
+        # IS transient — a retry usually finds a free slot.
+        return "no endpoints" in str(exc).lower()
+    if isinstance(exc, AuthenticationError):
+        return False
+    if isinstance(exc, BadRequestError):
+        return False
+    if isinstance(exc, HTTPException):
+        return False
+    # Treat any other exception (network, 5xx, unexpected) as worth
+    # one or two retries before giving up.
+    return True
 
 
 # In-process AI response cache. Two motivations:
@@ -184,47 +224,87 @@ class AI_Service:
                 logger.info("ai_service cache hit (model=%s)", litellm_model)
                 return cached
 
-        try:
-            chat_response = await acompletion(
-                model=litellm_model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": prompt},
-                ],
-                response_format=response_format,
-                timeout=180,
-                temperature=temperature,
-                **litellm_params,
-            )
-        except HTTPException:
-            raise
-        except AuthenticationError:
-            from utils.error_codes import AI_AUTH_FAILED, raise_with_code
-            logger.error("Invalid API key for model %s", litellm_model)
-            raise_with_code(
-                AI_AUTH_FAILED,
-                status.HTTP_401_UNAUTHORIZED,
-                "Invalid or expired API key for the selected AI provider",
-            )
-        except RateLimitError:
-            from utils.error_codes import AI_RATE_LIMITED, raise_with_code
-            logger.warning("Rate limit hit for model %s", litellm_model)
-            raise_with_code(
-                AI_RATE_LIMITED,
-                status.HTTP_429_TOO_MANY_REQUESTS,
-                "AI provider rate limit exceeded, please try again later",
-            )
-        except Timeout:
-            from utils.error_codes import AI_TIMEOUT, raise_with_code
-            logger.warning("Timeout calling model %s", litellm_model)
-            raise_with_code(
-                AI_TIMEOUT,
-                status.HTTP_504_GATEWAY_TIMEOUT,
-                "AI provider did not respond in time",
-            )
-        except Exception as exc:
+        chat_response = None
+        last_exc: Optional[BaseException] = None
+        for attempt in range(1, _AI_RETRY_MAX_ATTEMPTS + 1):
+            try:
+                chat_response = await acompletion(
+                    model=litellm_model,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": prompt},
+                    ],
+                    response_format=response_format,
+                    timeout=180,
+                    temperature=temperature,
+                    **litellm_params,
+                )
+                if attempt > 1:
+                    logger.info(
+                        "AI call succeeded on retry %d/%d (model=%s)",
+                        attempt,
+                        _AI_RETRY_MAX_ATTEMPTS,
+                        litellm_model,
+                    )
+                break
+            except HTTPException:
+                raise
+            except BaseException as exc:
+                last_exc = exc
+                if attempt >= _AI_RETRY_MAX_ATTEMPTS or not _is_retryable(exc):
+                    break
+                # Exp backoff with full jitter so simultaneous retries
+                # from concurrent requests don't synchronise into a
+                # thundering herd at the upstream.
+                base = min(
+                    _AI_RETRY_MAX_DELAY_S,
+                    _AI_RETRY_BASE_DELAY_S * (2 ** (attempt - 1)),
+                )
+                delay = random.uniform(0.0, base)
+                logger.warning(
+                    "AI call attempt %d/%d failed (%s: %s); retrying in %.2fs",
+                    attempt,
+                    _AI_RETRY_MAX_ATTEMPTS,
+                    type(exc).__name__,
+                    str(exc)[:200],
+                    delay,
+                )
+                await asyncio.sleep(delay)
+
+        if chat_response is None:
+            # All attempts exhausted — translate the last exception to
+            # a structured HTTP error using the same mapping as before.
+            exc = last_exc
+            if isinstance(exc, AuthenticationError):
+                from utils.error_codes import AI_AUTH_FAILED, raise_with_code
+                logger.error("Invalid API key for model %s", litellm_model)
+                raise_with_code(
+                    AI_AUTH_FAILED,
+                    status.HTTP_401_UNAUTHORIZED,
+                    "Invalid or expired API key for the selected AI provider",
+                )
+            if isinstance(exc, RateLimitError):
+                from utils.error_codes import AI_RATE_LIMITED, raise_with_code
+                logger.warning("Rate limit hit for model %s", litellm_model)
+                raise_with_code(
+                    AI_RATE_LIMITED,
+                    status.HTTP_429_TOO_MANY_REQUESTS,
+                    "AI provider rate limit exceeded, please try again later",
+                )
+            if isinstance(exc, Timeout):
+                from utils.error_codes import AI_TIMEOUT, raise_with_code
+                logger.warning("Timeout calling model %s", litellm_model)
+                raise_with_code(
+                    AI_TIMEOUT,
+                    status.HTTP_504_GATEWAY_TIMEOUT,
+                    "AI provider did not respond in time",
+                )
             from utils.error_codes import AI_BAD_GATEWAY, raise_with_code
-            logger.exception("Unexpected error from AI provider: %s", exc)
+            logger.exception(
+                "Unexpected error from AI provider after %d attempts: %s",
+                _AI_RETRY_MAX_ATTEMPTS,
+                exc,
+            )
             raise_with_code(
                 AI_BAD_GATEWAY,
                 status.HTTP_502_BAD_GATEWAY,
