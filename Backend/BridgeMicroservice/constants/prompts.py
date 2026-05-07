@@ -63,17 +63,28 @@ def writing_fill_in_the_blank_task_prompt(
            grammar, vocabulary, or sentence structure.
         2. Choose ONE word or phrase that is genuinely characteristic of {language} at {level}.
            Remove it; leave a blank ("____") in its place.
-        3. The blank must have **one canonical correct answer**. If equally-correct synonyms
+        3. ANTI-DUPLICATION: the correct answer (and any of its forms) MUST NOT appear
+           anywhere else in the visible sentence. If you write "Это ____ самое…" with
+           answer "Это", that duplicates "Это" — the result reads "Это Это самое…" and
+           is invalid. Pick a sentence where the target word fits ONLY in the blank.
+        4. NON-TRIVIAL: the blank must be a word the learner could plausibly get wrong.
+           Forbidden trivial cases: demonstratives that are grammatically optional in
+           the position (e.g. blanking "Это" before a nominative noun in Russian when
+           the sentence would be valid without it), articles where the answer is the
+           only article shape, fillers, or pronouns that the surrounding context makes
+           obvious. The task must EXERCISE the level — not just elicit the dictionary
+           translation of the gloss hint.
+        5. The blank must have **one canonical correct answer**. If equally-correct synonyms
            exist (e.g. perfective/imperfective pairs that both fit), return them all in
            `correctAnswer` as an array.
-        4. Avoid ambiguity from the surrounding context: the rest of the sentence must
+        6. Avoid ambiguity from the surrounding context: the rest of the sentence must
            uniquely determine the form (number, gender, tense, aspect…).
-        5. After the blank, include a glossary hint in parentheses translating the
+        7. After the blank, include a glossary hint in parentheses translating the
            missing word into {gloss_lang}, e.g. (go) for English UI, (iść) for Polish UI,
            (ir) for Spanish UI.
-        6. Use everyday contexts relevant to the level (greetings, work, routines, food…).
+        8. Use everyday contexts relevant to the level (greetings, work, routines, food…).
            Don't reuse the example from the level context verbatim.
-        7. Do not include any instructions inside the question — just the sentence.
+        9. Do not include any instructions inside the question — just the sentence.
 
         Return JSON only:
         {{
@@ -82,8 +93,10 @@ def writing_fill_in_the_blank_task_prompt(
         }}
 
         Examples (English UI):
-        - Vocabulary: "Я ____ в парк каждый день. (go)"
+        - Vocabulary: "Я ____ в парк каждый день. (go)"          ← good: "go" not in sentence
         - Grammar:    "Она ____ в течение трех часов. (has been studying)"
+        - BAD (do NOT generate): "Это ____ самое яркое воспоминание. (this)"
+          → answer would be "Это" but "Это" already appears → trivially duplicates.
         """
 
 
