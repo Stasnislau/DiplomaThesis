@@ -6,9 +6,16 @@ from services.vector_db_service import VectorDBService
 from services.ai_service import AI_Service
 from utils.user_context import UserContext
 from dotenv import load_dotenv
-from constants.prompts import writing_multiple_choice_task_prompt, writing_fill_in_the_blank_task_prompt, explain_answer_prompt
+from constants.prompts import (
+    writing_multiple_choice_task_prompt,
+    writing_fill_in_the_blank_task_prompt,
+    explain_answer_prompt,
+    writing_essay_topic_prompt,
+    writing_essay_evaluation_prompt,
+)
 from constants.variety import variety_picker
 from models.dtos.task_dto import MultipleChoiceTask, FillInTheBlankTask
+from models.dtos.essay_dto import EssayTask, EssayEvaluation
 from models.dtos.vector_db_dtos import SpecificSkillContext, FullLevelContext
 from models.request.explain_answer_request import ExplainAnswerRequest
 from models.responses.explain_answer_response import ExplainAnswerResponse
@@ -99,6 +106,101 @@ class WritingTaskService:
         json_response = await self._process_ai_response_and_validate(response, is_fill_in_blank=True)
 
         return self._finalize_task_generation(json_response, "fill_in_the_blank", FillInTheBlankTask)
+
+    async def generate_essay_task(
+        self,
+        language: str,
+        level: str,
+        user_context: Optional[UserContext] = None,
+        topic: Optional[str] = None,
+        keywords: Optional[list[str]] = None,
+    ) -> EssayTask:
+        """Generate an essay prompt + scaffolding for the learner.
+
+        `topic` here is the lesson topic / theme HINT (e.g. "Argumentative Essay",
+        "Psychology"), not the actual prompt the learner answers. The model fleshes
+        that hint into a real essay-worthy question.
+        """
+        effective_level = "A1" if level.upper() == "A0" else level.upper()
+        level_context: Union[SpecificSkillContext, FullLevelContext, None] = (
+            self.vector_db_service.get_level_context(effective_level, "writing")
+        )
+        if not level_context:
+            raise ValueError(f"Invalid level: {effective_level}")
+
+        seed = str(uuid.uuid4())
+        prompt = writing_essay_topic_prompt(
+            language,
+            level,
+            level_context.model_dump(),
+            topic_hint=topic,
+            keywords=keywords,
+            seed=seed,
+            ui_locale_label=user_context.ui_locale_label if user_context else None,
+        )
+        response = await self.ai_service.get_ai_response(
+            prompt, user_context=user_context, temperature=0.85
+        )
+        json_response = await self._process_ai_response_and_validate(response)
+
+        return self._finalize_task_generation(json_response, "essay", EssayTask)
+
+    async def evaluate_essay(
+        self,
+        language: str,
+        level: str,
+        topic: str,
+        essay: str,
+        word_count_target: int,
+        user_context: Optional[UserContext] = None,
+    ) -> EssayEvaluation:
+        """Grade a learner-submitted essay 0-100 with structured feedback."""
+        effective_level = "A1" if level.upper() == "A0" else level.upper()
+        level_context: Union[SpecificSkillContext, FullLevelContext, None] = (
+            self.vector_db_service.get_level_context(effective_level, "writing")
+        )
+        if not level_context:
+            raise ValueError(f"Invalid level: {effective_level}")
+
+        prompt = writing_essay_evaluation_prompt(
+            language,
+            level,
+            level_context.model_dump(),
+            topic=topic,
+            essay=essay,
+            word_count_target=word_count_target,
+            ui_locale_label=user_context.ui_locale_label if user_context else None,
+        )
+        # Low temperature — grading should be consistent, not creative.
+        response = await self.ai_service.get_ai_response(
+            prompt, user_context=user_context, temperature=0.2
+        )
+        json_response = await self._process_ai_response_and_validate(response)
+
+        # Backfill word counts the model didn't give us — they're cheap
+        # to compute server-side and the frontend wants them.
+        json_response.setdefault("wordCount", len(essay.split()))
+        json_response.setdefault("wordCountTarget", word_count_target)
+        # Defensive: clamp score and re-derive `passed` so the UI never
+        # sees a 75 with passed=false (or a 40 with passed=true).
+        try:
+            score = int(json_response.get("score", 0))
+        except (TypeError, ValueError):
+            score = 0
+        score = max(0, min(100, score))
+        json_response["score"] = score
+        json_response["passed"] = score >= 60
+
+        try:
+            return EssayEvaluation(**json_response)
+        except Exception as e:
+            from utils.error_codes import TASK_VALIDATION_FAILED, raise_with_code
+            logger.error(f"EssayEvaluation validation failed: {e}")
+            raise_with_code(
+                TASK_VALIDATION_FAILED,
+                500,
+                f"Failed to parse essay evaluation: {e}",
+            )
 
     async def explain_answer(
         self,

@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 from services.writing_task_service import WritingTaskService
 from services.user_service import UserService
 from models.dtos.task_dto import MultipleChoiceTask, FillInTheBlankTask
+from models.dtos.essay_dto import EssayTask, EssayEvaluation
 from models.request.explain_answer_request import ExplainAnswerRequest
 from models.responses.explain_answer_response import ExplainAnswerResponse
 from models.request.writing_task_request import WritingTaskRequest
@@ -39,6 +40,24 @@ class WritingResultRequest(BaseModel):
     topic: Optional[str] = None
     targetedWeaknesses: list[str] = []
     questionPreview: Optional[str] = None
+    model_config = {"populate_by_name": True}
+
+
+class EssayGenerateRequest(BaseModel):
+    language: str
+    level: str
+    topic: Optional[str] = None
+    keywords: Optional[list[str]] = None
+    model_config = {"populate_by_name": True}
+
+
+class EssayEvaluateRequest(BaseModel):
+    language: str
+    level: str
+    topic: str
+    essay: str
+    wordCountTarget: int = Field(default=300)
+    lessonId: Optional[str] = None
     model_config = {"populate_by_name": True}
 
 
@@ -197,6 +216,73 @@ class WritingController:
                 },
             )
             return BaseResponse[bool](success=True, payload=True)
+
+        @self.router.post(
+            "/essay/generate",
+            response_model=BaseResponse[EssayTask],
+            response_model_exclude_none=True,
+        )
+        async def generate_essay(
+            request: Request, body: EssayGenerateRequest
+        ) -> BaseResponse[EssayTask]:
+            """Produce an essay PROMPT (topic + scaffolding) for the
+            learner. The user then writes their essay client-side and
+            posts it to /essay/evaluate to get a score."""
+            user_context = extract_user_context(request)
+            task = await self.writing_task_service.generate_essay_task(
+                body.language,
+                body.level,
+                user_context=user_context,
+                topic=body.topic,
+                keywords=body.keywords,
+            )
+            return BaseResponse[EssayTask](success=True, payload=task)
+
+        @self.router.post(
+            "/essay/evaluate",
+            response_model=BaseResponse[EssayEvaluation],
+            response_model_exclude_none=True,
+        )
+        async def evaluate_essay(
+            request: Request, body: EssayEvaluateRequest
+        ) -> BaseResponse[EssayEvaluation]:
+            """Grade a learner's essay 0-100 and log the outcome to
+            history so adaptive logic can pick up writing weaknesses."""
+            user_context = extract_user_context(request)
+            from utils.language_codes import to_iso_language
+
+            evaluation = await self.writing_task_service.evaluate_essay(
+                body.language,
+                body.level,
+                topic=body.topic,
+                essay=body.essay,
+                word_count_target=body.wordCountTarget,
+                user_context=user_context,
+            )
+
+            # Log to TaskHistoryEntry — same shape as other writing
+            # results so the existing adaptive-focus deriver can read
+            # the weaknesses field.
+            await self.user_service.log_task_history(
+                user_context,
+                {
+                    "taskType": "writing",
+                    "title": f"Essay practice ({body.language})",
+                    "score": evaluation.score,
+                    "language": to_iso_language(body.language),
+                    "metadata": {
+                        "flavour": "essay",
+                        "isCorrect": evaluation.passed,
+                        "topic": body.topic[:200],
+                        "lessonId": body.lessonId,
+                        "wordCount": evaluation.word_count,
+                        "wordCountTarget": evaluation.word_count_target,
+                        "weaknesses": evaluation.weaknesses,
+                    },
+                },
+            )
+
+            return BaseResponse[EssayEvaluation](success=True, payload=evaluation)
 
         @self.router.post(
             "/explainanswer",
