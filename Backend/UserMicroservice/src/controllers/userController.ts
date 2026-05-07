@@ -13,12 +13,16 @@ import { AuthenticatedRequest } from "src/types/AuthenticatedRequest";
 import { BaseResponse } from "src/types/BaseResponse";
 import { EventPattern } from "@nestjs/microservices";
 import { UserService } from "../services/userService";
+import { MailerService } from "../services/mailerService";
 import { Roles } from "../guards/roles.decorator";
 import { RolesGuard } from "../guards/rolesGuard";
 
 @Controller("")
 export class UserController {
-  constructor(private userService: UserService) {}
+  constructor(
+    private userService: UserService,
+    private mailerService: MailerService,
+  ) {}
 
   @Get("languages")
   async getLanguages(): Promise<BaseResponse<Language[]>> {
@@ -99,5 +103,19 @@ export class UserController {
   @EventPattern("user.deleted")
   async handleUserDeleted(userData: { id: string }) {
     await this.userService.deleteUser(userData);
+  }
+
+  @EventPattern("password.reset")
+  async handlePasswordReset(payload: {
+    id: string;
+    email: string;
+    newPassword: string;
+  }) {
+    const locale = await this.userService.getUserLocale(payload.id);
+    await this.mailerService.sendPasswordReset(
+      payload.email,
+      payload.newPassword,
+      locale,
+    );
   }
 }

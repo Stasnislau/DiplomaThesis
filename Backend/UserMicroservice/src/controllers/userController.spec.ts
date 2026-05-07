@@ -4,10 +4,12 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { AuthenticatedRequest } from "../types/AuthenticatedRequest";
 import { UserController } from "./userController";
 import { UserService } from "../services/userService";
+import { MailerService } from "../services/mailerService";
 
 describe("UserController", () => {
   let controller: UserController;
   let userService: jest.Mocked<UserService>;
+  let mailerService: jest.Mocked<MailerService>;
 
   const mockUser: User = {
     id: "user-123",
@@ -44,6 +46,11 @@ describe("UserController", () => {
       createUser: jest.fn(),
       updateUserRole: jest.fn(),
       deleteUser: jest.fn(),
+      getUserLocale: jest.fn(),
+    };
+
+    const mockMailerService = {
+      sendPasswordReset: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -53,11 +60,16 @@ describe("UserController", () => {
           provide: UserService,
           useValue: mockUserService,
         },
+        {
+          provide: MailerService,
+          useValue: mockMailerService,
+        },
       ],
     }).compile();
 
     controller = module.get<UserController>(UserController);
     userService = module.get(UserService) as jest.Mocked<UserService>;
+    mailerService = module.get(MailerService) as jest.Mocked<MailerService>;
   });
 
   it("should be defined", () => {
@@ -175,6 +187,41 @@ describe("UserController", () => {
       const payload = { id: "user-123" };
       await controller.handleUserDeleted(payload);
       expect(userService.deleteUser).toHaveBeenCalledWith(payload);
+    });
+
+    it("should handle password.reset and forward to mailer with locale", async () => {
+      userService.getUserLocale.mockResolvedValue("pl");
+      const payload = {
+        id: "user-123",
+        email: "test@test.com",
+        newPassword: "new-uuid-pass",
+      };
+
+      await controller.handlePasswordReset(payload);
+
+      expect(userService.getUserLocale).toHaveBeenCalledWith("user-123");
+      expect(mailerService.sendPasswordReset).toHaveBeenCalledWith(
+        "test@test.com",
+        "new-uuid-pass",
+        "pl",
+      );
+    });
+
+    it("should default to en locale when user has no native language", async () => {
+      userService.getUserLocale.mockResolvedValue("en");
+      const payload = {
+        id: "user-456",
+        email: "newbie@test.com",
+        newPassword: "another-pass",
+      };
+
+      await controller.handlePasswordReset(payload);
+
+      expect(mailerService.sendPasswordReset).toHaveBeenCalledWith(
+        "newbie@test.com",
+        "another-pass",
+        "en",
+      );
     });
   });
 });
