@@ -132,6 +132,11 @@ const en = {
       loginSuccess: "Successfully logged in",
       logoutSuccess: "Successfully logged out",
       registerSuccess: "Account created successfully",
+      resetPassword: "Reset password",
+      resetPasswordDescription: "Enter your email and we'll send you a new password.",
+      resetPasswordSuccess: "A new password has been sent to your email.",
+      rememberPassword: "Remember your password?",
+      backToLogin: "Back to login",
     },
 
     tasks: {
@@ -782,6 +787,11 @@ const pl = {
       loginSuccess: "Zalogowano pomyślnie",
       logoutSuccess: "Wylogowano pomyślnie",
       registerSuccess: "Konto utworzone pomyślnie",
+      resetPassword: "Zresetuj hasło",
+      resetPasswordDescription: "Podaj swój e-mail, a wyślemy Ci nowe hasło.",
+      resetPasswordSuccess: "Nowe hasło zostało wysłane na Twój e-mail.",
+      rememberPassword: "Pamiętasz hasło?",
+      backToLogin: "Powrót do logowania",
     },
 
     tasks: {
@@ -1427,6 +1437,11 @@ const es = {
       loginSuccess: "Sesión iniciada correctamente",
       logoutSuccess: "Sesión cerrada correctamente",
       registerSuccess: "Cuenta creada correctamente",
+      resetPassword: "Restablecer contraseña",
+      resetPasswordDescription: "Introduce tu correo y te enviaremos una nueva contraseña.",
+      resetPasswordSuccess: "Se ha enviado una nueva contraseña a tu correo.",
+      rememberPassword: "¿Recuerdas tu contraseña?",
+      backToLogin: "Volver al inicio de sesión",
     },
 
     tasks: {
