@@ -127,8 +127,9 @@ export class AuthController {
     };
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("ADMIN")
+  // Public forgot-password endpoint. Per-email rate limit enforced
+  // inside AuthService so bots can't spam the victim's inbox or
+  // silently rotate their password every few seconds.
   @Post("resetPassword")
   async resetPassword(@Body("email") email: string) {
     await this.authService.resetPassword(email);

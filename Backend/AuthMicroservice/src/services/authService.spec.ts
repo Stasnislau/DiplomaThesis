@@ -457,12 +457,35 @@ describe("AuthService", () => {
     it("should throw NotFoundException when user not found", async () => {
       prismaService.user.findUnique.mockResolvedValue(null);
 
+      // Two distinct emails so the per-email throttle doesn't merge
+      // them into a single 429 instead of independent 404s.
       await expect(
-        service.resetPassword("nonexistent@example.com"),
+        service.resetPassword("ghost-a@example.com"),
       ).rejects.toThrow(NotFoundException);
       await expect(
-        service.resetPassword("nonexistent@example.com"),
+        service.resetPassword("ghost-b@example.com"),
       ).rejects.toThrow("AUTH_USER_NOT_FOUND");
+    });
+
+    it("should rate-limit a second reset for the same email", async () => {
+      prismaService.user.findUnique.mockResolvedValue(mockUser as any);
+      (bcrypt.hash as jest.Mock).mockResolvedValue("newHashedPassword");
+      prismaService.credentials.update.mockResolvedValue(
+        mockCredentials as any,
+      );
+
+      const email = "throttle-target@example.com";
+      // Stub user lookup so the first call succeeds end-to-end.
+      prismaService.user.findUnique.mockResolvedValue({
+        ...mockUser,
+        email,
+      } as any);
+
+      await service.resetPassword(email);
+
+      await expect(service.resetPassword(email)).rejects.toThrow(
+        "AUTH_RATE_LIMITED",
+      );
     });
   });
 

@@ -18,6 +18,7 @@ import {
   AUTH_EMAIL_TAKEN,
   AUTH_INVALID_CREDENTIALS,
   AUTH_INVALID_OLD_PASSWORD,
+  AUTH_RATE_LIMITED,
   AUTH_REFRESH_TOKEN_EXPIRED,
   AUTH_REFRESH_TOKEN_INVALID,
   AUTH_REFRESH_TOKEN_REQUIRED,
@@ -44,6 +45,14 @@ const failedLogins = new Map<string, FailedAttempt>();
 function failedKey(email: string): string {
   return email.trim().toLowerCase();
 }
+
+/* Per-email password-reset throttle. Without this, any anonymous
+ * caller can spam /resetPassword for a victim's email and blast their
+ * inbox while silently rotating their password (since reset really
+ * does mutate the credentials row). One request per 5 minutes per
+ * email is more than enough for a real "I forgot" flow. */
+const RESET_WINDOW_MS = 5 * 60 * 1000;
+const resetAttempts = new Map<string, number>();
 
 @Injectable()
 export class AuthService {
@@ -363,6 +372,24 @@ export class AuthService {
   }
 
   async resetPassword(email: string) {
+    const key = failedKey(email);
+
+    // Per-email throttle: one reset every RESET_WINDOW_MS. Without it,
+    // anyone can spam a victim's inbox AND silently rotate their
+    // password every few seconds. Check this BEFORE the user lookup so
+    // existence-vs-non-existence enumeration is also slowed down.
+    const lastAt = resetAttempts.get(key);
+    const now = Date.now();
+    if (lastAt && now - lastAt < RESET_WINDOW_MS) {
+      const retryAfter = Math.ceil((RESET_WINDOW_MS - (now - lastAt)) / 1000);
+      throwWithCode(
+        AUTH_RATE_LIMITED,
+        HttpStatus.TOO_MANY_REQUESTS,
+        `Reset already requested. Try again in ${retryAfter}s.`,
+      );
+    }
+    resetAttempts.set(key, now);
+
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
       throwWithCode(
