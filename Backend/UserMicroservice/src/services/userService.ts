@@ -291,4 +291,17 @@ export class UserService {
       payload: true,
     };
   }
+
+  // Returns the user's native-language ISO code (en/pl/es). Falls back
+  // to "en" if the user has no profile yet or no native language picked
+  // — used by the mailer to localise password-reset templates.
+  async getUserLocale(userId: string): Promise<string> {
+    const native = await this.prisma.userLanguage.findFirst({
+      where: { userId, isNative: true },
+      include: { language: true },
+    });
+    const code = native?.language?.code?.toLowerCase();
+    if (code === "pl" || code === "es") return code;
+    return "en";
+  }
 }

@@ -44,6 +44,7 @@ describe("UserService", () => {
       },
       userLanguage: {
         create: jest.fn(),
+        findFirst: jest.fn(),
       },
     };
 
@@ -345,6 +346,34 @@ describe("UserService", () => {
       await expect(
         service.addUserLanguage("user-123", "nonexistent", "A1"),
       ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe("getUserLocale", () => {
+    it("returns the native language code in lowercase", async () => {
+      (prisma.userLanguage.findFirst as jest.Mock).mockResolvedValue({
+        language: { code: "PL" },
+      });
+      await expect(service.getUserLocale("user-123")).resolves.toBe("pl");
+    });
+
+    it("returns 'es' for Spanish natives", async () => {
+      (prisma.userLanguage.findFirst as jest.Mock).mockResolvedValue({
+        language: { code: "es" },
+      });
+      await expect(service.getUserLocale("user-123")).resolves.toBe("es");
+    });
+
+    it("falls back to 'en' when user has no native language row", async () => {
+      (prisma.userLanguage.findFirst as jest.Mock).mockResolvedValue(null);
+      await expect(service.getUserLocale("user-123")).resolves.toBe("en");
+    });
+
+    it("falls back to 'en' for unsupported language codes", async () => {
+      (prisma.userLanguage.findFirst as jest.Mock).mockResolvedValue({
+        language: { code: "ru" },
+      });
+      await expect(service.getUserLocale("user-123")).resolves.toBe("en");
     });
   });
 });
