@@ -2,6 +2,7 @@ import { FillInTheBlankTask, MultipleChoiceTask } from "@/types/responses/TaskRe
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
 
+import EssayTask from "@/pages/Tasks/components/EssayTask";
 import { Lesson } from "@/api/hooks/useLearningPath";
 import { TaskComponent } from "@/pages/Quiz/components/TaskComponent";
 import { isAnswerCorrect } from "@/utils/answerValidation";
@@ -19,21 +20,23 @@ import {
 const CORRECT_TO_COMPLETE = 5;
 
 const TYPE_ICON: Record<string, string> = {
-  vocabulary: "📚",
-  grammar:    "📐",
-  theory:     "📖",
-  practice:   "🎯",
-  listening:  "👂",
-  speaking:   "🗣️",
+  vocabulary:    "📚",
+  grammar:       "📐",
+  theory:        "📖",
+  practice:      "🎯",
+  listening:     "👂",
+  speaking:      "🗣️",
+  writing_essay: "✍️",
 };
 
 const TYPE_COLOR: Record<string, string> = {
-  vocabulary: "from-amber-500 to-yellow-500",
-  grammar:    "from-blue-500 to-indigo-500",
-  theory:     "from-purple-500 to-violet-500",
-  practice:   "from-green-500 to-teal-500",
-  listening:  "from-cyan-500 to-sky-500",
-  speaking:   "from-rose-500 to-pink-500",
+  vocabulary:    "from-amber-500 to-yellow-500",
+  grammar:       "from-blue-500 to-indigo-500",
+  theory:        "from-purple-500 to-violet-500",
+  practice:      "from-green-500 to-teal-500",
+  listening:     "from-cyan-500 to-sky-500",
+  speaking:      "from-rose-500 to-pink-500",
+  writing_essay: "from-violet-500 to-fuchsia-500",
 };
 
 type TaskFlavour = "multiple-choice" | "fill-blank";
@@ -281,6 +284,60 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
         <div className="flex flex-col items-center gap-4">
           <div className="w-16 h-16 border-4 border-indigo-300 border-t-indigo-600 rounded-full animate-spin" />
           <p className="text-gray-600 dark:text-gray-300 font-semibold">{t("learningPath.practice.savingMessage")}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Essay-type lessons skip the multi-question quiz flow entirely:
+  // one prompt, one essay, AI grade. Pass = lesson complete.
+  if (lesson.type === "writing_essay") {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-10 transition-colors duration-300">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+          <Link
+            to="/learning-path"
+            state={{ language: language.toLowerCase(), level }}
+            className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+          >
+            {t("learningPath.practice.backLink")}
+          </Link>
+
+          <div className={`bg-gradient-to-r ${gradient} rounded-3xl p-6 text-white shadow-xl`}>
+            <div className="flex items-start gap-4">
+              <div className="h-16 w-16 rounded-2xl bg-white/20 flex items-center justify-center text-4xl flex-shrink-0">
+                {icon}
+              </div>
+              <div className="flex-1">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                  <span className="text-xs font-bold uppercase tracking-widest bg-white/20 px-2.5 py-0.5 rounded-full">
+                    {localizedType}
+                  </span>
+                  <span className="text-xs font-bold uppercase tracking-widest bg-white/20 px-2.5 py-0.5 rounded-full">
+                    {level}
+                  </span>
+                  <span className="text-xs bg-white/20 px-2.5 py-0.5 rounded-full">
+                    ⏱ {lesson.durationMinutes} min
+                  </span>
+                </div>
+                <h1 className="text-2xl font-bold">{localizedLesson.title}</h1>
+                <p className="text-white/80 text-sm mt-1">{localizedLesson.description}</p>
+              </div>
+            </div>
+          </div>
+
+          <EssayTask
+            language={language}
+            level={level}
+            topic={lesson.topic}
+            keywords={lesson.keywords}
+            lessonId={lesson.id}
+            onEvaluated={(ev) => {
+              if (ev.passed) {
+                completeLesson({ lessonId: lesson.id, language, level });
+              }
+            }}
+          />
         </div>
       </div>
     );

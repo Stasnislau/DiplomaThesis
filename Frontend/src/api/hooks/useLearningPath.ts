@@ -15,7 +15,8 @@ export interface Lesson {
     | "grammar"
     | "practice"
     | "listening"
-    | "speaking";
+    | "speaking"
+    | "writing_essay";
   keywords: string[];
   durationMinutes: number;
 }
