@@ -1,6 +1,7 @@
 import hashlib
 import json
 import logging
+import os
 import time
 
 from dotenv import load_dotenv
@@ -87,6 +88,16 @@ PROVIDER_CONFIG: Dict[str, Dict[str, Any]] = {
         "api_base": "https://api.deepseek.com",
     },
     "groq": {"model": "groq/llama-3.3-70b-versatile"},
+    # OpenRouter is the meta-router that fronts every other lab. The
+    # default routes to Sonnet 4.6 (best quality/$ ratio at 1M ctx),
+    # but the model is overridable via OPENROUTER_MODEL so swapping to
+    # opus-4.7 / gpt-5.4 / a :free model takes one env var, no rebuild.
+    "openrouter": {
+        "model": os.getenv(
+            "OPENROUTER_MODEL", "openrouter/anthropic/claude-sonnet-4.6"
+        ),
+        "api_base": "https://openrouter.ai/api/v1",
+    },
 }
 
 

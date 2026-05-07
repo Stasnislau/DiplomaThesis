@@ -54,6 +54,10 @@ const SeedAIProviders = [
     id: "groq",
     name: "Groq",
   },
+  {
+    id: "openrouter",
+    name: "OpenRouter",
+  },
 ];
 
 import { PrismaClient } from "@prisma/client";
