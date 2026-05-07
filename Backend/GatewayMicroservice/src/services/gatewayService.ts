@@ -99,6 +99,9 @@ export class GatewayService {
     "api/auth/login",
     "api/auth/register",
     "api/auth/refresh",
+    // Forgot-password by definition runs from a logged-out browser —
+    // requiring a JWT here would soft-brick the recovery flow.
+    "api/auth/resetPassword",
     "api/languages",
     // Health probes need to be reachable without a JWT — Docker
     // healthchecks and any external uptime monitor never have one.
