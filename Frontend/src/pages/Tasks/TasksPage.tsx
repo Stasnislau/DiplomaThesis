@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/common/Tabs";
 
+import FreeEssayTask from "./components/FreeEssayTask";
 import ListeningTask from "./components/ListeningTask";
 import MaterialsTask from "./components/MaterialsTask";
 import SpeakingTask from "./components/SpeakingTask";
@@ -27,8 +28,11 @@ const TasksPage = () => {
       case "speaking":
       case "pronunciation":
         return "speaking";
+      case "essay":
+      case "writing_essay":
+        return "essay";
       case "vocabulary":
-      case "grammar": 
+      case "grammar":
       case "theory":
       case "practice":
       default:
@@ -125,12 +129,19 @@ const TasksPage = () => {
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 transition-colors duration-300">
           <Tabs defaultValue={defaultTab} className="w-full">
             <TabsList className="w-full flex flex-wrap gap-2 bg-gray-100 dark:bg-gray-700 p-1.5 rounded-xl mb-6 h-auto">
-              <TabsTrigger 
-                value="writing" 
+              <TabsTrigger
+                value="writing"
                 className="flex-1 min-w-[140px] whitespace-normal text-center h-auto rounded-lg py-3 px-3 text-sm font-semibold transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-gray-600 data-[state=active]:shadow-md data-[state=active]:text-indigo-600 dark:data-[state=active]:text-white dark:text-gray-300"
               >
                 <span className="mr-1.5" role="img" aria-hidden="true">✍️</span>
                 {t('tasks.writing')}
+              </TabsTrigger>
+              <TabsTrigger
+                value="essay"
+                className="flex-1 min-w-[140px] whitespace-normal text-center h-auto rounded-lg py-3 px-3 text-sm font-semibold transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-gray-600 data-[state=active]:shadow-md data-[state=active]:text-violet-600 dark:data-[state=active]:text-violet-300 dark:text-gray-300"
+              >
+                <span className="mr-1.5" role="img" aria-hidden="true">📝</span>
+                {t('tasks.essay')}
               </TabsTrigger>
               <TabsTrigger 
                 value="speaking"
@@ -155,10 +166,16 @@ const TasksPage = () => {
               </TabsTrigger>
             </TabsList>
             <TabsContent value="writing">
-              <WritingTask 
-                initialLanguage={initialLanguage} 
-                initialLevel={initialLevel} 
+              <WritingTask
+                initialLanguage={initialLanguage}
+                initialLevel={initialLevel}
                 initialTaskType={initialTaskType}
+              />
+            </TabsContent>
+            <TabsContent value="essay">
+              <FreeEssayTask
+                initialLanguage={initialLanguage}
+                initialLevel={initialLevel}
               />
             </TabsContent>
             <TabsContent value="speaking">
