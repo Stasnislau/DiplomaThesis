@@ -35,6 +35,7 @@ export const AUTH_TOKEN_EXPIRED = "AUTH_TOKEN_EXPIRED";
 export const AUTH_INVALID_TOKEN = "AUTH_INVALID_TOKEN";
 export const AUTH_AUTHORIZATION_FAILED = "AUTH_AUTHORIZATION_FAILED";
 export const AUTH_INTERNAL_ERROR = "AUTH_INTERNAL_ERROR";
+export const AUTH_RATE_LIMITED = "AUTH_RATE_LIMITED";
 
 /**
  * Pick the right NestJS exception class for a given HTTP status so the
@@ -54,6 +55,8 @@ function exceptionFor(
       return new ConflictException(message);
     case HttpStatus.INTERNAL_SERVER_ERROR:
       return new InternalServerErrorException(message);
+    case HttpStatus.TOO_MANY_REQUESTS:
+      return new HttpException(message, HttpStatus.TOO_MANY_REQUESTS);
     case HttpStatus.BAD_REQUEST:
     default:
       return new BadRequestException(message);
