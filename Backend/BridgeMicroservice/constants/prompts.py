@@ -285,3 +285,120 @@ def verify_polish_task_prompt(task: Dict[str, Any]) -> str:
         Kiedy zwracasz odpowiedź, zwróć tylko JSON, bez dodatkowych komentarzy
         i nie zwracaj better_task jeśli zadanie jest poprawne.
         """
+
+
+# ─── Essay tasks ──────────────────────────────────────────────────────
+# Two prompts: one to GENERATE an essay topic + scaffolding, one to
+# EVALUATE a learner's submission with a 0-100 score and structured
+# feedback. Used by both the learning-path "writing_essay" lesson type
+# and the free-practice essay flow.
+
+def writing_essay_topic_prompt(
+    language: str,
+    level: str,
+    level_context: Dict[str, str],
+    topic_hint: str | None = None,
+    keywords: list[str] | None = None,
+    seed: str | None = None,
+    ui_locale_label: Optional[str] = None,
+) -> str:
+    keyword_clause = ""
+    if keywords:
+        keyword_clause = (
+            f"\n        - Suggest the user weave in these phrases / structures: "
+            f"{', '.join(keywords)}.\n        - Do NOT make using them mandatory; "
+            "they are scaffolding for level practice."
+        )
+    topic_clause = (
+        f"\n        - Anchor the prompt to this lesson topic: '{topic_hint}'."
+        if topic_hint else ""
+    )
+    seed_letter = (seed or "x")[0].lower() if seed else None
+    seed_clause = (
+        f"\n        - Randomness seed: {seed_letter}. Use this to vary "
+        "which angle of the topic you pick, not to constrain content."
+        if seed_letter and seed_letter.isalpha() else ""
+    )
+    loc = _ui_lang_clause(
+        ui_locale_label,
+        ["instructions", "rubricHints"],
+    )
+    return f"""
+        Generate a single ESSAY PROMPT for a {language} learner at {level} level.
+
+        Level proficiency description:
+        {level_context}{topic_clause}{keyword_clause}{seed_clause}
+
+        GUIDELINES:
+        1. The essay topic must demand genuine argumentation / analysis at {level}.
+           Trivial "describe your weekend" topics are rejected at B2 and above.
+        2. Word target should match level: B2 ~250 words, C1 ~350 words, C2 ~500 words.
+           Pick a number you'll later grade against.
+        3. The essay prompt itself must be in {language} (the target language —
+           that's what the learner is practicing).
+        4. `instructions` lists 3-4 short bullet-style hints in 1-2 lines each on
+           how to approach the essay (structure, expected register, what to argue).
+        5. `rubricHints` lists 3-5 short tags the learner can target (e.g.
+           "balanced argument", "topic-specific vocabulary", "use of hedging").
+        6. Do NOT pre-write the essay. Do NOT pre-fill the answer.{loc}
+
+        Return JSON only:
+        {{
+            "topic": "The essay prompt the learner sees, in {language}",
+            "instructions": ["short bullet 1", "short bullet 2", "..."],
+            "rubricHints": ["tag1", "tag2", "..."],
+            "wordCountTarget": <integer>
+        }}
+        """
+
+
+def writing_essay_evaluation_prompt(
+    language: str,
+    level: str,
+    level_context: Dict[str, str],
+    topic: str,
+    essay: str,
+    word_count_target: int,
+    ui_locale_label: Optional[str] = None,
+) -> str:
+    loc = _ui_lang_clause(
+        ui_locale_label,
+        ["summary", "strengths", "weaknesses", "suggestions"],
+    )
+    return f"""
+        You are evaluating a {language} learner's essay at {level} level.
+
+        Level proficiency description:
+        {level_context}
+
+        ESSAY PROMPT:
+        \"\"\"{topic}\"\"\"
+
+        TARGET WORD COUNT: ~{word_count_target}
+
+        LEARNER'S ESSAY:
+        \"\"\"{essay}\"\"\"
+
+        SCORING RUBRIC (each 0-25, sum = 0-100):
+        - Task achievement: did they answer the prompt with substantive content?
+        - Coherence & cohesion: structure, paragraphing, signposting.
+        - Lexical range: variety + precision of vocabulary at {level}.
+        - Grammatical range & accuracy: complex structures used correctly at {level}.
+        Cap the total at 100.
+
+        IMPORTANT:
+        - Score the essay AS-IS. If it's off-topic or mostly empty, score harshly.
+        - Word count below 60% of target loses task-achievement points but
+          well-written brevity is not catastrophic.
+        - `passed` is true iff `score` >= 60.{loc}
+
+        Return JSON only:
+        {{
+            "score": <integer 0-100>,
+            "passed": <boolean>,
+            "summary": "1-2 sentence overall verdict, candid",
+            "strengths": ["concrete strength 1", "..."],
+            "weaknesses": ["concrete weakness 1 with example from text", "..."],
+            "suggestions": ["actionable next-step 1", "..."]
+        }}
+        """

@@ -463,6 +463,7 @@ const en = {
         practice: "practice",
         listening: "listening",
         speaking: "speaking",
+        writing_essay: "essay",
       },
       themes: {
         greetingsIntroductions: "Greetings & Introductions",
@@ -1033,6 +1034,7 @@ const pl = {
         practice: "praktyka",
         listening: "słuchanie",
         speaking: "mówienie",
+        writing_essay: "esej",
       },
       themes: {
         greetingsIntroductions: "Powitania i przedstawianie się",
@@ -1681,6 +1683,7 @@ const es = {
         practice: "práctica",
         listening: "comprensión auditiva",
         speaking: "expresión oral",
+        writing_essay: "ensayo",
       },
       themes: {
         greetingsIntroductions: "Saludos y presentaciones",

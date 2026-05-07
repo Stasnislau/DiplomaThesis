@@ -203,7 +203,10 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
     resetFB();
     if (roll === "multiple-choice") createMC(taskPayload);
     else                            createFB(taskPayload);
-    setTaskCount((c) => c + 1);
+    // taskCount is incremented in handleCheck — counting "in flight"
+    // tasks before the user answers makes accuracy lie (e.g. 4 right
+    // out of 4 answered shows up as 4/5 = 80% the moment the 5th task
+    // appears on screen).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [language, level, lesson.topic, lesson.keywords, createMC, createFB, resetMC, resetFB]);
 
@@ -211,6 +214,9 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
 
   const handleCheck = () => {
     if (!currentTask || !userAnswer) return;
+    // Guard against double-submit on the same task — without this an
+    // accidental two-click on Check would inflate taskCount.
+    if (isCorrect !== null) return;
 
     let correct: boolean;
     if (isMultipleChoice(currentTask)) {
@@ -225,6 +231,7 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
     }
 
     setIsCorrect(correct);
+    setTaskCount((c) => c + 1);
     if (correct) {
       const next = correctCount + 1;
       setCorrectCount(next);
