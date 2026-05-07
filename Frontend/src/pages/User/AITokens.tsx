@@ -58,6 +58,10 @@ const PROVIDER_STYLES: Record<string, {
     bg: "bg-rose-50", border: "border-rose-200", text: "text-rose-700", icon: "bg-rose-100",
     darkBg: "dark:bg-rose-900/20", darkBorder: "dark:border-rose-700/50", darkText: "dark:text-rose-400", darkIcon: "dark:bg-rose-800/40",
   },
+  openrouter: {
+    bg: "bg-violet-50", border: "border-violet-200", text: "text-violet-700", icon: "bg-violet-100",
+    darkBg: "dark:bg-violet-900/20", darkBorder: "dark:border-violet-700/50", darkText: "dark:text-violet-400", darkIcon: "dark:bg-violet-800/40",
+  },
 };
 
 const getProviderStyle = (providerId: string) => {

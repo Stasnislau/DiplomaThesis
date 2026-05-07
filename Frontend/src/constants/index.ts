@@ -7,4 +7,5 @@ export const AI_PROVIDERS = [
   { value: "claude", label: "Claude (Anthropic)", keyUrl: "https://console.anthropic.com/settings/keys" },
   { value: "deepseek", label: "DeepSeek", keyUrl: "https://platform.deepseek.com/api_keys" },
   { value: "groq", label: "Groq", keyUrl: "https://console.groq.com/keys" },
+  { value: "openrouter", label: "OpenRouter", keyUrl: "https://openrouter.ai/keys" },
 ];
