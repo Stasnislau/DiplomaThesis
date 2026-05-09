@@ -1,10 +1,13 @@
 /**
  * Stable, machine-readable codes for every HttpException User raises.
  *
- * Wire format: exception.message = "<CODE>: <english fallback>". The
- * ErrorHandlingMiddleware copies that into payload.message; the
- * frontend's parseApiError splits it back into { code, message } so
- * useLocalizedError can translate the prefix.
+ * Wire contract (since the structured-error refactor):
+ *   - throwWithCode() raises an HttpException whose response body is
+ *     `{ code, message }`.
+ *   - ErrorHandlingMiddleware reads both fields and emits
+ *     `payload.code` AND `payload.message` as siblings — code is no
+ *     longer embedded inside the message string.
+ *   - Frontend `parseApiResponse` reads `payload.code` directly.
  *
  * Adding a new code:
  *   1. Add a constant below in the matching section.
@@ -39,29 +42,35 @@ export const USER_TOKEN_EXPIRED = "USER_TOKEN_EXPIRED";
 export const USER_INVALID_TOKEN = "USER_INVALID_TOKEN";
 export const USER_INTERNAL_ERROR = "USER_INTERNAL_ERROR";
 
-function exceptionFor(status: number, message: string): HttpException {
+function exceptionFor(
+  status: number,
+  code: string,
+  message: string,
+): HttpException {
+  const body = { code, message };
   switch (status) {
     case HttpStatus.UNAUTHORIZED:
-      return new UnauthorizedException(message);
+      return new UnauthorizedException(body);
     case HttpStatus.NOT_FOUND:
-      return new NotFoundException(message);
+      return new NotFoundException(body);
     case HttpStatus.CONFLICT:
-      return new ConflictException(message);
+      return new ConflictException(body);
     case HttpStatus.INTERNAL_SERVER_ERROR:
-      return new InternalServerErrorException(message);
+      return new InternalServerErrorException(body);
     case HttpStatus.BAD_REQUEST:
     default:
-      return new BadRequestException(message);
+      return new BadRequestException(body);
   }
 }
 
 /**
- * Throw an HttpException whose message is `"<CODE>: <english fallback>"`.
+ * Throw an HttpException whose response body is `{ code, message }`.
+ * The middleware turns that into `payload: { code, message, timestamp }`.
  */
 export function throwWithCode(
   code: string,
   status: number,
   message: string,
 ): never {
-  throw exceptionFor(status, `${code}: ${message}`);
+  throw exceptionFor(status, code, message);
 }

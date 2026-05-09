@@ -2,20 +2,20 @@
 
 Why we have this:
 
-  Until now every error was just a free-form English `detail` string,
-  which meant the frontend either had to keyword-match it (brittle) or
-  show the raw English to a Polish/Spanish user (ugly). With every
-  failure now leading with a `CODE: english message` prefix, the
-  frontend can branch on the code, look up a localized string, and the
-  English message stays as a fallback for codes the UI doesn't know yet.
+  Without structured codes, the frontend either had to keyword-match
+  free-form English (brittle) or show the raw English to a Polish /
+  Spanish user (ugly). With every failure carrying a `code` field the
+  frontend can branch on it, look up a localized string, and the
+  English `message` stays as a fallback for codes the UI doesn't know
+  yet.
 
-Format on the wire:
+Wire format (since the structured-error refactor):
 
-    HTTPException(detail="<CODE>: <english explanation>", status_code=<int>)
+    HTTPException(detail={"code": "<CODE>", "message": "<msg>"},
+                  status_code=<int>)
 
-Frontend parses with the regex `^([A-Z][A-Z0-9_]+):\\s*(.*)$`. The
-prefix is what matters; the rest of the string is a developer-friendly
-fallback, NOT a user-facing message.
+FastAPI emits this verbatim as `{"detail": {"code": ..., "message": ...}}`
+so the frontend reads `detail.code` directly — no string parsing.
 
 Adding a new code:
 
@@ -87,12 +87,14 @@ USER_TOKENS_EMPTY = "USER_TOKENS_EMPTY"
 def raise_with_code(
     code: str, status_code: int, message: str
 ) -> NoReturn:
-    """Raise an HTTPException whose detail is `<CODE>: <message>`.
+    """Raise an HTTPException with a structured `{code, message}` body.
 
-    The prefix is the machine-readable contract; the message is a
-    fallback for unmapped codes and developer log readability.
+    FastAPI surfaces this verbatim as `{"detail": {"code": ...,
+    "message": ...}}` — clients read `detail.code` directly, no string
+    parsing. The English `message` stays as a fallback for any code
+    the frontend hasn't translated yet.
     """
     raise HTTPException(
         status_code=status_code,
-        detail=f"{code}: {message}",
+        detail={"code": code, "message": message},
     )

@@ -3,6 +3,7 @@ import * as bcrypt from "bcrypt";
 import {
   BadRequestException,
   ConflictException,
+  HttpException,
   NotFoundException,
   UnauthorizedException,
 } from "@nestjs/common";
@@ -18,6 +19,30 @@ import { JwtService } from "@nestjs/jwt";
 import { PrismaService } from "../../prisma/prismaService";
 import { Role } from "@prisma/client";
 import { of } from "rxjs";
+
+/**
+ * Assert that a thrown HttpException carries a specific error code in
+ * its structured response body. Replaces the old pattern of asserting
+ * the message string contained "CODE: …" — codes now live in a
+ * separate `code` field on `getResponse()`.
+ */
+async function expectThrownWithCode(
+  promise: Promise<unknown>,
+  expectedCode: string,
+): Promise<HttpException> {
+  let caught: unknown;
+  try {
+    await promise;
+  } catch (e) {
+    caught = e;
+  }
+  expect(caught).toBeInstanceOf(HttpException);
+  const exception = caught as HttpException;
+  const body = exception.getResponse();
+  expect(typeof body).toBe("object");
+  expect((body as Record<string, unknown>).code).toBe(expectedCode);
+  return exception;
+}
 
 jest.mock("bcrypt");
 
@@ -200,7 +225,8 @@ describe("AuthService", () => {
       await expect(service.login(loginDto)).rejects.toThrow(
         UnauthorizedException,
       );
-      await expect(service.login(loginDto)).rejects.toThrow(
+      await expectThrownWithCode(
+        service.login(loginDto),
         "AUTH_INVALID_CREDENTIALS",
       );
     });
@@ -210,16 +236,15 @@ describe("AuthService", () => {
       prismaService.user.findUnique.mockResolvedValue(null);
 
       // First failure: should be plain wrong-credentials, not a lock.
-      await expect(service.login(loginDto)).rejects.toThrow(
+      await expectThrownWithCode(
+        service.login(loginDto),
         "AUTH_INVALID_CREDENTIALS",
       );
       // Second failure: should STILL be wrong-credentials (under the
       // 8-attempt limit). The pre-fix code would lock here.
-      await expect(service.login(loginDto)).rejects.toThrow(
+      await expectThrownWithCode(
+        service.login(loginDto),
         "AUTH_INVALID_CREDENTIALS",
-      );
-      await expect(service.login(loginDto)).rejects.not.toThrow(
-        "AUTH_RATE_LIMITED",
       );
     });
 
@@ -232,14 +257,16 @@ describe("AuthService", () => {
       // is still raised as INVALID_CREDENTIALS (the lock takes effect
       // for the NEXT request).
       for (let i = 0; i < 8; i++) {
-        await expect(service.login(loginDto)).rejects.toThrow(
+        await expectThrownWithCode(
+          service.login(loginDto),
           "AUTH_INVALID_CREDENTIALS",
         );
       }
 
       // 9th attempt: now we hit the lock check at the top of login()
       // before validating creds.
-      await expect(service.login(loginDto)).rejects.toThrow(
+      await expectThrownWithCode(
+        service.login(loginDto),
         "AUTH_RATE_LIMITED",
       );
     });
@@ -293,7 +320,8 @@ describe("AuthService", () => {
       await expect(service.register(userDto)).rejects.toThrow(
         ConflictException,
       );
-      await expect(service.register(userDto)).rejects.toThrow(
+      await expectThrownWithCode(
+        service.register(userDto),
         "AUTH_EMAIL_TAKEN",
       );
       expect(prismaService.user.create).not.toHaveBeenCalled();
@@ -409,7 +437,8 @@ describe("AuthService", () => {
       await expect(service.refreshToken("")).rejects.toThrow(
         BadRequestException,
       );
-      await expect(service.refreshToken("")).rejects.toThrow(
+      await expectThrownWithCode(
+        service.refreshToken(""),
         "AUTH_REFRESH_TOKEN_REQUIRED",
       );
     });
@@ -426,7 +455,8 @@ describe("AuthService", () => {
       await expect(service.refreshToken("invalid.token")).rejects.toThrow(
         BadRequestException,
       );
-      await expect(service.refreshToken("invalid.token")).rejects.toThrow(
+      await expectThrownWithCode(
+        service.refreshToken("invalid.token"),
         "AUTH_REFRESH_TOKEN_INVALID",
       );
       // Family revocation must have been triggered.
@@ -448,7 +478,8 @@ describe("AuthService", () => {
       await expect(service.refreshToken("valid.token")).rejects.toThrow(
         UnauthorizedException,
       );
-      await expect(service.refreshToken("valid.token")).rejects.toThrow(
+      await expectThrownWithCode(
+        service.refreshToken("valid.token"),
         "AUTH_USER_NOT_FOUND",
       );
     });
@@ -503,9 +534,10 @@ describe("AuthService", () => {
       await expect(
         service.resetPassword("ghost-a@example.com"),
       ).rejects.toThrow(NotFoundException);
-      await expect(
+      await expectThrownWithCode(
         service.resetPassword("ghost-b@example.com"),
-      ).rejects.toThrow("AUTH_USER_NOT_FOUND");
+        "AUTH_USER_NOT_FOUND",
+      );
     });
 
     it("should rate-limit a second reset for the same email", async () => {
@@ -524,7 +556,8 @@ describe("AuthService", () => {
 
       await service.resetPassword(email);
 
-      await expect(service.resetPassword(email)).rejects.toThrow(
+      await expectThrownWithCode(
+        service.resetPassword(email),
         "AUTH_RATE_LIMITED",
       );
     });
