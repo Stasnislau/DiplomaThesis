@@ -4,7 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 
 import EssayTask from "@/pages/Tasks/components/EssayTask";
 import { Lesson } from "@/api/hooks/useLearningPath";
+import LessonFreeSpeakTask from "@/pages/LearningPath/LessonFreeSpeakTask";
 import LessonListeningTask from "@/pages/LearningPath/LessonListeningTask";
+import LessonModePicker from "@/pages/LearningPath/LessonModePicker";
+import LessonQuickQuiz from "@/pages/LearningPath/LessonQuickQuiz";
 import LessonSpeakingTask from "@/pages/LearningPath/LessonSpeakingTask";
 import { TaskComponent } from "@/pages/Quiz/components/TaskComponent";
 import { isAnswerCorrect } from "@/utils/answerValidation";
@@ -241,6 +244,11 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
   const [taskCount,       setTaskCount]        = useState(0);
   const [correctCount,    setCorrectCount]     = useState(0);
   const [activeFlavour,   setActiveFlavour]    = useState<TaskFlavour>("multiple-choice");
+  // Sub-mode picker for lesson types that have more than one
+  // meaningful exercise format. Lessons that only support one mode
+  // ignore these.
+  const [essayMode,    setEssayMode]    = useState<"essay" | "quiz">("essay");
+  const [speakingMode, setSpeakingMode] = useState<"phrase" | "freespeak">("phrase");
 
   const { createTask: createMC, isLoading: loadMC, data: dataMC, reset: resetMC } = useCreateMultipleChoiceTask();
   const { createTask: createFB, isLoading: loadFB, data: dataFB, reset: resetFB } = useCreateBlankSpaceTask();
@@ -358,7 +366,9 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
   }
 
   // Speaking-type lessons swap the quiz UI for a record-and-analyze
-  // flow. Pass criterion: pronunciation.fluencyScore >= 60.
+  // flow. Pass criterion: pronunciation.fluencyScore >= 60. Two
+  // modes: read a generated phrase, or speak freely on the lesson
+  // topic — the learner picks which one to practice.
   if (lesson.type === "speaking") {
     return (
       <LessonShell
@@ -370,17 +380,48 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
         localizedType={localizedType}
         localizedLesson={localizedLesson}
       >
-        <LessonSpeakingTask
-          language={language.toLowerCase()}
-          level={level}
-          topic={lesson.topic}
-          keywords={lesson.keywords}
-          onAnalyzed={(result) => {
-            if (result.pronunciation.fluencyScore >= 60) {
-              completeLesson({ lessonId: lesson.id, language, level });
-            }
-          }}
+        <LessonModePicker
+          modes={[
+            {
+              key: "phrase",
+              icon: "🗣️",
+              label: t("lessonSpeaking.modePhraseLabel"),
+              description: t("lessonSpeaking.modePhraseDescription"),
+            },
+            {
+              key: "freespeak",
+              icon: "🎤",
+              label: t("lessonFreeSpeak.modeLabel"),
+              description: t("lessonFreeSpeak.modeDescription"),
+            },
+          ]}
+          active={speakingMode}
+          onChange={(k) => setSpeakingMode(k as "phrase" | "freespeak")}
         />
+        {speakingMode === "phrase" ? (
+          <LessonSpeakingTask
+            language={language.toLowerCase()}
+            level={level}
+            topic={lesson.topic}
+            keywords={lesson.keywords}
+            onAnalyzed={(result) => {
+              if (result.pronunciation.fluencyScore >= 60) {
+                completeLesson({ lessonId: lesson.id, language, level });
+              }
+            }}
+          />
+        ) : (
+          <LessonFreeSpeakTask
+            language={language.toLowerCase()}
+            topic={lesson.topic}
+            keywords={lesson.keywords}
+            onAnalyzed={(result) => {
+              if (result.pronunciation.fluencyScore >= 60) {
+                completeLesson({ lessonId: lesson.id, language, level });
+              }
+            }}
+          />
+        )}
       </LessonShell>
     );
   }
@@ -411,8 +452,10 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
     );
   }
 
-  // Essay-type lessons skip the multi-question quiz flow entirely:
-  // one prompt, one essay, AI grade. Pass = lesson complete.
+  // Writing-essay lessons offer two modes: write the full academic
+  // essay (the lesson's intended skill, AI-graded 0-100), or warm up
+  // on the lesson keywords with a quick MC + fill-in quiz. Either
+  // path completes the lesson on its own pass criterion.
   if (lesson.type === "writing_essay") {
     return (
       <LessonShell
@@ -424,18 +467,48 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
         localizedType={localizedType}
         localizedLesson={localizedLesson}
       >
-        <EssayTask
-          language={language}
-          level={level}
-          topic={lesson.topic}
-          keywords={lesson.keywords}
-          lessonId={lesson.id}
-          onEvaluated={(ev) => {
-            if (ev.passed) {
-              completeLesson({ lessonId: lesson.id, language, level });
-            }
-          }}
+        <LessonModePicker
+          modes={[
+            {
+              key: "essay",
+              icon: "✍️",
+              label: t("essay.modeEssayLabel"),
+              description: t("essay.modeEssayDescription"),
+            },
+            {
+              key: "quiz",
+              icon: "⚡",
+              label: t("essay.modeQuizLabel"),
+              description: t("essay.modeQuizDescription"),
+            },
+          ]}
+          active={essayMode}
+          onChange={(k) => setEssayMode(k as "essay" | "quiz")}
         />
+        {essayMode === "essay" ? (
+          <EssayTask
+            language={language}
+            level={level}
+            topic={lesson.topic}
+            keywords={lesson.keywords}
+            lessonId={lesson.id}
+            onEvaluated={(ev) => {
+              if (ev.passed) {
+                completeLesson({ lessonId: lesson.id, language, level });
+              }
+            }}
+          />
+        ) : (
+          <LessonQuickQuiz
+            language={language}
+            level={level}
+            topic={lesson.topic}
+            keywords={lesson.keywords}
+            onPassed={() =>
+              completeLesson({ lessonId: lesson.id, language, level })
+            }
+          />
+        )}
       </LessonShell>
     );
   }
