@@ -202,14 +202,30 @@ export const ProfilePage: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-          <UserStats title={t('dashboard.languages')} value={languagesCount} icon="🌍" />
+          <UserStats
+            title={t('dashboard.languages')}
+            value={languagesCount}
+            icon="🌍"
+            to="/learning-path"
+          />
           <UserStats
             title={t('dashboard.achievements')}
             value={achievementsCount}
             icon="🏆"
+            to="#achievements-section"
           />
-          <UserStats title={t('dashboard.totalXp')} value={0} icon="⭐" />
-          <UserStats title={t('dashboard.streak')} value={0} icon="🔥" />
+          <UserStats
+            title={t('dashboard.totalXp')}
+            value={0}
+            icon="⭐"
+            to="/history"
+          />
+          <UserStats
+            title={t('dashboard.streak')}
+            value={0}
+            icon="🔥"
+            to="/history"
+          />
         </div>
       </div>
 
@@ -255,7 +271,7 @@ export const ProfilePage: React.FC = () => {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+      <div id="achievements-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 scroll-mt-24">
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 transition-colors duration-300">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">

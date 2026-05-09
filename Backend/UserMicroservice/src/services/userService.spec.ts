@@ -242,7 +242,11 @@ describe("UserService", () => {
   });
 
   describe("setNativeLanguage", () => {
-    it("should set native language for user", async () => {
+    beforeEach(() => {
+      (prisma.userLanguage as any).update = jest.fn().mockResolvedValue({});
+    });
+
+    it("creates a new native language row when user has none", async () => {
       (prisma.language.findUnique as jest.Mock).mockResolvedValue({ id: "lang-1" });
       (prisma.user.findUnique as jest.Mock).mockResolvedValue({
         ...mockUser,
@@ -264,28 +268,88 @@ describe("UserService", () => {
       });
     });
 
-    it("should throw NotFoundException when user not found", async () => {
+    it("is idempotent when re-picking the same native language", async () => {
+      (prisma.language.findUnique as jest.Mock).mockResolvedValue({ id: "lang-1" });
+      (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+        ...mockUser,
+        languages: [
+          { id: "ul-1", languageId: "lang-1", isNative: true },
+        ],
+      });
+
+      const result = await service.setNativeLanguage("user-123", "lang-1");
+
+      expect(result.success).toBe(true);
+      expect(prisma.userLanguage.create).not.toHaveBeenCalled();
+      // Existing row promoted (no-op effectively, but the call goes through)
+      expect((prisma.userLanguage as any).update).toHaveBeenCalledWith({
+        where: { id: "ul-1" },
+        data: expect.objectContaining({ isNative: true }),
+      });
+    });
+
+    it("demotes old native and promotes new one when switching", async () => {
+      (prisma.language.findUnique as jest.Mock).mockResolvedValue({ id: "lang-2" });
+      (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+        ...mockUser,
+        languages: [
+          { id: "ul-1", languageId: "lang-1", isNative: true },
+          { id: "ul-2", languageId: "lang-2", isNative: false, level: "B1" },
+        ],
+      });
+
+      await service.setNativeLanguage("user-123", "lang-2");
+
+      // Old native demoted
+      expect((prisma.userLanguage as any).update).toHaveBeenCalledWith({
+        where: { id: "ul-1" },
+        data: { isNative: false },
+      });
+      // Existing target row promoted (no fresh create)
+      expect((prisma.userLanguage as any).update).toHaveBeenCalledWith({
+        where: { id: "ul-2" },
+        data: expect.objectContaining({
+          isNative: true,
+          level: LanguageLevel.NATIVE,
+        }),
+      });
+      expect(prisma.userLanguage.create).not.toHaveBeenCalled();
+    });
+
+    it("creates a new row when switching to a brand-new language", async () => {
+      (prisma.language.findUnique as jest.Mock).mockResolvedValue({ id: "lang-2" });
+      (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+        ...mockUser,
+        languages: [
+          { id: "ul-1", languageId: "lang-1", isNative: true },
+        ],
+      });
+      (prisma.userLanguage.create as jest.Mock).mockResolvedValue({});
+
+      await service.setNativeLanguage("user-123", "lang-2");
+
+      // Old native demoted
+      expect((prisma.userLanguage as any).update).toHaveBeenCalledWith({
+        where: { id: "ul-1" },
+        data: { isNative: false },
+      });
+      // New row created for lang-2
+      expect(prisma.userLanguage.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          languageId: "lang-2",
+          isNative: true,
+          level: LanguageLevel.NATIVE,
+        }),
+      });
+    });
+
+    it("throws NotFoundException when user not found", async () => {
       (prisma.language.findUnique as jest.Mock).mockResolvedValue({ id: "lang-1" });
       (prisma.user.findUnique as jest.Mock).mockResolvedValue(null);
 
       await expect(
         service.setNativeLanguage("nonexistent", "lang-1"),
       ).rejects.toThrow(NotFoundException);
-    });
-
-    it("should throw ConflictException when language already added", async () => {
-      (prisma.language.findUnique as jest.Mock).mockResolvedValue({ id: "lang-1" });
-      (prisma.user.findUnique as jest.Mock).mockResolvedValue({
-        ...mockUser,
-        languages: [{ languageId: "lang-1" }],
-      });
-
-      await expect(
-        service.setNativeLanguage("user-123", "lang-1"),
-      ).rejects.toThrow(ConflictException);
-      await expect(
-        service.setNativeLanguage("user-123", "lang-1"),
-      ).rejects.toThrow("USER_LANGUAGE_ALREADY_ADDED");
     });
   });
 
