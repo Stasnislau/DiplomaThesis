@@ -39,6 +39,11 @@ const FAILED_LOGIN_LIMIT = 8;
 const FAILED_LOGIN_WINDOW_MS = 15 * 60 * 1000;
 interface FailedAttempt {
   count: number;
+  // Wall-clock time of the most recent failed attempt. Used to tell
+  // whether the user is still inside the rolling 15-minute window —
+  // gap of >WINDOW_MS resets the counter.
+  lastAttemptAt: number;
+  // 0 when not locked. Otherwise: timestamp the lock expires.
   lockedUntil: number;
 }
 const failedLogins = new Map<string, FailedAttempt>();
@@ -93,7 +98,7 @@ export class AuthService {
     const tracked = failedLogins.get(key);
     if (tracked && tracked.lockedUntil > now) {
       throwWithCode(
-        AUTH_INVALID_CREDENTIALS,
+        AUTH_RATE_LIMITED,
         HttpStatus.TOO_MANY_REQUESTS,
         "Too many failed attempts; try again later.",
       );
@@ -101,14 +106,25 @@ export class AuthService {
 
     const user = await this.validateUser(loginDto.email, loginDto.password);
     if (!user) {
-      const attempt = tracked && tracked.lockedUntil > now - FAILED_LOGIN_WINDOW_MS
-        ? tracked
-        : { count: 0, lockedUntil: 0 };
+      // Roll forward the per-email failure counter. If the previous
+      // failure was within the last WINDOW_MS, increment; otherwise
+      // start a fresh window. The counter only triggers a lock when
+      // it crosses LIMIT — every failure before that is just a wrong
+      // password (UNAUTHORIZED), not a rate-limit (TOO_MANY).
+      //
+      // Previous bug: both branches of the lock-vs-no-lock ternary
+      // wrote `now + WINDOW_MS` to lockedUntil, so a single typo
+      // locked the user out for 15 minutes. Now `lockedUntil` only
+      // gets a non-zero value when count >= LIMIT.
+      const insideWindow =
+        !!tracked && now - tracked.lastAttemptAt < FAILED_LOGIN_WINDOW_MS;
+      const attempt: FailedAttempt = insideWindow
+        ? { ...tracked!, lastAttemptAt: now }
+        : { count: 0, lastAttemptAt: now, lockedUntil: 0 };
       attempt.count += 1;
-      attempt.lockedUntil =
-        attempt.count >= FAILED_LOGIN_LIMIT
-          ? now + FAILED_LOGIN_WINDOW_MS
-          : now + FAILED_LOGIN_WINDOW_MS; // sliding window
+      if (attempt.count >= FAILED_LOGIN_LIMIT) {
+        attempt.lockedUntil = now + FAILED_LOGIN_WINDOW_MS;
+      }
       failedLogins.set(key, attempt);
       throwWithCode(
         AUTH_INVALID_CREDENTIALS,

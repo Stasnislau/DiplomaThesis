@@ -192,7 +192,9 @@ describe("AuthService", () => {
     });
 
     it("should throw UnauthorizedException when credentials are invalid", async () => {
-      const loginDto = { email: "test@example.com", password: "wrongpassword" };
+      // Distinct email to avoid contaminating other tests' state in
+      // the module-level failedLogins map.
+      const loginDto = { email: "wrong-pw@example.com", password: "wrongpassword" };
       prismaService.user.findUnique.mockResolvedValue(null);
 
       await expect(service.login(loginDto)).rejects.toThrow(
@@ -200,6 +202,45 @@ describe("AuthService", () => {
       );
       await expect(service.login(loginDto)).rejects.toThrow(
         "AUTH_INVALID_CREDENTIALS",
+      );
+    });
+
+    it("does NOT lock after a single failed attempt (regression: bug had identical ternary branches)", async () => {
+      const loginDto = { email: "single-fail@example.com", password: "wrong" };
+      prismaService.user.findUnique.mockResolvedValue(null);
+
+      // First failure: should be plain wrong-credentials, not a lock.
+      await expect(service.login(loginDto)).rejects.toThrow(
+        "AUTH_INVALID_CREDENTIALS",
+      );
+      // Second failure: should STILL be wrong-credentials (under the
+      // 8-attempt limit). The pre-fix code would lock here.
+      await expect(service.login(loginDto)).rejects.toThrow(
+        "AUTH_INVALID_CREDENTIALS",
+      );
+      await expect(service.login(loginDto)).rejects.not.toThrow(
+        "AUTH_RATE_LIMITED",
+      );
+    });
+
+    it("locks the account after 8 failed attempts and surfaces AUTH_RATE_LIMITED", async () => {
+      const loginDto = { email: "lock-target@example.com", password: "wrong" };
+      prismaService.user.findUnique.mockResolvedValue(null);
+
+      // 8 wrong-password attempts — all should throw the bare invalid-
+      // credentials code. The 8th sets lockedUntil, but the 8th itself
+      // is still raised as INVALID_CREDENTIALS (the lock takes effect
+      // for the NEXT request).
+      for (let i = 0; i < 8; i++) {
+        await expect(service.login(loginDto)).rejects.toThrow(
+          "AUTH_INVALID_CREDENTIALS",
+        );
+      }
+
+      // 9th attempt: now we hit the lock check at the top of login()
+      // before validating creds.
+      await expect(service.login(loginDto)).rejects.toThrow(
+        "AUTH_RATE_LIMITED",
       );
     });
   });
