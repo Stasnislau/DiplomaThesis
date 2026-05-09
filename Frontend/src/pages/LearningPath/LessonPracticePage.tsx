@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 
 import EssayTask from "@/pages/Tasks/components/EssayTask";
 import { Lesson } from "@/api/hooks/useLearningPath";
+import LessonListeningTask from "@/pages/LearningPath/LessonListeningTask";
+import LessonSpeakingTask from "@/pages/LearningPath/LessonSpeakingTask";
 import { TaskComponent } from "@/pages/Quiz/components/TaskComponent";
 import { isAnswerCorrect } from "@/utils/answerValidation";
 import { isMultipleChoice } from "@/types/typeGuards/isMultipleChoice";
@@ -46,6 +48,72 @@ interface LessonState {
   language: string;
   level: string;
 }
+
+interface LessonShellProps {
+  lesson: Lesson;
+  language: string;
+  level: string;
+  gradient: string;
+  icon: string;
+  localizedType: string;
+  localizedLesson: { title: string; description: string };
+  children: React.ReactNode;
+}
+
+/** Page chrome shared between the writing_essay / speaking / listening
+ *  lesson flows: gradient background, back link, lesson header card.
+ *  The standard quiz-flow renders its own custom layout below, so it
+ *  doesn't use this. */
+const LessonShell = ({
+  lesson,
+  language,
+  level,
+  gradient,
+  icon,
+  localizedType,
+  localizedLesson,
+  children,
+}: LessonShellProps) => {
+  const { t } = useTranslation();
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-10 transition-colors duration-300">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <Link
+          to="/learning-path"
+          state={{ language: language.toLowerCase(), level }}
+          className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+        >
+          {t("learningPath.practice.backLink")}
+        </Link>
+
+        <div className={`bg-gradient-to-r ${gradient} rounded-3xl p-6 text-white shadow-xl`}>
+          <div className="flex items-start gap-4">
+            <div className="h-16 w-16 rounded-2xl bg-white/20 flex items-center justify-center text-4xl flex-shrink-0">
+              {icon}
+            </div>
+            <div className="flex-1">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <span className="text-xs font-bold uppercase tracking-widest bg-white/20 px-2.5 py-0.5 rounded-full">
+                  {localizedType}
+                </span>
+                <span className="text-xs font-bold uppercase tracking-widest bg-white/20 px-2.5 py-0.5 rounded-full">
+                  {level}
+                </span>
+                <span className="text-xs bg-white/20 px-2.5 py-0.5 rounded-full">
+                  ⏱ {lesson.durationMinutes} min
+                </span>
+              </div>
+              <h1 className="text-2xl font-bold">{localizedLesson.title}</h1>
+              <p className="text-white/80 text-sm mt-1">{localizedLesson.description}</p>
+            </div>
+          </div>
+        </div>
+
+        {children}
+      </div>
+    </div>
+  );
+};
 
 interface CompletionScreenProps {
   lesson: Lesson;
@@ -289,57 +357,86 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
     );
   }
 
+  // Speaking-type lessons swap the quiz UI for a record-and-analyze
+  // flow. Pass criterion: pronunciation.fluencyScore >= 60.
+  if (lesson.type === "speaking") {
+    return (
+      <LessonShell
+        lesson={lesson}
+        language={language}
+        level={level}
+        gradient={gradient}
+        icon={icon}
+        localizedType={localizedType}
+        localizedLesson={localizedLesson}
+      >
+        <LessonSpeakingTask
+          language={language.toLowerCase()}
+          level={level}
+          topic={lesson.topic}
+          keywords={lesson.keywords}
+          onAnalyzed={(result) => {
+            if (result.pronunciation.fluencyScore >= 60) {
+              completeLesson({ lessonId: lesson.id, language, level });
+            }
+          }}
+        />
+      </LessonShell>
+    );
+  }
+
+  // Listening-type lessons play an audio clip + comprehension Qs.
+  // Pass criterion: at least 60% of questions correct.
+  if (lesson.type === "listening") {
+    return (
+      <LessonShell
+        lesson={lesson}
+        language={language}
+        level={level}
+        gradient={gradient}
+        icon={icon}
+        localizedType={localizedType}
+        localizedLesson={localizedLesson}
+      >
+        <LessonListeningTask
+          language={language}
+          level={level}
+          onCompleted={(correct, total) => {
+            if (total > 0 && correct / total >= 0.6) {
+              completeLesson({ lessonId: lesson.id, language, level });
+            }
+          }}
+        />
+      </LessonShell>
+    );
+  }
+
   // Essay-type lessons skip the multi-question quiz flow entirely:
   // one prompt, one essay, AI grade. Pass = lesson complete.
   if (lesson.type === "writing_essay") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-10 transition-colors duration-300">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-          <Link
-            to="/learning-path"
-            state={{ language: language.toLowerCase(), level }}
-            className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-          >
-            {t("learningPath.practice.backLink")}
-          </Link>
-
-          <div className={`bg-gradient-to-r ${gradient} rounded-3xl p-6 text-white shadow-xl`}>
-            <div className="flex items-start gap-4">
-              <div className="h-16 w-16 rounded-2xl bg-white/20 flex items-center justify-center text-4xl flex-shrink-0">
-                {icon}
-              </div>
-              <div className="flex-1">
-                <div className="flex flex-wrap items-center gap-2 mb-1">
-                  <span className="text-xs font-bold uppercase tracking-widest bg-white/20 px-2.5 py-0.5 rounded-full">
-                    {localizedType}
-                  </span>
-                  <span className="text-xs font-bold uppercase tracking-widest bg-white/20 px-2.5 py-0.5 rounded-full">
-                    {level}
-                  </span>
-                  <span className="text-xs bg-white/20 px-2.5 py-0.5 rounded-full">
-                    ⏱ {lesson.durationMinutes} min
-                  </span>
-                </div>
-                <h1 className="text-2xl font-bold">{localizedLesson.title}</h1>
-                <p className="text-white/80 text-sm mt-1">{localizedLesson.description}</p>
-              </div>
-            </div>
-          </div>
-
-          <EssayTask
-            language={language}
-            level={level}
-            topic={lesson.topic}
-            keywords={lesson.keywords}
-            lessonId={lesson.id}
-            onEvaluated={(ev) => {
-              if (ev.passed) {
-                completeLesson({ lessonId: lesson.id, language, level });
-              }
-            }}
-          />
-        </div>
-      </div>
+      <LessonShell
+        lesson={lesson}
+        language={language}
+        level={level}
+        gradient={gradient}
+        icon={icon}
+        localizedType={localizedType}
+        localizedLesson={localizedLesson}
+      >
+        <EssayTask
+          language={language}
+          level={level}
+          topic={lesson.topic}
+          keywords={lesson.keywords}
+          lessonId={lesson.id}
+          onEvaluated={(ev) => {
+            if (ev.passed) {
+              completeLesson({ lessonId: lesson.id, language, level });
+            }
+          }}
+        />
+      </LessonShell>
     );
   }
 
