@@ -41,11 +41,13 @@ describe("ErrorHandlingMiddleware", () => {
       middleware.catch(exception, mockHost);
 
       expect(mockResponse.status).toHaveBeenCalledWith(401);
+      // Code is now a separate field on payload — not embedded in message.
       expect(mockResponse.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
           payload: expect.objectContaining({
-            message: expect.stringContaining("AUTH_TOKEN_EXPIRED"),
+            code: "AUTH_TOKEN_EXPIRED",
+            message: expect.any(String),
           }),
         }),
       );
@@ -61,7 +63,8 @@ describe("ErrorHandlingMiddleware", () => {
         expect.objectContaining({
           success: false,
           payload: expect.objectContaining({
-            message: expect.stringContaining("AUTH_INVALID_TOKEN"),
+            code: "AUTH_INVALID_TOKEN",
+            message: expect.any(String),
           }),
         }),
       );
@@ -121,7 +124,8 @@ describe("ErrorHandlingMiddleware", () => {
         expect.objectContaining({
           success: false,
           payload: expect.objectContaining({
-            message: expect.stringContaining("AUTH_INTERNAL_ERROR"),
+            code: "AUTH_INTERNAL_ERROR",
+            message: expect.any(String),
           }),
         }),
       );

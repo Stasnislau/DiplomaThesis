@@ -19,6 +19,7 @@ import {
 
 /** Error response payload structure */
 interface ErrorPayload {
+  code?: string;
   message: string;
   timestamp: string;
   errors?: unknown;
@@ -30,6 +31,30 @@ interface ErrorResponseBody {
   payload: ErrorPayload;
 }
 
+/** Pull { code, message } out of an HttpException — supports both the
+ *  new structured `{ code, message }` body and the legacy plain-string
+ *  message so a stray throw doesn't break the response shape. */
+function extractCodeAndMessage(
+  exception: HttpException,
+): { code?: string; message: string } {
+  const response = exception.getResponse();
+  if (typeof response === "object" && response !== null) {
+    const obj = response as Record<string, unknown>;
+    const code = typeof obj.code === "string" ? obj.code : undefined;
+    const inner = obj.message;
+    let message: string;
+    if (typeof inner === "string") {
+      message = inner;
+    } else if (Array.isArray(inner)) {
+      message = inner.join("; ");
+    } else {
+      message = exception.message;
+    }
+    return { code, message };
+  }
+  return { message: exception.message };
+}
+
 @Catch()
 export class ErrorHandlingMiddleware implements ExceptionFilter {
   private readonly logger = new Logger(ErrorHandlingMiddleware.name);
@@ -37,7 +62,10 @@ export class ErrorHandlingMiddleware implements ExceptionFilter {
   catch(exception: Error, host: ArgumentsHost) {
     if (exception instanceof TokenExpiredError) {
       this.handleError(
-        new UnauthorizedException(`${USER_TOKEN_EXPIRED}: Token has expired`),
+        new UnauthorizedException({
+          code: USER_TOKEN_EXPIRED,
+          message: "Token has expired",
+        }),
         host,
       );
       return;
@@ -45,7 +73,10 @@ export class ErrorHandlingMiddleware implements ExceptionFilter {
 
     if (exception instanceof JsonWebTokenError) {
       this.handleError(
-        new UnauthorizedException(`${USER_INVALID_TOKEN}: Invalid token`),
+        new UnauthorizedException({
+          code: USER_INVALID_TOKEN,
+          message: "Invalid token",
+        }),
         host,
       );
       return;
@@ -59,9 +90,10 @@ export class ErrorHandlingMiddleware implements ExceptionFilter {
         exception.stack,
       );
       this.handleError(
-        new InternalServerErrorException(
-          `${USER_INTERNAL_ERROR}: ${exception.message || "Internal server error"}`,
-        ),
+        new InternalServerErrorException({
+          code: USER_INTERNAL_ERROR,
+          message: exception.message || "Internal server error",
+        }),
         host,
       );
     }
@@ -72,10 +104,12 @@ export class ErrorHandlingMiddleware implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const status = exception.getStatus();
 
+    const { code, message } = extractCodeAndMessage(exception);
     const responseBody: ErrorResponseBody = {
       success: false,
       payload: {
-        message: exception.message,
+        code,
+        message,
         timestamp: new Date().toISOString(),
       },
     };
@@ -84,7 +118,10 @@ export class ErrorHandlingMiddleware implements ExceptionFilter {
       const validationErrors = exception.getResponse();
       if (typeof validationErrors === "object" && validationErrors !== null) {
         const errors = validationErrors as Record<string, unknown>;
-        responseBody.payload.errors = errors["message"] || validationErrors;
+        const inner = errors["message"];
+        if (Array.isArray(inner)) {
+          responseBody.payload.errors = inner;
+        }
       }
     }
 

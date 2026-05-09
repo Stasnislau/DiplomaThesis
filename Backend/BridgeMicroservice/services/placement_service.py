@@ -10,6 +10,8 @@ import time
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict
 
+from fastapi import HTTPException
+
 from models.dtos.task_dto import MultipleChoiceTask, FillInTheBlankTask
 from models.dtos.evaluate_test_dto import EvaluateTestDto
 from models.dtos.placement_dtos import PlacementAnswer, PlacementTestAnswer
@@ -102,6 +104,14 @@ class PlacementService:
                 )
             return task
 
+        except HTTPException:
+            # The downstream task service already raised a structured
+            # HTTPException — preserve it so the {code, message} body
+            # reaches the client untouched. Wrapping in `raise Exception`
+            # would stringify the structured detail into a confusing
+            # nested "PLACEMENT_GENERATION_FAILED: 502: AI_BAD_GATEWAY: …"
+            # blob.
+            raise
         except Exception as e:
             raise Exception(f"Failed to generate placement task: {e}")
 

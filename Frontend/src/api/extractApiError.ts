@@ -2,18 +2,19 @@
  * One place to turn a Bridge / Auth / User error response into something
  * the UI can reason about.
  *
- * Bridge raises every HTTPException via `raise_with_code(CODE, status, msg)`,
- * which puts the wire-format detail as `"<CODE>: <english fallback>"`. The
- * gateway sometimes wraps that into `{success: false, payload: {...}}`,
- * sometimes passes through as `{detail: "..."}` (FastAPI default), and the
- * Nest microservices have their own `payload.message` / `payload.errors`
- * shapes. We try them all in priority order.
+ * Modern wire format (since the structured-error refactor):
+ *   - Nest microservices: `{ success: false, payload: { code, message, ... } }`
+ *   - Bridge (FastAPI):    `{ detail: { code, message } }`
+ *   - Both expose `code` as a sibling field, no parsing required.
  *
- * Returns:
- *  - `{ code, message }` — `code` is the machine-readable prefix when
- *    present (so the UI can `t("errors.codes." + code)`), else undefined.
- *    `message` is the English fallback after the colon, or the whole
- *    string when there's no code, or the supplied default.
+ * Legacy fallback we still honour:
+ *   - `{ detail: "CODE: english fallback" }`
+ *   - `{ payload: { message: "CODE: english fallback" } }`
+ * Older deployments and the rare uncaught throw might still emit the
+ * embedded prefix; we keep parsing it so a stray response doesn't drop
+ * the localized error path.
+ *
+ * Returns `{ code, message }` so callers can `t("errors.codes." + code)`.
  */
 
 export interface ParsedApiError {
@@ -62,6 +63,44 @@ function rawErrorString(apiResult: unknown, fallback: string): string {
 }
 
 /**
+ * Try to read `code` (and message) directly from a structured error
+ * payload — this is the preferred path under the new wire contract.
+ * Looks at, in priority order:
+ *   - `payload.code` + `payload.message`     (Nest-wrapped responses)
+ *   - `detail.code`  + `detail.message`      (FastAPI structured detail)
+ *   - top-level `code` + `message`            (rare passthroughs)
+ *
+ * Returns null when no structured code is present, telling the caller
+ * to fall back to legacy CODE-prefixed string parsing.
+ */
+function readStructuredError(
+  apiResult: unknown,
+): ParsedApiError | null {
+  if (!apiResult || typeof apiResult !== "object") return null;
+  const result = apiResult as Record<string, unknown>;
+
+  const candidates: Array<Record<string, unknown> | undefined> = [
+    result.payload as Record<string, unknown> | undefined,
+    typeof result.detail === "object" && result.detail !== null
+      ? (result.detail as Record<string, unknown>)
+      : undefined,
+    result,
+  ];
+
+  for (const obj of candidates) {
+    if (!obj) continue;
+    const code = typeof obj.code === "string" ? obj.code : undefined;
+    if (!code) continue;
+    const message =
+      typeof obj.message === "string" && obj.message.trim()
+        ? (obj.message as string)
+        : "";
+    return { code, message };
+  }
+  return null;
+}
+
+/**
  * Parse an API error into { code, message }. Use this when you want to
  * branch on the structured backend code (e.g. for an i18n lookup).
  */
@@ -69,6 +108,18 @@ export function parseApiError(
   apiResult: unknown,
   fallback = "Request failed",
 ): ParsedApiError {
+  // Modern wire format wins — `code` and `message` arrive as separate
+  // fields, no string parsing required.
+  const structured = readStructuredError(apiResult);
+  if (structured) {
+    return {
+      code: structured.code,
+      message: structured.message || fallback,
+    };
+  }
+
+  // Legacy fallback: scan whatever string field the response carries
+  // for a "CODE: msg" prefix, and split it.
   const raw = rawErrorString(apiResult, fallback);
   const match = CODE_PREFIX_RE.exec(raw);
   if (match) {

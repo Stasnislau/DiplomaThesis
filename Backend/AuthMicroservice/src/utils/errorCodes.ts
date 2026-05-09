@@ -1,11 +1,15 @@
 /**
  * Stable, machine-readable codes for every HttpException Auth raises.
  *
- * Same contract as Bridge's error_codes.py and Frontend's parseApiError:
- * the exception's `message` is `"<CODE>: <english explanation>"`. The
- * ErrorHandlingMiddleware copies that string into `payload.message`,
- * the gateway forwards it as-is, and `parseApiError` on the frontend
- * splits it into `{ code, message }` for `useLocalizedError`.
+ * Wire contract (since the structured-error refactor):
+ *   - throwWithCode() raises an HttpException whose response body is
+ *     `{ code, message }`.
+ *   - ErrorHandlingMiddleware reads both fields and emits
+ *     `payload.code` AND `payload.message` as siblings — code is no
+ *     longer embedded inside the message string.
+ *   - Frontend `parseApiResponse` reads `payload.code` directly. It
+ *     still falls back to parsing a "<CODE>: <msg>" message prefix
+ *     for backward compatibility with any uncaught path.
  *
  * Adding a new code:
  *   1. Add a constant below in the matching section.
@@ -38,40 +42,46 @@ export const AUTH_INTERNAL_ERROR = "AUTH_INTERNAL_ERROR";
 export const AUTH_RATE_LIMITED = "AUTH_RATE_LIMITED";
 
 /**
- * Pick the right NestJS exception class for a given HTTP status so the
- * existing ErrorHandlingMiddleware keeps recognising kinds (it special-
- * cases BadRequestException for the validation `errors` array).
+ * Pick the right NestJS exception class for a given HTTP status. Each
+ * exception gets a structured response body `{ code, message }` so
+ * the middleware can emit them as separate fields on the wire.
+ *
+ * BadRequestException stays special-cased because the
+ * ErrorHandlingMiddleware uses it to surface validation `errors`
+ * arrays from class-validator.
  */
 function exceptionFor(
   status: number,
+  code: string,
   message: string,
 ): HttpException {
+  const body = { code, message };
   switch (status) {
     case HttpStatus.UNAUTHORIZED:
-      return new UnauthorizedException(message);
+      return new UnauthorizedException(body);
     case HttpStatus.NOT_FOUND:
-      return new NotFoundException(message);
+      return new NotFoundException(body);
     case HttpStatus.CONFLICT:
-      return new ConflictException(message);
+      return new ConflictException(body);
     case HttpStatus.INTERNAL_SERVER_ERROR:
-      return new InternalServerErrorException(message);
+      return new InternalServerErrorException(body);
     case HttpStatus.TOO_MANY_REQUESTS:
-      return new HttpException(message, HttpStatus.TOO_MANY_REQUESTS);
+      return new HttpException(body, HttpStatus.TOO_MANY_REQUESTS);
     case HttpStatus.BAD_REQUEST:
     default:
-      return new BadRequestException(message);
+      return new BadRequestException(body);
   }
 }
 
 /**
- * Throw an HttpException whose message is `"<CODE>: <english fallback>"`.
- * The prefix is the wire contract, the message is for developer logs +
- * unmapped-code fallbacks on the frontend.
+ * Throw an HttpException whose response body is `{ code, message }`.
+ * The middleware turns that into `payload: { code, message, timestamp }`
+ * so clients never need to parse a magic string.
  */
 export function throwWithCode(
   code: string,
   status: number,
   message: string,
 ): never {
-  throw exceptionFor(status, `${code}: ${message}`);
+  throw exceptionFor(status, code, message);
 }
