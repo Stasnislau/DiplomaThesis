@@ -113,23 +113,40 @@ export class UserService {
       throwWithCode(USER_NOT_FOUND, HttpStatus.NOT_FOUND, "User not found");
     }
 
-    if (user.languages.find((language) => language.languageId === languageId)) {
-      throwWithCode(
-        USER_LANGUAGE_ALREADY_ADDED,
-        HttpStatus.CONFLICT,
-        "Language already added",
-      );
+    // Idempotent set-native flow:
+    //   1. Demote whatever was previously the user's native language.
+    //   2. If they already had a row for the target language (any
+    //      level), promote it to native; otherwise create one.
+    // Without this the call would either 409 "already added" when
+    // re-picking the same language, or end up with two `isNative=true`
+    // rows when switching native.
+    const existingNative = user.languages.find((l) => l.isNative);
+    if (existingNative && existingNative.languageId !== languageId) {
+      await this.prisma.userLanguage.update({
+        where: { id: existingNative.id },
+        data: { isNative: false },
+      });
     }
 
-    await this.prisma.userLanguage.create({
-      data: {
-        level: LanguageLevel.NATIVE,
-        languageId: languageId,
-        userId: userId,
-        isStarted: true,
-        isNative: true,
-      },
-    });
+    const existingForTarget = user.languages.find(
+      (l) => l.languageId === languageId,
+    );
+    if (existingForTarget) {
+      await this.prisma.userLanguage.update({
+        where: { id: existingForTarget.id },
+        data: { isNative: true, level: LanguageLevel.NATIVE, isStarted: true },
+      });
+    } else {
+      await this.prisma.userLanguage.create({
+        data: {
+          level: LanguageLevel.NATIVE,
+          languageId,
+          userId,
+          isStarted: true,
+          isNative: true,
+        },
+      });
+    }
 
     return {
       success: true,

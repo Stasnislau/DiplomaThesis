@@ -32,9 +32,22 @@
 	@spa {
 		not path /api/*
 		not path /static/*
+		not path /assets/*
 		not file
 	}
 	rewrite @spa /index.html
+
+	# Stale tab loading a hash-named chunk that no longer exists must
+	# get a real 404 — without this, the SPA fallback above would
+	# serve index.html under a Content-Type of text/html, and the
+	# browser's nosniff policy then crashes the page with
+	# "'text/html' is not a valid JavaScript MIME type". A 404 here
+	# is the correct signal so the React shell can prompt a reload.
+	@missingAssets {
+		path /assets/*
+		not file
+	}
+	respond @missingAssets 404
 
 	@assets path_regexp \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$
 	header @assets Cache-Control "public, max-age=31536000, immutable"

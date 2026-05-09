@@ -126,6 +126,18 @@ const AITokensPage: React.FC = () => {
     createToken(data, {
       onSuccess: () => {
         reset();
+        addToast({
+          title: t("aiTokens.tokenAddedTitle"),
+          content: t("aiTokens.tokenAddedBody"),
+          severity: "success",
+        });
+      },
+      onError: (err: Error) => {
+        addToast({
+          title: t("aiTokens.tokenAddFailedTitle"),
+          content: err.message,
+          severity: "error",
+        });
       },
     });
   };
@@ -166,8 +178,11 @@ const AITokensPage: React.FC = () => {
           <p className="text-sm text-indigo-800 dark:text-indigo-300 mb-3 leading-relaxed">
             {t("aiTokens.disclaimerBody")}
           </p>
-          <div className="text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-xl px-3 py-2 mb-4 leading-relaxed">
+          <div className="text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-xl px-3 py-2 mb-3 leading-relaxed">
             {t("aiTokens.billingNotice")}
+          </div>
+          <div className="text-xs text-rose-800 dark:text-rose-300 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800/50 rounded-xl px-3 py-2 mb-4 leading-relaxed">
+            {t("aiTokens.securityNotice")}
           </div>
           <p className="text-xs font-semibold text-indigo-900 dark:text-indigo-200 uppercase tracking-wide mb-2">
             {t("aiTokens.whereToGetKey")}
@@ -305,7 +320,13 @@ const AITokensPage: React.FC = () => {
                       <div>
                         <p className="font-semibold text-gray-900 dark:text-white">{providerLabel}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="inline-block w-2 h-2 rounded-full bg-green-500" />
+                          <span
+                            className="inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-300"
+                            title={t("aiTokens.activeTooltip")}
+                          >
+                            <span className="inline-block w-2 h-2 rounded-full bg-emerald-500" />
+                            {t("aiTokens.activeLabel")}
+                          </span>
                           <p className="text-xs text-gray-500 dark:text-gray-400 font-mono tracking-wider">
                             ••••••••••••{token.token?.slice(-4) || "••••"}
                           </p>
@@ -350,12 +371,12 @@ const AITokensPage: React.FC = () => {
                         ) : verifyStatus[token.id] === "valid" ? (
                           <>
                             <span aria-hidden="true">✓</span>
-                            {t("aiTokens.verify")}
+                            {t("aiTokens.verified")}
                           </>
                         ) : verifyStatus[token.id] === "invalid" ? (
                           <>
                             <span aria-hidden="true">✗</span>
-                            {t("aiTokens.verify")}
+                            {t("aiTokens.verifyFailed")}
                           </>
                         ) : (
                           t("aiTokens.verify")

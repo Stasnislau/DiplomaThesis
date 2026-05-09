@@ -363,11 +363,14 @@ const en = {
       tokenModalTitle: "Add your AI token",
       tokenModalBody: "To generate tasks and analyses, add at least one AI provider token.",
       goToConfiguration: "Go to configuration",
+      dismissForNow: "Not now",
       disclaimerTitle: "Why do I need an API key?",
       disclaimerBody:
         "This platform does not include a built-in AI subscription. To generate exercises, evaluate answers and produce audio, you need to provide your own key from one of the supported providers below. Most providers offer a free tier sufficient for testing.",
       billingNotice:
         "⚠️ Heads-up: every action that calls the AI (generating tasks, evaluating answers, speaking analysis, listening transcripts) is billed against the API key you provide. We don't add any markup, but you do pay the provider directly.",
+      securityNotice:
+        "🛡️ However, in the era of Claude Mythos every server can be hacked, so we suggest constraining the budget assigned to the API key on the provider's side (most providers expose a hard monthly cap or per-key spend limit).",
       whereToGetKey: "Where to get a key",
       privacyNote:
         "Your keys are stored only in your account on this server and are never shared with anyone else.",
@@ -390,8 +393,15 @@ const en = {
       deleteToken: "Remove key",
       verify: "Verify",
       verifying: "Verifying…",
+      verified: "Verified",
+      verifyFailed: "Invalid",
+      activeLabel: "active",
+      activeTooltip: "This key is enabled. Click Verify to ping the provider.",
       verifyValidTitle: "API key is valid",
       verifyInvalidTitle: "API key check failed",
+      tokenAddedTitle: "Token added",
+      tokenAddedBody: "The API key was saved. Click Verify on the row to confirm it works.",
+      tokenAddFailedTitle: "Couldn't save the token",
       keysEncrypted: "Your API keys are encrypted and stored securely",
     },
 
@@ -1232,11 +1242,14 @@ const pl = {
       tokenModalTitle: "Dodaj swój klucz AI",
       tokenModalBody: "Aby generować zadania i analizy, dodaj co najmniej jeden klucz dostawcy AI.",
       goToConfiguration: "Przejdź do ustawień",
+      dismissForNow: "Nie teraz",
       disclaimerTitle: "Dlaczego potrzebuję klucza API?",
       disclaimerBody:
         "Platforma nie zawiera własnej subskrypcji AI. Aby generować zadania, oceniać odpowiedzi i tworzyć audio, musisz podać własny klucz od jednego z poniższych dostawców. Większość z nich oferuje darmowy poziom, który wystarczy do testów.",
       billingNotice:
         "⚠️ Uwaga: każda akcja korzystająca z AI (generowanie zadań, ocena odpowiedzi, analiza mówienia, transkrypcja słuchania) jest rozliczana z Twojego klucza API. Nie pobieramy żadnej prowizji — płacisz dostawcy bezpośrednio.",
+      securityNotice:
+        "🛡️ Pamiętaj jednak, że w erze Mitologii Claude'a każdy serwer można zhakować — zalecamy ustawić limit budżetu dla klucza API po stronie dostawcy (większość udostępnia twardy miesięczny cap albo per-key spend limit).",
       whereToGetKey: "Gdzie zdobyć klucz",
       privacyNote:
         "Twoje klucze są przechowywane wyłącznie w Twoim koncie na tym serwerze i nie są nikomu udostępniane.",
@@ -1259,8 +1272,15 @@ const pl = {
       deleteToken: "Usuń klucz",
       verify: "Sprawdź",
       verifying: "Sprawdzanie…",
+      verified: "Sprawdzony",
+      verifyFailed: "Nieprawidłowy",
+      activeLabel: "aktywny",
+      activeTooltip: "Klucz jest aktywny. Kliknij Sprawdź, aby zweryfikować u dostawcy.",
       verifyValidTitle: "Klucz API jest prawidłowy",
       verifyInvalidTitle: "Sprawdzenie klucza nie powiodło się",
+      tokenAddedTitle: "Klucz dodany",
+      tokenAddedBody: "Klucz API został zapisany. Kliknij Sprawdź obok wpisu, aby potwierdzić, że działa.",
+      tokenAddFailedTitle: "Nie udało się zapisać klucza",
       keysEncrypted: "Twoje klucze API są zaszyfrowane i bezpiecznie przechowywane",
     },
 
@@ -1903,11 +1923,14 @@ const es = {
       tokenModalTitle: "Añade tu clave AI",
       tokenModalBody: "Para generar tareas y análisis, añade al menos una clave de proveedor de IA.",
       goToConfiguration: "Ir a la configuración",
+      dismissForNow: "Ahora no",
       disclaimerTitle: "¿Por qué necesito una clave API?",
       disclaimerBody:
         "Esta plataforma no incluye una suscripción integrada de IA. Para generar ejercicios, evaluar respuestas y producir audio, debes proporcionar tu propia clave de uno de los proveedores admitidos a continuación. La mayoría ofrecen un nivel gratuito suficiente para pruebas.",
       billingNotice:
         "⚠️ Aviso: cada acción que utilice la IA (generar tareas, evaluar respuestas, análisis del habla, transcripción de escucha) se facturará a la clave API que proporciones. No añadimos ningún margen — pagas directamente al proveedor.",
+      securityNotice:
+        "🛡️ Sin embargo, en la era del Mito de Claude cualquier servidor puede ser hackeado, así que recomendamos limitar el presupuesto asignado a la clave API en el panel del proveedor (la mayoría exponen un tope mensual estricto o un límite de gasto por clave).",
       whereToGetKey: "Dónde obtener una clave",
       privacyNote:
         "Tus claves se almacenan solo en tu cuenta de este servidor y nunca se comparten con nadie.",
@@ -1930,8 +1953,15 @@ const es = {
       deleteToken: "Eliminar clave",
       verify: "Verificar",
       verifying: "Verificando…",
+      verified: "Verificada",
+      verifyFailed: "Inválida",
+      activeLabel: "activa",
+      activeTooltip: "La clave está activa. Pulsa Verificar para hacer un ping al proveedor.",
       verifyValidTitle: "La clave API es válida",
       verifyInvalidTitle: "La verificación de la clave falló",
+      tokenAddedTitle: "Clave añadida",
+      tokenAddedBody: "La clave API se guardó. Pulsa Verificar al lado para confirmar que funciona.",
+      tokenAddFailedTitle: "No se pudo guardar la clave",
       keysEncrypted: "Tus claves API están cifradas y almacenadas de forma segura",
     },
 
