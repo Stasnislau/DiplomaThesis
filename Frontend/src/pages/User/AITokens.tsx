@@ -73,9 +73,9 @@ const getProviderStyle = (providerId: string) => {
 
 const AITokensPage: React.FC = () => {
   const { t } = useTranslation();
-  const { data: aiTokens, isLoading } = useGetUserAITokens();
+  const { data: aiTokens, isLoading, error: tokensError } = useGetUserAITokens();
   const { mutate: createToken, isPending: isCreating } = useCreateUserAIToken();
-  const { mutate: deleteToken } = useDeleteUserAIToken();
+  const { mutate: deleteToken, isPending: isDeleting, variables: deletingId } = useDeleteUserAIToken();
   const { setDefaultToken, isSettingDefault } = useSetDefaultUserAIToken();
   const { verifyTokenAsync } = useVerifyAIToken();
   const addToast = useToastsStore((s) => s.addToast);
@@ -85,6 +85,37 @@ const AITokensPage: React.FC = () => {
   const [verifyStatus, setVerifyStatus] = React.useState<
     Record<string, "valid" | "invalid">
   >({});
+  // Two-stage delete: first click arms the confirm UI, second click
+  // actually deletes. Without this an accidental click on the trash
+  // icon nukes the credential immediately. Keyed by token id so each
+  // row arms independently.
+  const [pendingDeleteId, setPendingDeleteId] = React.useState<string | null>(
+    null,
+  );
+
+  const requestDelete = (tokenId: string) => {
+    if (pendingDeleteId !== tokenId) {
+      setPendingDeleteId(tokenId);
+      return;
+    }
+    deleteToken(tokenId, {
+      onSuccess: () => {
+        setPendingDeleteId(null);
+        addToast({
+          title: t("aiTokens.tokenDeletedTitle"),
+          content: t("aiTokens.tokenDeletedBody"),
+          severity: "success",
+        });
+      },
+      onError: (err: Error) => {
+        addToast({
+          title: t("aiTokens.tokenDeleteFailedTitle"),
+          content: localizeError(err),
+          severity: "error",
+        });
+      },
+    });
+  };
 
   const handleVerify = async (tokenId: string) => {
     setVerifyingId(tokenId);
@@ -286,9 +317,26 @@ const AITokensPage: React.FC = () => {
             </div>
           )}
 
-          {!isLoading && aiTokens?.length === 0 && (
+          {!isLoading && tokensError && (
+            <div
+              role="alert"
+              className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-6 text-center"
+            >
+              <p className="text-red-700 dark:text-red-300 font-medium mb-2">
+                {t("aiTokens.tokensFetchFailedTitle")}
+              </p>
+              <p className="text-sm text-red-600 dark:text-red-400">
+                {localizeError(tokensError)}
+              </p>
+            </div>
+          )}
+
+          {!isLoading && !tokensError && aiTokens?.length === 0 && (
             <div className="text-center py-12">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gray-100 dark:bg-gray-700 border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center">
+              <div
+                className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gray-100 dark:bg-gray-700 border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center"
+                aria-hidden="true"
+              >
                 <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
@@ -298,7 +346,7 @@ const AITokensPage: React.FC = () => {
             </div>
           )}
 
-          {!isLoading && aiTokens && aiTokens.length > 0 && (
+          {!isLoading && !tokensError && aiTokens && aiTokens.length > 0 && (
             <div className="space-y-3">
               {aiTokens.map((token) => {
                 const providerLabel =
@@ -383,12 +431,39 @@ const AITokensPage: React.FC = () => {
                         )}
                       </button>
 
-                      <IconButton
-                        onClick={() => deleteToken(token.id)}
-                        className="h-10 w-10 flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all duration-200 opacity-0 group-hover:opacity-100"
-                      >
-                        <TrashIcon className="h-5 w-5" />
-                      </IconButton>
+                      {pendingDeleteId === token.id ? (
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => requestDelete(token.id)}
+                            disabled={isDeleting && deletingId === token.id}
+                            aria-label={t("aiTokens.confirmDeleteAriaLabel", { provider: providerLabel })}
+                            className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50 disabled:opacity-50 inline-flex items-center gap-1.5"
+                          >
+                            {isDeleting && deletingId === token.id ? (
+                              <span className="inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                            ) : null}
+                            {t("aiTokens.confirmDeleteButton")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPendingDeleteId(null)}
+                            disabled={isDeleting && deletingId === token.id}
+                            className="text-xs font-medium px-2 py-1.5 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50"
+                          >
+                            {t("aiTokens.cancelDeleteButton")}
+                          </button>
+                        </div>
+                      ) : (
+                        <IconButton
+                          onClick={() => requestDelete(token.id)}
+                          aria-label={t("aiTokens.deleteAriaLabel", { provider: providerLabel })}
+                          title={t("aiTokens.deleteToken")}
+                          className="h-10 w-10 flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all duration-200 opacity-0 group-hover:opacity-100"
+                        >
+                          <TrashIcon className="h-5 w-5" />
+                        </IconButton>
+                      )}
                     </div>
                   </div>
                 );

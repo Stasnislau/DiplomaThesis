@@ -138,9 +138,13 @@ const WritingTask = ({ initialLanguage, initialLevel, initialTaskType }: Writing
         isCorrect: isAnswerCorrect,
         targetedWeaknesses: targetedWeaknesses ?? [],
         questionPreview: currentTaskData.question?.slice(0, 160),
-      }).catch(() => {
+      }).catch((err) => {
         // Logging is non-critical: a transient error here just means
-        // the next adaptive call has slightly less signal.
+        // the next adaptive call has slightly less signal. Keep it
+        // visible in dev tools though — silent failure here would
+        // hide a regression where the entire adaptive loop stops
+        // recording results.
+        console.warn("logWritingResult failed:", err);
       });
     }
   };

@@ -115,6 +115,7 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ user, onUserDeleted })
             variant={user.role === "ADMIN" ? "secondary" : "primary"}
             onClick={handleRoleChange}
             isLoading={isRoleLoading}
+            disabled={isRoleLoading || isDeleteLoading}
             className="w-full"
           >
             {user.role === "ADMIN" ? "Remove Admin Role" : "Make Admin"}
@@ -126,6 +127,7 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ user, onUserDeleted })
                 variant="danger"
                 onClick={handleDeleteUser}
                 isLoading={isDeleteLoading}
+                disabled={isDeleteLoading}
                 className="flex-1"
               >
                 Confirm Delete
@@ -133,6 +135,7 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ user, onUserDeleted })
               <Button
                 variant="tertiary"
                 onClick={() => setConfirmDelete(false)}
+                disabled={isDeleteLoading}
                 className="flex-1"
               >
                 Cancel
@@ -142,6 +145,7 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ user, onUserDeleted })
             <Button
               variant="danger"
               onClick={handleDeleteUser}
+              disabled={isDeleteLoading || isRoleLoading}
               className="w-full"
             >
               Delete User

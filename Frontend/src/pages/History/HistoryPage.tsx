@@ -104,7 +104,9 @@ const HistoryPage: React.FC = () => {
 
         {!isLoading && entries && entries.length === 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-12 text-center">
-            <div className="text-5xl mb-4">📭</div>
+            <div className="text-5xl mb-4" role="img" aria-label={t("history.empty.title")}>
+              📭
+            </div>
             <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
               {t("history.empty.title")}
             </h2>

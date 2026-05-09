@@ -58,8 +58,8 @@ export const MaterialsPage: React.FC = () => {
   const [userAnswers, setUserAnswers] = useState<Record<number, string>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
   
-  const { mutate: upload, isPending: isUploading, error: uploadError } = useUploadMaterial();
-  const { mutate: generateQuizMutation, isPending: isGeneratingQuiz } = useGenerateQuiz();
+  const { mutate: upload, isPending: isUploading, error: uploadError, reset: resetUpload } = useUploadMaterial();
+  const { mutate: generateQuizMutation, isPending: isGeneratingQuiz, error: quizError, reset: resetQuiz } = useGenerateQuiz();
   const { mutate: saveMaterial } = useSaveMaterial();
   const { data: userMaterials, isLoading: isMaterialsLoading } = useGetUserMaterials();
   
@@ -188,12 +188,26 @@ export const MaterialsPage: React.FC = () => {
                       </div>
                       
                       {uploadError && (
-                        <p className="text-red-500 mt-4 text-center">{uploadError.message}</p>
+                        <div
+                          role="alert"
+                          className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md flex items-center justify-between gap-3"
+                        >
+                          <p className="text-sm text-red-700 dark:text-red-300">
+                            {uploadError.message || t("materialsPage.uploadFailed")}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => resetUpload()}
+                            className="text-xs font-medium px-2 py-1 rounded text-red-700 dark:text-red-300 border border-red-300 dark:border-red-700 hover:bg-red-100 dark:hover:bg-red-900/40"
+                          >
+                            {t("materialsPage.tryAgain")}
+                          </button>
+                        </div>
                       )}
 
                       <div className="mt-6 flex justify-end">
-                        <Button 
-                          onClick={handleUpload} 
+                        <Button
+                          onClick={handleUpload}
                           disabled={!file || isUploading}
                           variant="primary"
                         >
@@ -290,9 +304,26 @@ export const MaterialsPage: React.FC = () => {
                         </div>
                     )}
                     
+                    {quizError && (
+                        <div
+                            role="alert"
+                            className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md flex items-center justify-between gap-3"
+                        >
+                            <p className="text-sm text-red-700 dark:text-red-300">
+                                {quizError.message || t("materialsPage.quizGenerationFailed")}
+                            </p>
+                            <button
+                                type="button"
+                                onClick={() => resetQuiz()}
+                                className="text-xs font-medium px-2 py-1 rounded text-red-700 dark:text-red-300 border border-red-300 dark:border-red-700 hover:bg-red-100 dark:hover:bg-red-900/40"
+                            >
+                                {t("materialsPage.tryAgain")}
+                            </button>
+                        </div>
+                    )}
                     <div className="flex justify-end">
-                        <Button 
-                            onClick={handleGenerateQuiz} 
+                        <Button
+                            onClick={handleGenerateQuiz}
                             disabled={isGeneratingQuiz || (analyzedTypes.length > 0 && selectedTypes.length === 0)}
                             variant="primary"
                             className="px-8 py-3 h-auto"

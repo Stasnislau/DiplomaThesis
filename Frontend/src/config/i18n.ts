@@ -305,6 +305,9 @@ const en = {
       subtitle: "Upload a document, and I'll generate similar exercises for you.",
       uploadNewFile: "Upload New File",
       newUpload: "New Upload",
+      uploadFailed: "Upload failed. Try a different file or check your AI provider key.",
+      quizGenerationFailed: "Couldn't generate the quiz. Try again or pick fewer task types.",
+      tryAgain: "Try again",
     },
 
     admin: {
@@ -402,6 +405,14 @@ const en = {
       tokenAddedTitle: "Token added",
       tokenAddedBody: "The API key was saved. Click Verify on the row to confirm it works.",
       tokenAddFailedTitle: "Couldn't save the token",
+      tokenDeletedTitle: "Token removed",
+      tokenDeletedBody: "The provider key has been deleted.",
+      tokenDeleteFailedTitle: "Couldn't delete the token",
+      tokensFetchFailedTitle: "Couldn't load your providers",
+      deleteAriaLabel: "Delete the {{provider}} key",
+      confirmDeleteAriaLabel: "Confirm deleting the {{provider}} key",
+      confirmDeleteButton: "Confirm delete",
+      cancelDeleteButton: "Cancel",
       keysEncrypted: "Your API keys are encrypted and stored securely",
     },
 
@@ -991,6 +1002,9 @@ const pl = {
       subtitle: "Wgraj dokument, a wygeneruję na jego podstawie podobne ćwiczenia.",
       uploadNewFile: "Wgraj nowy plik",
       newUpload: "Nowy plik",
+      uploadFailed: "Nie udało się wgrać pliku. Spróbuj inny plik lub sprawdź swój klucz dostawcy AI.",
+      quizGenerationFailed: "Nie udało się wygenerować quizu. Spróbuj ponownie lub wybierz mniej typów zadań.",
+      tryAgain: "Spróbuj ponownie",
     },
 
     admin: {
@@ -1281,6 +1295,14 @@ const pl = {
       tokenAddedTitle: "Klucz dodany",
       tokenAddedBody: "Klucz API został zapisany. Kliknij Sprawdź obok wpisu, aby potwierdzić, że działa.",
       tokenAddFailedTitle: "Nie udało się zapisać klucza",
+      tokenDeletedTitle: "Klucz usunięty",
+      tokenDeletedBody: "Klucz dostawcy został usunięty.",
+      tokenDeleteFailedTitle: "Nie udało się usunąć klucza",
+      tokensFetchFailedTitle: "Nie udało się załadować dostawców",
+      deleteAriaLabel: "Usuń klucz {{provider}}",
+      confirmDeleteAriaLabel: "Potwierdź usunięcie klucza {{provider}}",
+      confirmDeleteButton: "Potwierdź usunięcie",
+      cancelDeleteButton: "Anuluj",
       keysEncrypted: "Twoje klucze API są zaszyfrowane i bezpiecznie przechowywane",
     },
 
@@ -1673,6 +1695,9 @@ const es = {
       subtitle: "Sube un documento y te generaré ejercicios similares.",
       uploadNewFile: "Subir un nuevo archivo",
       newUpload: "Nueva subida",
+      uploadFailed: "No se pudo subir el archivo. Prueba con otro o revisa tu clave de proveedor de IA.",
+      quizGenerationFailed: "No se pudo generar el cuestionario. Inténtalo de nuevo o elige menos tipos de tareas.",
+      tryAgain: "Reintentar",
     },
 
     admin: {
@@ -1962,6 +1987,14 @@ const es = {
       tokenAddedTitle: "Clave añadida",
       tokenAddedBody: "La clave API se guardó. Pulsa Verificar al lado para confirmar que funciona.",
       tokenAddFailedTitle: "No se pudo guardar la clave",
+      tokenDeletedTitle: "Clave eliminada",
+      tokenDeletedBody: "La clave del proveedor ha sido eliminada.",
+      tokenDeleteFailedTitle: "No se pudo eliminar la clave",
+      tokensFetchFailedTitle: "No se pudieron cargar tus proveedores",
+      deleteAriaLabel: "Eliminar la clave de {{provider}}",
+      confirmDeleteAriaLabel: "Confirmar eliminación de la clave de {{provider}}",
+      confirmDeleteButton: "Confirmar eliminación",
+      cancelDeleteButton: "Cancelar",
       keysEncrypted: "Tus claves API están cifradas y almacenadas de forma segura",
     },
 
