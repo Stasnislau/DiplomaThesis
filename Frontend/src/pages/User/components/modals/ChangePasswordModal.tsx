@@ -47,7 +47,9 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
         onClose();
       })
       .catch(() => {
-        // Error is handled by the mutation state
+        // Mutation `error` state is rendered inline below — the empty
+        // catch only exists to swallow the rejection so React doesn't
+        // log "unhandled promise rejection".
       });
   };
 
@@ -55,7 +57,10 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} title="Change Password">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {error && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
+          <div
+            role="alert"
+            className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md text-red-700 dark:text-red-300 text-sm"
+          >
             {error.message || "Failed to update password. Please try again."}
           </div>
         )}
@@ -65,6 +70,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
           {...register("currentPassword", {
             required: "Current password is required",
           })}
+          error={errors.currentPassword?.message}
         />
         <TextField
           label="New Password"

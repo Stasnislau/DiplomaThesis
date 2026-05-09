@@ -26,7 +26,12 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const { t } = useTranslation();
   const { me } = useMe();
   const { updateUser, isLoading, error, reset: resetMutation } = useUpdateUser();
-  const { register, handleSubmit, reset: resetForm } = useForm<IFormInput>({
+  const {
+    register,
+    handleSubmit,
+    reset: resetForm,
+    formState: { errors },
+  } = useForm<IFormInput>({
     defaultValues: {
       name: me?.name || "",
       surname: me?.surname || "",
@@ -50,6 +55,10 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
           onClose();
         })
         .catch(() => {
+          // Error is already exposed via the `error` field from the
+          // useUpdateUser hook and rendered inline below; we just need
+          // to swallow the rejection here so React doesn't complain
+          // about an unhandled promise.
         });
     } else {
       onClose();
@@ -60,7 +69,10 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} title={t("profile.editProfile")}>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {error && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
+          <div
+            role="alert"
+            className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md text-red-700 dark:text-red-300 text-sm"
+          >
             {error.message || t("profile.updateFailed")}
           </div>
         )}
@@ -68,11 +80,13 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
           label={t("auth.name")}
           {...register("name", { required: t("profile.nameRequired") })}
           placeholder={t("profile.yourName")}
+          error={errors.name?.message}
         />
         <TextField
           label={t("profile.surname")}
           {...register("surname", { required: t("profile.surnameRequired") })}
           placeholder={t("profile.yourSurname")}
+          error={errors.surname?.message}
         />
         <div className="flex justify-end space-x-3 mt-6">
           <Button variant="secondary" onClick={onClose} type="button" disabled={isLoading}>
