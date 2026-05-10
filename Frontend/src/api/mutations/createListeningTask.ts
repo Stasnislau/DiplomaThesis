@@ -1,11 +1,18 @@
 import { BRIDGE_MICROSERVICE_URL } from "../consts";
 import { ListeningTaskResponse } from "@/types/responses/TaskResponse";
+import type { ListeningQuestionType } from "@/types/responses/ListeningResponse";
 import { asApiError } from "../extractApiError";
 import { fetchWithAuth } from "../fetchWithAuth";
 
 export interface CreateListeningTaskRequest {
   language: string;
   level: string;
+  /**
+   * Subset of canonical question types the user wants in this set.
+   * Omit / leave empty to get the historic default mix
+   * (multiple_choice + fill_in_the_blank).
+   */
+  questionTypes?: ListeningQuestionType[];
 }
 
 export async function createListeningTask(
@@ -15,7 +22,15 @@ export async function createListeningTask(
     `${BRIDGE_MICROSERVICE_URL}/tasks/listening`,
     {
       method: "POST",
-      body: JSON.stringify(input),
+      // Wire shape uses snake_case `question_types`; the request DTO
+      // on the backend has alias_generator=to_camel + populate_by_name,
+      // so either form is accepted, but snake_case keeps the wire
+      // self-documenting.
+      body: JSON.stringify({
+        language: input.language,
+        level: input.level,
+        question_types: input.questionTypes,
+      }),
     },
   );
 

@@ -5,6 +5,7 @@ import { SpeakingAnalysisResult } from "@/api/mutations/analyzeAudioFile";
 import { useAnalyzeAudioFile } from "@/api/hooks/useAnalyzeAudioFile";
 import { useTranslation } from "react-i18next";
 import { PracticePhraseBlock } from "@/pages/Tasks/components/PracticePhraseBlock";
+import FormatPracticePanel from "@/pages/Tasks/components/SpeakingFormat/FormatPracticePanel";
 
 const LANGUAGES = [
   { code: "english", flag: "🇬🇧" },
@@ -24,6 +25,11 @@ const SpeakingTask = () => {
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [audioURL, setAudioURL] = useState<string>("");
   const [language, setLanguage] = useState<string>(LANGUAGES[0].code);
+  // Top-level mode toggle. Free analyze = the historic record-and-
+  // get-feedback flow. Guided practice = Phase 3 format-driven
+  // prompts with rubric-based grading.
+  const [mode, setMode] = useState<"free_analyze" | "guided">("free_analyze");
+  const [guidedLevel, setGuidedLevel] = useState<string>("B1");
   const { analyzeAudioFile, isLoading: isAnalyzingAudioFile } = useAnalyzeAudioFile();
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -177,6 +183,156 @@ const SpeakingTask = () => {
     return map[key] ? t(map[key]) : errorType;
   };
 
+  return (
+    <div className="space-y-6">
+      {/* Mode toggle: free analyze vs guided practice */}
+      <div className="grid grid-cols-2 gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-2xl">
+        {(["free_analyze", "guided"] as const).map((m) => {
+          const isOn = mode === m;
+          return (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMode(m)}
+              aria-pressed={isOn}
+              className={`py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                isOn
+                  ? "bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-300 shadow"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+              }`}
+            >
+              {m === "free_analyze"
+                ? t("tasks.modeFreeAnalyze", { defaultValue: "Free analyze" })
+                : t("tasks.modeGuided", { defaultValue: "Guided practice" })}
+            </button>
+          );
+        })}
+      </div>
+
+      {mode === "guided" ? (
+        <>
+          {/* Language Selection (shared with free-analyze visually below) */}
+          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 rounded-2xl p-6 border border-indigo-100 dark:border-gray-600">
+            <label className="text-sm font-semibold text-gray-800 dark:text-gray-100 mb-3 block">
+              🌍 {t("languages.chooseLanguage")}
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {LANGUAGES.map((lang) => (
+                <button
+                  key={lang.code}
+                  onClick={() => setLanguage(lang.code)}
+                  aria-pressed={language === lang.code}
+                  className={`flex-1 min-w-[90px] py-3 px-4 rounded-xl text-sm font-medium transition-all flex flex-col items-center gap-1 ${
+                    language === lang.code
+                      ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30"
+                      : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600"
+                  }`}
+                >
+                  <span className="text-xl">{lang.flag}</span>
+                  <span className="text-xs">{t(`languages.${lang.code}`)}</span>
+                </button>
+              ))}
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {(["A1", "A2", "B1", "B2", "C1", "C2"] as const).map((lvl) => (
+                <button
+                  key={lvl}
+                  onClick={() => setGuidedLevel(lvl)}
+                  aria-pressed={guidedLevel === lvl}
+                  className={`min-w-[60px] py-2 px-4 rounded-xl text-sm font-bold transition-all ${
+                    guidedLevel === lvl
+                      ? "bg-purple-600 text-white shadow"
+                      : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700"
+                  }`}
+                >
+                  {lvl}
+                </button>
+              ))}
+            </div>
+          </div>
+          <FormatPracticePanel
+            language={language.charAt(0).toUpperCase() + language.slice(1)}
+            level={guidedLevel}
+          />
+        </>
+      ) : (
+        <FreeAnalyzeFlow
+          t={t}
+          i18n={i18n}
+          language={language}
+          setLanguage={setLanguage}
+          audioFile={audioFile}
+          setAudioFile={setAudioFile}
+          audioURL={audioURL}
+          setAudioURL={setAudioURL}
+          isRecording={isRecording}
+          setIsRecording={setIsRecording}
+          analysisResult={analysisResult}
+          setAnalysisResult={setAnalysisResult}
+          errorMessage={errorMessage}
+          setErrorMessage={setErrorMessage}
+          handleAudioFileChange={handleAudioFileChange}
+          handleRecordButtonClick={handleRecordButtonClick}
+          handleClearAudio={handleClearAudio}
+          handleAnalyzeClick={handleAnalyzeClick}
+          isAnalyzingAudioFile={isAnalyzingAudioFile}
+          getConfidenceColor={getConfidenceColor}
+          getFluencyLabel={getFluencyLabel}
+          getErrorTypeColor={getErrorTypeColor}
+          localizeErrorType={localizeErrorType}
+        />
+      )}
+    </div>
+  );
+};
+
+// Original free-analyze body extracted into its own component so the
+// mode toggle above can swap between flows without duplicating JSX.
+interface FreeAnalyzeFlowProps {
+  t: ReturnType<typeof useTranslation>["t"];
+  i18n: ReturnType<typeof useTranslation>["i18n"];
+  language: string;
+  setLanguage: (s: string) => void;
+  audioFile: File | null;
+  setAudioFile: (f: File | null) => void;
+  audioURL: string;
+  setAudioURL: (s: string) => void;
+  isRecording: boolean;
+  setIsRecording: (b: boolean) => void;
+  analysisResult: SpeakingAnalysisResult | null;
+  setAnalysisResult: (r: SpeakingAnalysisResult | null) => void;
+  errorMessage: string;
+  setErrorMessage: (s: string) => void;
+  handleAudioFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleRecordButtonClick: () => void;
+  handleClearAudio: () => void;
+  handleAnalyzeClick: () => Promise<void>;
+  isAnalyzingAudioFile: boolean;
+  getConfidenceColor: (c: number) => string;
+  getFluencyLabel: (s: number) => { label: string; color: string };
+  getErrorTypeColor: (t: string) => string;
+  localizeErrorType: (t: string) => string;
+}
+
+const FreeAnalyzeFlow = ({
+  t,
+  language,
+  setLanguage,
+  audioFile,
+  audioURL,
+  isRecording,
+  analysisResult,
+  errorMessage,
+  handleAudioFileChange,
+  handleRecordButtonClick,
+  handleClearAudio,
+  handleAnalyzeClick,
+  isAnalyzingAudioFile,
+  getConfidenceColor,
+  getFluencyLabel,
+  getErrorTypeColor,
+  localizeErrorType,
+}: FreeAnalyzeFlowProps) => {
   return (
     <div className="space-y-6">
       <PracticePhraseBlock language={language} />

@@ -129,7 +129,11 @@ async def test_analyze_user_audio_groq_provider_error(
         with pytest.raises(HTTPException) as exc_info:
             await speaking_service.analyze_user_audio(b"audio", "x.mp3", "English")
         assert exc_info.value.status_code == 502
-        assert "transcription provider error" in exc_info.value.detail
+        # Errors are now structured `{code, message}` dicts (see
+        # utils/error_codes.raise_with_code) so the FE can branch on
+        # `detail.code`. Substring-check the human message rather than
+        # the whole detail blob.
+        assert "transcription provider error" in exc_info.value.detail["message"]
 
 
 @pytest.mark.asyncio
@@ -149,7 +153,11 @@ async def test_analyze_user_audio_missing_groq_key(
     with pytest.raises(HTTPException) as exc_info:
         await speaking_service.analyze_user_audio(b"audio", "x.mp3", "English")
     assert exc_info.value.status_code == 500
-    assert "GROQ_API_KEY" in exc_info.value.detail
+    # Structured `{code, message}` error shape — see Phase 1 commit
+    # fd54c2e. Assert on the dedicated code field rather than scraping
+    # the message text.
+    assert exc_info.value.detail["code"] == "SPEAKING_GROQ_KEY_MISSING"
+    assert "GROQ_API_KEY" in exc_info.value.detail["message"]
 
 
 def test_pronunciation_metrics_low_confidence_words(

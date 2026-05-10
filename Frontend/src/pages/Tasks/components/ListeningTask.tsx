@@ -2,10 +2,17 @@ import { useState, useEffect } from "react";
 import Button from "@/components/common/Button";
 import { useCreateListeningTask } from "@/api/hooks/useCreateListeningTask";
 import { ListeningTaskResponse } from "@/types/responses/TaskResponse";
-import { TaskComponent } from "@/pages/Quiz/components/TaskComponent";
-import { isMultipleChoice } from "@/types/typeGuards/isMultipleChoice";
+import {
+  LISTENING_QUESTION_TYPES,
+  type ListeningQuestionType,
+} from "@/types/responses/ListeningResponse";
 import { useTranslation } from "react-i18next";
 import { generateAdaptiveListeningTask } from "@/api/mutations/generateAdaptiveListeningTask";
+import ListeningQuestionRenderer, {
+  gradeListeningQuestion,
+  type ListeningAnswerValue,
+} from "./ListeningRenderers";
+import cn from "@/utils/cn";
 
 const LANGUAGES = [
   { code: "English", flag: "🇬🇧" },
@@ -14,19 +21,39 @@ const LANGUAGES = [
   { code: "German", flag: "🇩🇪" },
   { code: "Russian", flag: "🇷🇺" },
   { code: "Polish", flag: "🇵🇱" },
-  { code: "Italian", flag: "🇮🇹" }
+  { code: "Italian", flag: "🇮🇹" },
 ];
 
 const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
+
+// Default selection on first mount — historic behaviour.
+const DEFAULT_SELECTED_TYPES: ListeningQuestionType[] = [
+  "multiple_choice",
+  "fill_in_the_blank",
+];
+
+const QUESTION_TYPE_LABELS: Record<ListeningQuestionType, { defaultLabel: string; emoji: string }> = {
+  multiple_choice: { defaultLabel: "Multiple choice", emoji: "🔘" },
+  fill_in_the_blank: { defaultLabel: "Fill in the blank", emoji: "✍️" },
+  dictation: { defaultLabel: "Dictation", emoji: "📝" },
+  true_false_not_given: { defaultLabel: "True / False / Not Given", emoji: "⚖️" },
+  sentence_completion: { defaultLabel: "Sentence completion", emoji: "🧩" },
+  multi_speaker_matching: { defaultLabel: "Match speakers", emoji: "🗣️" },
+};
 
 const ListeningTask = () => {
   const { t } = useTranslation();
   const [language, setLanguage] = useState("");
   const [level, setLevel] = useState("");
+  const [selectedTypes, setSelectedTypes] = useState<ListeningQuestionType[]>(
+    DEFAULT_SELECTED_TYPES,
+  );
   const [currentTaskData, setCurrentTaskData] = useState<ListeningTaskResponse | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [userAnswers, setUserAnswers] = useState<string[]>([]);
-  const [isCorrect, setIsCorrect] = useState<(boolean | null)[]>([]);
+  // Per-question answers — shape varies by question type, the
+  // dispatcher and grader interpret each entry.
+  const [userAnswers, setUserAnswers] = useState<Record<number, ListeningAnswerValue>>({});
+  const [revealed, setRevealed] = useState<Record<number, boolean>>({});
   const [showTranscript, setShowTranscript] = useState<boolean>(false);
 
   const { createListeningTask, isLoading, error, data, reset } = useCreateListeningTask();
@@ -38,48 +65,47 @@ const ListeningTask = () => {
     if (data) {
       setCurrentTaskData(data);
       setCurrentQuestionIndex(0);
-      setUserAnswers(new Array(data.questions.length).fill(""));
-      setIsCorrect(new Array(data.questions.length).fill(null));
+      setUserAnswers({});
+      setRevealed({});
       setShowTranscript(false);
     }
   }, [data]);
 
+  const toggleType = (type: ListeningQuestionType) => {
+    setSelectedTypes((prev) =>
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type],
+    );
+  };
+
   const handleCreateTask = () => {
-    if (language && level) {
+    if (language && level && selectedTypes.length > 0) {
       reset();
       setCurrentTaskData(null);
       setAdaptiveTargets([]);
-      createListeningTask({ language, level });
+      createListeningTask({
+        language,
+        level,
+        questionTypes: selectedTypes,
+      });
     } else {
       alert(t("tasks.selectLanguageAndLevel"));
     }
   };
 
-  const handleCheckAnswer = (questionIndex: number) => {
-    const question = currentTaskData?.questions[questionIndex];
-    const userAnswer = userAnswers[questionIndex];
-    if (!question || !userAnswer) return;
-
-    let isAnswerCorrect = false;
-    if (isMultipleChoice(question)) {
-      isAnswerCorrect = question.correctAnswer === userAnswer;
-    } else {
-      const correctAnswer = Array.isArray(question.correctAnswer) ? question.correctAnswer[0] : question.correctAnswer;
-      isAnswerCorrect = correctAnswer.toLowerCase() === userAnswer.toLowerCase();
-    }
-
-    const newIsCorrect = [...isCorrect];
-    newIsCorrect[questionIndex] = isAnswerCorrect;
-    setIsCorrect(newIsCorrect);
+  const handleAnswerChange = (idx: number, ans: ListeningAnswerValue) => {
+    setUserAnswers((prev) => ({ ...prev, [idx]: ans }));
   };
 
-  const handleUserAnswerChange = (answer: string) => {
-    const newUserAnswers = [...userAnswers];
-    newUserAnswers[currentQuestionIndex] = answer;
-    setUserAnswers(newUserAnswers);
+  const toggleRevealed = (idx: number) => {
+    setRevealed((prev) => ({ ...prev, [idx]: !prev[idx] }));
   };
 
   const currentQuestion = currentTaskData?.questions[currentQuestionIndex];
+  const isCurrentRevealed = !!revealed[currentQuestionIndex];
+  const currentVerdict =
+    isCurrentRevealed && currentQuestion
+      ? gradeListeningQuestion(currentQuestion, userAnswers[currentQuestionIndex])
+      : null;
 
   return (
     <div className="space-y-6">
@@ -138,10 +164,52 @@ const ListeningTask = () => {
         </div>
       </div>
 
+      {/* Question type selector */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/50 flex items-center justify-center">
+            <span className="text-lg">🎯</span>
+          </div>
+          <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+            {t("tasks.questionTypes", { defaultValue: "Question types" })}
+          </label>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {LISTENING_QUESTION_TYPES.map((typ) => {
+            const isOn = selectedTypes.includes(typ);
+            const meta = QUESTION_TYPE_LABELS[typ];
+            return (
+              <button
+                key={typ}
+                type="button"
+                onClick={() => toggleType(typ)}
+                aria-pressed={isOn}
+                className={cn(
+                  "px-3 py-2 rounded-xl text-xs font-semibold border-2 transition-all flex items-center gap-1.5",
+                  isOn
+                    ? "border-violet-500 bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300"
+                    : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:border-violet-300",
+                )}
+              >
+                <span>{meta.emoji}</span>
+                <span>{t(`tasks.questionType.${typ}`, { defaultValue: meta.defaultLabel })}</span>
+              </button>
+            );
+          })}
+        </div>
+        {selectedTypes.length === 0 && (
+          <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">
+            {t("tasks.pickAtLeastOneType", {
+              defaultValue: "Pick at least one question type.",
+            })}
+          </p>
+        )}
+      </div>
+
       {/* Generate Button */}
       <Button
         onClick={handleCreateTask}
-        disabled={!language || !level || isLoading || adaptiveLoading}
+        disabled={!language || !level || selectedTypes.length === 0 || isLoading || adaptiveLoading}
         variant="primary"
         isLoading={isLoading}
         className="w-full h-14 text-lg font-semibold rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg shadow-indigo-500/25"
@@ -149,9 +217,7 @@ const ListeningTask = () => {
         {isLoading ? t("common.generating") : t("tasks.generateListeningTask")}
       </Button>
 
-      {/* Adaptive — pulls a passage shaped around the user's recent
-          weaknesses. Quietly falls back to the regular generator
-          when there's no signal yet. */}
+      {/* Adaptive */}
       <button
         type="button"
         onClick={async () => {
@@ -165,8 +231,8 @@ const ListeningTask = () => {
             const out = await generateAdaptiveListeningTask({ language, level });
             setCurrentTaskData(out.task);
             setCurrentQuestionIndex(0);
-            setUserAnswers(new Array(out.task.questions.length).fill(""));
-            setIsCorrect(new Array(out.task.questions.length).fill(null));
+            setUserAnswers({});
+            setRevealed({});
             setShowTranscript(false);
             setAdaptiveTargets(out.derivedFromHistory ? out.targetedWeaknesses : []);
           } catch (e) {
@@ -207,7 +273,7 @@ const ListeningTask = () => {
 
       {currentTaskData && (
         <div className="space-y-4">
-          {/* Audio Player Card */}
+          {/* Audio Player */}
           <div className="bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl p-6 shadow-lg">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
@@ -219,6 +285,18 @@ const ListeningTask = () => {
               </div>
             </div>
             <audio src={currentTaskData.audioUrl} controls className="w-full rounded-xl" />
+            {currentTaskData.speakers && currentTaskData.speakers.length > 1 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {currentTaskData.speakers.map((sp) => (
+                  <span
+                    key={sp}
+                    className="px-2.5 py-1 rounded-full bg-white/20 text-white text-xs font-semibold"
+                  >
+                    🗣️ {sp}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Transcript Toggle */}
@@ -235,16 +313,16 @@ const ListeningTask = () => {
                   {showTranscript ? t("tasks.hideTranscript") : t("tasks.showTranscript")}
                 </span>
               </div>
-              <svg 
-                className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${showTranscript ? "rotate-180" : ""}`} 
-                fill="none" 
-                stroke="currentColor" 
+              <svg
+                className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${showTranscript ? "rotate-180" : ""}`}
+                fill="none"
+                stroke="currentColor"
                 viewBox="0 0 24 24"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </button>
-            
+
             {showTranscript && (
               <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800">
                 <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">{currentTaskData.transcript}</p>
@@ -261,46 +339,73 @@ const ListeningTask = () => {
                     <span className="text-white font-bold">{currentQuestionIndex + 1}</span>
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-900 dark:text-gray-100">Question {currentQuestionIndex + 1}</h3>
-                    <p className="text-xs text-gray-500">of {currentTaskData.questions.length} questions</p>
+                    <h3 className="font-bold text-gray-900 dark:text-gray-100">
+                      {t("tasks.questionLabel", { defaultValue: "Question" })} {currentQuestionIndex + 1}
+                    </h3>
+                    <p className="text-xs text-gray-500">
+                      of {currentTaskData.questions.length} questions
+                    </p>
                   </div>
                 </div>
-                
-                {/* Progress dots */}
-                <div className="flex items-center gap-1">
-                  {currentTaskData.questions.map((_, idx) => (
-                    <div
-                      key={idx}
-                      className={`w-2 h-2 rounded-full transition-all duration-200 ${
-                        idx === currentQuestionIndex
-                          ? "w-6 bg-indigo-600"
-                          : isCorrect[idx] === true
-                          ? "bg-green-500"
-                          : isCorrect[idx] === false
-                          ? "bg-red-50 dark:bg-red-900/200"
-                          : "bg-gray-300"
-                      }`}
-                    />
-                  ))}
-                </div>
+
+                {/* Per-question type chip */}
+                <span className="text-xs font-medium text-indigo-700 bg-indigo-100 dark:bg-indigo-900/40 dark:text-indigo-300 px-3 py-1 rounded-full">
+                  {t(`tasks.questionType.${currentQuestion.type}`, {
+                    defaultValue: QUESTION_TYPE_LABELS[currentQuestion.type].defaultLabel,
+                  })}
+                </span>
               </div>
-              
-              <TaskComponent
-                taskData={currentQuestion}
-                userAnswer={userAnswers[currentQuestionIndex]}
-                setUserAnswer={handleUserAnswerChange}
-                onCheckAnswer={() => handleCheckAnswer(currentQuestionIndex)}
-                onExplainAnswer={() => {}}
-                isCorrect={isCorrect[currentQuestionIndex]}
-                isExplaining={false}
-                explanationData={undefined}
-                showExplanation={false}
+
+              {/* Question prompt — for sentence_completion the renderer
+                  itself shows the question text with inline blank,
+                  so suppress the duplicate here. */}
+              {currentQuestion.type !== "sentence_completion" && (
+                <p className="text-base font-medium text-gray-900 dark:text-gray-100 mb-5">
+                  {currentQuestion.question}
+                </p>
+              )}
+
+              <ListeningQuestionRenderer
+                question={currentQuestion}
+                answer={userAnswers[currentQuestionIndex]}
+                onChange={(a) => handleAnswerChange(currentQuestionIndex, a)}
+                revealed={isCurrentRevealed}
               />
-              
+
+              <button
+                onClick={() => toggleRevealed(currentQuestionIndex)}
+                className={cn(
+                  "mt-5 flex items-center gap-2 text-sm font-medium transition-colors",
+                  isCurrentRevealed ? "text-gray-500" : "text-indigo-600 hover:text-indigo-700",
+                )}
+              >
+                {isCurrentRevealed
+                  ? t("tasks.hideAnswer", { defaultValue: "Hide Answer" })
+                  : t("tasks.checkAnswer", { defaultValue: "Check Answer" })}
+              </button>
+
+              {isCurrentRevealed && currentVerdict !== null && (
+                <div
+                  className={cn(
+                    "mt-3 p-4 rounded-xl border flex items-center gap-2 font-semibold",
+                    currentVerdict
+                      ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300"
+                      : "bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300",
+                  )}
+                >
+                  <span className="text-xl">{currentVerdict ? "✓" : "✕"}</span>
+                  <span>
+                    {currentVerdict
+                      ? t("tasks.correct", { defaultValue: "Correct" })
+                      : t("tasks.incorrect", { defaultValue: "Incorrect" })}
+                  </span>
+                </div>
+              )}
+
               {/* Navigation */}
               <div className="flex justify-between mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <Button
-                  onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
+                  onClick={() => setCurrentQuestionIndex((prev) => Math.max(0, prev - 1))}
                   disabled={currentQuestionIndex === 0}
                   variant="secondary"
                   className="h-10 px-6 rounded-xl"
@@ -308,7 +413,11 @@ const ListeningTask = () => {
                   ← {t("common.previous")}
                 </Button>
                 <Button
-                  onClick={() => setCurrentQuestionIndex(prev => Math.min(currentTaskData.questions.length - 1, prev + 1))}
+                  onClick={() =>
+                    setCurrentQuestionIndex((prev) =>
+                      Math.min(currentTaskData.questions.length - 1, prev + 1),
+                    )
+                  }
                   disabled={currentQuestionIndex === currentTaskData.questions.length - 1}
                   variant="primary"
                   className="h-10 px-6 rounded-xl"
