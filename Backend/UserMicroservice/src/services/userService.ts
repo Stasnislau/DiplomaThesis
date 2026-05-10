@@ -3,6 +3,7 @@ import { Language, LanguageLevel, User } from "@prisma/client";
 
 import { BaseResponse } from "src/types/BaseResponse";
 import { PrismaService } from "../../prisma/prismaService";
+import { AchievementService } from "./achievementService";
 import {
   USER_ID_AND_ROLE_REQUIRED,
   USER_ID_REQUIRED,
@@ -16,7 +17,10 @@ import {
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly achievementService: AchievementService,
+  ) {}
 
   async getLanguages(): Promise<BaseResponse<Language[]>> {
     const languages = await this.prisma.language.findMany();
@@ -307,6 +311,86 @@ export class UserService {
       success: true,
       payload: true,
     };
+  }
+
+  /**
+   * Record activity for the day: add xpGained to the user's total XP,
+   * maintain the daily streak counter, and update streak-based achievements.
+   *
+   * Streak rules (UTC day boundaries):
+   *   - No previous activity OR gap > 1 day  → reset streak to 1
+   *   - Last activity was yesterday            → streak += 1
+   *   - Last activity was today                → keep (idempotent same-day)
+   */
+  async updateActivity(
+    userId: string,
+    xpGained: number,
+  ): Promise<{ xp: number; streak: number }> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throwWithCode(USER_NOT_FOUND, HttpStatus.NOT_FOUND, "User not found");
+    }
+
+    const now = new Date();
+    // Start-of-day in UTC — compare calendar days, not timestamps.
+    const todayUTC = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+    );
+
+    let newStreak = user.streak;
+    let streakIncreasedToday = false;
+
+    if (!user.lastActivityDate) {
+      // First ever activity.
+      newStreak = 1;
+      streakIncreasedToday = true;
+    } else {
+      const lastUTC = new Date(
+        Date.UTC(
+          user.lastActivityDate.getUTCFullYear(),
+          user.lastActivityDate.getUTCMonth(),
+          user.lastActivityDate.getUTCDate(),
+        ),
+      );
+      const diffDays = Math.round(
+        (todayUTC.getTime() - lastUTC.getTime()) / (1000 * 60 * 60 * 24),
+      );
+
+      if (diffDays === 0) {
+        // Same calendar day — no streak change (idempotent).
+      } else if (diffDays === 1) {
+        // Consecutive day — extend streak.
+        newStreak = user.streak + 1;
+        streakIncreasedToday = true;
+      } else {
+        // Gap of 2+ days — streak broken.
+        newStreak = 1;
+        streakIncreasedToday = true;
+      }
+    }
+
+    const newXp = user.xp + xpGained;
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        xp: newXp,
+        streak: newStreak,
+        lastActivityDate: now,
+      },
+    });
+
+    // Only award streak achievements when the streak actually moved
+    // forward (new day), not on repeated same-day calls.
+    if (streakIncreasedToday) {
+      await Promise.allSettled([
+        this.achievementService.updateProgress(userId, "On Fire", 1),
+        this.achievementService.updateProgress(userId, "Unstoppable", 1),
+        this.achievementService.updateProgress(userId, "Dedicated", 1),
+      ]);
+    }
+
+    return { xp: newXp, streak: newStreak };
   }
 
   // Returns the user's native-language ISO code (en/pl/es). Falls back

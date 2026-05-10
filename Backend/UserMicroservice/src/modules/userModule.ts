@@ -4,9 +4,10 @@ import { UserController } from "../controllers/userController";
 import { PrismaService } from "../../prisma/prismaService";
 import { EventModule } from "./eventModule";
 import { MailerModule } from "./mailerModule";
+import { AchievementModule } from "./achievementModule";
 
 @Module({
-  imports: [EventModule, MailerModule],
+  imports: [EventModule, MailerModule, AchievementModule],
   providers: [UserService, PrismaService],
   controllers: [UserController],
   exports: [UserService],

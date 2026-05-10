@@ -119,6 +119,8 @@ export const ProfilePage: React.FC = () => {
 
   const languagesCount = me.languages?.length || 0;
   const achievementsCount = achievements.filter((a: Achievement) => a.isUnlocked).length;
+  const totalXp = me.xp ?? 0;
+  const currentStreak = me.streak ?? 0;
 
   const CATEGORY_LABELS: Record<string, { label: string; icon: string }> = {
     learning: { label: t("profile.categoryLearning"), icon: "📚" },
@@ -216,13 +218,13 @@ export const ProfilePage: React.FC = () => {
           />
           <UserStats
             title={t('dashboard.totalXp')}
-            value={0}
+            value={totalXp}
             icon="⭐"
             to="/history"
           />
           <UserStats
             title={t('dashboard.streak')}
-            value={0}
+            value={currentStreak}
             icon="🔥"
             to="/history"
           />

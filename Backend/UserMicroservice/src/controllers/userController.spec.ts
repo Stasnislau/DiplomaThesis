@@ -17,6 +17,9 @@ describe("UserController", () => {
     name: "John",
     surname: "Doe",
     role: "USER",
+    xp: 0,
+    streak: 0,
+    lastActivityDate: null,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -47,6 +50,7 @@ describe("UserController", () => {
       updateUserRole: jest.fn(),
       deleteUser: jest.fn(),
       getUserLocale: jest.fn(),
+      updateActivity: jest.fn(),
     };
 
     const mockMailerService = {

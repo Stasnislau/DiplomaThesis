@@ -153,6 +153,56 @@ class UserService:
         except Exception as exc:  # noqa: BLE001
             logger.warning("history log exception: %s", exc)
 
+    async def post_achievement_progress(
+        self, ctx: UserContext, achievement_name: str, increment_by: int = 1
+    ) -> None:
+        """Best-effort POST to /api/achievements/progress. Never raises —
+        achievement updates must not block or fail the user-facing operation.
+        """
+        try:
+            url = f"{self.base_url}/achievements/progress"
+            headers = ctx.to_forward_headers()
+            headers["x-internal-service-key"] = _internal_key()
+            headers["content-type"] = "application/json"
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                response = await client.post(
+                    url,
+                    headers=headers,
+                    json={"achievementName": achievement_name, "incrementBy": increment_by},
+                )
+            if response.status_code >= 400:
+                logger.warning(
+                    "achievement progress failed status=%s body=%s",
+                    response.status_code,
+                    response.text[:200],
+                )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("post_achievement_progress exception: %s", exc)
+
+    async def log_activity(self, ctx: UserContext, xp_gained: int) -> None:
+        """Best-effort POST to /api/me/activity. Never raises — XP/streak
+        updates must not block or fail the user-facing operation.
+        """
+        try:
+            url = f"{self.base_url}/me/activity"
+            headers = ctx.to_forward_headers()
+            headers["x-internal-service-key"] = _internal_key()
+            headers["content-type"] = "application/json"
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                response = await client.post(
+                    url,
+                    headers=headers,
+                    json={"xpGained": xp_gained},
+                )
+            if response.status_code >= 400:
+                logger.warning(
+                    "log_activity failed status=%s body=%s",
+                    response.status_code,
+                    response.text[:200],
+                )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("log_activity exception: %s", exc)
+
     async def get_recent_history(
         self, ctx: UserContext, limit: int = 20, task_type: Optional[str] = None
     ) -> List[Dict[str, Any]]:

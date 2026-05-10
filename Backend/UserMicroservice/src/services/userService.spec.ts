@@ -7,6 +7,7 @@ import { Test, TestingModule } from "@nestjs/testing";
 
 import { LanguageLevel } from "@prisma/client";
 import { PrismaService } from "../../prisma/prismaService";
+import { AchievementService } from "./achievementService";
 import { UserService } from "./userService";
 
 describe("UserService", () => {
@@ -19,7 +20,11 @@ describe("UserService", () => {
     name: "John",
     surname: "Doe",
     role: "USER",
+    xp: 0,
+    streak: 0,
+    lastActivityDate: null,
     createdAt: new Date(),
+    updatedAt: new Date(),
     languages: [],
   };
 
@@ -48,10 +53,15 @@ describe("UserService", () => {
       },
     };
 
+    const mockAchievementService = {
+      updateProgress: jest.fn().mockResolvedValue({}),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UserService,
         { provide: PrismaService, useValue: mockPrismaService },
+        { provide: AchievementService, useValue: mockAchievementService },
       ],
     }).compile();
 

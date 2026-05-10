@@ -19,34 +19,34 @@ export async function createListeningTask(
   input: CreateListeningTaskRequest,
 ): Promise<ListeningTaskResponse> {
   const response = await fetchWithAuth(
-    `${BRIDGE_MICROSERVICE_URL}/tasks/listening`,
+    `${BRIDGE_MICROSERVICE_URL}/tasks/listening/adaptive`,
     {
       method: "POST",
-      // Wire shape uses snake_case `question_types`; the request DTO
-      // on the backend has alias_generator=to_camel + populate_by_name,
-      // so either form is accepted, but snake_case keeps the wire
-      // self-documenting.
       body: JSON.stringify({
         language: input.language,
         level: input.level,
-        question_types: input.questionTypes,
       }),
     },
   );
 
-  // The listening endpoint historically returned either a wrapped
-  // BaseResponse or the raw task object on success. Keep the
-  // dual-shape handling but funnel failures through asApiError so
-  // a structured `code` survives all the way to the UI.
+  // The adaptive listening endpoint returns a BaseResponse-wrapped
+  // envelope: { task: ListeningTaskResponse, targetedWeaknesses, derivedFromHistory }.
+  // Unwrap through the standard payload path, then extract .task.
   const data = await response.json();
 
   if (!response.ok || data?.success === false) {
     throw asApiError(data, "Failed to create listening task");
   }
 
-  if (data && typeof data === "object" && "payload" in data) {
-    return data.payload as ListeningTaskResponse;
+  // BaseResponse envelope: { success, payload: { task, ... } }
+  const payload = data && typeof data === "object" && "payload" in data
+    ? data.payload
+    : data;
+
+  // Adaptive envelope: { task, targetedWeaknesses, derivedFromHistory }
+  if (payload && typeof payload === "object" && "task" in payload) {
+    return payload.task as ListeningTaskResponse;
   }
 
-  return data as ListeningTaskResponse;
+  return payload as ListeningTaskResponse;
 }

@@ -271,6 +271,23 @@ LOCALIZATION (HARD RULE):
                     },
                 )
 
+                # Award "First Steps" achievement for completing any
+                # placement test.
+                await self.user_service.post_achievement_progress(
+                    user_context, "First Steps", 1
+                )
+
+                # "Level Up" only fires for B1 and above — reaching
+                # those levels means the learner has cleared A-level
+                # material which is the intent of the achievement.
+                if evaluation.level in ("B1", "B2", "C1", "C2"):
+                    await self.user_service.post_achievement_progress(
+                        user_context, "Level Up", 1
+                    )
+
+                # XP for completing a placement test (50 points).
+                await self.user_service.log_activity(user_context, 50)
+
             return evaluation
 
         except json.JSONDecodeError as e:

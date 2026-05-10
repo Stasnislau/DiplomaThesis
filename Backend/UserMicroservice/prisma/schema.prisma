@@ -25,6 +25,10 @@ model User {
     surname String @map("surname")
     role    String @map("role")
 
+    xp               Int       @default(0) @map("xp")
+    streak           Int       @default(0) @map("streak")
+    lastActivityDate DateTime? @map("last_activity_date")
+
     createdAt DateTime @default(now()) @map("created_at")
     updatedAt DateTime @updatedAt @map("updated_at")
 
