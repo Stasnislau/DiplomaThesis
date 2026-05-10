@@ -308,6 +308,19 @@ const en = {
       uploadFailed: "Upload failed. Try a different file or check your AI provider key.",
       quizGenerationFailed: "Couldn't generate the quiz. Try again or pick fewer task types.",
       tryAgain: "Try again",
+      noTypesIdentified: "I couldn't identify specific exercise types in this document, but I can still try to generate tasks based on its content.",
+      questionLabel: "Question {{n}}",
+      questionType: {
+        multiple_choice: "Multiple choice",
+        multi_select_mc: "Multi-select",
+        true_false: "True / False",
+        open: "Open-ended",
+        fill_in_the_blank: "Fill in the blank",
+        gap_fill_grammar: "Grammar gap-fill",
+        gap_fill_vocab: "Vocabulary gap-fill",
+        matching: "Matching",
+        cloze_passage: "Cloze passage",
+      },
     },
 
     admin: {
@@ -1045,6 +1058,19 @@ const pl = {
       uploadFailed: "Nie udało się wgrać pliku. Spróbuj inny plik lub sprawdź swój klucz dostawcy AI.",
       quizGenerationFailed: "Nie udało się wygenerować quizu. Spróbuj ponownie lub wybierz mniej typów zadań.",
       tryAgain: "Spróbuj ponownie",
+      noTypesIdentified: "Nie udało się rozpoznać konkretnych typów ćwiczeń w tym dokumencie, ale spróbuję wygenerować zadania na podstawie jego treści.",
+      questionLabel: "Pytanie {{n}}",
+      questionType: {
+        multiple_choice: "Wybór wielokrotny",
+        multi_select_mc: "Wybór wielokrotny (wiele odp.)",
+        true_false: "Prawda / Fałsz",
+        open: "Pytanie otwarte",
+        fill_in_the_blank: "Uzupełnij lukę",
+        gap_fill_grammar: "Luka gramatyczna",
+        gap_fill_vocab: "Luka słownikowa",
+        matching: "Dopasowanie",
+        cloze_passage: "Tekst z lukami",
+      },
     },
 
     admin: {
@@ -1778,6 +1804,19 @@ const es = {
       uploadFailed: "No se pudo subir el archivo. Prueba con otro o revisa tu clave de proveedor de IA.",
       quizGenerationFailed: "No se pudo generar el cuestionario. Inténtalo de nuevo o elige menos tipos de tareas.",
       tryAgain: "Reintentar",
+      noTypesIdentified: "No pude identificar tipos concretos de ejercicios en este documento, pero puedo intentar generar tareas a partir de su contenido.",
+      questionLabel: "Pregunta {{n}}",
+      questionType: {
+        multiple_choice: "Opción múltiple",
+        multi_select_mc: "Selección múltiple",
+        true_false: "Verdadero / Falso",
+        open: "Pregunta abierta",
+        fill_in_the_blank: "Completar el espacio",
+        gap_fill_grammar: "Hueco gramatical",
+        gap_fill_vocab: "Hueco de vocabulario",
+        matching: "Emparejar",
+        cloze_passage: "Texto con huecos",
+      },
     },
 
     admin: {
