@@ -9,6 +9,30 @@ import cn from "@/utils/cn";
 import { useGenerateQuiz } from "@/api/hooks/useGenerateQuiz";
 import { useGetUserMaterials } from "@/api/hooks/useGetUserMaterials";
 import { useSaveMaterial } from "@/api/hooks/useSaveMaterial";
+import QuestionRenderer, {
+  gradeQuestion,
+  type UserAnswerValue,
+} from "@/pages/Tasks/components/MaterialsRenderers";
+
+/**
+ * Map an internal Materials task-type slug to a friendly label and an
+ * emoji. The same backend slug is reused for both the type analyser
+ * (which detects what's in the uploaded PDF) and the quiz generator
+ * (which produces actual questions in those formats), so the renderer
+ * also has to handle the analyser's older aliases like
+ * `gap_fill_grammar` and `gap_fill_vocab` that map to fill-in-blank.
+ */
+const MATERIALS_TYPE_LABELS: Record<string, { defaultLabel: string; emoji: string }> = {
+  multiple_choice:  { defaultLabel: "Multiple choice",       emoji: "🔘" },
+  multi_select_mc:  { defaultLabel: "Multi-select",          emoji: "☑️" },
+  true_false:       { defaultLabel: "True / False",          emoji: "⚖️" },
+  open:             { defaultLabel: "Open-ended",            emoji: "✏️" },
+  fill_in_the_blank:{ defaultLabel: "Fill in the blank",     emoji: "✍️" },
+  gap_fill_grammar: { defaultLabel: "Grammar gap-fill",      emoji: "✍️" },
+  gap_fill_vocab:   { defaultLabel: "Vocabulary gap-fill",   emoji: "✍️" },
+  matching:         { defaultLabel: "Matching",              emoji: "🔗" },
+  cloze_passage:    { defaultLabel: "Cloze passage",         emoji: "🧩" },
+};
 import { useTranslation } from "react-i18next";
 import { useUploadMaterial } from "@/api/hooks/useUploadMaterial";
 
@@ -17,36 +41,36 @@ interface AnalyzedType {
   example: string;
 }
 
-function levenshtein(a: string, b: string): number {
-  if (a.length === 0) return b.length;
-  if (b.length === 0) return a.length;
-  const matrix = [];
-  for (let i = 0; i <= b.length; i++) { matrix[i] = [i]; }
-  for (let j = 0; j <= a.length; j++) { matrix[0][j] = j; }
-  for (let i = 1; i <= b.length; i++) {
-    for (let j = 1; j <= a.length; j++) {
-      if (b.charAt(i - 1) === a.charAt(j - 1)) {
-        matrix[i][j] = matrix[i - 1][j - 1];
-      } else {
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j - 1] + 1,
-          matrix[i][j - 1] + 1,
-          matrix[i - 1][j] + 1
-        );
-      }
+/** Render a human-readable form of the canonical correct answer for
+ *  any of the seven QuizQuestion shapes. Used in the post-submit
+ *  feedback banner. */
+function summariseCorrectAnswer(q: QuizQuestion): string {
+    switch (q.type) {
+        case "multiple_choice":
+        case "open":
+            return q.correct_answer;
+        case "fill_in_the_blank":
+        case "gap_fill_grammar":
+        case "gap_fill_vocab":
+            return Array.isArray(q.correct_answer)
+                ? q.correct_answer.join(" / ")
+                : q.correct_answer;
+        case "true_false":
+            return q.correct_answer;
+        case "matching":
+            return q.pairs.map((p) => `${p.left} → ${p.right}`).join("; ");
+        case "multi_select_mc":
+            return q.correct_answers.join(", ");
+        case "cloze_passage":
+            return q.blanks
+                .map((b) =>
+                    Array.isArray(b.correct_answer)
+                        ? `${b.id}: ${b.correct_answer.join(" / ")}`
+                        : `${b.id}: ${b.correct_answer}`,
+                )
+                .join("; ");
     }
-  }
-  return matrix[b.length][a.length];
 }
-
-const isAnswerCorrect = (user: string, correct: string) => {
-    if (!user) return false;
-    const u = user.toLowerCase().trim().replace(/[.,!?;:]/g, "");
-    const c = correct.toLowerCase().trim().replace(/[.,!?;:]/g, "");
-    if (u === c) return true;
-    const threshold = c.length > 6 ? 2 : (c.length > 3 ? 1 : 0);
-    return levenshtein(u, c) <= threshold;
-};
 
 export const MaterialsPage: React.FC = () => {
   const { t } = useTranslation();
@@ -55,7 +79,10 @@ export const MaterialsPage: React.FC = () => {
   const [analyzedTypes, setAnalyzedTypes] = useState<AnalyzedType[]>([]);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [quiz, setQuiz] = useState<QuizQuestion[]>([]);
-  const [userAnswers, setUserAnswers] = useState<Record<number, string>>({});
+  // UserAnswerValue covers every shape the seven question types can
+  // hold: string for MC/open/T-F/FIB, string[] for multi-select, and
+  // Record<string,string> for matching pairs and cloze blanks.
+  const [userAnswers, setUserAnswers] = useState<Record<number, UserAnswerValue>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
   
   const { mutate: upload, isPending: isUploading, error: uploadError, reset: resetUpload } = useUploadMaterial();
@@ -270,29 +297,36 @@ export const MaterialsPage: React.FC = () => {
                     
                     {analyzedTypes.length > 0 ? (
                         <div className="grid gap-4 mb-8">
-                            {analyzedTypes.map((t, idx) => (
-                                <div 
-                                    key={idx} 
+                            {analyzedTypes.map((at, idx) => (
+                                <div
+                                    key={idx}
                                     className={cn(
                                         "border rounded-xl p-4 cursor-pointer transition-all hover:shadow-md",
-                                        selectedTypes.includes(t.type) 
-                                            ? "border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500" 
+                                        selectedTypes.includes(at.type)
+                                            ? "border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500"
                                             : "border-gray-200 hover:border-indigo-300"
                                     )}
-                                    onClick={() => toggleType(t.type)}
+                                    onClick={() => toggleType(at.type)}
                                 >
                                     <div className="flex items-start">
                                         <div className={cn(
                                             "w-5 h-5 rounded border mt-1 mr-3 flex items-center justify-center flex-shrink-0 transition-colors",
-                                            selectedTypes.includes(t.type)
+                                            selectedTypes.includes(at.type)
                                                 ? "bg-indigo-600 border-indigo-600 text-white"
                                                 : "border-gray-300 bg-white"
                                         )}>
-                                            {selectedTypes.includes(t.type) && <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                                            {selectedTypes.includes(at.type) && <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                                         </div>
                                         <div>
-                                            <h4 className="font-semibold text-gray-900">{t.type}</h4>
-                                            {t.example && <p className="text-sm text-gray-500 mt-1 italic">"{t.example}"</p>}
+                                            <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+                                                <span aria-hidden="true">{MATERIALS_TYPE_LABELS[at.type]?.emoji || "❓"}</span>
+                                                <span>
+                                                    {t(`materialsPage.questionType.${at.type}`, {
+                                                        defaultValue: MATERIALS_TYPE_LABELS[at.type]?.defaultLabel || at.type,
+                                                    })}
+                                                </span>
+                                            </h4>
+                                            {at.example && <p className="text-sm text-gray-500 mt-1 italic">"{at.example}"</p>}
                                         </div>
                                     </div>
                                 </div>
@@ -300,7 +334,7 @@ export const MaterialsPage: React.FC = () => {
                         </div>
                     ) : (
                         <div className="p-4 bg-yellow-50 text-yellow-800 rounded-lg mb-6">
-                            I couldn't identify specific exercise types, but I can still try to generate tasks based on the content.
+                            {t("materialsPage.noTypesIdentified")}
                         </div>
                     )}
                     
@@ -342,7 +376,7 @@ export const MaterialsPage: React.FC = () => {
                     <div className="flex gap-4 items-center">
                         {isSubmitted && (
                              <div className="text-lg font-bold">
-                                 Score: {quiz.filter((q, i) => isAnswerCorrect(userAnswers[i], q.correct_answer)).length} / {quiz.length}
+                                 Score: {quiz.filter((q, i) => gradeQuestion(q, userAnswers[i]) === true).length} / {quiz.length}
                              </div>
                         )}
                         <Button variant="secondary" onClick={() => setView("ready")}>Exit</Button>
@@ -350,8 +384,9 @@ export const MaterialsPage: React.FC = () => {
                  </div>
                  
                  {quiz.map((q, idx) => {
-                     const isCorrect = isSubmitted ? isAnswerCorrect(userAnswers[idx], q.correct_answer) : undefined;
-                     
+                     const graded = isSubmitted ? gradeQuestion(q, userAnswers[idx]) : null;
+                     const isCorrect = graded === true ? true : graded === false ? false : undefined;
+
                      return (
                      <Card key={idx} className={cn(
                          "transition-colors border-2",
@@ -361,8 +396,17 @@ export const MaterialsPage: React.FC = () => {
                          <CardHeader>
                              <CardTitle className="text-lg flex justify-between items-start">
                                  <div className="flex flex-col gap-1">
-                                    <span>Question {idx + 1}</span>
-                                    {q.type && <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded w-fit">{q.type}</span>}
+                                    <span>{t("materialsPage.questionLabel", { n: idx + 1 })}</span>
+                                    {q.type && (
+                                        <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded w-fit inline-flex items-center gap-1">
+                                            <span aria-hidden="true">{MATERIALS_TYPE_LABELS[q.type]?.emoji || "❓"}</span>
+                                            <span>
+                                                {t(`materialsPage.questionType.${q.type}`, {
+                                                    defaultValue: MATERIALS_TYPE_LABELS[q.type]?.defaultLabel || q.type,
+                                                })}
+                                            </span>
+                                        </span>
+                                    )}
                                  </div>
                                  {isSubmitted && (
                                      <span className={cn(
@@ -381,47 +425,25 @@ export const MaterialsPage: React.FC = () => {
                                  </div>
                              )}
 
-                             <p className="font-medium text-gray-800 mb-6 text-lg">{q.question}</p>
-                             
-                             {q.options && q.options.length > 0 ? (
-                                 <div className="space-y-3">
-                                     {q.options.map((opt, i) => (
-                                         <label key={i} className={cn(
-                                             "flex items-center p-4 border rounded-xl cursor-pointer transition-all",
-                                             userAnswers[idx] === opt 
-                                                ? "border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500" 
-                                                : "border-gray-200 hover:bg-gray-50",
-                                             isSubmitted && q.correct_answer === opt ? "border-green-500 bg-green-100 ring-1 ring-green-500" : ""
-                                         )}>
-                                             <input 
-                                                 type="radio" 
-                                                 name={`q-${idx}`} 
-                                                 value={opt}
-                                                 checked={userAnswers[idx] === opt}
-                                                 onChange={() => !isSubmitted && setUserAnswers(prev => ({...prev, [idx]: opt}))}
-                                                 disabled={isSubmitted}
-                                                 className="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500 disabled:opacity-50"
-                                             />
-                                             <span className="ml-3 text-gray-700">{opt}</span>
-                                         </label>
-                                     ))}
-                                 </div>
-                             ) : (
-                                 <div className="space-y-4">
-                                     <input
-                                         type="text"
-                                         placeholder="Your answer..."
-                                         value={userAnswers[idx] || ""}
-                                         onChange={(e) => !isSubmitted && setUserAnswers(prev => ({...prev, [idx]: e.target.value}))}
-                                         disabled={isSubmitted}
-                                         className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100"
-                                     />
-                                 </div>
-                             )}
+                             {/* Dispatcher renders the right component for every
+                                 question type — MC, multi-select, T/F, open,
+                                 fill-in-blank, matching, cloze passage. The
+                                 inline-MC-only path that lived here before
+                                 silently mis-rendered the four other shapes. */}
+                             <QuestionRenderer
+                                 question={q}
+                                 answer={userAnswers[idx]}
+                                 onChange={(answer) =>
+                                     !isSubmitted &&
+                                     setUserAnswers((prev) => ({ ...prev, [idx]: answer }))
+                                 }
+                                 revealed={isSubmitted}
+                             />
 
-                             {isSubmitted && !isCorrect && (
+                             {isSubmitted && isCorrect === false && (
                                  <div className="mt-4 p-3 bg-red-50 text-red-800 rounded-lg border border-red-100">
-                                     <strong>Correct Answer:</strong> {q.correct_answer}
+                                     <strong>{t("tasks.correctAnswer", { defaultValue: "Correct answer:" })}</strong>{" "}
+                                     {summariseCorrectAnswer(q)}
                                  </div>
                              )}
                          </CardContent>

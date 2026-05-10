@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
 
 import Button from "@/components/common/Button";
-import { ListeningTaskResponse } from "@/types/responses/TaskResponse";
-import { TaskComponent } from "@/pages/Quiz/components/TaskComponent";
-import { isAnswerCorrect } from "@/utils/answerValidation";
-import { isMultipleChoice } from "@/types/typeGuards/isMultipleChoice";
+import ListeningQuestionRenderer, {
+  gradeListeningQuestion,
+} from "@/pages/Tasks/components/ListeningRenderers";
+import type {
+  ListeningAnswerValue,
+} from "@/pages/Tasks/components/ListeningRenderers";
+import type { ListeningTaskResponse } from "@/types/responses/TaskResponse";
+import type { ListeningQuestion } from "@/types/responses/ListeningResponse";
 import { useCreateListeningTask } from "@/api/hooks/useCreateListeningTask";
 import { useTranslation } from "react-i18next";
 
@@ -19,12 +23,15 @@ interface LessonListeningTaskProps {
 
 /**
  * Single listening exercise scoped to a lesson:
- *   - Auto-loads one task (audio + 3-4 comprehension questions).
- *   - Walks the learner through each question with the same TaskComponent
- *     used in the standard quiz flow.
- *   - When all questions are answered, surfaces a per-question correct/
- *     wrong breakdown and calls onCompleted so the lesson page can
- *     mark the lesson complete on a passing score.
+ *   - Auto-loads one task (audio + 3-4 mixed-format comprehension
+ *     questions: MC, FIB, dictation, true/false/not-given, sentence
+ *     completion, multi-speaker matching).
+ *   - Walks the learner through each question with the same
+ *     ListeningQuestionRenderer the free-practice page uses, so all
+ *     six question types render identically in both contexts.
+ *   - When all questions are answered, surfaces a per-question
+ *     correct/wrong breakdown and calls onCompleted so the lesson
+ *     page can mark the lesson complete on a passing score.
  */
 const LessonListeningTask = ({
   language,
@@ -35,24 +42,29 @@ const LessonListeningTask = ({
 
   const { createListeningTask, isLoading, error, data, reset } =
     useCreateListeningTask();
-  const [task, setTask] = useState<ListeningTaskResponse | null>(null);
+  // The backend response carries six possible question shapes via the
+  // ListeningQuestion union; the legacy `ListeningTaskResponse` wrapper
+  // typing predates that union, so we narrow once at the boundary.
+  const [task, setTask] = useState<
+    | (Omit<ListeningTaskResponse, "questions"> & {
+        questions: ListeningQuestion[];
+      })
+    | null
+  >(null);
   const [idx, setIdx] = useState(0);
-  const [userAnswers, setUserAnswers] = useState<string[]>([]);
+  const [userAnswers, setUserAnswers] = useState<
+    Array<ListeningAnswerValue | undefined>
+  >([]);
   const [correctness, setCorrectness] = useState<(boolean | null)[]>([]);
-  const [currentInput, setCurrentInput] = useState<string>("");
   const [showTranscript, setShowTranscript] = useState(false);
   const [completed, setCompleted] = useState(false);
 
-  // Backend sometimes returns Polish placement of `{language, level}`
-  // capitalised; align to what /listening/task expects. Auto-fetch on
-  // mount.
   useEffect(() => {
     if (!language || !level) return;
     setTask(null);
     setIdx(0);
     setUserAnswers([]);
     setCorrectness([]);
-    setCurrentInput("");
     setCompleted(false);
     reset();
     const backendLanguage =
@@ -63,9 +75,15 @@ const LessonListeningTask = ({
 
   useEffect(() => {
     if (data) {
-      setTask(data);
-      setUserAnswers(new Array(data.questions.length).fill(""));
-      setCorrectness(new Array(data.questions.length).fill(null));
+      // Cast through unknown — runtime has the rich ListeningQuestion
+      // union, the legacy DTO type does not yet.
+      const narrowed = data as unknown as Omit<
+        ListeningTaskResponse,
+        "questions"
+      > & { questions: ListeningQuestion[] };
+      setTask(narrowed);
+      setUserAnswers(new Array(narrowed.questions.length).fill(undefined));
+      setCorrectness(new Array(narrowed.questions.length).fill(null));
     }
   }, [data]);
 
@@ -73,7 +91,6 @@ const LessonListeningTask = ({
   const correctCount = correctness.filter((c) => c === true).length;
   const allAnswered = total > 0 && correctness.every((c) => c !== null);
 
-  // Fire onCompleted exactly once, after the last answer is checked.
   useEffect(() => {
     if (!completed && allAnswered && total > 0) {
       setCompleted(true);
@@ -81,32 +98,24 @@ const LessonListeningTask = ({
     }
   }, [allAnswered, completed, correctCount, total, onCompleted]);
 
+  const setAnswer = (a: ListeningAnswerValue) => {
+    const next = [...userAnswers];
+    next[idx] = a;
+    setUserAnswers(next);
+  };
+
   const handleCheck = () => {
-    if (!task || !currentInput) return;
+    if (!task) return;
     const q = task.questions[idx];
-    let ok = false;
-    if (isMultipleChoice(q)) {
-      ok = q.correctAnswer === currentInput;
-    } else {
-      ok = isAnswerCorrect(currentInput, q.correctAnswer as string | string[], {
-        tolerance: 2,
-        ignoreCase: true,
-        trim: true,
-      });
-    }
-    const nextAnswers = [...userAnswers];
-    nextAnswers[idx] = currentInput;
-    setUserAnswers(nextAnswers);
-    const nextC = [...correctness];
-    nextC[idx] = ok;
-    setCorrectness(nextC);
+    const ans = userAnswers[idx];
+    const ok = gradeListeningQuestion(q, ans);
+    const next = [...correctness];
+    next[idx] = ok === null ? false : ok;
+    setCorrectness(next);
   };
 
   const handleNext = () => {
-    if (idx + 1 < total) {
-      setIdx(idx + 1);
-      setCurrentInput("");
-    }
+    if (idx + 1 < total) setIdx(idx + 1);
   };
 
   const handleNewTask = () => {
@@ -115,7 +124,6 @@ const LessonListeningTask = ({
     setIdx(0);
     setUserAnswers([]);
     setCorrectness([]);
-    setCurrentInput("");
     setCompleted(false);
     reset();
     const backendLanguage =
@@ -153,7 +161,6 @@ const LessonListeningTask = ({
 
   return (
     <div className="space-y-5">
-      {/* Audio player */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between mb-3">
           <span className="inline-block bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 text-xs px-2 py-1 rounded-full">
@@ -188,28 +195,30 @@ const LessonListeningTask = ({
         )}
       </div>
 
-      {/* Current question */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-        <TaskComponent
-          taskData={currentQ}
-          userAnswer={currentAnswered ? userAnswers[idx] : currentInput}
-          setUserAnswer={(val: string) => setCurrentInput(val)}
-          onCheckAnswer={handleCheck}
-          onExplainAnswer={() => { /* explanations not surfaced in lesson listening */ }}
-          isCorrect={correctness[idx]}
-          isExplaining={false}
-          showExplanation={false}
+        <ListeningQuestionRenderer
+          question={currentQ}
+          answer={userAnswers[idx]}
+          onChange={setAnswer}
+          revealed={currentAnswered}
         />
-        {currentAnswered && idx + 1 < total && (
-          <div className="flex justify-end mt-4">
+        <div className="mt-4 flex justify-end gap-2">
+          {!currentAnswered && (
+            <Button
+              onClick={handleCheck}
+              disabled={userAnswers[idx] === undefined}
+            >
+              {t("tasks.checkAnswer")}
+            </Button>
+          )}
+          {currentAnswered && idx + 1 < total && (
             <Button onClick={handleNext}>
               {t("lessonListening.nextQuestion")}
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      {/* Final summary */}
       {allAnswered && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
           <p className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
