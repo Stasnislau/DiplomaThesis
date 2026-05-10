@@ -61,6 +61,15 @@ export const useAudioRecorder = (
   const streamRef = useRef<MediaStream | null>(null);
   const tickIntervalRef = useRef<number | null>(null);
   const onStopRef = useRef<typeof onStop>(onStop);
+  // Mirror audioUrl in a ref so the unmount cleanup can revoke the
+  // CURRENT blob URL, not the stale empty-string captured at mount.
+  // Without this ref the cleanup useEffect (which deliberately runs
+  // with [] deps so it only fires once) would call
+  // URL.revokeObjectURL("") and leak every blob the user recorded.
+  const audioUrlRef = useRef<string>("");
+  useEffect(() => {
+    audioUrlRef.current = audioUrl;
+  }, [audioUrl]);
   // Keep onStop fresh without retriggering start() callback identity.
   useEffect(() => {
     onStopRef.current = onStop;
@@ -172,12 +181,25 @@ export const useAudioRecorder = (
     setElapsedSeconds(0);
   }, [audioUrl, teardownStream, teardownTimer]);
 
-  // Cleanup on unmount.
+  // Cleanup on unmount. We deliberately keep `[]` deps so this only
+  // fires once on tear-down — the current blob URL comes from
+  // `audioUrlRef`, which the effect above keeps in sync.
   useEffect(() => {
     return () => {
       teardownStream();
       teardownTimer();
-      if (audioUrl) URL.revokeObjectURL(audioUrl);
+      if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current);
+      // Stop any in-flight recorder so the browser releases the mic
+      // even if the consumer unmounts mid-recording without calling
+      // stop() first (e.g. user navigates away).
+      const r = recorderRef.current;
+      if (r && r.state !== "inactive") {
+        try {
+          r.stop();
+        } catch {
+          // The recorder may already be in a torn-down state — ignore.
+        }
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

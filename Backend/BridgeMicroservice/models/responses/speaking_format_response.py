@@ -44,8 +44,13 @@ class SpeakingPromptResponse(BaseModel):
 
     Optional fields are populated per-format:
       - `audioUrl` and `targetPhrase` only for `repeat_after_me`.
+      - `imageUrl` only for `picture_description` — the actual image
+        the learner is asked to describe (Pollinations.ai). The
+        scene `prompt` is kept too as an alt-text/caption fallback
+        when the image fails to load.
       - `translation` populated when the prompt is in the target
-        language and a UI-locale gloss helps comprehension.
+        language AND a UI-locale gloss is genuinely different from
+        the prompt (we avoid duplicating identical text).
       - `rubricHints` populated for content-graded formats so the
         learner knows what they're scored on before they speak.
     """
@@ -55,6 +60,7 @@ class SpeakingPromptResponse(BaseModel):
     translation: str = ""
     audioUrl: Optional[str] = None
     targetPhrase: Optional[str] = None
+    imageUrl: Optional[str] = None
     durationSeconds: int = 30
     rubricHints: List[str] = Field(default_factory=list)
     targetedWeaknesses: List[str] = Field(default_factory=list)

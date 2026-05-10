@@ -106,9 +106,14 @@ const RecorderPanel = ({
       </div>
 
       {recorder.error && (
-        <p className="text-xs text-red-600 dark:text-red-400">
-          {recorder.error}
-        </p>
+        <div className="text-xs text-red-600 dark:text-red-400">
+          {/* The hook surfaces the raw browser error in `error` (often
+             OS-localized like "NotAllowedError"); we prefix it with
+             our translated mic-permission line so the user sees a
+             clear human sentence regardless of browser. */}
+          <p className="font-semibold">{t("tasks.micError")}</p>
+          <p className="mt-0.5 opacity-80">{recorder.error}</p>
+        </div>
       )}
 
       {recorder.audioUrl && !recorder.isRecording && (
