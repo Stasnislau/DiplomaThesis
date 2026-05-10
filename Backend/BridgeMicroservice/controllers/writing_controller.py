@@ -156,6 +156,7 @@ class WritingController:
                         user_context=user_context,
                         topic=topic,
                         keywords=keywords or None,
+                        weaknesses=weaknesses or None,
                     )
                 )
             else:
@@ -166,6 +167,7 @@ class WritingController:
                         user_context=user_context,
                         topic=topic,
                         keywords=keywords or None,
+                        weaknesses=weaknesses or None,
                     )
                 )
 

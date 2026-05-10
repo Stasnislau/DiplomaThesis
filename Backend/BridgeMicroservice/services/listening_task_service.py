@@ -49,6 +49,7 @@ class ListeningTaskService:
         user_context: UserContext | None = None,
         focus_topic: str | None = None,
         focus_keywords: list[str] | None = None,
+        focus_weaknesses: list[str] | None = None,
     ) -> ListeningTaskResponse:
         language = request.language
         level = request.level
@@ -67,6 +68,11 @@ class ListeningTaskService:
             focus_clause = (
                 "\n        - Specifically work in this vocabulary or "
                 f"grammar focus: {', '.join(focus_keywords[:6])}."
+            )
+        if focus_weaknesses:
+            focus_clause += (
+                f"\n        - WEAKNESS TO TARGET (HARD REQUIREMENT): {', '.join(focus_weaknesses[:3])}"
+                " — at least one question MUST specifically test this weakness area."
             )
 
         prompt = self._build_prompt(
