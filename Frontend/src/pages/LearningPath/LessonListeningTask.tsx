@@ -11,6 +11,7 @@ import type { ListeningTaskResponse } from "@/types/responses/TaskResponse";
 import type { ListeningQuestion } from "@/types/responses/ListeningResponse";
 import { useCreateListeningTask } from "@/api/hooks/useCreateListeningTask";
 import { useTranslation } from "react-i18next";
+import { logListeningResult } from "@/api/mutations/logListeningResult";
 
 interface LessonListeningTaskProps {
   language: string;
@@ -95,8 +96,60 @@ const LessonListeningTask = ({
     if (!completed && allAnswered && total > 0) {
       setCompleted(true);
       onCompleted?.(correctCount, total);
+      // Persist to history so the adaptive layer learns from
+      // listening misses inside lessons (the standalone listening
+      // surface logs separately). Fire-and-forget — don't block
+      // lesson completion on a logging hiccup.
+      if (task && language && level) {
+        const score = Math.round((correctCount / total) * 100);
+        const errorExamples = task.questions
+          .map((q, i) => ({ q, verdict: correctness[i] }))
+          .filter(({ verdict }) => verdict === false)
+          .map(({ q }) => {
+            let suggestion = "";
+            switch (q.type) {
+              case "multiple_choice":
+              case "fill_in_the_blank":
+              case "dictation":
+                suggestion = String(q.correctAnswer);
+                break;
+              case "true_false_not_given":
+                suggestion = q.correctAnswer;
+                break;
+              case "sentence_completion":
+                suggestion = Array.isArray(q.correctAnswer)
+                  ? q.correctAnswer.join(" / ")
+                  : String(q.correctAnswer);
+                break;
+              case "multi_speaker_matching":
+                suggestion = q.statements
+                  .map((s) => `${s.statement} → ${s.correctSpeaker}`)
+                  .join("; ");
+                break;
+            }
+            return {
+              type: q.type,
+              text: q.question.slice(0, 160),
+              suggestion: suggestion.slice(0, 160),
+            };
+          })
+          .slice(0, 5);
+        logListeningResult({
+          language,
+          level,
+          score,
+          questionCount: total,
+          correctCount,
+          questionTypes: Array.from(
+            new Set(task.questions.map((q) => q.type)),
+          ),
+          errorExamples,
+        }).catch((err) => {
+          console.warn("logListeningResult (lesson) failed:", err);
+        });
+      }
     }
-  }, [allAnswered, completed, correctCount, total, onCompleted]);
+  }, [allAnswered, completed, correctCount, total, onCompleted, task, language, level, correctness]);
 
   const setAnswer = (a: ListeningAnswerValue) => {
     const next = [...userAnswers];

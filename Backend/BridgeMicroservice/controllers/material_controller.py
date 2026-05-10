@@ -31,6 +31,28 @@ class GenerateQuizRequest(BaseModel):
     document_map: Optional[DocumentMap] = None
 
 
+class MaterialsErrorExample(BaseModel):
+    """Wrong-answer trace from a finished materials quiz session.
+    Same shape as ListeningErrorExample / speaking errorExamples so
+    `derive_adaptive_focus` can read all task types uniformly."""
+
+    type: Optional[str] = None
+    text: Optional[str] = None
+    suggestion: Optional[str] = None
+
+
+class MaterialsResultRequest(BaseModel):
+    language: Optional[str] = None
+    level: Optional[str] = None
+    score: int
+    questionCount: int
+    correctCount: int
+    questionTypes: List[str] = []
+    errorExamples: List[MaterialsErrorExample] = []
+    documentKind: Optional[str] = None
+    model_config = {"populate_by_name": True}
+
+
 @router.post("/upload", response_model=BaseResponse[ProcessPdfResponse])
 async def upload_pdf(request: Request, file: UploadFile = File(...), service: MaterialService = Depends(get_material_service)) -> BaseResponse[ProcessPdfResponse]:
     from utils.error_codes import (
@@ -89,3 +111,52 @@ async def generate_quiz(
     except Exception as e:
         logger.error(f"Error generating quiz: {str(e)}", exc_info=True)
         raise_with_code(TASK_GENERATION_FAILED, 500, str(e))
+
+
+@router.post("/result", response_model=BaseResponse[bool])
+async def log_materials_result(
+    request: Request, body: MaterialsResultRequest
+) -> BaseResponse[bool]:
+    """Persist the outcome of a finished materials-quiz session so
+    the adaptive loop can mine which question types / topics the user
+    is failing on. Without this, /materials/quiz logs only the
+    GENERATION (with score=null) and the user's actual performance
+    is invisible to derive_adaptive_focus."""
+    from services.user_service import UserService
+    from utils.language_codes import to_iso_language
+
+    user_context = extract_user_context(request)
+    user_service = UserService()
+
+    await user_service.log_task_history(
+        user_context,
+        {
+            "taskType": "materials",
+            "title": "Materials quiz result",
+            "score": body.score,
+            "language": to_iso_language(body.language) if body.language else None,
+            "metadata": {
+                "errorTypes": [
+                    e.type for e in body.errorExamples if e.type
+                ][:5],
+                "errorExamples": [
+                    {
+                        "type": e.type or "",
+                        "text": (e.text or "")[:160],
+                        "suggestion": (e.suggestion or "")[:160],
+                    }
+                    for e in body.errorExamples[:5]
+                ],
+                "weaknesses": (
+                    [f"materials: {body.documentKind or 'mixed'}"]
+                    if body.score < 60
+                    else []
+                ),
+                "questionCount": body.questionCount,
+                "correctCount": body.correctCount,
+                "questionTypes": body.questionTypes,
+                "documentKind": body.documentKind,
+            },
+        },
+    )
+    return BaseResponse[bool](success=True, payload=True)
