@@ -12,8 +12,10 @@ import {
   fetchSpeakingPrompt,
   gradeSpeakingResponse,
 } from "@/api/mutations/speakingFormat";
+import { useLocalizedError } from "@/utils/useLocalizedError";
 import RecorderPanel from "./RecorderPanel";
 import GradeDisplay from "./GradeDisplay";
+import PictureScene from "./PictureScene";
 
 interface FormatPracticePanelProps {
   language: string;
@@ -30,6 +32,7 @@ const FORMAT_META: Record<SpeakingFormat, { emoji: string; defaultLabel: string 
 
 const FormatPracticePanel = ({ language, level }: FormatPracticePanelProps) => {
   const { t, i18n } = useTranslation();
+  const localizeError = useLocalizedError();
   const [format, setFormat] = useState<SpeakingFormat>("timed_response");
   const [prompt, setPrompt] = useState<SpeakingPromptResponse | null>(null);
   const [recordedFile, setRecordedFile] = useState<File | null>(null);
@@ -62,7 +65,10 @@ const FormatPracticePanel = ({ language, level }: FormatPracticePanelProps) => {
       setPrompt(data);
       setResetSignal((s) => s + 1);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load prompt");
+      // Map backend `code` (AI_RESPONSE_PARSE_FAILED, AI_API_KEY_MISSING…)
+      // through useLocalizedError so the user sees a translated string,
+      // not the raw English server message or "[object Object]".
+      setError(localizeError(e, t("tasks.analysisFailed")));
     } finally {
       setIsLoadingPrompt(false);
     }
@@ -83,7 +89,7 @@ const FormatPracticePanel = ({ language, level }: FormatPracticePanelProps) => {
       });
       setGrade(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to grade response");
+      setError(localizeError(e, t("tasks.analysisFailed")));
     } finally {
       setIsGrading(false);
     }
@@ -153,13 +159,27 @@ const FormatPracticePanel = ({ language, level }: FormatPracticePanelProps) => {
       {prompt && (
         <div className="space-y-3">
           <div className="rounded-2xl border border-indigo-200 dark:border-indigo-800 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-5">
-            <p className="text-base font-medium text-gray-900 dark:text-gray-100 leading-relaxed">
-              {prompt.prompt}
-            </p>
-            {prompt.translation && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 italic">
-                {prompt.translation}
-              </p>
+            {/* Picture-description format leads with the actual
+                image — the whole point is "describe what you see",
+                not "describe this paragraph". The text-scene falls
+                back to a caption (in case Pollinations is slow or
+                returned a corrupted image). */}
+            {prompt.format === "picture_description" && prompt.imageUrl ? (
+              <PictureScene
+                imageUrl={prompt.imageUrl}
+                caption={prompt.prompt}
+              />
+            ) : (
+              <>
+                <p className="text-base font-medium text-gray-900 dark:text-gray-100 leading-relaxed">
+                  {prompt.prompt}
+                </p>
+                {prompt.translation && prompt.translation !== prompt.prompt && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 italic">
+                    {prompt.translation}
+                  </p>
+                )}
+              </>
             )}
             {prompt.audioUrl && (
               <audio

@@ -616,7 +616,10 @@ Respond with a single JSON object only, no prose, with these keys:
             return SpeakingPromptResponse(
                 format="read_aloud",
                 prompt=phrase_payload["phrase"],
-                translation=phrase_payload.get("translation", ""),
+                translation=_dedupe_translation(
+                    phrase_payload["phrase"],
+                    phrase_payload.get("translation", ""),
+                ),
                 durationSeconds=FORMAT_DEFAULT_DURATION["read_aloud"],
                 rubricHints=FORMAT_RUBRIC_HINTS["read_aloud"],
             )
@@ -632,7 +635,9 @@ Respond with a single JSON object only, no prose, with these keys:
             return SpeakingPromptResponse(
                 format="timed_response",
                 prompt=prompt["question"],
-                translation=prompt.get("translation", ""),
+                translation=_dedupe_translation(
+                    prompt["question"], prompt.get("translation", "")
+                ),
                 durationSeconds=FORMAT_DEFAULT_DURATION["timed_response"],
                 rubricHints=FORMAT_RUBRIC_HINTS["timed_response"],
             )
@@ -665,7 +670,9 @@ Respond with a single JSON object only, no prose, with these keys:
             return SpeakingPromptResponse(
                 format="repeat_after_me",
                 prompt=phrase,
-                translation=phrase_payload.get("translation", ""),
+                translation=_dedupe_translation(
+                    phrase, phrase_payload.get("translation", "")
+                ),
                 audioUrl=audio_url,
                 targetPhrase=phrase,
                 durationSeconds=FORMAT_DEFAULT_DURATION["repeat_after_me"],
@@ -680,10 +687,20 @@ Respond with a single JSON object only, no prose, with these keys:
                 focus_clause=focus_clause,
                 user_context=user_context,
             )
+            # Build a Pollinations.ai image URL from the visual_prompt
+            # the LLM produced. Pollinations is open, no-API-key, and
+            # caches by prompt — same prompt yields the same image, so
+            # repeating the practice loop on a topic is reproducible.
+            image_url = _build_pollinations_url(
+                prompt.get("visual_prompt") or prompt["scene"]
+            )
+            scene_text = prompt["scene"]
+            translation = _dedupe_translation(scene_text, prompt.get("translation", ""))
             return SpeakingPromptResponse(
                 format="picture_description",
-                prompt=prompt["scene"],
-                translation=prompt.get("translation", ""),
+                prompt=scene_text,
+                translation=translation,
+                imageUrl=image_url,
                 durationSeconds=FORMAT_DEFAULT_DURATION["picture_description"],
                 rubricHints=FORMAT_RUBRIC_HINTS["picture_description"],
             )
@@ -699,7 +716,9 @@ Respond with a single JSON object only, no prose, with these keys:
             return SpeakingPromptResponse(
                 format="free_monologue",
                 prompt=prompt["topic"],
-                translation=prompt.get("translation", ""),
+                translation=_dedupe_translation(
+                    prompt["topic"], prompt.get("translation", "")
+                ),
                 durationSeconds=FORMAT_DEFAULT_DURATION["free_monologue"],
                 rubricHints=FORMAT_RUBRIC_HINTS["free_monologue"],
             )
@@ -772,7 +791,7 @@ Respond with a single JSON object only, no prose, with these keys:
                 if match_pct >= 70
                 else "Notable differences from the target — practise the highlighted words."
             )
-            return SpeakingGradeResponse(
+            response = SpeakingGradeResponse(
                 format="repeat_after_me",
                 transcription=transcript_text,
                 detectedLanguage=transcription.language,
@@ -781,6 +800,13 @@ Respond with a single JSON object only, no prose, with these keys:
                 wordErrorRate=round(wer, 3),
                 matchPercent=match_pct,
             )
+            await self._log_grade_to_history(
+                user_context=user_context,
+                language=language,
+                format=format,
+                response=response,
+            )
+            return response
 
         # Content-graded formats — delegate to the LLM with
         # format-specific rubric hints.
@@ -795,7 +821,7 @@ Respond with a single JSON object only, no prose, with these keys:
             user_context=user_context,
         )
 
-        return SpeakingGradeResponse(
+        response = SpeakingGradeResponse(
             format=format,  # type: ignore[arg-type]
             transcription=transcript_text,
             detectedLanguage=transcription.language,
@@ -812,6 +838,67 @@ Respond with a single JSON object only, no prose, with these keys:
             coherenceScore=_safe_int(grade_data.get("coherence_score")),
             vocabularyScore=_safe_int(grade_data.get("vocabulary_score")),
         )
+        await self._log_grade_to_history(
+            user_context=user_context,
+            language=language,
+            format=format,
+            response=response,
+        )
+        return response
+
+    async def _log_grade_to_history(
+        self,
+        user_context: Optional[UserContext],
+        language: str,
+        format: str,
+        response: SpeakingGradeResponse,
+    ) -> None:
+        """Surface guided-practice attempts in the user's history page.
+        We use the same `taskType: "speaking"` bucket as the legacy
+        free-analyze flow so the History filters keep working — the
+        format itself goes into metadata for future drill-down."""
+        if not user_context:
+            return
+        try:
+            from utils.language_codes import to_iso_language
+
+            # Pick the best single score we have to populate the
+            # history's "score" column. Match% for repeat_after_me;
+            # contentScore for everything else; fall back to fluency.
+            score: Optional[int] = None
+            if response.matchPercent is not None:
+                score = int(round(response.matchPercent))
+            elif response.contentScore is not None:
+                score = response.contentScore
+            elif response.pronunciation:
+                score = int(round(response.pronunciation.fluency_score))
+
+            await self.user_service.log_task_history(
+                user_context,
+                {
+                    "taskType": "speaking",
+                    "title": f"Speaking ({format}, {language})",
+                    "score": score,
+                    "language": to_iso_language(language),
+                    "metadata": {
+                        "speakingFormat": format,
+                        "transcriptionPreview": response.transcription[:120],
+                        "contentScore": response.contentScore,
+                        "coherenceScore": response.coherenceScore,
+                        "vocabularyScore": response.vocabularyScore,
+                        "matchPercent": response.matchPercent,
+                        "wordErrorRate": response.wordErrorRate,
+                        "fluencyScore": response.pronunciation.fluency_score
+                        if response.pronunciation
+                        else None,
+                        "errorCount": len(response.identifiedErrors),
+                    },
+                },
+            )
+        except Exception as e:
+            # History logging is best-effort — never block the grade
+            # response on a downstream failure.
+            logger.warning("History logging for speaking grade failed: %s", e)
 
     # ---------- Internal helpers ---------------------------------------
 
@@ -862,28 +949,57 @@ Return JSON only: {{"question": "<question in {language}>",
         focus_clause: str,
         user_context: Optional[UserContext],
     ) -> Dict[str, str]:
-        # No image generation here — we describe the scene in text and
-        # the FE renders that as the prompt. Keeps the flow free of
-        # image-model dependencies for the diploma scope.
+        """Generate a scene the learner will describe aloud.
+
+        Two outputs:
+          - `visual_prompt`: a concise English Stable-Diffusion-style
+            prompt fed to Pollinations.ai to render an actual image.
+            Always English so SD models render reliably regardless
+            of the learner's target language.
+          - `scene`: the same scene phrased as a 2-3 sentence caption
+            in the LEARNER'S target language, used as alt text and
+            rendered when image load fails.
+          - `translation`: optional UI-locale gloss for comprehension.
+        """
         prompt = f"""
-You are a speaking coach. Describe ONE concrete scene in {language} for a
-{level} learner to describe aloud in about 60 seconds.
+You are a speaking coach + image-prompt designer. Produce ONE concrete
+visual scene a {level} learner will describe aloud in about 60 seconds
+in {language}.
 
 The scene MUST:
-- Be a single rich situation worth describing in detail (not a list of
-  unrelated objects).
-- Have at least 4 distinct visible/inferable elements (people, objects,
-  setting, mood) so the learner has material to fill 60 seconds.
-- Be grounded in everyday life — coffee shop, train station, family
-  picnic — not abstract or fantastical.
+- Be a single rich, photographable situation (not a list of unrelated
+  objects, not abstract, not fantasy).
+- Have ≥4 distinguishable visible elements (people, props, setting,
+  mood) so the learner can fill 60 seconds.
+- Be grounded in everyday life: coffee shop, train station, family
+  picnic, classroom, market stall, gym, park bench, kitchen.
 - {focus_clause if focus_clause else "Pick a relatable everyday setting."}
 
-Return JSON only: {{"scene": "<2-3 sentence scene description in {language}>",
-"translation": "<short {ui_locale} gloss>"}}.
+Return strictly valid JSON with these EXACT keys:
+{{
+  "visual_prompt": "<English Stable-Diffusion prompt — concrete nouns, lighting, camera angle, photographic style, 15-30 words, NO speech-coach instructions>",
+  "scene": "<2-3 sentences in {language} describing the same scene as a caption>",
+  "translation": "<short {ui_locale} gloss of the scene, or empty string if {ui_locale} == {language}>"
+}}
+
+Example for English target, English UI:
+{{"visual_prompt": "candid photo of a busy coffee shop on a rainy afternoon, a young woman alone at a small table stirring her latte, a half-read book and a phone next to her, warm lamp light, shallow depth of field, photorealistic",
+  "scene": "A young woman sits alone at a small table in a busy coffee shop. She stirs her latte while watching the rain streak down the window beside her. A half-read book and a buzzing phone lie next to her cup.",
+  "translation": ""}}
+
+The `visual_prompt` MUST be in English regardless of {language} — open
+image models (SDXL/Flux) generate more reliable photographs from
+English prompts.
 """.strip()
-        return await self._call_and_parse_json(
+        data = await self._call_and_parse_json(
             prompt, user_context=user_context, fallback_key="scene"
         )
+        # Make sure visual_prompt is present even if the model dropped
+        # it; fall back to the scene text. Pollinations URL-encodes
+        # whatever we hand it.
+        if not data.get("visual_prompt"):
+            data["visual_prompt"] = data.get("scene", "")
+        return data
 
     async def _generate_monologue_prompt(
         self,
@@ -1032,6 +1148,57 @@ identified_errors length: 0 to 5. error_type stays in English. Output valid JSON
 
 
 # ---------- Module-level helpers ---------------------------------------
+
+
+# Pollinations.ai is open, no-API-key, no-registration text-to-image.
+# We hit GET https://image.pollinations.ai/prompt/<urlencoded prompt>
+# and the service returns a PNG directly. The free tier caches by
+# (prompt, seed, model), so the same scene description is reproducible
+# across page reloads — useful for the practice-loop UX. We pin
+# `model=flux` because at the time of writing it's the highest-quality
+# SDXL-tier free model on the platform and supports realistic photos.
+_POLLINATIONS_BASE = "https://image.pollinations.ai/prompt/"
+_POLLINATIONS_PARAMS = {
+    "model": "flux",
+    "width": "1024",
+    "height": "768",
+    "nologo": "true",
+    "private": "true",
+    "enhance": "true",
+}
+
+
+def _build_pollinations_url(visual_prompt: str) -> str:
+    """Return a Pollinations.ai image URL for the given scene prompt.
+
+    URL-encodes the prompt with quote_plus (the path segment lives
+    after `/prompt/` and pollinations expects + for spaces). Trims
+    overly long prompts to ~600 chars — long URLs occasionally trip
+    a 414 from upstream proxies. Tags the request with `?nologo`
+    because we render the image inside our own UI; `enhance=true`
+    nudges the model toward higher detail."""
+    import urllib.parse
+
+    cleaned = re.sub(r"\s+", " ", (visual_prompt or "").strip())[:600]
+    if not cleaned:
+        cleaned = "everyday scene, photo"
+    encoded = urllib.parse.quote(cleaned, safe="")
+    qs = "&".join(f"{k}={v}" for k, v in _POLLINATIONS_PARAMS.items())
+    return f"{_POLLINATIONS_BASE}{encoded}?{qs}"
+
+
+def _dedupe_translation(scene: str, translation: str) -> str:
+    """Don't render a translation that's just the scene repeated.
+
+    The LLM occasionally fills `translation` with the same string as
+    the source language when UI locale matches the target language —
+    that produces the "same paragraph twice" UX the user complained
+    about in the picture-description screenshot."""
+    if not translation:
+        return ""
+    if scene.strip().lower() == translation.strip().lower():
+        return ""
+    return translation
 
 
 _TOKEN_RE = re.compile(r"\w+", flags=re.UNICODE)

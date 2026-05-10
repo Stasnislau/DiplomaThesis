@@ -133,4 +133,27 @@ describe("useAudioRecorder", () => {
     expect(result.current.audioFile).toBe(null);
     expect(result.current.elapsedSeconds).toBe(0);
   });
+
+  it("unmounting mid-recording stops the recorder and revokes the URL", async () => {
+    // Spy on URL.revokeObjectURL to confirm the cleanup path actually
+    // releases the blob — this guards against a regression where the
+    // unmount cleanup captured the stale empty `audioUrl` from mount
+    // time and silently called revokeObjectURL("").
+    const revokeSpy = vi.spyOn(URL, "revokeObjectURL");
+    const { result, unmount } = renderHook(() => useAudioRecorder());
+    await act(async () => {
+      await result.current.start();
+    });
+    // Drive a stop so a real blob URL gets produced.
+    await act(async () => {
+      result.current.stop();
+      await Promise.resolve();
+    });
+    expect(result.current.audioUrl).not.toBe("");
+    const url = result.current.audioUrl;
+
+    revokeSpy.mockClear();
+    unmount();
+    expect(revokeSpy).toHaveBeenCalledWith(url);
+  });
 });

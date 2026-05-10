@@ -22,6 +22,11 @@ export interface SpeakingPromptResponse {
   translation?: string;
   audioUrl?: string | null;
   targetPhrase?: string | null;
+  /** picture_description only — Pollinations.ai PNG of the scene the
+   *  learner is asked to describe. Frontend renders this as the main
+   *  content; `prompt` becomes a caption / fallback if the image
+   *  fails to load. */
+  imageUrl?: string | null;
   durationSeconds: number;
   rubricHints: string[];
   targetedWeaknesses?: string[];

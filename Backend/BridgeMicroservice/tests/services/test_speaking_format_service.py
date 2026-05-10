@@ -12,7 +12,13 @@ import json
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from services.speaking_service import SpeakingService, _word_error_rate, _tokens
+from services.speaking_service import (
+    SpeakingService,
+    _word_error_rate,
+    _tokens,
+    _build_pollinations_url,
+    _dedupe_translation,
+)
 from models.responses.speaking_format_response import (
     SpeakingPromptResponse,
     SpeakingGradeResponse,
@@ -127,11 +133,22 @@ async def test_generate_prompt_timed_response(
 
 
 @pytest.mark.asyncio
-async def test_generate_prompt_picture_description(
+async def test_generate_prompt_picture_description_includes_image_url(
     speaking_service: SpeakingService, mock_ai_service: MagicMock
 ) -> None:
+    """picture_description must return:
+      - the scene caption as `prompt` (for alt-text + fallback),
+      - an `imageUrl` pointing at Pollinations.ai so the FE can
+        render an actual photograph the learner describes.
+    The whole point of this format is "describe what you SEE", not
+    "describe this paragraph"; without imageUrl we'd be back to the
+    earlier broken UX."""
     mock_ai_service.get_ai_response.return_value = json.dumps(
-        {"scene": "A busy coffee shop on a rainy Saturday morning.", "translation": ""}
+        {
+            "visual_prompt": "candid photo of a busy coffee shop on a rainy Saturday, photorealistic",
+            "scene": "A busy coffee shop on a rainy Saturday morning.",
+            "translation": "",
+        }
     )
     out = await speaking_service.generate_speaking_prompt(
         language="English", level="B2", format="picture_description"
@@ -139,6 +156,72 @@ async def test_generate_prompt_picture_description(
     assert out.format == "picture_description"
     assert "coffee" in out.prompt
     assert out.durationSeconds == 60
+    assert out.imageUrl, "picture_description MUST include an imageUrl"
+    assert out.imageUrl.startswith("https://image.pollinations.ai/prompt/")
+    # The visual_prompt key terms should be URL-encoded into the path,
+    # not silently dropped.
+    assert "coffee" in out.imageUrl
+
+
+@pytest.mark.asyncio
+async def test_generate_prompt_picture_description_falls_back_when_visual_prompt_missing(
+    speaking_service: SpeakingService, mock_ai_service: MagicMock
+) -> None:
+    """If the LLM forgets `visual_prompt`, we still render an image
+    by URL-encoding the scene caption. The URL must be valid and
+    non-empty either way."""
+    mock_ai_service.get_ai_response.return_value = json.dumps(
+        {
+            "scene": "A family at a picnic in the park.",
+            "translation": "",
+        }
+    )
+    out = await speaking_service.generate_speaking_prompt(
+        language="English", level="A2", format="picture_description"
+    )
+    assert out.imageUrl
+    assert "picnic" in out.imageUrl
+
+
+def test_pollinations_url_encodes_special_chars() -> None:
+    """Spaces, accents and quotes must be URL-encoded so the GET
+    reaches Pollinations intact instead of being truncated by a proxy."""
+    url = _build_pollinations_url("a café & a baguette, Paris")
+    assert url.startswith("https://image.pollinations.ai/prompt/")
+    assert "%20" in url or "%" in url  # at least one encoding occurred
+    assert "model=flux" in url
+    assert "nologo=true" in url
+
+
+def test_pollinations_url_clamps_long_prompts() -> None:
+    """Pollinations rejects URLs above ~2KB. We cap the prompt at
+    600 chars so the encoded URL stays well inside that ceiling."""
+    long_prompt = "lorem ipsum " * 200  # ~2400 chars raw
+    url = _build_pollinations_url(long_prompt)
+    # The path segment after /prompt/ shouldn't blow past ~1800 chars
+    # encoded (3× headroom for %20s).
+    path_segment = url.split("/prompt/", 1)[1].split("?", 1)[0]
+    assert len(path_segment) <= 1800
+
+
+def test_pollinations_url_handles_empty_input() -> None:
+    """Defensive: empty or whitespace-only prompt must still produce
+    a working URL (with a placeholder)."""
+    url = _build_pollinations_url("")
+    assert url.startswith("https://image.pollinations.ai/prompt/")
+
+
+def test_dedupe_translation_drops_identical() -> None:
+    """When the LLM returns the same string in `prompt` and
+    `translation` (UI lang == target lang case), we hide the
+    translation so the FE doesn't render the same paragraph twice."""
+    assert _dedupe_translation("Hello", "Hello") == ""
+    assert _dedupe_translation("Hello", " hello ") == ""  # case + whitespace
+
+
+def test_dedupe_translation_keeps_real_translation() -> None:
+    assert _dedupe_translation("Hello world", "Witam świat") == "Witam świat"
+    assert _dedupe_translation("Hello", "") == ""
 
 
 @pytest.mark.asyncio
