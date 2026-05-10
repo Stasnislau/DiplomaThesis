@@ -7,6 +7,7 @@ from services.writing_task_service import WritingTaskService
 from services.user_service import UserService
 from models.dtos.task_dto import MultipleChoiceTask, FillInTheBlankTask
 from models.dtos.essay_dto import EssayTask, EssayEvaluation
+from models.dtos.material_dtos import QuizQuestion
 from models.request.explain_answer_request import ExplainAnswerRequest
 from models.responses.explain_answer_response import ExplainAnswerResponse
 from models.request.writing_task_request import WritingTaskRequest
@@ -40,6 +41,25 @@ class WritingResultRequest(BaseModel):
     topic: Optional[str] = None
     targetedWeaknesses: list[str] = []
     questionPreview: Optional[str] = None
+    model_config = {"populate_by_name": True}
+
+
+class TypedTaskRequest(BaseModel):
+    """Request a single Materials-style question of the chosen type
+    for the /quiz route — same discriminated-union catalog the
+    Materials surface uses, just standalone (no PDF context)."""
+
+    language: str
+    level: str
+    taskType: Literal[
+        "multiple_choice",
+        "fill_in_the_blank",
+        "true_false",
+        "multi_select_mc",
+        "matching",
+        "cloze_passage",
+        "open",
+    ] = Field(default="multiple_choice")
     model_config = {"populate_by_name": True}
 
 
@@ -216,6 +236,56 @@ class WritingController:
                 },
             )
             return BaseResponse[bool](success=True, payload=True)
+
+        @self.router.post(
+            "/typed-task",
+            response_model=BaseResponse[QuizQuestion],
+            response_model_exclude_none=True,
+        )
+        async def generate_typed_task(
+            request: Request, body: TypedTaskRequest
+        ) -> BaseResponse[QuizQuestion]:
+            """Generate ONE question of the requested Materials-style
+            type (multi_select_mc, true_false, matching, cloze_passage,
+            etc.) with no PDF context. Used by the Quiz route to
+            surface the full type catalog beyond the legacy
+            MC/FIB-only mix.
+
+            Reuses MaterialService.generate_standalone_task — same
+            Stage 2 + Stage 3 pipeline + dedup safeguards as Materials,
+            so a quality fix in either path benefits both."""
+            from services.material_service import MaterialService
+            from services.vector_db_service import VectorDBService
+            from services.ai_service import AI_Service
+            from utils.error_codes import (
+                AI_RESPONSE_PARSE_FAILED,
+                raise_with_code,
+            )
+
+            user_context = extract_user_context(request)
+            material_service = MaterialService(
+                VectorDBService(), AI_Service()
+            )
+            history = await self.user_service.get_recent_history(
+                user_context, limit=20
+            )
+            focus = WritingTaskService.derive_adaptive_focus(history)
+
+            question = await material_service.generate_standalone_task(
+                task_type=body.taskType,
+                language=body.language,
+                level=body.level,
+                user_context=user_context,
+                focus_keywords=focus["keywords"] or None,
+                topic=focus["topic"],
+            )
+            if question is None:
+                raise_with_code(
+                    AI_RESPONSE_PARSE_FAILED,
+                    500,
+                    f"Could not generate a {body.taskType} task right now.",
+                )
+            return BaseResponse[QuizQuestion](success=True, payload=question)
 
         @self.router.post(
             "/essay/generate",

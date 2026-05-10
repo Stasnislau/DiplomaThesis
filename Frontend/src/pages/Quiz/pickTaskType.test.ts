@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   isEssayAllowedForLevel,
   pickQuizTaskType,
+  type QuizTaskType,
 } from "./pickTaskType";
 
 describe("isEssayAllowedForLevel", () => {
@@ -24,10 +25,14 @@ describe("isEssayAllowedForLevel", () => {
 });
 
 describe("pickQuizTaskType", () => {
-  it("never returns essay below B1, even at the extreme RNG edges", () => {
-    // Walk the full [0,1) RNG range — essay weight 0 below B1
-    // means the picker MUST never select it regardless of where
-    // the random point lands.
+  // Make a deterministic LCG so the Monte Carlo runs are
+  // reproducible and don't hammer Math.random ordering.
+  const makeRng = (seed: number) => () => {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    return seed / 0x7fffffff;
+  };
+
+  it("never returns essay below B1, even at every RNG point in [0, 1)", () => {
     for (let i = 0; i < 1000; i++) {
       const r = i / 1000;
       const t = pickQuizTaskType("A1", () => r);
@@ -35,49 +40,73 @@ describe("pickQuizTaskType", () => {
     }
   });
 
-  it("can return essay at B1+ but only inside its weight bucket", () => {
-    // B1+ weights are MC=45, FIB=45, essay=10 → total 100.
-    // Cumulative: rng [0, 0.45) → MC, [0.45, 0.90) → FIB,
-    // [0.90, 1.0) → essay. Probe each bucket.
-    expect(pickQuizTaskType("B1", () => 0.0)).toBe("multiple_choice");
-    expect(pickQuizTaskType("B1", () => 0.44)).toBe("multiple_choice");
-    expect(pickQuizTaskType("B1", () => 0.5)).toBe("fill_in_the_blank");
-    expect(pickQuizTaskType("B1", () => 0.89)).toBe("fill_in_the_blank");
-    expect(pickQuizTaskType("B1", () => 0.91)).toBe("essay");
-    expect(pickQuizTaskType("B1", () => 0.999)).toBe("essay");
+  it("never returns B1+-only types below B1", () => {
+    // matching, multi_select_mc, cloze_passage, open are also gated.
+    const forbidden: QuizTaskType[] = [
+      "essay",
+      "multi_select_mc",
+      "matching",
+      "cloze_passage",
+      "open",
+    ];
+    const seen = new Set<QuizTaskType>();
+    const rng = makeRng(99);
+    for (let i = 0; i < 5000; i++) {
+      seen.add(pickQuizTaskType("A2", rng));
+    }
+    for (const f of forbidden) {
+      expect(seen.has(f)).toBe(false);
+    }
+    // A1/A2 catalog is MC + FIB + true_false.
+    expect(seen.has("multiple_choice")).toBe(true);
+    expect(seen.has("fill_in_the_blank")).toBe(true);
+    expect(seen.has("true_false")).toBe(true);
   });
 
-  it("hits essay for ~10% of B2 picks across many rolls", () => {
-    // Use a deterministic LCG so the test is reproducible without
-    // depending on Math.random ordering.
-    let seed = 12345;
-    const rng = () => {
-      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-      return seed / 0x7fffffff;
-    };
-    const counts = { multiple_choice: 0, fill_in_the_blank: 0, essay: 0 };
+  it("hits all 8 variants at B2 across many rolls", () => {
+    const seen = new Set<QuizTaskType>();
+    const rng = makeRng(12345);
     for (let i = 0; i < 5000; i++) {
-      counts[pickQuizTaskType("B2", rng)]++;
+      seen.add(pickQuizTaskType("B2", rng));
     }
-    // Essay should be ~10% — allow ±3pp wobble for sample noise.
-    const essayPct = (counts.essay / 5000) * 100;
-    expect(essayPct).toBeGreaterThan(7);
-    expect(essayPct).toBeLessThan(13);
+    const expected: QuizTaskType[] = [
+      "multiple_choice",
+      "fill_in_the_blank",
+      "true_false",
+      "multi_select_mc",
+      "matching",
+      "cloze_passage",
+      "open",
+      "essay",
+    ];
+    for (const t of expected) {
+      expect(seen.has(t)).toBe(true);
+    }
   });
 
-  it("splits A1 picks roughly 50/50 between MC and FIB", () => {
-    let seed = 42;
-    const rng = () => {
-      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-      return seed / 0x7fffffff;
-    };
-    const counts = { multiple_choice: 0, fill_in_the_blank: 0, essay: 0 };
-    for (let i = 0; i < 5000; i++) {
-      counts[pickQuizTaskType("A1", rng)]++;
+  it("essay stays rare on B2 (~5%, ±2pp tolerance)", () => {
+    let count = 0;
+    const rng = makeRng(7);
+    const N = 8000;
+    for (let i = 0; i < N; i++) {
+      if (pickQuizTaskType("B2", rng) === "essay") count++;
     }
-    expect(counts.essay).toBe(0);
-    const mcPct = (counts.multiple_choice / 5000) * 100;
-    expect(mcPct).toBeGreaterThan(45);
-    expect(mcPct).toBeLessThan(55);
+    const pct = (count / N) * 100;
+    expect(pct).toBeGreaterThan(3);
+    expect(pct).toBeLessThan(7);
+  });
+
+  it("MC + FIB are still the most common B1+ picks combined", () => {
+    let mcOrFib = 0;
+    const rng = makeRng(42);
+    const N = 5000;
+    for (let i = 0; i < N; i++) {
+      const t = pickQuizTaskType("B1", rng);
+      if (t === "multiple_choice" || t === "fill_in_the_blank") mcOrFib++;
+    }
+    // 22 + 22 = 44 → ~44%. Allow ±5pp.
+    const pct = (mcOrFib / N) * 100;
+    expect(pct).toBeGreaterThan(38);
+    expect(pct).toBeLessThan(50);
   });
 });
