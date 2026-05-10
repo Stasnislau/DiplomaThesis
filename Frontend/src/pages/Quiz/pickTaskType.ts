@@ -1,22 +1,24 @@
 /**
- * Quiz task-type picker.
+ * Quiz task picker — three modalities (writing / listening / speaking)
+ * surfaced behind a single Generate Task click.
  *
- * Quiz surfaces the full Materials-style catalog so a single
- * Generate Task click can land on any of the 8 supported variants —
- * not just the historic MC/FIB pair. Mix and gating rules:
+ * The catalog is two-level: first roll a category (writing /
+ * listening / speaking), then roll a sub-type within it. Essay sits
+ * inside the writing category but is gated to B1+ and weighted low
+ * because it costs the user 5+ minutes.
  *
- *   - `multiple_choice`, `fill_in_the_blank`, `true_false` are
- *     bread-and-butter quick-fire drills available at every level.
- *   - `multi_select_mc`, `matching`, `cloze_passage`, `open` need
- *     enough productive vocab to make sense — gated to B1+.
- *   - `essay` is heavy practice (5+ minutes); B1+ only and rare
- *     (~5%) so the loop doesn't feel like homework.
+ * Speaking sub-formats are gated by level too — A-level learners
+ * shouldn't be asked for a 90-second free monologue. Listening sub-
+ * types follow the same rule (multi-speaker matching needs B1+).
  *
- * Returns the chosen variant. The picker takes an optional `rng`
- * (defaults to Math.random) so tests can drive deterministic
- * scenarios.
+ * Returns a discriminated union so the renderer can dispatch on
+ * `kind` and not have to enumerate a flat list of 18+ tokens.
  */
-export type QuizTaskType =
+
+import type { ListeningQuestionType } from "@/types/responses/ListeningResponse";
+import type { SpeakingFormat } from "@/types/responses/SpeakingResponse";
+
+export type QuizWritingType =
   | "multiple_choice"
   | "fill_in_the_blank"
   | "true_false"
@@ -25,6 +27,15 @@ export type QuizTaskType =
   | "cloze_passage"
   | "open"
   | "essay";
+
+export type QuizVariant =
+  | { kind: "writing"; type: QuizWritingType }
+  | { kind: "listening"; questionType: ListeningQuestionType }
+  | { kind: "speaking"; format: SpeakingFormat };
+
+/** Back-compat alias used by callers that still want the flat
+ *  string for telemetry / logging. */
+export type QuizTaskType = QuizWritingType;
 
 export type QuizLevel = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
 
@@ -35,52 +46,140 @@ const ESSAY_GATED_LEVELS: ReadonlySet<QuizLevel> = new Set([
   "C2",
 ]);
 
-interface WeightedOption {
-  type: QuizTaskType;
+interface WeightedOption<T> {
+  type: T;
   weight: number;
 }
 
-// A1 / A2: only types a beginner can engage with productively.
-const WEIGHTS_BELOW_B1: WeightedOption[] = [
-  { type: "multiple_choice", weight: 35 },
-  { type: "fill_in_the_blank", weight: 35 },
-  { type: "true_false", weight: 30 },
+// ---------- Writing sub-weights ------------------------------------
+
+const WRITING_BELOW_B1: WeightedOption<QuizWritingType>[] = [
+  { type: "multiple_choice", weight: 40 },
+  { type: "fill_in_the_blank", weight: 40 },
+  { type: "true_false", weight: 20 },
 ];
 
-// B1+: full catalog. Essay rare, cloze/matching moderate, MC/FIB
-// still the most common because they're fast.
-const WEIGHTS_FROM_B1: WeightedOption[] = [
+const WRITING_FROM_B1: WeightedOption<QuizWritingType>[] = [
   { type: "multiple_choice", weight: 22 },
   { type: "fill_in_the_blank", weight: 22 },
-  { type: "true_false", weight: 15 },
+  { type: "true_false", weight: 13 },
   { type: "multi_select_mc", weight: 12 },
   { type: "matching", weight: 12 },
   { type: "cloze_passage", weight: 7 },
   { type: "open", weight: 5 },
-  // Heavy by design: a 5-minute drill if it lands. Keep it rare so
-  // the practice loop doesn't feel like homework but exposes the
-  // learner to it occasionally.
-  { type: "essay", weight: 5 },
+  // Heavy: 5+ minutes if it lands. Kept rare so the loop doesn't
+  // feel like homework.
+  { type: "essay", weight: 7 },
 ];
 
-export const isEssayAllowedForLevel = (level: string): boolean =>
-  ESSAY_GATED_LEVELS.has((level || "").toUpperCase() as QuizLevel);
+// ---------- Listening sub-weights ----------------------------------
 
-export const pickQuizTaskType = (
-  level: string,
-  rng: () => number = Math.random,
-): QuizTaskType => {
-  const weights = isEssayAllowedForLevel(level)
-    ? WEIGHTS_FROM_B1
-    : WEIGHTS_BELOW_B1;
+const LISTENING_BELOW_B1: WeightedOption<ListeningQuestionType>[] = [
+  { type: "multiple_choice", weight: 50 },
+  { type: "fill_in_the_blank", weight: 30 },
+  { type: "dictation", weight: 20 },
+];
+
+const LISTENING_FROM_B1: WeightedOption<ListeningQuestionType>[] = [
+  { type: "multiple_choice", weight: 25 },
+  { type: "fill_in_the_blank", weight: 20 },
+  { type: "dictation", weight: 15 },
+  { type: "true_false_not_given", weight: 18 },
+  { type: "sentence_completion", weight: 12 },
+  { type: "multi_speaker_matching", weight: 10 },
+];
+
+// ---------- Speaking sub-weights -----------------------------------
+
+const SPEAKING_BELOW_B1: WeightedOption<SpeakingFormat>[] = [
+  // Below B1, only the simple read-aloud + repeat formats. Free
+  // monologue / picture description need productive vocab the
+  // learner doesn't have yet.
+  { type: "read_aloud", weight: 60 },
+  { type: "repeat_after_me", weight: 40 },
+];
+
+const SPEAKING_FROM_B1: WeightedOption<SpeakingFormat>[] = [
+  { type: "read_aloud", weight: 20 },
+  { type: "repeat_after_me", weight: 20 },
+  { type: "timed_response", weight: 25 },
+  { type: "picture_description", weight: 20 },
+  { type: "free_monologue", weight: 15 },
+];
+
+// ---------- Category-level weights ---------------------------------
+
+const CATEGORY_WEIGHTS = {
+  writing: 50,
+  listening: 25,
+  speaking: 25,
+} as const;
+
+// ---------- Helpers -------------------------------------------------
+
+const rollWeighted = <T>(
+  weights: WeightedOption<T>[],
+  rng: () => number,
+): T => {
   const total = weights.reduce((s, w) => s + w.weight, 0);
-  // rng() returns [0, 1); scaling by total gives a point in
-  // [0, total) which we walk through the cumulative buckets.
   let r = rng() * total;
   for (const opt of weights) {
     r -= opt.weight;
     if (r < 0) return opt.type;
   }
-  // Defensive: floating-point rounding edge case.
   return weights[weights.length - 1].type;
+};
+
+const isB1Plus = (level: string): boolean =>
+  ESSAY_GATED_LEVELS.has((level || "").toUpperCase() as QuizLevel);
+
+export const isEssayAllowedForLevel = isB1Plus;
+
+// ---------- Public API ---------------------------------------------
+
+export const pickQuizVariant = (
+  level: string,
+  rng: () => number = Math.random,
+): QuizVariant => {
+  // Step 1: pick the category.
+  const category = rollWeighted<keyof typeof CATEGORY_WEIGHTS>(
+    [
+      { type: "writing", weight: CATEGORY_WEIGHTS.writing },
+      { type: "listening", weight: CATEGORY_WEIGHTS.listening },
+      { type: "speaking", weight: CATEGORY_WEIGHTS.speaking },
+    ],
+    rng,
+  );
+
+  // Step 2: pick the sub-type with the appropriate level table.
+  const above = isB1Plus(level);
+  if (category === "writing") {
+    return {
+      kind: "writing",
+      type: rollWeighted(above ? WRITING_FROM_B1 : WRITING_BELOW_B1, rng),
+    };
+  }
+  if (category === "listening") {
+    return {
+      kind: "listening",
+      questionType: rollWeighted(
+        above ? LISTENING_FROM_B1 : LISTENING_BELOW_B1,
+        rng,
+      ),
+    };
+  }
+  return {
+    kind: "speaking",
+    format: rollWeighted(above ? SPEAKING_FROM_B1 : SPEAKING_BELOW_B1, rng),
+  };
+};
+
+/** Legacy flat-string picker kept for tests / older callers that
+ *  only care about the writing leaf. */
+export const pickQuizTaskType = (
+  level: string,
+  rng: () => number = Math.random,
+): QuizWritingType => {
+  const above = isB1Plus(level);
+  return rollWeighted(above ? WRITING_FROM_B1 : WRITING_BELOW_B1, rng);
 };

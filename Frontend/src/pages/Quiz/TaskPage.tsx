@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 
 import Button from "@/components/common/Button";
 import EssayTask from "@/pages/Tasks/components/EssayTask";
+import FormatPracticePanel from "@/pages/Tasks/components/SpeakingFormat/FormatPracticePanel";
 import { useTranslation } from "react-i18next";
 import { logWritingResult } from "@/api/mutations/logWritingResult";
 import {
@@ -14,7 +15,8 @@ import QuestionRenderer, {
   type UserAnswerValue,
 } from "@/pages/Tasks/components/MaterialsRenderers";
 import cn from "@/utils/cn";
-import { pickQuizTaskType, type QuizTaskType } from "./pickTaskType";
+import { pickQuizVariant, type QuizVariant } from "./pickTaskType";
+import QuizListeningCard from "./QuizListeningCard";
 
 const LANGUAGES = [
   { code: "Spanish", flag: "🇪🇸" },
@@ -36,19 +38,24 @@ export const TaskPage: React.FC = () => {
     undefined,
   );
   const [revealed, setRevealed] = useState(false);
-  const [activeTaskType, setActiveTaskType] = useState<QuizTaskType | null>(
-    null,
-  );
+  // The variant the picker rolled for the current generation. Drives
+  // which renderer mounts: writing → QuestionRenderer; listening →
+  // QuizListeningCard; speaking → FormatPracticePanel; essay (subset
+  // of writing) → EssayTask.
+  const [activeVariant, setActiveVariant] = useState<QuizVariant | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState<QuizQuestion | null>(
     null,
   );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Bumped on every Generate Task click so the listening / speaking
+  // sub-widgets force-remount and refetch.
+  const [genCounter, setGenCounter] = useState(0);
 
   useEffect(() => {
     if (language || level) {
       setCurrentQuestion(null);
-      setActiveTaskType(null);
+      setActiveVariant(null);
       setUserAnswer(undefined);
       setRevealed(false);
       setError(null);
@@ -61,38 +68,44 @@ export const TaskPage: React.FC = () => {
     setUserAnswer(undefined);
     setRevealed(false);
     setCurrentQuestion(null);
+    setGenCounter((c) => c + 1);
 
-    const taskType = pickQuizTaskType(level);
-    setActiveTaskType(taskType);
+    const variant = pickQuizVariant(level);
+    setActiveVariant(variant);
 
-    if (taskType === "essay") {
-      // Essay flow is fully self-contained inside <EssayTask />:
-      // generates its own prompt, handles evaluation, logs to history
-      // via /writing/essay/evaluate. We skip the typed-task fetch.
+    if (variant.kind === "writing") {
+      if (variant.type === "essay") {
+        // Essay flow is fully self-contained inside <EssayTask />.
+        // No typed-task fetch — the inner component generates its
+        // own prompt and grades it via /writing/essay/evaluate.
+        return;
+      }
+      setIsLoading(true);
+      try {
+        const q = await generateTypedTask({
+          language,
+          level,
+          taskType: variant.type as TypedTaskType,
+        });
+        setCurrentQuestion(q);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : t("tasks.analysisFailed"));
+      } finally {
+        setIsLoading(false);
+      }
       return;
     }
 
-    setIsLoading(true);
-    try {
-      const q = await generateTypedTask({
-        language,
-        level,
-        taskType: taskType as TypedTaskType,
-      });
-      setCurrentQuestion(q);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t("tasks.analysisFailed"));
-    } finally {
-      setIsLoading(false);
-    }
+    // Listening / speaking sub-widgets manage their own fetch +
+    // recording + grading lifecycle. We just mount them by setting
+    // activeVariant; each panel picks up the new genCounter and
+    // refetches.
   };
 
   const handleCheckAnswer = () => {
     if (!currentQuestion || userAnswer === undefined) return;
     setRevealed(true);
     const verdict = gradeQuestion(currentQuestion, userAnswer);
-    // Log to history. `verdict === null` means open-ended / no
-    // canonical right answer; we still log the attempt with score=null.
     if (language && level && verdict !== null) {
       logWritingResult({
         language,
@@ -125,7 +138,9 @@ export const TaskPage: React.FC = () => {
             <div className="divide-y divide-gray-200 dark:divide-gray-700">
               <div className="pb-8 text-center">
                 <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 mb-2">
-                  {t("nav.languageLearning", { defaultValue: "Language Learning" })}
+                  {t("nav.languageLearning", {
+                    defaultValue: "Language Learning",
+                  })}
                 </h1>
                 <p className="text-gray-500 dark:text-gray-400 text-sm">
                   {t("languages.chooseLanguage")} & {t("languages.proficiencyLevel")}
@@ -153,7 +168,9 @@ export const TaskPage: React.FC = () => {
                         <span className="text-lg" role="img" aria-hidden="true">
                           {lang.flag}
                         </span>
-                        <span>{t(`languages.${lang.code.toLowerCase()}`) || lang.code}</span>
+                        <span>
+                          {t(`languages.${lang.code.toLowerCase()}`) || lang.code}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -202,70 +219,96 @@ export const TaskPage: React.FC = () => {
               </div>
             )}
 
-            {activeTaskType === "essay" && language && level && (
+            {/* WRITING — essay sub-flow */}
+            {activeVariant?.kind === "writing" &&
+              activeVariant.type === "essay" &&
+              language &&
+              level && (
+                <div className="mt-8">
+                  <EssayTask
+                    key={`essay-${language}-${level}-${genCounter}`}
+                    language={language}
+                    level={level}
+                  />
+                </div>
+              )}
+
+            {/* WRITING — MC / FIB / T-F / multi-select / matching / cloze / open */}
+            {activeVariant?.kind === "writing" &&
+              activeVariant.type !== "essay" &&
+              currentQuestion && (
+                <div className="mt-8 space-y-4">
+                  <div className="rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50/40 dark:bg-indigo-900/10 p-4">
+                    <span className="inline-block text-[11px] uppercase tracking-wider font-semibold text-indigo-700 dark:text-indigo-300 mb-2">
+                      ✍️ {t(`tasks.questionType.${currentQuestion.type}`, {
+                        defaultValue: currentQuestion.type,
+                      })}
+                    </span>
+                    {currentQuestion.context_text &&
+                      currentQuestion.type !== "cloze_passage" && (
+                        <div className="mb-3 p-3 bg-white dark:bg-gray-800 rounded-lg text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line max-h-72 overflow-y-auto">
+                          {currentQuestion.context_text}
+                        </div>
+                      )}
+                    <p className="text-base font-medium text-gray-900 dark:text-gray-100">
+                      {currentQuestion.question}
+                    </p>
+                  </div>
+
+                  <QuestionRenderer
+                    question={currentQuestion}
+                    answer={userAnswer}
+                    onChange={setUserAnswer}
+                    revealed={revealed}
+                  />
+
+                  <Button
+                    onClick={handleCheckAnswer}
+                    disabled={revealed || userAnswer === undefined}
+                    variant="primary"
+                    className="w-full justify-center"
+                  >
+                    {t("tasks.checkAnswer")}
+                  </Button>
+
+                  {revealed && verdict !== null && (
+                    <div
+                      className={cn(
+                        "p-4 rounded-xl border flex items-center gap-2 font-semibold",
+                        verdict
+                          ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300"
+                          : "bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300",
+                      )}
+                    >
+                      <span className="text-xl">{verdict ? "✓" : "✕"}</span>
+                      <span>
+                        {verdict ? t("tasks.correct") : t("tasks.incorrect")}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+            {/* LISTENING — audio + question with adaptive history-logging */}
+            {activeVariant?.kind === "listening" && language && level && (
               <div className="mt-8">
-                {/* Essay flow is its own self-contained widget. We
-                    re-key on language+level so a fresh generation
-                    force-remounts (the inner generator otherwise
-                    holds onto a stale prompt). */}
-                <EssayTask
-                  key={`${language}-${level}`}
+                <QuizListeningCard
+                  key={`listen-${language}-${level}-${genCounter}`}
                   language={language}
                   level={level}
+                  questionType={activeVariant.questionType}
                 />
               </div>
             )}
 
-            {currentQuestion && activeTaskType !== "essay" && (
-              <div className="mt-8 space-y-4">
-                <div className="rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50/40 dark:bg-indigo-900/10 p-4">
-                  <span className="inline-block text-[11px] uppercase tracking-wider font-semibold text-indigo-700 dark:text-indigo-300 mb-2">
-                    {t(`tasks.questionType.${currentQuestion.type}`, {
-                      defaultValue: currentQuestion.type,
-                    })}
-                  </span>
-                  {currentQuestion.context_text &&
-                    currentQuestion.type !== "cloze_passage" && (
-                      <div className="mb-3 p-3 bg-white dark:bg-gray-800 rounded-lg text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line max-h-72 overflow-y-auto">
-                        {currentQuestion.context_text}
-                      </div>
-                    )}
-                  <p className="text-base font-medium text-gray-900 dark:text-gray-100">
-                    {currentQuestion.question}
-                  </p>
-                </div>
-
-                <QuestionRenderer
-                  question={currentQuestion}
-                  answer={userAnswer}
-                  onChange={setUserAnswer}
-                  revealed={revealed}
+            {/* SPEAKING — full guided-practice panel for the rolled format */}
+            {activeVariant?.kind === "speaking" && language && level && (
+              <div className="mt-8">
+                <FormatPracticePanel
+                  key={`speak-${language}-${level}-${activeVariant.format}-${genCounter}`}
+                  language={language}
+                  level={level}
                 />
-
-                <Button
-                  onClick={handleCheckAnswer}
-                  disabled={revealed || userAnswer === undefined}
-                  variant="primary"
-                  className="w-full justify-center"
-                >
-                  {t("tasks.checkAnswer")}
-                </Button>
-
-                {revealed && verdict !== null && (
-                  <div
-                    className={cn(
-                      "p-4 rounded-xl border flex items-center gap-2 font-semibold",
-                      verdict
-                        ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300"
-                        : "bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300",
-                    )}
-                  >
-                    <span className="text-xl">{verdict ? "✓" : "✕"}</span>
-                    <span>
-                      {verdict ? t("tasks.correct") : t("tasks.incorrect")}
-                    </span>
-                  </div>
-                )}
               </div>
             )}
           </div>
