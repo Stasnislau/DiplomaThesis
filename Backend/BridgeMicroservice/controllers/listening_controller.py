@@ -91,6 +91,7 @@ class ListeningController:
                 user_context=user_context,
                 focus_topic=topic,
                 focus_keywords=keywords or None,
+                focus_weaknesses=weaknesses or None,
             )
             # `question_types` rides on the inbound ListeningTaskRequest
             # already; the service reads it from there. No extra

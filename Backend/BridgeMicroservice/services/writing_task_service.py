@@ -39,6 +39,7 @@ class WritingTaskService:
     async def generate_writing_multiple_choice_task(
         self, language: str, level: str, user_context: Optional[UserContext] = None,
         topic: Optional[str] = None, keywords: Optional[list[str]] = None,
+        weaknesses: Optional[list[str]] = None,
     ) -> MultipleChoiceTask:
         effective_level = "A1" if level.upper() == "A0" else level.upper()
         level_context: Union[SpecificSkillContext, FullLevelContext, None] = self.vector_db_service.get_level_context(
@@ -54,7 +55,7 @@ class WritingTaskService:
         seed = str(uuid.uuid4())
         prompt = writing_multiple_choice_task_prompt(
             language, level, level_context.model_dump(),
-            topic=topic, keywords=keywords, seed=seed,
+            topic=topic, keywords=keywords, weaknesses=weaknesses, seed=seed,
             ui_locale_label=user_context.ui_locale_label if user_context else None,
         )
         response = await self.ai_service.get_ai_response(
@@ -81,6 +82,7 @@ class WritingTaskService:
     async def generate_writing_fill_in_the_blank_task(
         self, language: str, level: str, user_context: Optional[UserContext] = None,
         topic: Optional[str] = None, keywords: Optional[list[str]] = None,
+        weaknesses: Optional[list[str]] = None,
     ) -> FillInTheBlankTask:
         effective_level = "A1" if level.upper() == "A0" else level.upper()
         level_context: Union[SpecificSkillContext, FullLevelContext, None] = self.vector_db_service.get_level_context(
@@ -97,7 +99,7 @@ class WritingTaskService:
         seed = str(uuid.uuid4())
         prompt = writing_fill_in_the_blank_task_prompt(
             language, level, level_context.model_dump(),
-            topic=topic, keywords=keywords, seed=seed,
+            topic=topic, keywords=keywords, weaknesses=weaknesses, seed=seed,
             ui_locale_label=user_context.ui_locale_label if user_context else None,
         )
         response = await self.ai_service.get_ai_response(

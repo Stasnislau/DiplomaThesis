@@ -25,15 +25,22 @@ def writing_fill_in_the_blank_task_prompt(
     level_context: Dict[str, str],
     topic: str | None = None,
     keywords: list[str] | None = None,
+    weaknesses: list[str] | None = None,
     seed: str | None = None,
     ui_locale_label: Optional[str] = None,
 ) -> str:
     lesson_hint = ""
-    if topic or keywords:
+    if topic or keywords or weaknesses:
+        weakness_line = ""
+        if weaknesses:
+            weakness_line = (
+                f"\n        - WEAKNESS TO TARGET (HARD REQUIREMENT): {', '.join(weaknesses[:3])}"
+                " — the blank MUST test exactly this weakness area, not just mention it."
+            )
         lesson_hint = f"""
         LESSON CONTEXT (MANDATORY — your task MUST use this):
         - Topic: {topic or 'General'}
-        - Key words / phrases to test: {', '.join(keywords) if keywords else 'any relevant to the topic'}
+        - Key words / phrases to test: {', '.join(keywords) if keywords else 'any relevant to the topic'}{weakness_line}
         The missing word in the blank MUST be one of the key words or phrases listed above.
         """
     # The little gloss in parens after the blank is a learner aid, NOT a
@@ -106,15 +113,22 @@ def writing_multiple_choice_task_prompt(
     level_context: Dict[str, str],
     topic: str | None = None,
     keywords: list[str] | None = None,
+    weaknesses: list[str] | None = None,
     seed: str | None = None,
     ui_locale_label: Optional[str] = None,
 ) -> str:
     lesson_hint = ""
-    if topic or keywords:
+    if topic or keywords or weaknesses:
+        weakness_line = ""
+        if weaknesses:
+            weakness_line = (
+                f"\n        - WEAKNESS TO TARGET (HARD REQUIREMENT): {', '.join(weaknesses[:3])}"
+                " — design a distractor that specifically exploits this error pattern."
+            )
         lesson_hint = f"""
         LESSON CONTEXT (MANDATORY — your task MUST use this):
         - Topic: {topic or 'General'}
-        - Key words / phrases to include or test: {', '.join(keywords) if keywords else 'any relevant to the topic'}
+        - Key words / phrases to include or test: {', '.join(keywords) if keywords else 'any relevant to the topic'}{weakness_line}
         Build the sentence and options around the above words/phrases.
         """
     seed_letter = (seed or "x")[0].lower() if seed else None
