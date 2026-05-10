@@ -4,6 +4,7 @@ from services.material_service import (
     MaterialService,
     _has_verbatim_overlap,
     _word_ngrams,
+    _dedupe_preserve_order,
 )
 from models.dtos.material_dtos import (
     ProcessPdfResponse,
@@ -500,3 +501,117 @@ async def test_stimulus_retries_on_verbatim_overlap(
     # The accepted passage shouldn't be the copied one.
     ctx = result.quiz.questions[0].context_text or ""
     assert source_phrase not in ctx
+
+
+# ---------- Option-dedupe tests (FIX-1) -----------------------------
+
+
+def test_dedupe_preserve_order_drops_exact_duplicates() -> None:
+    out = _dedupe_preserve_order(["a", "b", "a", "c"])
+    assert out == ["a", "b", "c"]
+
+
+def test_dedupe_preserve_order_treats_case_and_whitespace_as_dupes() -> None:
+    """The reproduction case from prod was a Russian MC where
+    Option A and Option D were identical strings — but more
+    insidious is the case where the model emits 'диагностировать ' vs
+    'диагностировать' (one trailing space) and the user picks the
+    'wrong' one and gets Correct! by accident."""
+    out = _dedupe_preserve_order(
+        ["диагностировать", "диагнозировать", "Диагностировать ", "диагностицировать"]
+    )
+    assert out == ["диагностировать", "диагнозировать", "диагностицировать"]
+
+
+def test_dedupe_preserve_order_unicode_normalisation() -> None:
+    """NFKC-fold so a precomposed character vs decomposed pair
+    don't sneak past as 'distinct' options. We construct both forms
+    via codepoint escapes (\u00e9 vs e+\u0301) — writing them as
+    bare literals would let an editor's auto-normalise collapse them
+    in source and the test would silently lose its purpose."""
+    composed = "caf\u00e9"
+    decomposed = "cafe\u0301"
+    assert composed != decomposed
+    out = _dedupe_preserve_order([composed, decomposed, "tea"])
+    assert len(out) == 2
+
+
+def test_dedupe_preserve_order_skips_non_strings() -> None:
+    out = _dedupe_preserve_order(["a", None, 42, "b", ""])  # type: ignore[list-item]
+    assert out == ["a", "b"]
+
+
+@pytest.mark.asyncio
+async def test_generate_questions_drops_mc_with_duplicate_options(
+    material_service: MaterialService,
+    mock_vector_db: MagicMock,
+    mock_ai_service: MagicMock,
+) -> None:
+    """End-to-end safety: when the LLM emits an MC with two
+    byte-identical options, we drop that question rather than ship a
+    broken one to the FE. Reproduction of the user-reported screenshot
+    where Option A and Option D were both 'диагностировать' and the
+    user picked the dup and got Correct!."""
+    mock_vector_db.search_materials.return_value = [
+        MaterialChunk(text="x", source="doc", chunk_index=0, vector=[0.1])
+    ]
+    mock_ai_service.get_ai_response.side_effect = [
+        # 1st call: questions list with one BAD MC (dup options) and
+        # one GOOD MC. Pipeline must drop the bad one only.
+        '{"questions": ['
+        '{"type":"multiple_choice","question":"Q1","options":["диагностировать","диагнозировать","диагностицировать","диагностировать"],"correct_answer":"диагностировать"},'
+        '{"type":"multiple_choice","question":"Q2","options":["A","B","C"],"correct_answer":"A"}'
+        ']}',
+    ]
+    doc_map = DocumentMap(
+        exercises=[
+            DocumentExercise(
+                type="gap_fill_grammar",
+                question_count=2,
+            )
+        ]
+    )
+
+    result = await material_service.generate_quiz(document_map=doc_map)
+    assert isinstance(result.quiz, QuizContent)
+    # Dedupe collapses Q1's options from 4 → 3 (one byte-dup), so the
+    # question is salvaged with 3 distinct options. Q2 untouched.
+    assert len(result.quiz.questions) == 2
+    q1 = result.quiz.questions[0]
+    assert isinstance(q1, MultipleChoiceQuizQuestion)
+    assert len(q1.options) == 3, f"Q1 still has dup options: {q1.options}"
+    assert "диагностировать" in q1.options
+    # And the correct_answer must still be in the surviving option set.
+    assert q1.correct_answer in q1.options
+
+
+@pytest.mark.asyncio
+async def test_generate_questions_drops_matching_with_duplicate_lefts(
+    material_service: MaterialService,
+    mock_vector_db: MagicMock,
+    mock_ai_service: MagicMock,
+) -> None:
+    """Matching variant: the renderer pairs entries by the `left`
+    string, so two identical lefts silently overwrite each other in
+    the user's answer state. Drop such questions wholesale."""
+    mock_vector_db.search_materials.return_value = [
+        MaterialChunk(text="x", source="doc", chunk_index=0, vector=[0.1])
+    ]
+    mock_ai_service.get_ai_response.side_effect = [
+        '{"questions": ['
+        '{"type":"matching","question":"Match.","pairs":'
+        '[{"left":"happy","right":"sad"},{"left":"happy","right":"joyful"},{"left":"big","right":"large"}]},'
+        '{"type":"matching","question":"OK match.","pairs":'
+        '[{"left":"hot","right":"cold"},{"left":"up","right":"down"}]}'
+        ']}',
+    ]
+    doc_map = DocumentMap(
+        exercises=[DocumentExercise(type="matching", question_count=2)]
+    )
+    result = await material_service.generate_quiz(document_map=doc_map)
+    assert isinstance(result.quiz, QuizContent)
+    # Only the second matching survives (first had dup lefts).
+    assert len(result.quiz.questions) == 1
+    q = result.quiz.questions[0]
+    assert isinstance(q, MatchingQuizQuestion)
+    assert q.question == "OK match."

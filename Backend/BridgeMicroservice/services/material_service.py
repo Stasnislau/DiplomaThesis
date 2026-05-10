@@ -63,6 +63,32 @@ def _word_ngrams(text: str, n: int) -> Set[Tuple[str, ...]]:
     return {tuple(words[i : i + n]) for i in range(len(words) - n + 1)}
 
 
+def _dedupe_preserve_order(options: List[Any]) -> List[str]:
+    """Return options with case/whitespace-equal duplicates removed,
+    keeping the first occurrence's exact casing/spelling. Used to
+    sanitise MC option lists where the LLM occasionally produces a
+    near-identical entry as a "distractor" that's actually the same
+    string twice (visible bug: user picks dup, gets Correct! by
+    accident).
+
+    A duplicate is anything whose `.strip().lower()` matches one we
+    already kept. NFKC-fold for unicode safety so e.g. "ё" vs
+    composed "е + diaeresis" don't sneak past as distinct."""
+    import unicodedata
+
+    seen: set[str] = set()
+    out: List[str] = []
+    for raw in options:
+        if not isinstance(raw, str):
+            continue
+        normalised = unicodedata.normalize("NFKC", raw).strip().lower()
+        if not normalised or normalised in seen:
+            continue
+        seen.add(normalised)
+        out.append(raw)
+    return out
+
+
 def _has_verbatim_overlap(
     candidate: str,
     source_chunks: List[str],
@@ -638,6 +664,57 @@ class MaterialService:
         {analysis_context}
         """
 
+    async def generate_standalone_task(
+        self,
+        task_type: str,
+        language: str,
+        level: str,
+        user_context: Optional[object] = None,
+        focus_keywords: Optional[List[str]] = None,
+        topic: Optional[str] = None,
+    ) -> Optional[QuizQuestion]:
+        """Generate a SINGLE question of the requested type, no PDF
+        context. Used by the /writing/typed-task endpoint to power
+        the Quiz route — same renderer dispatcher and discriminated
+        union the Materials surface uses, just standalone.
+
+        Builds a synthetic DocumentExercise tagged with the requested
+        type (and the optional adaptive topic / keywords), runs it
+        through the same Stage 2 + Stage 3 pipeline, and returns the
+        first parsed question. Returns None on a complete miss so
+        callers can surface a friendly error.
+        """
+        ui_lang = (
+            getattr(user_context, "ui_locale_label", None) or "English"
+        )
+        owner_id = (
+            user_context.user_id
+            if isinstance(user_context, UserContext)
+            else None
+        )
+        # Build subtypes from the type itself so the prompt has
+        # something to anchor on. Cloze passages need a stimulus
+        # (the picker triggers Stage 2 automatically); MC/FIB/T-F
+        # are self-contained.
+        exercise = DocumentExercise(
+            type=task_type,
+            passage_word_count_estimate=200 if task_type == "cloze_passage" else None,
+            passage_topic_hint=topic,
+            question_count=1,
+            question_subtypes=[],
+            grammar_focus=focus_keywords or [],
+        )
+        questions = await self._build_questions_for_exercise(
+            exercise=exercise,
+            owner_id=owner_id,
+            ui_lang=ui_lang,
+            target_language=language,
+            user_context=user_context,
+        )
+        if not questions:
+            return None
+        return questions[0]
+
     async def _build_questions_for_exercise(
         self,
         exercise: DocumentExercise,
@@ -989,6 +1066,13 @@ class MaterialService:
         - For multi_select_mc, `correct_answers` MUST list ≥2 of the options verbatim.
         - For true_false, `correct_answer` MUST be the lowercase string "true" or "false".
         - For matching, every `right` value must be the correct counterpart of its `left`.
+        - For multiple_choice and multi_select_mc, the `options` list
+          MUST contain pairwise-distinct strings. Two identical
+          entries (or strings that differ only by an accent / case /
+          trailing whitespace) are forbidden — that's a rendering
+          bug, not a learning signal.
+        - For matching, every `left` value must be unique and every
+          `right` value must be unique.
         """
         response_json_str = await self.ai_service.get_ai_response(
             prompt=prompt,
@@ -1011,6 +1095,52 @@ class MaterialService:
             # contract consistent for the frontend.
             if stimulus and not raw.get("context_text"):
                 raw["context_text"] = stimulus
+            # Dedupe options before validation. Models occasionally
+            # produce e.g. ["диагностировать", "диагнозировать",
+            # "диагностицировать", "диагностировать"] — two of those
+            # are byte-identical and the user picks one of them and
+            # gets "Correct!" without learning anything. Strip
+            # adjacent-equal-after-trim duplicates before we hand the
+            # question to the FE; if dedup leaves <2 options, drop
+            # the whole item rather than render a broken question.
+            if raw.get("type") in ("multiple_choice", "multi_select_mc"):
+                deduped = _dedupe_preserve_order(raw.get("options") or [])
+                if len(deduped) < 2:
+                    logger.warning(
+                        "Dropping %s question — too few distinct options after dedupe (%s)",
+                        raw.get("type"),
+                        raw.get("options"),
+                    )
+                    continue
+                raw["options"] = deduped
+                # multi_select_mc keeps `correct_answers` (plural).
+                # multiple_choice picks ONE — verify the canonical
+                # answer is still in the deduped option set; if it
+                # was the dropped duplicate, we have to fail
+                # gracefully instead of returning an unanswerable item.
+                if raw.get("type") == "multiple_choice":
+                    ca = str(raw.get("correct_answer") or "").strip().lower()
+                    options_normalized = [
+                        str(o).strip().lower() for o in raw["options"]
+                    ]
+                    if ca and ca not in options_normalized:
+                        logger.warning(
+                            "Dropping multiple_choice — correct_answer %r vanished after option dedupe",
+                            raw.get("correct_answer"),
+                        )
+                        continue
+            elif raw.get("type") == "matching":
+                # Matching bug variant: identical lefts or identical
+                # rights. The renderer pairs by `left` so dup lefts
+                # silently overwrite each other. Drop the item.
+                pairs = raw.get("pairs") or []
+                lefts = [str(p.get("left") or "").strip() for p in pairs]
+                rights = [str(p.get("right") or "").strip() for p in pairs]
+                if len(set(lefts)) != len(lefts) or len(set(rights)) != len(rights):
+                    logger.warning(
+                        "Dropping matching question — duplicate left/right values"
+                    )
+                    continue
             try:
                 out.append(QuizQuestionAdapter.validate_python(raw))
             except Exception as item_err:

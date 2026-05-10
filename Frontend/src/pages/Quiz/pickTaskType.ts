@@ -1,16 +1,16 @@
 /**
  * Quiz task-type picker.
  *
- * The Quiz page asks the user for a language + level, then picks ONE
- * task variant to render. Mix and gating rules:
+ * Quiz surfaces the full Materials-style catalog so a single
+ * Generate Task click can land on any of the 8 supported variants —
+ * not just the historic MC/FIB pair. Mix and gating rules:
  *
- *   - `multiple_choice` and `fill_in_the_blank` are the bread-and-butter
- *     practice — they appear at every level, with equal frequency.
- *   - `essay` is **only available from B1 upward** (CEFR users below
- *     that don't have the productive vocab to write a coherent
- *     paragraph) and is **rare** (~10% of picks at qualifying levels)
- *     so the user mostly hits quick-fire MC/FIB and occasionally
- *     gets a heavier essay drill.
+ *   - `multiple_choice`, `fill_in_the_blank`, `true_false` are
+ *     bread-and-butter quick-fire drills available at every level.
+ *   - `multi_select_mc`, `matching`, `cloze_passage`, `open` need
+ *     enough productive vocab to make sense — gated to B1+.
+ *   - `essay` is heavy practice (5+ minutes); B1+ only and rare
+ *     (~5%) so the loop doesn't feel like homework.
  *
  * Returns the chosen variant. The picker takes an optional `rng`
  * (defaults to Math.random) so tests can drive deterministic
@@ -19,6 +19,11 @@
 export type QuizTaskType =
   | "multiple_choice"
   | "fill_in_the_blank"
+  | "true_false"
+  | "multi_select_mc"
+  | "matching"
+  | "cloze_passage"
+  | "open"
   | "essay";
 
 export type QuizLevel = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
@@ -35,18 +40,27 @@ interface WeightedOption {
   weight: number;
 }
 
+// A1 / A2: only types a beginner can engage with productively.
 const WEIGHTS_BELOW_B1: WeightedOption[] = [
-  { type: "multiple_choice", weight: 50 },
-  { type: "fill_in_the_blank", weight: 50 },
+  { type: "multiple_choice", weight: 35 },
+  { type: "fill_in_the_blank", weight: 35 },
+  { type: "true_false", weight: 30 },
 ];
 
+// B1+: full catalog. Essay rare, cloze/matching moderate, MC/FIB
+// still the most common because they're fast.
 const WEIGHTS_FROM_B1: WeightedOption[] = [
-  { type: "multiple_choice", weight: 45 },
-  { type: "fill_in_the_blank", weight: 45 },
-  // Rare on purpose. An essay takes the user 5+ minutes; if it
-  // appeared 1/3 of clicks the practice loop would feel like
-  // homework, not warm-up.
-  { type: "essay", weight: 10 },
+  { type: "multiple_choice", weight: 22 },
+  { type: "fill_in_the_blank", weight: 22 },
+  { type: "true_false", weight: 15 },
+  { type: "multi_select_mc", weight: 12 },
+  { type: "matching", weight: 12 },
+  { type: "cloze_passage", weight: 7 },
+  { type: "open", weight: 5 },
+  // Heavy by design: a 5-minute drill if it lands. Keep it rare so
+  // the practice loop doesn't feel like homework but exposes the
+  // learner to it occasionally.
+  { type: "essay", weight: 5 },
 ];
 
 export const isEssayAllowedForLevel = (level: string): boolean =>
