@@ -4,19 +4,30 @@ import { createTaskRequest } from "./createBlankSpaceTask";
 import { fetchWithAuth } from "../fetchWithAuth";
 import { parseApiPayload } from "../parseApiResponse";
 
+interface AdaptiveTaskEnvelope {
+  task: TaskData;
+  targetedWeaknesses: string[];
+  derivedFromHistory: boolean;
+}
+
 export async function createMultipleChoiceTask(
   input: createTaskRequest
 ): Promise<TaskData> {
   const response = await fetchWithAuth(
-    `${BRIDGE_MICROSERVICE_URL}/writing/multiplechoice`,
+    `${BRIDGE_MICROSERVICE_URL}/writing/adaptive`,
     {
       method: "POST",
-      body: JSON.stringify(input),
+      body: JSON.stringify({
+        language: input.language,
+        level: input.level,
+        flavour: "multiple_choice",
+      }),
     }
   );
 
-  return parseApiPayload<TaskData>(
+  const envelope = await parseApiPayload<AdaptiveTaskEnvelope>(
     response,
     "An error occurred while creating the task",
   );
+  return envelope.task;
 }
