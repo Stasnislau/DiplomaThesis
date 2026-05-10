@@ -35,8 +35,10 @@ def test_main_app_imports_and_constructs() -> None:
     [
         "/api/materials/upload",
         "/api/materials/quiz",
+        "/api/materials/result",
         "/api/tasks/listening",
         "/api/tasks/listening/adaptive",
+        "/api/tasks/listening/result",
         "/api/speaking/analyze",
         "/api/speaking/practice-phrase",
         "/api/speaking/practice-prompt",

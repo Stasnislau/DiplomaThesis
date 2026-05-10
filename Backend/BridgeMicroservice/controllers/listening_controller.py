@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel
 
 from fastapi import APIRouter, Request
@@ -14,6 +15,31 @@ class AdaptiveListeningResponse(BaseModel):
     task: ListeningTaskResponse
     targetedWeaknesses: list[str] = []
     derivedFromHistory: bool = False
+
+
+class ListeningErrorExample(BaseModel):
+    """One wrong-answer trace from a finished listening task. The
+    `type` is the question subtype (e.g. "fill_in_the_blank"), `text`
+    is a 160-char preview of the question, `suggestion` is the
+    canonical correct answer. Fed to derive_adaptive_focus so the
+    next task can drill the same kind of miss."""
+
+    type: Optional[str] = None
+    text: Optional[str] = None
+    suggestion: Optional[str] = None
+
+
+class ListeningResultRequest(BaseModel):
+    language: str
+    level: str
+    # 0-100. Computed FE-side from correct/total.
+    score: int
+    questionCount: int
+    correctCount: int
+    questionTypes: list[str] = []
+    errorExamples: list[ListeningErrorExample] = []
+    targetedWeaknesses: list[str] = []
+    model_config = {"populate_by_name": True}
 
 
 class ListeningController:
@@ -77,6 +103,59 @@ class ListeningController:
                     derivedFromHistory=bool(weaknesses or keywords or topic),
                 ),
             )
+
+        @self.router.post(
+            "/listening/result",
+            response_model=BaseResponse[bool],
+        )
+        async def log_listening_result(
+            request: Request, body: ListeningResultRequest
+        ) -> BaseResponse[bool]:
+            """Persist the outcome of a finished listening practice
+            session so /tasks/listening/adaptive (and the speaking /
+            writing adaptive paths) can read what the user struggled
+            with. Until this existed, listening results were a black
+            hole — the platform generated tasks but never learned from
+            misses, so the adaptive loop was effectively writing-only."""
+            from utils.language_codes import to_iso_language
+
+            user_context = extract_user_context(request)
+            await self.user_service.log_task_history(
+                user_context,
+                {
+                    "taskType": "listening",
+                    "title": f"Listening practice ({body.language})",
+                    "score": body.score,
+                    "language": to_iso_language(body.language),
+                    "metadata": {
+                        # Top-level adaptive signals — derive_adaptive_focus
+                        # reads these blindly across all task types.
+                        "errorTypes": [
+                            e.type for e in body.errorExamples if e.type
+                        ][:5],
+                        "errorExamples": [
+                            {
+                                "type": e.type or "",
+                                "text": (e.text or "")[:160],
+                                "suggestion": (e.suggestion or "")[:160],
+                            }
+                            for e in body.errorExamples[:5]
+                        ],
+                        "weaknesses": (
+                            ["listening comprehension"]
+                            if body.score < 60
+                            else []
+                        ),
+                        "targetedWeaknesses": body.targetedWeaknesses,
+                        # Bookkeeping for later analytics dashboards.
+                        "questionCount": body.questionCount,
+                        "correctCount": body.correctCount,
+                        "questionTypes": body.questionTypes,
+                        "adaptive": bool(body.targetedWeaknesses),
+                    },
+                },
+            )
+            return BaseResponse[bool](success=True, payload=True)
 
     def get_router(self) -> APIRouter:
         return self.router

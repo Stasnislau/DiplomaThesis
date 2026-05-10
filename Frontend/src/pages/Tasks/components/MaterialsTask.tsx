@@ -6,12 +6,13 @@ import cn from "@/utils/cn";
 import { useGenerateQuiz } from "@/api/hooks/useGenerateQuiz";
 import { useGetUserMaterials } from "@/api/hooks/useGetUserMaterials";
 import { useSaveMaterial } from "@/api/hooks/useSaveMaterial";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useUploadMaterial } from "@/api/hooks/useUploadMaterial";
 import { useUserStore } from "@/store/useUserStore";
 import { useAvailableLanguages } from "@/api/hooks/useAvailableLanguages";
 import { useLocalizedError } from "@/utils/useLocalizedError";
+import { logMaterialsResult } from "@/api/mutations/logMaterialsResult";
 import QuestionRenderer, {
   gradeQuestion,
   UserAnswerValue,
@@ -166,8 +167,91 @@ const MaterialsTask = () => {
     setQuizError(null);
     setUserAnswers({});
     setRevealedAnswers({});
+    loggedKeyRef.current = null;
     setView("upload");
   };
+
+  // Persist materials-quiz session result to history once the user
+  // has revealed every question. Mirrors the listening pattern: the
+  // adaptive loop pulls these entries blindly, so the wrong-answer
+  // examples we send now drive future task generation. Without this
+  // the materials surface logged ONLY the generation step (with
+  // score=null), so per-session performance was a black hole.
+  const loggedKeyRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (quiz.length === 0) return;
+    const revealedCount = Object.values(revealedAnswers).filter(Boolean).length;
+    if (revealedCount < quiz.length) return;
+    // Stable key: question prompts joined. Quiz array reference would
+    // change on re-mount but content stays — we want to log once per
+    // unique generation.
+    const sessionKey = quiz.map((q) => q.question).join("|").slice(0, 200);
+    if (loggedKeyRef.current === sessionKey) return;
+    loggedKeyRef.current = sessionKey;
+
+    let correct = 0;
+    const errors: { type?: string; text?: string; suggestion?: string }[] = [];
+    quiz.forEach((q, idx) => {
+      const verdict = gradeQuestion(q, userAnswers[idx]);
+      if (verdict === true) {
+        correct += 1;
+      } else if (verdict === false) {
+        // Build a human-readable suggestion per type so adaptive
+        // task generation has real text to riff on.
+        let suggestion = "";
+        if (q.type === "matching") {
+          suggestion = q.pairs
+            .map((p) => `${p.left} → ${p.right}`)
+            .join("; ");
+        } else if (q.type === "multi_select_mc") {
+          suggestion = q.correct_answers.join(", ");
+        } else if (q.type === "cloze_passage") {
+          suggestion = q.blanks
+            .map((b) =>
+              Array.isArray(b.correct_answer)
+                ? `${b.id}:${b.correct_answer.join("/")}`
+                : `${b.id}:${b.correct_answer}`,
+            )
+            .join("; ");
+        } else if (
+          q.type === "fill_in_the_blank" ||
+          q.type === "gap_fill_grammar" ||
+          q.type === "gap_fill_vocab"
+        ) {
+          suggestion = Array.isArray(q.correct_answer)
+            ? q.correct_answer.join(" / ")
+            : String(q.correct_answer);
+        } else {
+          suggestion = String(q.correct_answer);
+        }
+        errors.push({
+          type: q.type,
+          text: q.question.slice(0, 160),
+          suggestion: suggestion.slice(0, 160),
+        });
+      }
+      // verdict === null (open questions) — neither right nor wrong;
+      // we skip those so the score % isn't biased by self-grading.
+    });
+
+    // Only count gradeable questions in the score denominator.
+    const gradeable = quiz.filter(
+      (q, idx) => gradeQuestion(q, userAnswers[idx]) !== null,
+    ).length;
+    const score = gradeable > 0 ? Math.round((correct / gradeable) * 100) : 0;
+
+    logMaterialsResult({
+      language: targetLanguage,
+      score,
+      questionCount: gradeable,
+      correctCount: correct,
+      questionTypes: Array.from(new Set(quiz.map((q) => q.type))),
+      errorExamples: errors.slice(0, 5),
+      documentKind: documentMap?.document_kind ?? undefined,
+    }).catch((err) => {
+      console.warn("logMaterialsResult failed:", err);
+    });
+  }, [revealedAnswers, quiz, userAnswers, targetLanguage, documentMap]);
 
   return (
     <div className="space-y-6">

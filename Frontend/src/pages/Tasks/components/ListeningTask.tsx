@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Button from "@/components/common/Button";
 import { useCreateListeningTask } from "@/api/hooks/useCreateListeningTask";
 import { ListeningTaskResponse } from "@/types/responses/TaskResponse";
@@ -8,6 +8,7 @@ import {
 } from "@/types/responses/ListeningResponse";
 import { useTranslation } from "react-i18next";
 import { generateAdaptiveListeningTask } from "@/api/mutations/generateAdaptiveListeningTask";
+import { logListeningResult } from "@/api/mutations/logListeningResult";
 import ListeningQuestionRenderer, {
   gradeListeningQuestion,
   type ListeningAnswerValue,
@@ -106,6 +107,82 @@ const ListeningTask = () => {
     isCurrentRevealed && currentQuestion
       ? gradeListeningQuestion(currentQuestion, userAnswers[currentQuestionIndex])
       : null;
+
+  // History logging — fires ONCE when the user has revealed every
+  // question in the current set. We track a loggedKey so a subsequent
+  // re-render or audio-replay doesn't double-log; the key is reset
+  // whenever fresh data lands. Without this, listening sessions
+  // never reached /tasks/listening/result and the adaptive loop
+  // had zero signal from listening misses.
+  const loggedKeyRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!currentTaskData) return;
+    const totalQs = currentTaskData.questions.length;
+    if (totalQs === 0) return;
+    const revealedCount = Object.values(revealed).filter(Boolean).length;
+    if (revealedCount < totalQs) return;
+    // Stable key per session: language + level + transcript hash
+    // (use audioUrl which is unique per generation).
+    const sessionKey = `${language}|${level}|${currentTaskData.audioUrl}`;
+    if (loggedKeyRef.current === sessionKey) return;
+    loggedKeyRef.current = sessionKey;
+
+    let correct = 0;
+    const errorExamples: { type?: string; text?: string; suggestion?: string }[] = [];
+    currentTaskData.questions.forEach((q, idx) => {
+      const verdict = gradeListeningQuestion(q, userAnswers[idx]);
+      if (verdict === true) {
+        correct += 1;
+      } else if (verdict === false) {
+        // Record only WRONG answers — derive_adaptive_focus picks
+        // up to 3 errorExamples per session, prioritising recency.
+        let suggestion = "";
+        switch (q.type) {
+          case "multiple_choice":
+          case "fill_in_the_blank":
+          case "dictation":
+            suggestion = String(q.correctAnswer);
+            break;
+          case "true_false_not_given":
+            suggestion = q.correctAnswer;
+            break;
+          case "sentence_completion":
+            suggestion = Array.isArray(q.correctAnswer)
+              ? q.correctAnswer.join(" / ")
+              : String(q.correctAnswer);
+            break;
+          case "multi_speaker_matching":
+            suggestion = q.statements
+              .map((s) => `${s.statement} → ${s.correctSpeaker}`)
+              .join("; ")
+              .slice(0, 160);
+            break;
+        }
+        errorExamples.push({
+          type: q.type,
+          text: q.question.slice(0, 160),
+          suggestion: suggestion.slice(0, 160),
+        });
+      }
+    });
+
+    const score = Math.round((correct / totalQs) * 100);
+    logListeningResult({
+      language,
+      level,
+      score,
+      questionCount: totalQs,
+      correctCount: correct,
+      questionTypes: Array.from(new Set(currentTaskData.questions.map((q) => q.type))),
+      errorExamples: errorExamples.slice(0, 5),
+      targetedWeaknesses: adaptiveTargets,
+    }).catch((err) => {
+      // Best-effort: a 500 here shouldn't block the user from
+      // moving on. We surface in dev tools so a regression where
+      // the endpoint goes down doesn't disappear silently.
+      console.warn("logListeningResult failed:", err);
+    });
+  }, [revealed, currentTaskData, userAnswers, language, level, adaptiveTargets]);
 
   return (
     <div className="space-y-6">

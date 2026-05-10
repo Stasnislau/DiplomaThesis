@@ -35,6 +35,7 @@ const MATERIALS_TYPE_LABELS: Record<string, { defaultLabel: string; emoji: strin
 };
 import { useTranslation } from "react-i18next";
 import { useUploadMaterial } from "@/api/hooks/useUploadMaterial";
+import { logMaterialsResult } from "@/api/mutations/logMaterialsResult";
 
 interface AnalyzedType {
   type: string;
@@ -452,9 +453,57 @@ export const MaterialsPage: React.FC = () => {
 
                  {!isSubmitted && (
                      <div className="flex justify-end pt-4">
-                         <Button 
-                            variant="primary" 
-                            onClick={() => setIsSubmitted(true)}
+                         <Button
+                            variant="primary"
+                            onClick={() => {
+                                setIsSubmitted(true);
+                                // Log to history on submit so adaptive
+                                // logic can mine the wrong answers.
+                                // Without this the materials surface
+                                // logged only the GENERATION step
+                                // (score=null) and per-session
+                                // performance was invisible.
+                                let correct = 0;
+                                const errors: { type?: string; text?: string; suggestion?: string }[] = [];
+                                quiz.forEach((q, idx) => {
+                                    const verdict = gradeQuestion(q, userAnswers[idx]);
+                                    if (verdict === true) {
+                                        correct += 1;
+                                    } else if (verdict === false) {
+                                        let suggestion = "";
+                                        if (q.type === "matching") {
+                                            suggestion = q.pairs.map((p) => `${p.left} → ${p.right}`).join("; ");
+                                        } else if (q.type === "multi_select_mc") {
+                                            suggestion = q.correct_answers.join(", ");
+                                        } else if (q.type === "cloze_passage") {
+                                            suggestion = q.blanks.map((b) =>
+                                                Array.isArray(b.correct_answer)
+                                                    ? `${b.id}:${b.correct_answer.join("/")}`
+                                                    : `${b.id}:${b.correct_answer}`,
+                                            ).join("; ");
+                                        } else {
+                                            const ca = (q as { correct_answer?: string | string[] }).correct_answer;
+                                            suggestion = Array.isArray(ca) ? ca.join(" / ") : String(ca ?? "");
+                                        }
+                                        errors.push({
+                                            type: q.type,
+                                            text: q.question.slice(0, 160),
+                                            suggestion: suggestion.slice(0, 160),
+                                        });
+                                    }
+                                });
+                                const gradeable = quiz.filter((q, idx) => gradeQuestion(q, userAnswers[idx]) !== null).length;
+                                const score = gradeable > 0 ? Math.round((correct / gradeable) * 100) : 0;
+                                logMaterialsResult({
+                                    score,
+                                    questionCount: gradeable,
+                                    correctCount: correct,
+                                    questionTypes: Array.from(new Set(quiz.map((q) => q.type))),
+                                    errorExamples: errors.slice(0, 5),
+                                }).catch((err) => {
+                                    console.warn("logMaterialsResult failed:", err);
+                                });
+                            }}
                             className="w-full sm:w-auto px-12 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all hover:-translate-y-1"
                             disabled={Object.keys(userAnswers).length < quiz.length}
                          >
