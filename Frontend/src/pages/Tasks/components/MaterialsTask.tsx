@@ -1,5 +1,6 @@
 import Button from "@/components/common/Button";
 import { QuizQuestion } from "@/api/mutations/generateQuiz";
+import { DocumentMap } from "@/api/mutations/uploadMaterial";
 import { UserMaterial } from "@/api/mutations/saveMaterial";
 import cn from "@/utils/cn";
 import { useGenerateQuiz } from "@/api/hooks/useGenerateQuiz";
@@ -11,6 +12,10 @@ import { useUploadMaterial } from "@/api/hooks/useUploadMaterial";
 import { useUserStore } from "@/store/useUserStore";
 import { useAvailableLanguages } from "@/api/hooks/useAvailableLanguages";
 import { useLocalizedError } from "@/utils/useLocalizedError";
+import QuestionRenderer, {
+  gradeQuestion,
+  UserAnswerValue,
+} from "./MaterialsRenderers";
 
 interface AnalyzedType {
   type: string;
@@ -23,9 +28,17 @@ const MaterialsTask = () => {
   const [view, setView] = useState<"upload" | "history" | "ready" | "quiz">("upload");
   const [analyzedTypes, setAnalyzedTypes] = useState<AnalyzedType[]>([]);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  // The DocumentMap from /materials/upload — round-tripped to
+  // /materials/quiz so the backend can skip re-classification and
+  // drive Stage 2/3 from the same exercises the user picked types from.
+  const [documentMap, setDocumentMap] = useState<DocumentMap | null>(null);
   const [quiz, setQuiz] = useState<QuizQuestion[]>([]);
   const [quizError, setQuizError] = useState<string | null>(null);
-  const [selectedAnswer, setSelectedAnswer] = useState<Record<number, string>>({});
+  // Per-question user answer. Shape varies by question type (string,
+  // string[], or {id: value}); the renderer & grader interpret it.
+  const [userAnswers, setUserAnswers] = useState<
+    Record<number, UserAnswerValue>
+  >({});
   const [revealedAnswers, setRevealedAnswers] = useState<Record<number, boolean>>({});
 
   // The user is currently practising whichever non-native language they
@@ -65,8 +78,13 @@ const MaterialsTask = () => {
         }
         setAnalyzedTypes(types);
         setSelectedTypes(types.map(t => t.type));
+        // Stash the rich DocumentMap so handleGenerateQuiz can hand
+        // it back to the backend instead of triggering a fresh
+        // classification call. Null when the response didn't include
+        // one (older backend / parser fallback path).
+        setDocumentMap(data.document_map ?? null);
         setView("ready");
-        
+
         saveMaterial({
           filename: data.filename,
           analyzedTypes: types
@@ -88,6 +106,7 @@ const MaterialsTask = () => {
     generateQuizMutation({
       selectedTypes,
       targetLanguage,
+      documentMap: documentMap ?? undefined,
     }, {
       onSuccess: (data) => {
         const payload = data.quiz;
@@ -97,7 +116,7 @@ const MaterialsTask = () => {
           Array.isArray((payload as { questions?: unknown }).questions)
         ) {
           setQuiz((payload as { questions: QuizQuestion[] }).questions);
-          setSelectedAnswer({});
+          setUserAnswers({});
           setRevealedAnswers({});
           setView("quiz");
           return;
@@ -130,8 +149,8 @@ const MaterialsTask = () => {
     setView("ready");
   };
 
-  const handleSelectAnswer = (qIdx: number, answer: string) => {
-    setSelectedAnswer(prev => ({ ...prev, [qIdx]: answer }));
+  const handleAnswerChange = (qIdx: number, answer: UserAnswerValue) => {
+    setUserAnswers(prev => ({ ...prev, [qIdx]: answer }));
   };
 
   const toggleRevealAnswer = (qIdx: number) => {
@@ -142,9 +161,10 @@ const MaterialsTask = () => {
     setFile(null);
     setAnalyzedTypes([]);
     setSelectedTypes([]);
+    setDocumentMap(null);
     setQuiz([]);
     setQuizError(null);
-    setSelectedAnswer({});
+    setUserAnswers({});
     setRevealedAnswers({});
     setView("upload");
   };
@@ -482,128 +502,86 @@ const MaterialsTask = () => {
           </div>
 
           {/* Questions */}
-          {quiz.map((q, idx) => (
-            <div key={idx} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-              {/* Question Header */}
-              <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 px-6 py-4 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center shadow-sm">
-                      <span className="text-white font-bold">{idx + 1}</span>
+          {quiz.map((q, idx) => {
+            const isRevealed = !!revealedAnswers[idx];
+            const verdict = isRevealed ? gradeQuestion(q, userAnswers[idx]) : null;
+            return (
+              <div
+                key={idx}
+                className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden"
+              >
+                {/* Question Header */}
+                <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 px-6 py-4 border-b border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center shadow-sm">
+                        <span className="text-white font-bold">{idx + 1}</span>
+                      </div>
+                      <span className="font-semibold text-gray-700 dark:text-gray-300">
+                        {t("tasks.questionLabel", { defaultValue: "Question" })} {idx + 1}
+                      </span>
                     </div>
-                    <span className="font-semibold text-gray-700 dark:text-gray-300">Question {idx + 1}</span>
+                    {q.type && (
+                      <span className="text-xs font-medium text-violet-700 bg-violet-100 dark:bg-violet-900/40 dark:text-violet-300 px-3 py-1 rounded-full">
+                        {q.type}
+                      </span>
+                    )}
                   </div>
-                  {q.type && (
-                    <span className="text-xs font-medium text-violet-700 bg-violet-100 px-3 py-1 rounded-full">
-                      {q.type}
-                    </span>
+                </div>
+
+                {/* Question Content */}
+                <div className="p-6">
+                  {q.context_text && q.type !== "cloze_passage" && (
+                    <div className="mb-5 p-4 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-200 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line max-h-72 overflow-y-auto">
+                      {q.context_text}
+                    </div>
+                  )}
+                  <p className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-6">
+                    {q.question}
+                  </p>
+
+                  <QuestionRenderer
+                    question={q}
+                    answer={userAnswers[idx]}
+                    onChange={(a) => handleAnswerChange(idx, a)}
+                    revealed={isRevealed}
+                  />
+
+                  {/* Show / Hide answer toggle */}
+                  <button
+                    onClick={() => toggleRevealAnswer(idx)}
+                    className={cn(
+                      "mt-4 flex items-center gap-2 text-sm font-medium transition-colors",
+                      isRevealed ? "text-gray-500" : "text-violet-600 hover:text-violet-700",
+                    )}
+                  >
+                    {isRevealed
+                      ? t("tasks.hideAnswer", { defaultValue: "Hide Answer" })
+                      : t("tasks.showAnswer", { defaultValue: "Show Answer" })}
+                  </button>
+
+                  {/* Verdict line — green/red/neutral depending on grade. */}
+                  {isRevealed && verdict !== null && (
+                    <div
+                      className={cn(
+                        "mt-3 p-4 rounded-xl border flex items-center gap-2 font-semibold",
+                        verdict
+                          ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300"
+                          : "bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300",
+                      )}
+                    >
+                      <span className="text-xl">{verdict ? "✓" : "✕"}</span>
+                      <span>
+                        {verdict
+                          ? t("tasks.correct", { defaultValue: "Correct" })
+                          : t("tasks.incorrect", { defaultValue: "Incorrect" })}
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>
-              
-              {/* Question Content */}
-              <div className="p-6">
-                <p className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-6">{q.question}</p>
-                
-                {q.options && q.options.length > 0 ? (
-                  <div className="space-y-3">
-                    {q.options.map((opt, i) => {
-                      const isSelected = selectedAnswer[idx] === opt;
-                      const isRevealed = revealedAnswers[idx];
-                      const isCorrect = opt === q.correct_answer;
-                      
-                      return (
-                        <div 
-                          key={i} 
-                          onClick={() => !isRevealed && handleSelectAnswer(idx, opt)}
-                          className={cn(
-                            "flex items-center p-4 rounded-xl border-2 transition-all duration-200",
-                            isRevealed && isCorrect
-                              ? "border-green-500 bg-green-50"
-                              : isRevealed && isSelected && !isCorrect
-                              ? "border-red-500 bg-red-50 dark:bg-red-900/20"
-                              : isSelected
-                              ? "border-violet-500 bg-violet-50"
-                              : "border-gray-200 hover:border-violet-300 hover:bg-gray-50 dark:bg-gray-800 cursor-pointer"
-                          )}
-                        >
-                          <div className={cn(
-                            "w-5 h-5 rounded-full border-2 mr-4 flex items-center justify-center flex-shrink-0",
-                            isRevealed && isCorrect
-                              ? "border-green-500 bg-green-500"
-                              : isRevealed && isSelected && !isCorrect
-                              ? "border-red-500 bg-red-50 dark:bg-red-900/200"
-                              : isSelected
-                              ? "border-violet-500 bg-violet-500"
-                              : "border-gray-300"
-                          )}>
-                            {(isSelected || (isRevealed && isCorrect)) && (
-                              <div className="w-2 h-2 rounded-full bg-white"></div>
-                            )}
-                          </div>
-                          <span className={cn(
-                            "font-medium",
-                            isRevealed && isCorrect ? "text-green-700" : 
-                            isRevealed && isSelected && !isCorrect ? "text-red-700" : "text-gray-700 dark:text-gray-300"
-                          )}>
-                            {opt}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200">
-                    <textarea 
-                      className="w-full bg-transparent resize-none outline-none text-gray-700 dark:text-gray-300 placeholder-gray-400"
-                      rows={3}
-                      placeholder={t("tasks.typeAnswer")}
-                      value={selectedAnswer[idx] || ''}
-                      onChange={(e) => handleSelectAnswer(idx, e.target.value)}
-                    />
-                  </div>
-                )}
-
-                {/* Show Answer Button */}
-                <button
-                  onClick={() => toggleRevealAnswer(idx)}
-                  className={cn(
-                    "mt-4 flex items-center gap-2 text-sm font-medium transition-colors",
-                    revealedAnswers[idx] ? "text-gray-500" : "text-violet-600 hover:text-violet-700"
-                  )}
-                >
-                  {revealedAnswers[idx] ? (
-                    <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                      </svg>
-                      Hide Answer
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                      Show Answer
-                    </>
-                  )}
-                </button>
-                
-                {revealedAnswers[idx] && (
-                  <div className="mt-3 p-4 bg-emerald-50 rounded-xl border border-emerald-200">
-                    <div className="flex items-center gap-2 text-emerald-700">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span className="font-semibold">Correct Answer:</span>
-                      <span>{q.correct_answer}</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
+            );
+          })}
           
           {/* Generate More Button */}
           <Button

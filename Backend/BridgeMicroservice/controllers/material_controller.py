@@ -6,7 +6,7 @@ from services.ai_service import AI_Service
 from pydantic import BaseModel
 import logging
 from models.base_response import BaseResponse
-from models.dtos.material_dtos import ProcessPdfResponse, GenerateQuizResponse
+from models.dtos.material_dtos import ProcessPdfResponse, GenerateQuizResponse, DocumentMap
 from utils.user_context import extract_user_context
 
 logging.basicConfig(level=logging.INFO)
@@ -24,6 +24,11 @@ def get_material_service() -> MaterialService:
 class GenerateQuizRequest(BaseModel):
     selected_types: Optional[List[str]] = None
     target_language: Optional[str] = None
+    # When the FE round-trips the DocumentMap from /materials/upload,
+    # we skip the re-classification step and feed Stage 2/3 directly.
+    # Optional so older clients still work — backend re-derives the
+    # map from indexed material when this is missing.
+    document_map: Optional[DocumentMap] = None
 
 
 @router.post("/upload", response_model=BaseResponse[ProcessPdfResponse])
@@ -74,6 +79,7 @@ async def generate_quiz(
             body.selected_types,
             user_context=user_context,
             target_language=body.target_language,
+            document_map=body.document_map,
         )
 
         logger.info("Quiz generated successfully.")
