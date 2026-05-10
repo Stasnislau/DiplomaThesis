@@ -353,7 +353,7 @@ describe("PROD smoke: Phase 3 Speaking guided practice end-to-end", () => {
     );
     renderWithProviders(<FormatPracticePanel language="English" level="B1" />);
 
-    fireEvent.click(screen.getByRole("button", { name: /Load prompt/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Load task/i }));
     expect(
       await screen.findByText("What's your favourite meal?"),
     ).toBeInTheDocument();
@@ -371,7 +371,7 @@ describe("PROD smoke: Phase 3 Speaking guided practice end-to-end", () => {
       "@/pages/Tasks/components/SpeakingFormat/FormatPracticePanel"
     );
     renderWithProviders(<FormatPracticePanel language="English" level="B1" />);
-    fireEvent.click(screen.getByRole("button", { name: /Load prompt/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Load task/i }));
     expect(await screen.findByText("Old prompt.")).toBeInTheDocument();
     fireEvent.click(screen.getByText(/Repeat after me/));
     await waitFor(() => {
@@ -388,7 +388,7 @@ describe("PROD smoke: Phase 3 Speaking guided practice end-to-end", () => {
       "@/pages/Tasks/components/SpeakingFormat/FormatPracticePanel"
     );
     renderWithProviders(<FormatPracticePanel language="English" level="B1" />);
-    fireEvent.click(screen.getByRole("button", { name: /Load prompt/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Load task/i }));
     // useLocalizedError maps the code → the EN translation
     // ("No AI API key set for this provider. Add one in Settings →
     // AI Tokens.") — substring is enough.

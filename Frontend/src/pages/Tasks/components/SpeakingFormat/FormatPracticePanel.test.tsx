@@ -34,7 +34,7 @@ describe("FormatPracticePanel", () => {
     });
 
     render(<FormatPracticePanel language="English" level="B1" />);
-    fireEvent.click(screen.getByRole("button", { name: /Load prompt/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Load task/i }));
 
     await waitFor(() => {
       expect(speakingFormat.fetchSpeakingPrompt).toHaveBeenCalledWith({
@@ -56,7 +56,7 @@ describe("FormatPracticePanel", () => {
       rubricHints: [],
     });
     render(<FormatPracticePanel language="English" level="B1" />);
-    fireEvent.click(screen.getByRole("button", { name: /Load prompt/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Load task/i }));
     expect(await screen.findByText("Sample prompt")).toBeInTheDocument();
 
     // Toggle to a different format — old prompt must disappear.
@@ -66,7 +66,7 @@ describe("FormatPracticePanel", () => {
 
   it("disables Load prompt button when language is missing", () => {
     render(<FormatPracticePanel language="" level="B1" />);
-    const btn = screen.getByRole("button", { name: /Load prompt/i });
+    const btn = screen.getByRole("button", { name: /Load task/i });
     expect(btn).toBeDisabled();
   });
 });

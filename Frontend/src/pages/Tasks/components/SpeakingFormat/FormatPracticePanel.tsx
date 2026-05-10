@@ -108,7 +108,7 @@ const FormatPracticePanel = ({ language, level }: FormatPracticePanelProps) => {
           <p className="text-xs text-gray-500 dark:text-gray-400">
             {t("tasks.guidedPracticeHint", {
               defaultValue:
-                "Pick a format, get a prompt, record, and get a structured grade.",
+                "Pick a format, get a task, record, and get a structured grade.",
             })}
           </p>
         </div>
@@ -151,8 +151,8 @@ const FormatPracticePanel = ({ language, level }: FormatPracticePanelProps) => {
         className="rounded-xl"
       >
         {prompt
-          ? t("tasks.newPrompt", { defaultValue: "Generate new prompt" })
-          : t("tasks.loadPrompt", { defaultValue: "Load prompt" })}
+          ? t("tasks.newPrompt", { defaultValue: "Generate new task" })
+          : t("tasks.loadPrompt", { defaultValue: "Load task" })}
       </Button>
 
       {/* Prompt display */}

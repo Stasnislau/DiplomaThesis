@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 
 import Button from "@/components/common/Button";
 import EssayTask from "@/pages/Tasks/components/EssayTask";
-import FormatPracticePanel from "@/pages/Tasks/components/SpeakingFormat/FormatPracticePanel";
+import QuizSpeakingCard from "./QuizSpeakingCard";
 import { useTranslation } from "react-i18next";
 import { logWritingResult } from "@/api/mutations/logWritingResult";
 import {
@@ -301,13 +301,14 @@ export const TaskPage: React.FC = () => {
               </div>
             )}
 
-            {/* SPEAKING — full guided-practice panel for the rolled format */}
+            {/* SPEAKING — single rolled format, auto-loads, no second click */}
             {activeVariant?.kind === "speaking" && language && level && (
               <div className="mt-8">
-                <FormatPracticePanel
+                <QuizSpeakingCard
                   key={`speak-${language}-${level}-${activeVariant.format}-${genCounter}`}
                   language={language}
                   level={level}
+                  format={activeVariant.format}
                 />
               </div>
             )}
