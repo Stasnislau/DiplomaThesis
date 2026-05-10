@@ -3,11 +3,14 @@ import React, { useEffect, useState } from "react";
 
 import Button from "@/components/common/Button";
 import { TaskComponent } from "./components/TaskComponent";
+import EssayTask from "@/pages/Tasks/components/EssayTask";
 import { isMultipleChoice } from "@/types/typeGuards/isMultipleChoice";
 import { useCreateTask } from "@/api/hooks/useCreateTask";
 import { useExplainAnswer } from "@/api/hooks/useExplainAnswer";
 import { useTranslation } from "react-i18next";
 import { isAnswerCorrect as checkAnswer } from "@/utils/answerValidation";
+import { logWritingResult } from "@/api/mutations/logWritingResult";
+import { pickQuizTaskType, type QuizTaskType } from "./pickTaskType";
 
 const LANGUAGES = [
   { code: "Spanish", flag: "🇪🇸" },
@@ -27,6 +30,11 @@ export const TaskPage: React.FC = () => {
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
   const [currentTaskData, setCurrentTaskData] = useState<MultipleChoiceTask | FillInTheBlankTask | null>(null);
+  // The type the picker rolled for the current generation. Drives
+  // which renderer mounts: TaskComponent for MC/FIB or EssayTask
+  // for the essay variant. Reset whenever the user changes
+  // language/level so the previous variant doesn't bleed through.
+  const [activeTaskType, setActiveTaskType] = useState<QuizTaskType | null>(null);
   const { createTask, isLoading, error, data } = useCreateTask();
   const {
     explainAnswer,
@@ -35,22 +43,33 @@ export const TaskPage: React.FC = () => {
   } = useExplainAnswer();
 
   const handleCreateTask = () => {
-    if (language && level) {
-      setCurrentTaskData(null);
+    if (!language || !level) return;
+    setCurrentTaskData(null);
+    setUserAnswer("");
+    setShowExplanation(false);
+    setIsCorrect(null);
 
-      const taskType =
-        Math.random() < 0.5 ? "multiple_choice" : "fill_in_the_blank";
-      createTask({ language, level, taskType });
+    // Roll across all 3 supported variants. The picker self-gates
+    // essay to B1+ so we don't have to branch on level here.
+    const taskType = pickQuizTaskType(level);
+    setActiveTaskType(taskType);
 
-      setUserAnswer("");
-      setShowExplanation(false);
-      setIsCorrect(null);
-    } 
+    if (taskType === "essay") {
+      // Essay flow is fully self-contained inside <EssayTask /> —
+      // it generates its own prompt and handles evaluation, so we
+      // skip the createTask hook entirely. The render branch below
+      // mounts the component when activeTaskType === "essay".
+      return;
+    }
+    createTask({ language, level, taskType });
   };
 
   useEffect(() => {
     if (language || level) {
       setCurrentTaskData(null);
+      // Drop the in-flight essay too — its language/level inputs
+      // just changed under it.
+      setActiveTaskType(null);
     }
   }, [language, level]);
 
@@ -69,6 +88,28 @@ export const TaskPage: React.FC = () => {
       isAnswerCorrect = checkAnswer(userAnswer, currentTaskData.correctAnswer);
     }
     setIsCorrect(isAnswerCorrect);
+
+    // Persist the outcome to user history. The Quiz page (this
+    // route) was previously the only writing surface that DIDN'T
+    // call /writing/result, so its activity never showed up in
+    // History. Mirrors the same fire-and-forget pattern used by
+    // pages/Tasks/components/WritingTask.tsx — UX never blocks on
+    // a logging failure, but a console.warn surfaces a regression
+    // if the endpoint goes down.
+    if (language && level) {
+      logWritingResult({
+        language,
+        level,
+        flavour: isMultipleChoice(currentTaskData)
+          ? "multiple_choice"
+          : "fill_in_the_blank",
+        isCorrect: isAnswerCorrect,
+        targetedWeaknesses: [],
+        questionPreview: currentTaskData.question?.slice(0, 160),
+      }).catch((err) => {
+        console.warn("logWritingResult failed:", err);
+      });
+    }
   };
 
   useEffect(() => {
@@ -171,7 +212,23 @@ export const TaskPage: React.FC = () => {
               </div>
             )}
 
-            {currentTaskData && (
+            {activeTaskType === "essay" && language && level && (
+              <div className="mt-8">
+                {/* Essay flow is its own self-contained widget:
+                    auto-generates a topic, lets the user write the
+                    response, then POSTs to /writing/essay/evaluate
+                    for a score. We re-key on language+level so a
+                    new generation force-remounts (otherwise the
+                    inner generator caches the stale prompt). */}
+                <EssayTask
+                  key={`${language}-${level}`}
+                  language={language}
+                  level={level}
+                />
+              </div>
+            )}
+
+            {currentTaskData && activeTaskType !== "essay" && (
               <div className="mt-8">
                 <TaskComponent
                   taskData={currentTaskData}
