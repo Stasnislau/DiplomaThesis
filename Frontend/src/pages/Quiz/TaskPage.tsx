@@ -141,7 +141,7 @@ export const TaskPage: React.FC = () => {
             <div className="divide-y divide-gray-200 dark:divide-gray-700">
               <div className="pb-8 text-center">
                 <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 mb-2">
-                  Language Learning
+                  {t("nav.languageLearning", { defaultValue: "Language Learning" })}
                 </h1>
                 <p className="text-gray-500 dark:text-gray-400 text-sm">
                   {t('languages.chooseLanguage')} & {t('languages.proficiencyLevel')}

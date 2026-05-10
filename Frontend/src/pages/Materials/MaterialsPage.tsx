@@ -209,9 +209,9 @@ export const MaterialsPage: React.FC = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                           </svg>
                           <span className="text-lg font-medium text-gray-700">
-                            {file ? file.name : "Click to select PDF file"}
+                            {file ? file.name : t("tasks.clickSelectPdf")}
                           </span>
-                          <span className="text-sm text-gray-500 mt-2">Max size 10MB</span>
+                          <span className="text-sm text-gray-500 mt-2">{t("tasks.maxSize")}</span>
                         </label>
                       </div>
                       
@@ -239,7 +239,9 @@ export const MaterialsPage: React.FC = () => {
                           disabled={!file || isUploading}
                           variant="primary"
                         >
-                          {isUploading ? "Analyzing Structure..." : "Analyze File"}
+                          {isUploading
+                            ? t("tasks.analyzingDocument")
+                            : t("tasks.analyzeAndExtract")}
                         </Button>
                       </div>
                     </CardContent>
@@ -251,7 +253,7 @@ export const MaterialsPage: React.FC = () => {
                 {view === "upload" && (
                     <div className="space-y-4">
                         {isMaterialsLoading && <p className="text-center text-gray-500">{t("materials.loadingMaterials")}</p>}
-                        {userMaterials?.length === 0 && <p className="text-center text-gray-500">No saved materials yet.</p>}
+                        {userMaterials?.length === 0 && <p className="text-center text-gray-500">{t("tasks.noSavedMaterials")}</p>}
                         {userMaterials?.map((material) => (
                             <Card 
                                 key={material.id} 
@@ -363,7 +365,9 @@ export const MaterialsPage: React.FC = () => {
                             variant="primary"
                             className="px-8 py-3 h-auto"
                         >
-                            {isGeneratingQuiz ? "Generating Tasks..." : "Generate Similar Tasks"}
+                            {isGeneratingQuiz
+                              ? t("tasks.generatingTasks")
+                              : t("tasks.generateSimilar")}
                         </Button>
                     </div>
                 </CardContent>
@@ -373,14 +377,15 @@ export const MaterialsPage: React.FC = () => {
         {view === "quiz" && (
             <div className="space-y-6 pb-20">
                  <div className="flex justify-between items-center sticky top-0 bg-gray-50 z-10 py-4 shadow-sm px-2">
-                    <h2 className="text-2xl font-bold">Quiz</h2>
+                    <h2 className="text-2xl font-bold">{t("nav.quiz")}</h2>
                     <div className="flex gap-4 items-center">
                         {isSubmitted && (
                              <div className="text-lg font-bold">
-                                 Score: {quiz.filter((q, i) => gradeQuestion(q, userAnswers[i]) === true).length} / {quiz.length}
+                                 {t("tasks.scoreLabel", { defaultValue: "Score:" })}{" "}
+                                 {quiz.filter((q, i) => gradeQuestion(q, userAnswers[i]) === true).length} / {quiz.length}
                              </div>
                         )}
-                        <Button variant="secondary" onClick={() => setView("ready")}>Exit</Button>
+                        <Button variant="secondary" onClick={() => setView("ready")}>{t("common.back")}</Button>
                     </div>
                  </div>
                  
@@ -414,7 +419,7 @@ export const MaterialsPage: React.FC = () => {
                                          "text-sm font-bold px-3 py-1 rounded-full",
                                          isCorrect ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
                                      )}>
-                                         {isCorrect ? "Correct" : "Incorrect"}
+                                         {isCorrect ? t("tasks.correct") : t("tasks.incorrect")}
                                      </span>
                                  )}
                              </CardTitle>
@@ -507,7 +512,7 @@ export const MaterialsPage: React.FC = () => {
                             className="w-full sm:w-auto px-12 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all hover:-translate-y-1"
                             disabled={Object.keys(userAnswers).length < quiz.length}
                          >
-                            Submit Answers
+                            {t("tasks.submitAnswers", { defaultValue: "Submit Answers" })}
                          </Button>
                      </div>
                  )}
