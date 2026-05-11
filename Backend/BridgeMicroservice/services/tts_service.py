@@ -19,75 +19,84 @@ _SPEAKER_TAG_RE = re.compile(
 )
 
 
+# Chirp 3 HD is Google's current top voice family across all our
+# target languages. It supersedes Neural2 (older, less natural on
+# intonation) and Wavenet (oldest, only viable option for PL/RU
+# before Chirp). The mythological/astronomical voice names are
+# universal across languages — picking the same five names per
+# language keeps the pool consistent without losing voice variety.
+# Chirp 3 HD supports `speaking_rate` (required for our CEFR pace
+# scaling) but ignores `pitch`, `volumeGainDb`, and SSML — the
+# synthesize call already uses pitch=0 so this isn't a regression.
 LANGUAGE_VOICE_POOLS = {
     "english": {
         "code": "en-US",
         "voices": [
-            "en-US-Neural2-A",
-            "en-US-Neural2-C",
-            "en-US-Neural2-D",
-            "en-US-Neural2-F",
-            "en-US-Neural2-I",
-            "en-US-Neural2-J",
+            "en-US-Chirp3-HD-Achernar",
+            "en-US-Chirp3-HD-Achird",
+            "en-US-Chirp3-HD-Algenib",
+            "en-US-Chirp3-HD-Algieba",
+            "en-US-Chirp3-HD-Alnilam",
         ],
     },
     "polish": {
         "code": "pl-PL",
         "voices": [
-            "pl-PL-Wavenet-A",
-            "pl-PL-Wavenet-B",
-            "pl-PL-Wavenet-C",
-            "pl-PL-Wavenet-D",
-            "pl-PL-Wavenet-E",
+            "pl-PL-Chirp3-HD-Achernar",
+            "pl-PL-Chirp3-HD-Achird",
+            "pl-PL-Chirp3-HD-Algenib",
+            "pl-PL-Chirp3-HD-Algieba",
+            "pl-PL-Chirp3-HD-Alnilam",
         ],
     },
     "spanish": {
         "code": "es-ES",
         "voices": [
-            "es-ES-Neural2-A",
-            "es-ES-Neural2-B",
-            "es-ES-Neural2-C",
-            "es-ES-Neural2-D",
-            "es-ES-Neural2-E",
-            "es-ES-Neural2-F",
+            "es-ES-Chirp3-HD-Achernar",
+            "es-ES-Chirp3-HD-Achird",
+            "es-ES-Chirp3-HD-Algenib",
+            "es-ES-Chirp3-HD-Algieba",
+            "es-ES-Chirp3-HD-Alnilam",
         ],
     },
     "french": {
         "code": "fr-FR",
         "voices": [
-            "fr-FR-Neural2-A",
-            "fr-FR-Neural2-B",
-            "fr-FR-Neural2-C",
-            "fr-FR-Neural2-D",
-            "fr-FR-Neural2-E",
+            "fr-FR-Chirp3-HD-Achernar",
+            "fr-FR-Chirp3-HD-Achird",
+            "fr-FR-Chirp3-HD-Algenib",
+            "fr-FR-Chirp3-HD-Algieba",
+            "fr-FR-Chirp3-HD-Alnilam",
         ],
     },
     "german": {
         "code": "de-DE",
         "voices": [
-            "de-DE-Neural2-A",
-            "de-DE-Neural2-B",
-            "de-DE-Neural2-C",
-            "de-DE-Neural2-D",
-            "de-DE-Neural2-F",
+            "de-DE-Chirp3-HD-Achernar",
+            "de-DE-Chirp3-HD-Achird",
+            "de-DE-Chirp3-HD-Algenib",
+            "de-DE-Chirp3-HD-Algieba",
+            "de-DE-Chirp3-HD-Alnilam",
         ],
     },
     "italian": {
         "code": "it-IT",
         "voices": [
-            "it-IT-Neural2-A",
-            "it-IT-Neural2-C",
-            "it-IT-Neural2-E",
+            "it-IT-Chirp3-HD-Achernar",
+            "it-IT-Chirp3-HD-Achird",
+            "it-IT-Chirp3-HD-Algenib",
+            "it-IT-Chirp3-HD-Algieba",
+            "it-IT-Chirp3-HD-Alnilam",
         ],
     },
     "russian": {
         "code": "ru-RU",
         "voices": [
-            "ru-RU-Wavenet-A",
-            "ru-RU-Wavenet-B",
-            "ru-RU-Wavenet-C",
-            "ru-RU-Wavenet-D",
-            "ru-RU-Wavenet-E",
+            "ru-RU-Chirp3-HD-Aoede",
+            "ru-RU-Chirp3-HD-Charon",
+            "ru-RU-Chirp3-HD-Fenrir",
+            "ru-RU-Chirp3-HD-Kore",
+            "ru-RU-Chirp3-HD-Leda",
         ],
     },
 }
