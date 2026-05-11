@@ -14,6 +14,7 @@ from fastapi import HTTPException
 from dotenv import load_dotenv
 
 from .ai_service import AI_Service
+from .image_service import ImageService
 from .user_service import UserService
 from utils.user_context import UserContext
 from models.dtos.speaking_analysis_dtos import WhisperTranscriptionResult, WhisperSegment, WhisperWord
@@ -43,9 +44,18 @@ _SPEAKING_CACHE_MAX = 64
 
 
 class SpeakingService:
-    def __init__(self, ai_service: AI_Service):
+    def __init__(
+        self,
+        ai_service: AI_Service,
+        image_service: ImageService | None = None,
+    ):
         self.ai_service = ai_service
         self.user_service = UserService()
+        # Imagen 3 is the primary renderer for picture-description.
+        # If callers don't supply one we spin a default instance —
+        # if env vars are missing it silently disables itself and
+        # the speaking flow falls back to Pollinations transparently.
+        self.image_service = image_service or ImageService()
         # (cache_key) -> (expires_at, response). cache_key is sha256 of
         # (audio bytes, language, ui_locale) — so re-clicking 'Analyze'
         # on the same recording doesn't bill the provider twice.
@@ -687,13 +697,14 @@ Respond with a single JSON object only, no prose, with these keys:
                 focus_clause=focus_clause,
                 user_context=user_context,
             )
-            # Build a Pollinations.ai image URL from the visual_prompt
-            # the LLM produced. Pollinations is open, no-API-key, and
-            # caches by prompt — same prompt yields the same image, so
-            # repeating the practice loop on a topic is reproducible.
-            image_url = _build_pollinations_url(
-                prompt.get("visual_prompt") or prompt["scene"]
-            )
+            visual_prompt_text = prompt.get("visual_prompt") or prompt["scene"]
+            # Primary: Imagen 3 via Vertex AI — sharper scenes, fewer
+            # mangled subjects. Falls back to Pollinations on any
+            # failure (credentials missing, quota exhausted, network)
+            # so the speaking flow never hard-fails on an image issue.
+            image_url = await self.image_service.generate(visual_prompt_text)
+            if not image_url:
+                image_url = _build_pollinations_url(visual_prompt_text)
             scene_text = prompt["scene"]
             translation = _dedupe_translation(scene_text, prompt.get("translation", ""))
             return SpeakingPromptResponse(

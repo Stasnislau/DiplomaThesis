@@ -19,6 +19,10 @@ yarn.lock
 *.mp3
 language_levels.db*
 
+# Generated images and GCP service account credentials
+**/static/images/
+**/gcp-credentials.json
+
 *playwright-report/
 *coverage/
 Frontend/test-results/

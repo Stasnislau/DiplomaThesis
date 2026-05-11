@@ -127,6 +127,8 @@ services:
       OPENROUTER_MODEL: ${OPENROUTER_MODEL:-openrouter/anthropic/claude-sonnet-4.6}
       GOOGLE_TTS_API_KEY: ${GOOGLE_TTS_API_KEY:-}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
+      VERTEX_AI_PROJECT_ID: ${VERTEX_AI_PROJECT_ID:-}
+      VERTEX_AI_LOCATION: ${VERTEX_AI_LOCATION:-us-central1}
     depends_on:
       postgres:
         condition: service_healthy

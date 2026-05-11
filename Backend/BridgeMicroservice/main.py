@@ -21,6 +21,7 @@ from controllers.placement_controller import PlacementController
 from services.placement_service import PlacementService
 from controllers.speaking_controller import SpeakingController
 from services.speaking_service import SpeakingService
+from services.image_service import ImageService
 from controllers.listening_controller import ListeningController
 from services.listening_task_service import ListeningTaskService
 from controllers.material_controller import router as material_router
@@ -44,23 +45,27 @@ logger.addHandler(console_handler)
 
 
 async def _audio_janitor() -> None:
-    """Background task: every hour, delete files in static/audio that
-    are older than AUDIO_TTL_HOURS (default 24). Without this the
-    listening-task generator slowly fills the VM's disk — every task
-    writes a unique <uuid>.mp3 and nothing ever cleans them up."""
+    """Background task: every hour, delete stale files in static/audio
+    and static/images. Without this the listening-task generator and
+    Imagen renderer slowly fill the VM's disk — every task writes a
+    unique <uuid>.mp3/.png and nothing ever cleans them up."""
     import asyncio
     import time
 
-    audio_dir = os.path.join("static", "audio")
-    ttl_hours = float(os.environ.get("AUDIO_TTL_HOURS", "24"))
+    sweep_dirs = [
+        (os.path.join("static", "audio"), float(os.environ.get("AUDIO_TTL_HOURS", "24"))),
+        (os.path.join("static", "images"), float(os.environ.get("IMAGE_TTL_HOURS", "24"))),
+    ]
     sleep_seconds = 60 * 60  # one sweep per hour
     while True:
         try:
-            if os.path.isdir(audio_dir):
+            for directory, ttl_hours in sweep_dirs:
+                if not os.path.isdir(directory):
+                    continue
                 cutoff = time.time() - ttl_hours * 3600
                 removed = 0
-                for name in os.listdir(audio_dir):
-                    path = os.path.join(audio_dir, name)
+                for name in os.listdir(directory):
+                    path = os.path.join(directory, name)
                     try:
                         if os.path.isfile(path) and os.path.getmtime(path) < cutoff:
                             os.remove(path)
@@ -70,9 +75,9 @@ async def _audio_janitor() -> None:
                         # changed underfoot. Skip; we'll catch it next pass.
                         continue
                 if removed:
-                    logger.info("Audio janitor removed %d expired files", removed)
+                    logger.info("Janitor removed %d expired files in %s", removed, directory)
         except Exception as exc:  # noqa: BLE001
-            logger.warning("Audio janitor sweep failed: %s", exc)
+            logger.warning("Janitor sweep failed: %s", exc)
         await asyncio.sleep(sleep_seconds)
 
 
@@ -179,7 +184,12 @@ placement_controller = PlacementController(placement_service)
 app.include_router(placement_controller.get_router(), prefix="/api")
 
 # SPEAKING #
-speaking_service = SpeakingService(ai_service)
+# Imagen 3 renders the picture-description scene. Initialised once at
+# startup so we don't pay Vertex SDK warm-up cost on every request.
+# Self-disables and falls back to Pollinations if credentials are
+# absent — see ImageService for the guard logic.
+image_service = ImageService()
+speaking_service = SpeakingService(ai_service, image_service)
 speaking_controller = SpeakingController(speaking_service, _writing_user_service)
 app.include_router(speaking_controller.get_router(), prefix="/api")
 
