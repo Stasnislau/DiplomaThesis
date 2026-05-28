@@ -118,11 +118,13 @@ jobs:
           path: ~/.cache/pypoetry/virtualenvs
           key: poetry-${{ runner.os }}-${{ hashFiles('Backend/BridgeMicroservice/poetry.lock') }}
       - run: poetry install --no-interaction --no-root
-      # Two test files import asyncpg + google.api_core which only exist
-      # inside the Docker image. Skip them in CI — the rest of the suite
-      # still covers the changes we make in this repo.
+      - name: Stub GCP credentials for import-time SDK init
+        run: |
+          echo '{"type":"service_account","project_id":"ci-stub","private_key_id":"x","private_key":"-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA0Z3VS5JJcds3xfn/ygWyF8PbnGy0AHB7MhgHcTz6sE2I2yPB\naFDrBz9vFqU4yqlAFJJvOvenXWfJM4RDJuHm4HpJ/ZJJj6smVcOPBbmR3K0JFBYX\nRPldIrNqoH5fLJqE8RJFn0XxPJRKMudANjhB2qLKzuHmOF3pRFJFM7swBRH6SJRW\neDGCbMjuQ4eDz3fVmFRN5d0UPt4XJw9oPF+3vr5wLjVzBcW3C/5QJcaGqwHCwdBk\nx7wF8sNJYpYHEVJEeWRikL2xTv8JWE0pkJLLjKNHfYj1GCPH4ffbTYiLWsOSj6Mv\nvEFOLiJBYj2qJjJJzp5ZCFqsJIJoW0fCpALu0QIDAQABAoIBAH7lVuPF15ygpbJK\ny+TkFh35xnT4uhdqeS1u0kJFJHZ7N1G+LXdPcj9H/L+BfUkPi/JMbi2MIHM5bG7\nvaM6TLtYEReLQ+g+0v2yfvFJwJYP5JpXQm/sKpB0VnEDwLQhMR+smHl8dalV67ok\nfJJ0AMZR7JdvqMMLO6MEzV1Hy1TPS5Pa0LxyPrcn3K1J0Q6xfe2BLnFEZ4sYXNi2\nYvJBDLmL4x+NzC7L/HGH/XDDMJY+R68q5E9n+xVd7JIHn2BVOz0k5FYL7u5KqP0\n0c1KPVSmqPJi0e0fL/it0CpmB6WbKxwVcEBUq40xyuKasJlkC9jMfmzV5yw/F8Yr\nuFiJwCECgYEA6iD0JcYRqJvmB0GiMLoq1paIi8BxfLkEM9bEKg0FMZ6VoL33bsWT\ndEL/sFLGQDf9FJapFB+MPz0+MR/sT+f+I94P3I1HzfL5M4+EcNMN/IXIOHEj6jYS\n7u5bq4S2WlXXJhJLmYOiMm8El2PhiME+qOblxHNJ/CF6RLnBr2PFo50CgYEA5qSA\ndoyDAH9AH9K3Dbp1Jj2+Sm1IgUHDPwEL9wdWLL/V+H4VYP8UGaK1TfhB1UPkIR7q\nYk/H1VwICfn0fBk0zZQp9ioI2bljOjLPl0Z4CbJW7JfEIFwEbFDMBBvYDOz+o9hT\nVLLcLZ3p3V+KL9P7dBr1Lfv9vQL2K7EHQVFqQ0CgYA7kQJ+TgHp1gY3RDTOLPE0\n-----END RSA PRIVATE KEY-----\n","client_email":"ci@ci-stub.iam.gserviceaccount.com","client_id":"0","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token"}' > /tmp/gcp-ci-stub.json
       - run: >
           poetry run pytest -q
           --ignore=tests/services/test_learning_path_service.py
           --ignore=tests/services/test_listening_task_service.py
           --ignore=tests/e2e/
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-ci-stub.json
