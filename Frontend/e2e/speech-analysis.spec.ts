@@ -9,7 +9,7 @@ test.describe("Speech Analysis Page", () => {
   test.beforeEach(async ({ page }) => {
     await loginViaStorage(page);
     await page.goto("/speech-analysis");
-    await page.waitForLoadState("networkidle");
+    await page.waitForURL("**/speech-analysis**", { timeout: 15000 });
   });
 
   test("renders /speech-analysis for authenticated user", async ({ page }) => {

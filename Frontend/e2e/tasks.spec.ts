@@ -10,7 +10,7 @@ test.describe("Tasks Page", () => {
   test.beforeEach(async ({ page }) => {
     await loginViaStorage(page);
     await page.goto("/tasks");
-    await page.waitForLoadState("networkidle");
+    await page.waitForURL("**/tasks**", { timeout: 15000 });
   });
 
   test("renders /tasks for authenticated user", async ({ page }) => {

@@ -10,7 +10,7 @@ test.describe("Learning Path Page", () => {
   test.beforeEach(async ({ page }) => {
     await loginViaStorage(page);
     await page.goto("/learning-path");
-    await page.waitForLoadState("networkidle");
+    await page.waitForURL("**/learning-path**", { timeout: 15000 });
   });
 
   test("renders /learning-path for authenticated user", async ({ page }) => {

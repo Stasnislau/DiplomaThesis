@@ -11,7 +11,7 @@ test.describe("User Profile Page", () => {
       },
     });
     await page.goto("/profile");
-    await page.waitForLoadState("networkidle");
+    await page.waitForURL("**/profile**", { timeout: 15000 });
   });
 
   test("displays user info heading and email", async ({ page }) => {
