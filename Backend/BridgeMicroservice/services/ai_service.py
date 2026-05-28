@@ -120,7 +120,7 @@ def _ai_cache_put(key: str, value: str) -> None:
 
 PROVIDER_CONFIG: Dict[str, Dict[str, Any]] = {
     "openai": {"model": "gpt-5.4-mini"},
-    "google-geminis": {"model": "gemini/gemini-3-flash-preview"},
+    "google-geminis": {"model": "vertex_ai/gemini-2.5-flash"},
     "mistral": {"model": "mistral/mistral-large-latest"},
     "claude": {"model": "anthropic/claude-haiku-4-5-20251001"},
     "deepseek": {
@@ -163,9 +163,10 @@ class AI_Service:
 
         model = provider_config["model"]
         extra_params = {k: v for k, v in provider_config.items() if k != "model"}
+        uses_adc = model.startswith("vertex_ai/")
         if api_key:
             extra_params["api_key"] = api_key
-        elif require_api_key:
+        elif require_api_key and not uses_adc:
             raise_with_code(
                 AI_API_KEY_MISSING,
                 status.HTTP_400_BAD_REQUEST,
@@ -176,7 +177,7 @@ class AI_Service:
     async def get_ai_response(
         self, 
         prompt: str, 
-        model: str = "gemini/gemini-3-flash-preview",
+        model: str = "vertex_ai/gemini-2.5-flash",
         response_format: Optional[Dict[str, str]] = {"type": "json_object"},
         system_prompt: str = "You are a philologist with over 20 years of experience in language education.",
         user_context: Optional[UserContext] = None,

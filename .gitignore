@@ -42,8 +42,13 @@ user-testing/
 **/TESTING_SESSION_SUMMARY.md
 **/BENCHMARK_ANALYSIS_GUIDE.md
 **/BRIDGE_README.md
+**/mock_transcribe.sh
 
 .claude/
+.planning/
+.tmp_diagrams/
+presentation_assets/
+"EasyLanguage Review 2026-05-07.pdf"
 
 terraform/.terraform/
 terraform/.terraform.lock.hcl
