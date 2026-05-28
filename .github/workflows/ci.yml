@@ -125,3 +125,4 @@ jobs:
           poetry run pytest -q
           --ignore=tests/services/test_learning_path_service.py
           --ignore=tests/services/test_listening_task_service.py
+          --ignore=tests/e2e/

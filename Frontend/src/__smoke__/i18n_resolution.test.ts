@@ -24,7 +24,7 @@
  *     fall back to English everywhere.
  */
 
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, beforeAll } from "vitest";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import i18n from "i18next";

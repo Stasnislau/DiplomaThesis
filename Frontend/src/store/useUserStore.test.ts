@@ -62,6 +62,8 @@ describe("useUserStore", () => {
         role: "USER",
         createdAt: "2024-01-01",
         updatedAt: "2024-01-01",
+        xp: 0,
+        streak: 0,
       };
 
       act(() => {
@@ -82,6 +84,8 @@ describe("useUserStore", () => {
           role: "USER",
           createdAt: "2024-01-01",
           updatedAt: "2024-01-01",
+          xp: 0,
+          streak: 0,
         });
       });
 

@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import PictureScene from "./PictureScene";
 
