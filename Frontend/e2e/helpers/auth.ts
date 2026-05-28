@@ -132,6 +132,8 @@ export async function mockAuthRoutes(
           name: options.user?.name ?? "Test",
           surname: options.user?.surname ?? "User",
           role,
+          xp: 0,
+          streak: 0,
           createdAt: "2026-01-01T00:00:00.000Z",
           updatedAt: "2026-01-01T00:00:00.000Z",
           languages: options.user?.languages ?? DEFAULT_USER_LANGUAGES,
