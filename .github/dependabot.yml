@@ -42,7 +42,7 @@ updates:
         update-types: [minor, patch]
 
   - package-ecosystem: pip
-    directory: /Backend/BridgeMicroservice
+    directory: /Backend/AIMicroservice
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
@@ -58,7 +58,7 @@ updates:
       interval: monthly
 
   - package-ecosystem: docker
-    directory: /Backend/BridgeMicroservice
+    directory: /Backend/AIMicroservice
     schedule:
       interval: monthly
 

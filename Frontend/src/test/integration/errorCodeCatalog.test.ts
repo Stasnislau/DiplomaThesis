@@ -1,6 +1,6 @@
 /**
  * Cross-service catalog test: for every error code declared in any
- * backend (Bridge / Auth / User), the frontend i18n catalog must
+ * backend (AI / Auth / User), the frontend i18n catalog must
  * have a translation in en, pl, and es.
  *
  * Without this, adding a new code to the backend silently produces
@@ -9,7 +9,7 @@
  * fails fast.
  *
  * It reads the source files directly (regex over constants) instead
- * of importing them, because Bridge is Python and the Nest files
+ * of importing them, because AI is Python and the Nest files
  * use NestJS-only imports we don't want to drag into vitest.
  */
 import { readFileSync } from "node:fs";
@@ -33,8 +33,8 @@ interface CodeSource {
 
 const SOURCES: CodeSource[] = [
   {
-    label: "Bridge",
-    path: "Backend/BridgeMicroservice/utils/error_codes.py",
+    label: "AI",
+    path: "Backend/AIMicroservice/utils/error_codes.py",
     regex: /^([A-Z][A-Z0-9_]+)\s*=\s*"\1"/gm,
   },
   {

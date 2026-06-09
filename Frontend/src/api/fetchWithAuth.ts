@@ -18,7 +18,7 @@ function buildHeaders(
   const headers: Record<string, string> = {
     Authorization: `Bearer ${token}`,
     // Tell the backend which UI locale to use for AI-generated user-facing
-    // text (explanations, feedback, hints). Picked up by Bridge's
+    // text (explanations, feedback, hints). Picked up by AI's
     // extract_user_context and threaded into every prompt.
     "X-UI-Locale": (i18n.language || "en").split("-")[0].toLowerCase(),
   };

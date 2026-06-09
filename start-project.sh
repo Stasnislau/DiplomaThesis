@@ -41,7 +41,7 @@ EOF
 run_in_new_terminal "Gateway Microservice" "$SCRIPT_DIR/Backend/GatewayMicroservice" "npm install && npm run dev"
 run_in_new_terminal "Auth Microservice" "$SCRIPT_DIR/Backend/AuthMicroservice" "npm install && npm run dev"
 run_in_new_terminal "User Microservice" "$SCRIPT_DIR/Backend/UserMicroservice" "npm install && npm run dev"
-run_in_new_terminal "Bridge Microservice" "$SCRIPT_DIR/Backend/BridgeMicroservice" "poetry run uvicorn main:app --reload --port 3003"
+run_in_new_terminal "AI Microservice" "$SCRIPT_DIR/Backend/AIMicroservice" "poetry run uvicorn main:app --reload --port 3003"
 
 echo "${YELLOW}Waiting 5 seconds for services to start...${NC}"
 sleep 5

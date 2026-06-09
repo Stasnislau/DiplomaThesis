@@ -1,7 +1,7 @@
 import {
   AUTH_MICROSERVICE_URL,
   AVAILABLE_MICROSERVICES,
-  BRIDGE_MICROSERVICE_URL,
+  AI_MICROSERVICE_URL,
   USER_MICROSERVICE_URL,
 } from "src/consts";
 import { IncomingHttpHeaders, IncomingMessage } from "http";
@@ -26,7 +26,7 @@ interface GatewayResponse {
 /**
  * Tiny in-process token-bucket rate limiter for AI endpoints.
  *
- * Why bridge-only (instead of all routes): the user's API key is
+ * Why AI-routes-only (instead of all routes): the user's API key is
  * billed per call there, so a runaway client (or accidental retry
  * loop) can drain real money in seconds. Auth/user routes are
  * cheap and self-contained — no need to gate them.
@@ -108,10 +108,10 @@ export class GatewayService {
     "api/health",
   ];
 
-  // Bridge subpaths that actually call out to an AI provider — these
-  // are the ones we rate-limit. Other bridge paths (e.g. /health,
+  // AI subpaths that actually call out to an AI provider — these
+  // are the ones we rate-limit. Other AI-service paths (e.g. /health,
   // /ai-tokens/verify) are exempt.
-  private readonly AI_BRIDGE_PREFIXES = [
+  private readonly AI_RATE_LIMITED_PREFIXES = [
     "writing/",
     "listening/",
     "speaking/",
@@ -184,8 +184,8 @@ export class GatewayService {
         case "auth":
           targetUrl = `${AUTH_MICROSERVICE_URL}/api/${path}`;
           break;
-        case "bridge":
-          targetUrl = `${BRIDGE_MICROSERVICE_URL}/api/${path}`;
+        case "ai":
+          targetUrl = `${AI_MICROSERVICE_URL}/api/${path}`;
           break;
         case "user":
           targetUrl = `${USER_MICROSERVICE_URL}/api/${path}`;
@@ -216,12 +216,12 @@ export class GatewayService {
         userData = await this.validateToken(headers);
       }
 
-      // After auth, before forwarding: gate AI-billing-bearing bridge
+      // After auth, before forwarding: gate AI-billing-bearing service
       // calls behind a per-user-per-hour quota.
       if (
-        microservice === "bridge" &&
+        microservice === "ai" &&
         userData &&
-        this.AI_BRIDGE_PREFIXES.some((p) => path.startsWith(p))
+        this.AI_RATE_LIMITED_PREFIXES.some((p) => path.startsWith(p))
       ) {
         const quota = checkAndIncrementAiQuota(userData.id);
         if (!quota.ok) {

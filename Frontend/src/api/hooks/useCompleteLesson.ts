@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { BRIDGE_MICROSERVICE_URL } from "../consts";
+import { AI_MICROSERVICE_URL } from "../consts";
 import { fetchWithAuth } from "../fetchWithAuth";
 
 interface CompleteLessonInput {
@@ -19,7 +19,7 @@ async function completeLesson(
   input: CompleteLessonInput,
 ): Promise<CompleteLessonResult> {
   const response = await fetchWithAuth(
-    `${BRIDGE_MICROSERVICE_URL}/learning-path/complete`,
+    `${AI_MICROSERVICE_URL}/learning-path/complete`,
     {
       method: "POST",
       body: JSON.stringify({

@@ -215,8 +215,8 @@ export function authenticatedFlow() {
   sleep(0.3);
 
   // 5. Get learning path
-  group("GET /bridge/learning-path", () => {
-    const res = http.get(`${API}/bridge/learning-path?language=English`, {
+  group("GET /ai/learning-path", () => {
+    const res = http.get(`${API}/ai/learning-path?language=English`, {
       headers: authHeaders(token),
       tags: { endpoint: "learning_path" },
     });

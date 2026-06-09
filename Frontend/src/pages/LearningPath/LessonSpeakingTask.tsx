@@ -25,7 +25,7 @@ interface LessonSpeakingTaskProps {
  * Single-shot speaking practice for the lesson flow:
  *   1. Fetch a practice phrase tied to the lesson topic / level.
  *   2. User records themselves reading it (or uploads audio).
- *   3. Bridge analyses the recording — pronunciation + grammar errors.
+ *   3. AI analyses the recording — pronunciation + grammar errors.
  *   4. Surface the score; >=60 fluency = pass.
  *
  * Distinct from the free-practice SpeakingTask in that it skips the

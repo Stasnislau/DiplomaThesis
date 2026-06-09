@@ -105,7 +105,7 @@ export function getLocalizedAchievement(
   return { name, description };
 }
 
-/** Bridge produces module.theme straight from the curriculum ("Family
+/** AI produces module.theme straight from the curriculum ("Family
  *  & Relationships"). Translate the theme via slug; English fallback
  *  preserves the original look when a theme is missing. */
 export function getLocalizedTheme(englishTheme: string): string {
@@ -125,7 +125,7 @@ export function getLocalizedLessonType(type: string): string {
   });
 }
 
-/** Bridge formats module.title as "Unit {N}: {theme}". Re-emit it via
+/** AI formats module.title as "Unit {N}: {theme}". Re-emit it via
  *  i18n so the connector word ("Unit") and the theme are both in the
  *  user's language. If the input doesn't match the expected pattern
  *  (e.g. someone changed the backend), return it unchanged. */
@@ -142,7 +142,7 @@ export function getLocalizedModuleTitle(rawTitle: string): string {
 
 /** Translate a lesson card's title + description. The lookup table
  *  in `learningPathLessons.ts` keys by camelCase slug of the English
- *  title. If the slug isn't there, the raw English from Bridge is
+ *  title. If the slug isn't there, the raw English from AI is
  *  returned unchanged so a missing entry never breaks the UI. */
 export function getLocalizedLesson(
   englishTitle: string,
@@ -156,7 +156,7 @@ export function getLocalizedLesson(
   };
 }
 
-/** Bridge formats module.description as
+/** AI formats module.description as
  *  "Explore {theme.lower()} and build solid {LEVEL} competency.". */
 export function getLocalizedModuleDescription(
   rawDescription: string,

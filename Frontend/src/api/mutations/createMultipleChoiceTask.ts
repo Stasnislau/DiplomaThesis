@@ -1,4 +1,4 @@
-import { BRIDGE_MICROSERVICE_URL } from "../consts";
+import { AI_MICROSERVICE_URL } from "../consts";
 import { TaskData } from "@/types/responses/TaskResponse";
 import { createTaskRequest } from "./createBlankSpaceTask";
 import { fetchWithAuth } from "../fetchWithAuth";
@@ -14,7 +14,7 @@ export async function createMultipleChoiceTask(
   input: createTaskRequest
 ): Promise<TaskData> {
   const response = await fetchWithAuth(
-    `${BRIDGE_MICROSERVICE_URL}/writing/adaptive`,
+    `${AI_MICROSERVICE_URL}/writing/adaptive`,
     {
       method: "POST",
       body: JSON.stringify({

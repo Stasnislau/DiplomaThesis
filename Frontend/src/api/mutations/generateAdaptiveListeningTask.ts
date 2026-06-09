@@ -1,4 +1,4 @@
-import { BRIDGE_MICROSERVICE_URL } from "../consts";
+import { AI_MICROSERVICE_URL } from "../consts";
 import { ListeningTaskResponse } from "@/types/responses/TaskResponse";
 import { fetchWithAuth } from "../fetchWithAuth";
 import { parseApiPayload } from "../parseApiResponse";
@@ -23,7 +23,7 @@ export async function generateAdaptiveListeningTask(
   input: AdaptiveListeningRequest,
 ): Promise<AdaptiveListeningResponse> {
   const response = await fetchWithAuth(
-    `${BRIDGE_MICROSERVICE_URL}/tasks/listening/adaptive`,
+    `${AI_MICROSERVICE_URL}/tasks/listening/adaptive`,
     {
       method: "POST",
       body: JSON.stringify({

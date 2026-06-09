@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from "react-router-dom";
 
-import { BRIDGE_MICROSERVICE_URL } from "@/api/consts";
+import { AI_MICROSERVICE_URL } from "@/api/consts";
 import LoadingSpinner from "@/components/layout/Loading";
 import { fetchWithAuth } from "@/api/fetchWithAuth";
 import { motion } from "framer-motion";
@@ -83,7 +83,7 @@ const TestResults = () => {
 
     if (evaluation.level !== "A1") {
       try {
-        await fetchWithAuth(`${BRIDGE_MICROSERVICE_URL}/learning-path/bulk-complete`, {
+        await fetchWithAuth(`${AI_MICROSERVICE_URL}/learning-path/bulk-complete`, {
           method: "POST",
           body: JSON.stringify({ userLevel: evaluation.level }),
         });

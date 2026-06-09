@@ -248,7 +248,7 @@ const LearningPathPage = () => {
         <div className="text-center">
           <p className="text-4xl mb-4">😕</p>
           <p className="text-xl font-semibold text-red-600 dark:text-red-400">{t("learningPath.loadFailed")}</p>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">{t("learningPath.bridgeOffline")}</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">{t("learningPath.aiOffline")}</p>
         </div>
       </div>
     );

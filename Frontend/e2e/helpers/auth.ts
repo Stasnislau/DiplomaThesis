@@ -183,10 +183,10 @@ export async function mockAuthRoutes(
     });
   });
 
-  // Generic stub for Bridge calls — returns an empty success payload so
+  // Generic stub for AI calls — returns an empty success payload so
   // pages do not render their "service down" fallbacks. Specific specs
   // can override individual routes in their own test bodies.
-  await page.route("**/api/gateway/bridge/**", async (route) => {
+  await page.route("**/api/gateway/ai/**", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",

@@ -43,7 +43,7 @@ python3 generate-report.py results.json
 2. `POST /auth/login` - get JWT
 3. `GET /user/me` - fetch profile
 4. `GET /user/languages` - fetch languages
-5. `GET /bridge/learning-path` - fetch curriculum
+5. `GET /ai/learning-path` - fetch curriculum
 
 ## Interpreting results
 

@@ -1,4 +1,4 @@
-import { BRIDGE_MICROSERVICE_URL } from "../consts";
+import { AI_MICROSERVICE_URL } from "../consts";
 import { fetchWithAuth } from "../fetchWithAuth";
 import { parseApiPayload } from "../parseApiResponse";
 import { asApiError } from "../extractApiError";
@@ -18,7 +18,7 @@ export const fetchSpeakingPrompt = async (
   body: PracticePromptRequest,
 ): Promise<SpeakingPromptResponse> => {
   const res = await fetchWithAuth(
-    `${BRIDGE_MICROSERVICE_URL}/speaking/practice-prompt`,
+    `${AI_MICROSERVICE_URL}/speaking/practice-prompt`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -47,7 +47,7 @@ export const gradeSpeakingResponse = async (
   const formData = new FormData();
   formData.append("audio_file", input.audioFile, input.audioFile.name);
 
-  const url = new URL(`${BRIDGE_MICROSERVICE_URL}/speaking/grade-response`);
+  const url = new URL(`${AI_MICROSERVICE_URL}/speaking/grade-response`);
   url.searchParams.set("language", input.language);
   url.searchParams.set("format", input.format);
   url.searchParams.set("promptText", input.promptText);

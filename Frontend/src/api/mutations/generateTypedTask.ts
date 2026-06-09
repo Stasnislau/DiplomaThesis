@@ -1,4 +1,4 @@
-import { BRIDGE_MICROSERVICE_URL } from "../consts";
+import { AI_MICROSERVICE_URL } from "../consts";
 import { QuizQuestion } from "./generateQuiz";
 import { fetchWithAuth } from "../fetchWithAuth";
 import { parseApiPayload } from "../parseApiResponse";
@@ -28,7 +28,7 @@ export const generateTypedTask = async (
   body: TypedTaskRequest,
 ): Promise<QuizQuestion> => {
   const res = await fetchWithAuth(
-    `${BRIDGE_MICROSERVICE_URL}/writing/typed-task`,
+    `${AI_MICROSERVICE_URL}/writing/typed-task`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },

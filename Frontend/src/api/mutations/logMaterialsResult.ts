@@ -1,4 +1,4 @@
-import { BRIDGE_MICROSERVICE_URL } from "../consts";
+import { AI_MICROSERVICE_URL } from "../consts";
 import { fetchWithAuth } from "../fetchWithAuth";
 import { parseApiPayload } from "../parseApiResponse";
 
@@ -27,7 +27,7 @@ export const logMaterialsResult = async (
   body: LogMaterialsResultRequest,
 ): Promise<boolean> => {
   const response = await fetchWithAuth(
-    `${BRIDGE_MICROSERVICE_URL}/materials/result`,
+    `${AI_MICROSERVICE_URL}/materials/result`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },

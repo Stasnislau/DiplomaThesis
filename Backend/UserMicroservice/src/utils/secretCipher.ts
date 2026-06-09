@@ -6,7 +6,7 @@ import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
  *
  * Wire format: a single base64 string of [12-byte IV][16-byte tag][ciphertext].
  * The plaintext leaves the process only when the request is authorised
- * to read it (Bridge with the internal-service-key, after a fresh JWT
+ * to read it (AI with the internal-service-key, after a fresh JWT
  * round-trip).
  *
  * KEY_ENCRYPTION_KEY: 32 raw bytes encoded as base64 (64 hex digits also

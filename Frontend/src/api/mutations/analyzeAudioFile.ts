@@ -1,4 +1,4 @@
-import { BRIDGE_MICROSERVICE_URL } from "../consts";
+import { AI_MICROSERVICE_URL } from "../consts";
 import { fetchWithAuth } from "../fetchWithAuth";
 import { parseApiPayload } from "../parseApiResponse";
 
@@ -43,7 +43,7 @@ export async function analyzeSpeech(
 ): Promise<SpeakingAnalysisResult> {
   const formData = new FormData();
   formData.append("audio_file", input.audioFile, input.filename);
-  const url = new URL(BRIDGE_MICROSERVICE_URL + "/speaking/analyze");
+  const url = new URL(AI_MICROSERVICE_URL + "/speaking/analyze");
   url.searchParams.set("language", input.language);
   if (input.uiLocale) {
     url.searchParams.set("uiLocale", input.uiLocale);

@@ -1,10 +1,10 @@
 /**
- * One place to turn a Bridge / Auth / User error response into something
+ * One place to turn a AI / Auth / User error response into something
  * the UI can reason about.
  *
  * Modern wire format (since the structured-error refactor):
  *   - Nest microservices: `{ success: false, payload: { code, message, ... } }`
- *   - Bridge (FastAPI):    `{ detail: { code, message } }`
+ *   - AI (FastAPI):    `{ detail: { code, message } }`
  *   - Both expose `code` as a sibling field, no parsing required.
  *
  * Legacy fallback we still honour:

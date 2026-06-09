@@ -183,12 +183,12 @@ def _gateway_health() -> None:
     assert_status(r, 200, "Gateway health")
 
 
-@check("Gateway forwards bridge health (auth-required path returns 401, not 5xx)")
-def _bridge_via_gateway_unauthed() -> None:
+@check("Gateway forwards AI health (auth-required path returns 401, not 5xx)")
+def _ai_via_gateway_unauthed() -> None:
     """An unauthenticated call to a protected gateway path must come
     back as 401 from the auth check — not 502/503 from a misrouted
-    forward. Catches the bridge-down scenario clearly."""
-    r = get("/api/gateway/bridge/listening/anything")
+    forward. Catches the AI-service-down scenario clearly."""
+    r = get("/api/gateway/ai/listening/anything")
     assert r.status in (
         401,
         404,
@@ -334,7 +334,7 @@ def _full_speaking_prompt() -> None:
     if not _TEST_USER_TOKEN:
         skip("no token from signup step")
     r = post(
-        "/api/gateway/bridge/speaking/practice-prompt",
+        "/api/gateway/ai/speaking/practice-prompt",
         payload={"language": "English", "level": "B1", "format": "timed_response"},
         headers={"Authorization": f"Bearer {_TEST_USER_TOKEN}"},
     )
@@ -363,7 +363,7 @@ def _full_listening_request() -> None:
     if not _TEST_USER_TOKEN:
         skip("no token from signup step")
     r = post(
-        "/api/gateway/bridge/tasks/listening",
+        "/api/gateway/ai/tasks/listening",
         payload={
             "language": "English",
             "level": "A2",
@@ -420,7 +420,7 @@ def _full_listening_question_type_catalog() -> None:
     for qt in types:
         try:
             r = _send_catalog_probe(
-                "/api/gateway/bridge/tasks/listening",
+                "/api/gateway/ai/tasks/listening",
                 {
                     "language": "English",
                     "level": "A2",
@@ -455,7 +455,7 @@ def _full_speaking_format_catalog() -> None:
     for fmt in formats:
         try:
             r = _send_catalog_probe(
-                "/api/gateway/bridge/speaking/practice-prompt",
+                "/api/gateway/ai/speaking/practice-prompt",
                 {"language": "English", "level": "B1", "format": fmt},
             )
         except (urllib.error.URLError, TimeoutError, Exception) as e:
@@ -487,7 +487,7 @@ def _full_speaking_grade_known_unknown_split() -> None:
         "Content-Type: audio/wav\r\n\r\n"
     ).encode() + fake_audio + f"\r\n--{boundary}--\r\n".encode()
 
-    base = "/api/gateway/bridge/speaking/grade-response"
+    base = "/api/gateway/ai/speaking/grade-response"
 
     # Unknown format → 400/422.
     r_unknown = _request(
@@ -544,7 +544,7 @@ def _full_materials_upload_round_trip() -> None:
 
     r = _request(
         "POST",
-        f"{API_URL}/api/gateway/bridge/materials/upload",
+        f"{API_URL}/api/gateway/ai/materials/upload",
         headers={
             "Authorization": f"Bearer {_TEST_USER_TOKEN}",
             "Content-Type": f"multipart/form-data; boundary={boundary}",
@@ -575,7 +575,7 @@ def _run_all() -> int:
     print(f"== Post-deploy smoke against {API_URL} (full={FULL}) ==\n")
     checks = [
         _gateway_health,
-        _bridge_via_gateway_unauthed,
+        _ai_via_gateway_unauthed,
         _frontend_index,
         _auth_login_rejects,
         _languages_endpoint,

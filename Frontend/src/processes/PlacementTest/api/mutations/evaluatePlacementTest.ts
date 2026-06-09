@@ -1,4 +1,4 @@
-import { BRIDGE_MICROSERVICE_URL } from "../../../../api/consts";
+import { AI_MICROSERVICE_URL } from "../../../../api/consts";
 import { BaseResponse } from "@/types/responses/BaseResponse";
 import { EvaluationResult } from "@/types/models/EvaluationResult";
 import { PlacementTestAnswer } from "@/types/models/PlacementTestAnswer";
@@ -13,7 +13,7 @@ export async function evaluatePlacementTest(
   input: EvaluatePlacementTestRequest,
 ): Promise<EvaluationResult> {
   const response = await fetchWithAuth(
-    `${BRIDGE_MICROSERVICE_URL}/placement/evaluate`,
+    `${AI_MICROSERVICE_URL}/placement/evaluate`,
     {
       method: "POST",
       body: JSON.stringify(input),

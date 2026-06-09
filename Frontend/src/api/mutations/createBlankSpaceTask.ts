@@ -1,4 +1,4 @@
-import { BRIDGE_MICROSERVICE_URL } from "../consts";
+import { AI_MICROSERVICE_URL } from "../consts";
 import { TaskData } from "@/types/responses/TaskResponse";
 import { fetchWithAuth } from "../fetchWithAuth";
 import { parseApiPayload } from "../parseApiResponse";
@@ -20,7 +20,7 @@ export async function createBlankSpaceTask(
   input: createTaskRequest,
 ): Promise<TaskData> {
   const response = await fetchWithAuth(
-    `${BRIDGE_MICROSERVICE_URL}/writing/adaptive`,
+    `${AI_MICROSERVICE_URL}/writing/adaptive`,
     {
       method: "POST",
       body: JSON.stringify({

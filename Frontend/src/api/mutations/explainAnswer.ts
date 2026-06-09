@@ -1,4 +1,4 @@
-import { BRIDGE_MICROSERVICE_URL } from "../consts";
+import { AI_MICROSERVICE_URL } from "../consts";
 import { fetchWithAuth } from "../fetchWithAuth";
 import { parseApiPayload } from "../parseApiResponse";
 
@@ -24,7 +24,7 @@ export async function explainAnswer(
   data: ExplainAnswerRequest,
 ): Promise<ExplainAnswerResponse> {
   const response = await fetchWithAuth(
-    `${BRIDGE_MICROSERVICE_URL}/writing/explainanswer`,
+    `${AI_MICROSERVICE_URL}/writing/explainanswer`,
     {
       method: "POST",
       body: JSON.stringify(data),

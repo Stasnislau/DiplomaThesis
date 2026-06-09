@@ -25,8 +25,8 @@ export class TaskHistoryController {
 
   /**
    * Create a history entry. Reachable by:
-   *   1. End user via gateway → records own activity (rare; usually Bridge logs).
-   *   2. Bridge service via x-internal-service-key with x-user-id of the acting user.
+   *   1. End user via gateway → records own activity (rare; usually AI logs).
+   *   2. AI service via x-internal-service-key with x-user-id of the acting user.
    */
   @Post()
   async create(

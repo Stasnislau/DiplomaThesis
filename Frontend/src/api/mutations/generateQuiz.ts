@@ -1,4 +1,4 @@
-import { BRIDGE_MICROSERVICE_URL } from "../consts";
+import { AI_MICROSERVICE_URL } from "../consts";
 import { fetchWithAuth } from "../fetchWithAuth";
 import { parseApiPayload } from "../parseApiResponse";
 import type { DocumentMap } from "./uploadMaterial";
@@ -7,7 +7,7 @@ import type { DocumentMap } from "./uploadMaterial";
  * Quiz question wire types — discriminated union by `type`.
  *
  * The shape mirrors the backend's Pydantic discriminated union in
- * Backend/BridgeMicroservice/models/dtos/material_dtos.py. The
+ * Backend/AIMicroservice/models/dtos/material_dtos.py. The
  * MaterialsTask renderer dispatches on `type` to pick the right
  * component.
  */
@@ -108,7 +108,7 @@ export const generateQuiz = async (
   params: GenerateQuizParams = {},
 ): Promise<GenerateQuizResponse> => {
   const response = await fetchWithAuth(
-    `${BRIDGE_MICROSERVICE_URL}/materials/quiz`,
+    `${AI_MICROSERVICE_URL}/materials/quiz`,
     {
       method: "POST",
       headers: {

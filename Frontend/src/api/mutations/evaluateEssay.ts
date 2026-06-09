@@ -1,4 +1,4 @@
-import { BRIDGE_MICROSERVICE_URL } from "../consts";
+import { AI_MICROSERVICE_URL } from "../consts";
 import { fetchWithAuth } from "../fetchWithAuth";
 import { parseApiPayload } from "../parseApiResponse";
 
@@ -26,7 +26,7 @@ export async function evaluateEssay(
   input: EvaluateEssayRequest,
 ): Promise<EssayEvaluation> {
   const response = await fetchWithAuth(
-    `${BRIDGE_MICROSERVICE_URL}/writing/essay/evaluate`,
+    `${AI_MICROSERVICE_URL}/writing/essay/evaluate`,
     { method: "POST", body: JSON.stringify(input) },
   );
   return parseApiPayload<EssayEvaluation>(

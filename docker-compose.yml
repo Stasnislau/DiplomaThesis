@@ -37,15 +37,15 @@ services:
       timeout: 5s
       retries: 5
 
-  postgres-bridge:
+  postgres-ai:
     image: postgres:15
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-12345}
-      POSTGRES_DB: bridgedb
+      POSTGRES_DB: aidb
     volumes:
-      - postgres_bridge_data:/var/lib/postgresql/data
+      - postgres_ai_data:/var/lib/postgresql/data
     ports:
       - "5434:5432"
     healthcheck:
@@ -125,17 +125,17 @@ services:
     environment:
       PORT: 3001
       AUTH_MICROSERVICE_URL: http://auth:3002
-      BRIDGE_MICROSERVICE_URL: http://bridge:3003
+      AI_MICROSERVICE_URL: http://ai:3003
       USER_MICROSERVICE_URL: http://user:3004
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173}
     depends_on:
       - auth
       - user
-      - bridge
+      - ai
 
-  bridge:
+  ai:
     build:
-      context: ./Backend/BridgeMicroservice
+      context: ./Backend/AIMicroservice
       dockerfile: Dockerfile
     restart: always
     ports:
@@ -144,13 +144,13 @@ services:
       USER_MICROSERVICE_URL: http://user:3004/api
       INTERNAL_SERVICE_KEY: ${INTERNAL_SERVICE_KEY:?INTERNAL_SERVICE_KEY must be set}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set (same as Auth)}
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-12345}@postgres-bridge:5432/bridgedb
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-12345}@postgres-ai:5432/aidb
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       GOOGLE_TTS_API_KEY: ${GOOGLE_TTS_API_KEY:-}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
     depends_on:
-      postgres-bridge:
+      postgres-ai:
         condition: service_healthy
       user:
         condition: service_started
@@ -172,5 +172,5 @@ services:
 volumes:
   postgres_auth_data:
   postgres_user_data:
-  postgres_bridge_data:
+  postgres_ai_data:
   rabbitmq_data:

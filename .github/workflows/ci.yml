@@ -90,7 +90,7 @@ jobs:
       - if: steps.pw-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
       # Tests stub all backend routes via page.route, so the dev server
-      # is enough — no real Auth/User/Bridge needed in CI.
+      # is enough — no real Auth/User/AI needed in CI.
       - run: echo "VITE_API_URL=http://localhost:3001" > .env
       - run: npx playwright test --project=chromium
       - if: always()
@@ -100,12 +100,12 @@ jobs:
           path: Frontend/playwright-report/
           retention-days: 7
 
-  bridge:
-    name: Bridge microservice (pytest)
+  ai:
+    name: AI microservice (pytest)
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: Backend/BridgeMicroservice
+        working-directory: Backend/AIMicroservice
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -117,7 +117,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pypoetry/virtualenvs
-          key: poetry-${{ runner.os }}-${{ hashFiles('Backend/BridgeMicroservice/poetry.lock') }}
+          key: poetry-${{ runner.os }}-${{ hashFiles('Backend/AIMicroservice/poetry.lock') }}
       - run: poetry install --no-interaction --no-root
       - run: >
           poetry run pytest -q

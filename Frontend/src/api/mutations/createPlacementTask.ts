@@ -2,7 +2,7 @@ import {
   FillInTheBlankTask,
   MultipleChoiceTask,
 } from "@/types/responses/TaskResponse";
-import { BRIDGE_MICROSERVICE_URL } from "../consts";
+import { AI_MICROSERVICE_URL } from "../consts";
 import { fetchWithAuth } from "../fetchWithAuth";
 import { parseApiPayload } from "../parseApiResponse";
 
@@ -18,7 +18,7 @@ export async function createPlacementTask(
   input: CreatePlacementTaskRequest
 ): Promise<MultipleChoiceTask | FillInTheBlankTask> {
   const response = await fetchWithAuth(
-    `${BRIDGE_MICROSERVICE_URL}/placement/task`,
+    `${AI_MICROSERVICE_URL}/placement/task`,
     {
       method: "POST",
       body: JSON.stringify(input),

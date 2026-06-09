@@ -8,9 +8,9 @@ import { UnauthorizedException } from "@nestjs/common";
 
 jest.mock("src/consts", () => ({
   AUTH_MICROSERVICE_URL: "http://auth:3001",
-  BRIDGE_MICROSERVICE_URL: "http://bridge:8000",
+  AI_MICROSERVICE_URL: "http://ai:8000",
   USER_MICROSERVICE_URL: "http://user:3004",
-  AVAILABLE_MICROSERVICES: ["auth", "bridge", "user"],
+  AVAILABLE_MICROSERVICES: ["auth", "ai", "user"],
 }));
 
 describe("GatewayService", () => {
@@ -133,18 +133,18 @@ describe("GatewayService", () => {
       );
     });
 
-    it("should route request to bridge microservice", async () => {
+    it("should route request to ai microservice", async () => {
       (httpService.post as jest.Mock).mockReturnValue(of(mockAuthResponse));
       (httpService.request as jest.Mock).mockReturnValue(
         of({
           status: 200,
-          data: { success: true, payload: "response from bridge" },
+          data: { success: true, payload: "response from ai" },
         }),
       );
 
       const result = await service.handleRequest(
         "GET",
-        "/api/gateway/bridge/writing/task",
+        "/api/gateway/ai/writing/task",
         mockHeaders,
         {},
         createMockReq(),
@@ -153,7 +153,7 @@ describe("GatewayService", () => {
       expect(result.status).toBe(200);
       expect(httpService.request).toHaveBeenCalledWith(
         expect.objectContaining({
-          url: "http://bridge:8000/api/writing/task",
+          url: "http://ai:8000/api/writing/task",
         }),
       );
     });

@@ -1,6 +1,6 @@
 /**
  * Listening question variants — mirrors the discriminated union in
- * Backend/BridgeMicroservice/models/responses/listening_task_response.py.
+ * Backend/AIMicroservice/models/responses/listening_task_response.py.
  * Wire field names stay camelCase to match the existing
  * `correctAnswer` convention from the original two listening types.
  */

@@ -1,4 +1,4 @@
-import { BRIDGE_MICROSERVICE_URL } from "../consts";
+import { AI_MICROSERVICE_URL } from "../consts";
 import { fetchWithAuth } from "../fetchWithAuth";
 import { parseApiPayload } from "../parseApiResponse";
 
@@ -22,7 +22,7 @@ export async function generateEssayTask(
   input: GenerateEssayRequest,
 ): Promise<EssayTask> {
   const response = await fetchWithAuth(
-    `${BRIDGE_MICROSERVICE_URL}/writing/essay/generate`,
+    `${AI_MICROSERVICE_URL}/writing/essay/generate`,
     { method: "POST", body: JSON.stringify(input) },
   );
   return parseApiPayload<EssayTask>(

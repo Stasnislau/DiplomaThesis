@@ -1,4 +1,4 @@
-import { BRIDGE_MICROSERVICE_URL } from "@/api/consts";
+import { AI_MICROSERVICE_URL } from "@/api/consts";
 import { BaseResponse } from "@/types/responses/BaseResponse";
 import { fetchWithAuth } from "@/api/fetchWithAuth";
 import { useQuery } from "@tanstack/react-query";
@@ -41,7 +41,7 @@ export const useLearningPath = (language: string, level: string) => {
   return useQuery({
     queryKey: ["learning-path", language, level],
     queryFn: async () => {
-      const url = new URL(`${BRIDGE_MICROSERVICE_URL}/learning-path`);
+      const url = new URL(`${AI_MICROSERVICE_URL}/learning-path`);
       url.searchParams.append("language", language);
       url.searchParams.append("level", level);
 

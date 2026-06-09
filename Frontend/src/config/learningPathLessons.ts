@@ -1,5 +1,5 @@
 /**
- * Translations for every lesson in Bridge's CURRICULUM (138 entries).
+ * Translations for every lesson in AI's CURRICULUM (138 entries).
  *
  * Lives outside i18n.ts because dropping ~600 lines into the main
  * translation file made it unreadable. The lookup helper in

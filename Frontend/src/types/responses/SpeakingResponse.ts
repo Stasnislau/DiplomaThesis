@@ -1,5 +1,5 @@
 /**
- * Mirrors Backend/BridgeMicroservice/models/responses/speaking_format_response.py.
+ * Mirrors Backend/AIMicroservice/models/responses/speaking_format_response.py.
  */
 
 export type SpeakingFormat =

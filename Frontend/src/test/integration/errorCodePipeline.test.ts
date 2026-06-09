@@ -15,7 +15,7 @@
  *
  * If anything breaks in that chain a real user sees raw English
  * instead of a translation, so this test pins each step against the
- * next. Both Bridge's `{detail: "CODE: msg"}` and the gateway's
+ * next. Both AI's `{detail: "CODE: msg"}` and the gateway's
  * `{success: false, payload: {message: "CODE: msg"}}` shapes are
  * exercised against every locale we ship.
  */
@@ -28,7 +28,7 @@ import { parseApiResponse } from "@/api/parseApiResponse";
 import { useLocalizedError } from "@/utils/useLocalizedError";
 
 const SAMPLE_CODES = [
-  // Bridge
+  // AI
   "AUTH_MISSING_USER",
   "PDF_NO_TEXT",
   "AI_RATE_LIMITED",

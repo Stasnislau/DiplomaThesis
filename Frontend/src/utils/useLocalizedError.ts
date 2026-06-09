@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 /**
  * Translate a backend error code into a user-facing string in the current
  * UI language. Falls back to the supplied `rawMessage` (typically the
- * English fallback that came in the same `detail` payload from Bridge),
+ * English fallback that came in the same `detail` payload from AI),
  * and finally to a generic "something went wrong" line.
  *
  * Usage:

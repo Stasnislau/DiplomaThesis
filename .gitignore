@@ -41,7 +41,7 @@ user-testing/
 **/TEST_GUIDE.md
 **/TESTING_SESSION_SUMMARY.md
 **/BENCHMARK_ANALYSIS_GUIDE.md
-**/BRIDGE_README.md
+**/AI_README.md
 **/mock_transcribe.sh
 
 .claude/
@@ -55,3 +55,8 @@ terraform/.terraform.lock.hcl
 terraform/*.tfstate*
 terraform/terraform.tfvars
 terraform/infracost-report.*
+.fallow
+podraza
+Backend/AIMicroservice/static/
+test.txt
+reviews

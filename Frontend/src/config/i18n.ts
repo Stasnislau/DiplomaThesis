@@ -566,7 +566,7 @@ const en = {
     learningPath: {
       loadingJourney: "Loading your journey...",
       loadFailed: "Failed to load learning path.",
-      bridgeOffline: "Please make sure the Bridge service is running.",
+      aiOffline: "Please make sure the AI service is running.",
       overallProgress: "Overall progress",
       header: {
         title: "Learning Path",
@@ -795,9 +795,9 @@ const en = {
       notFound: "Resource not found",
       generic: "Something went wrong. Please try again.",
       // Backend error codes — single source of truth for user-facing copy
-      // when the Bridge raises HTTPException via raise_with_code(...).
+      // when the AI raises HTTPException via raise_with_code(...).
       // Keep the keys identical to the constants in
-      // Backend/BridgeMicroservice/utils/error_codes.py.
+      // Backend/AIMicroservice/utils/error_codes.py.
       codes: {
         AUTH_MISSING_USER: "Your session expired. Please sign in again.",
         AUTH_INVALID_TOKEN: "Authentication failed. Please sign in again.",
@@ -1324,7 +1324,7 @@ const pl = {
     learningPath: {
       loadingJourney: "Ładowanie Twojej podróży...",
       loadFailed: "Nie udało się załadować ścieżki nauki.",
-      bridgeOffline: "Upewnij się, że usługa Bridge działa.",
+      aiOffline: "Upewnij się, że usługa AI działa.",
       overallProgress: "Ogólny postęp",
       header: {
         title: "Ścieżka nauki",
@@ -2180,7 +2180,7 @@ const es = {
     learningPath: {
       loadingJourney: "Cargando tu trayecto...",
       loadFailed: "No se pudo cargar la ruta de aprendizaje.",
-      bridgeOffline: "Asegúrate de que el servicio Bridge esté en ejecución.",
+      aiOffline: "Asegúrate de que el servicio AI esté en ejecución.",
       overallProgress: "Progreso general",
       header: {
         title: "Ruta de aprendizaje",

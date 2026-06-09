@@ -60,7 +60,7 @@ export class AchievementController {
 
   /**
    * Update progress for a specific achievement. Designed to be
-   * called by Bridge (which awards progress on lesson completion,
+   * called by AI (which awards progress on lesson completion,
    * speech analysis, etc.) — never by the end user directly. Without
    * the internal-service-key gate, any USER could just POST
    * {"achievementName":"Dedicated"} repeatedly to fake-unlock every

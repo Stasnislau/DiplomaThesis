@@ -1,4 +1,4 @@
-import { BRIDGE_MICROSERVICE_URL } from "../consts";
+import { AI_MICROSERVICE_URL } from "../consts";
 import {
   FillInTheBlankTask,
   MultipleChoiceTask,
@@ -19,16 +19,16 @@ export interface AdaptiveTaskResponse {
 }
 
 /**
- * Ask Bridge for a writing task biased toward the user's recent
+ * Ask AI for a writing task biased toward the user's recent
  * weaknesses (placement misses, low-score topics, speaking errors).
- * If history is empty Bridge falls back to the regular variety
+ * If history is empty AI falls back to the regular variety
  * picker — the call is always safe.
  */
 export async function generateAdaptiveTask(
   input: AdaptiveTaskRequest,
 ): Promise<AdaptiveTaskResponse> {
   const response = await fetchWithAuth(
-    `${BRIDGE_MICROSERVICE_URL}/writing/adaptive`,
+    `${AI_MICROSERVICE_URL}/writing/adaptive`,
     {
       method: "POST",
       body: JSON.stringify({

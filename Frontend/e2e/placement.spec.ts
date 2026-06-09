@@ -28,14 +28,14 @@ test.describe("Placement Test Userflow", () => {
     });
   });
 
-  // TODO: /placement renders only the layout shell when the Bridge stub
+  // TODO: /placement renders only the layout shell when the AI stub
   // returns null. The page logic depends on a richer task payload than the
   // current generic mock supplies; flesh this out with proper /placement
   // route ordering (helper stub registered AFTER spec-specific routes).
   test.skip("completes placement test using mocked AI responses", async ({
     page,
   }) => {
-    await page.route("**/api/gateway/bridge/placement/task", async (route) => {
+    await page.route("**/api/gateway/ai/placement/task", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -44,7 +44,7 @@ test.describe("Placement Test Userflow", () => {
     });
 
     await page.route(
-      "**/api/gateway/bridge/writing/explainanswer",
+      "**/api/gateway/ai/writing/explainanswer",
       async (route) => {
         await route.fulfill({
           status: 200,

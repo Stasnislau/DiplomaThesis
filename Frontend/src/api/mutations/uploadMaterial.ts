@@ -1,4 +1,4 @@
-import { BRIDGE_MICROSERVICE_URL } from "../consts";
+import { AI_MICROSERVICE_URL } from "../consts";
 import { ApiError } from "../extractApiError";
 import { fetchWithAuth } from "../fetchWithAuth";
 import { parseApiPayload } from "../parseApiResponse";
@@ -10,7 +10,7 @@ export interface AnalyzedType {
 
 /**
  * Mirrors `DocumentExercise` in
- * Backend/BridgeMicroservice/models/dtos/material_dtos.py. Drives
+ * Backend/AIMicroservice/models/dtos/material_dtos.py. Drives
  * Stage 2/3 of quiz generation; carries enough metadata for the
  * backend to know how long each stimulus passage should be and what
  * subtypes of questions to drill.
@@ -55,7 +55,7 @@ export const uploadMaterial = async (
   formData.append("file", file);
 
   const response = await fetchWithAuth(
-    `${BRIDGE_MICROSERVICE_URL}/materials/upload`,
+    `${AI_MICROSERVICE_URL}/materials/upload`,
     {
       method: "POST",
       body: formData,

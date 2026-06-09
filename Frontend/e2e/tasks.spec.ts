@@ -4,7 +4,7 @@ import { loginViaStorage } from "./helpers/auth";
 /**
  * Smoke-level: confirm /tasks renders for an authenticated user, does
  * not redirect back to /login, and exposes at least one task tab.
- * Deeper interaction tests would require mocking every Bridge endpoint.
+ * Deeper interaction tests would require mocking every AI endpoint.
  */
 test.describe("Tasks Page", () => {
   test.beforeEach(async ({ page }) => {
