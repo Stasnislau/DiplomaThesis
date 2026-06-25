@@ -140,6 +140,10 @@ All responses follow the `BaseResponse` schema:
     },
 )
 
+# A fresh checkout (CI, a new clone) has no static/ — it is gitignored
+# and only created at runtime when audio is written. StaticFiles raises
+# at construction if the directory is missing, so ensure it exists first.
+os.makedirs("static", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
