@@ -40,6 +40,19 @@ class TaskHistoryEntry(TypedDict, total=False):
     metadata: Optional[Dict[str, Any]]
 
 
+class UserErrorEntry(TypedDict, total=False):
+    # ISO 639-1 code (en/pl/...) — the User service resolves it to a
+    # languageId. errorType mirrors IdentifiedError.error_type
+    # (Grammar/Vocabulary/Phrasing/Fluency). source is the skill that
+    # produced it, e.g. "speaking".
+    languageCode: str
+    errorText: str
+    correction: str
+    errorType: str
+    source: str
+    context: Optional[str]
+
+
 class UserService:
     def __init__(self) -> None:
         self.base_url = os.getenv(
@@ -152,6 +165,30 @@ class UserService:
                 )
         except Exception as exc:  # noqa: BLE001
             logger.warning("history log exception: %s", exc)
+
+    async def record_user_error(
+        self, ctx: UserContext, error: "UserErrorEntry"
+    ) -> None:
+        """Best-effort POST to /api/user-errors. Records one recurring
+        error (FR6) with upsert semantics on the User side. Never raises —
+        error logging must not block or fail the grading response the user
+        is waiting on.
+        """
+        try:
+            url = f"{self.base_url}/user-errors"
+            headers = ctx.to_forward_headers()
+            headers["x-internal-service-key"] = _internal_key()
+            headers["content-type"] = "application/json"
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                response = await client.post(url, headers=headers, json=error)
+            if response.status_code >= 400:
+                logger.warning(
+                    "record_user_error failed status=%s body=%s",
+                    response.status_code,
+                    response.text[:200],
+                )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("record_user_error exception: %s", exc)
 
     async def post_achievement_progress(
         self, ctx: UserContext, achievement_name: str, increment_by: int = 1

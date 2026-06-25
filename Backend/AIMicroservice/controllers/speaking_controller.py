@@ -77,6 +77,27 @@ class SpeakingController:
                 user_context=user_context,
                 ui_locale=ui_locale,
             )
+
+            # FR6 — persist each identified error to the user's recurring
+            # error log (upsert on the User side). Best-effort: a failure
+            # here must not break the analysis the user is waiting on.
+            from utils.language_codes import to_iso_language
+
+            language_code = to_iso_language(language)
+            if language_code:
+                for err in result.identified_errors:
+                    await self.user_service.record_user_error(
+                        user_context,
+                        {
+                            "languageCode": language_code,
+                            "errorText": err.erroneous_text,
+                            "correction": err.suggestion,
+                            "errorType": err.error_type,
+                            "source": "speaking",
+                            "context": err.explanation,
+                        },
+                    )
+
             return BaseResponse(success=True, payload=result)
 
         @self.router.post(

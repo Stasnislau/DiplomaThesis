@@ -8,6 +8,7 @@ import { PlacementTestModule } from "./modules/placementTestModule";
 import { TaskHistoryModule } from "./modules/task-history.module";
 import { UserAITokensModule } from "./modules/user-ai-tokens.module";
 import { UserDataMiddleware } from "./middlewares/userDataMiddleware";
+import { UserErrorModule } from "./modules/userErrorModule";
 import { UserModule } from "./modules/userModule";
 import configuration from "./config/configuration";
 import { HealthController } from "./controllers/healthController";
@@ -26,6 +27,7 @@ import { HealthController } from "./controllers/healthController";
     AchievementModule,
     PlacementTestModule,
     TaskHistoryModule,
+    UserErrorModule,
   ],
 
   controllers: [HealthController],
