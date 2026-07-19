@@ -1,4 +1,5 @@
 import re
+import uuid
 
 import lancedb
 from sentence_transformers import SentenceTransformer
@@ -222,6 +223,12 @@ class VectorDBService:
     def save_task_templates(self, templates: List[TaskTemplate]) -> None:
         """
         Saves extracted task templates.
+
+        Templates are mined from a user's own upload, so each row keeps
+        the owner's user_id and search_task_templates filters on it —
+        same contract as save_chunks/search_materials. A template leaks
+        the shape of someone's private material, so it gets the same
+        scoping as the material itself.
         """
         if not templates:
             return
@@ -229,7 +236,14 @@ class VectorDBService:
             embeddings = self.model.encode([t.template for t in templates])
             data = []
             for i, template in enumerate(templates):
-                record = template.model_dump()
+                # `distance` only exists on rows that came back OUT of a
+                # search. Persisting it would add a column that no freshly
+                # built template has, so a search-then-resave round trip
+                # would break the schema.
+                record = template.model_dump(exclude={"distance"})
+                # A null id makes LanceDB type the column as null, after
+                # which every later row that does carry an id is rejected.
+                record["id"] = template.id or str(uuid.uuid4())
                 record["vector"] = embeddings[i].tolist()
                 data.append(record)
 
@@ -243,21 +257,53 @@ class VectorDBService:
             print(f"Error saving templates: {e}")
             raise e
 
-    def search_task_templates(self, query: str, limit: int = 20) -> List[TaskTemplate]:
+    def search_task_templates(
+        self,
+        query: str,
+        limit: int = 20,
+        user_id: Optional[str] = None,
+    ) -> List[TaskTemplate]:
         """
         Searches for stored task templates similar to the query.
+
+        If user_id is provided, results are restricted to templates mined
+        from that user's own uploads. Rows written before templates were
+        scoped have user_id="" and are NEVER returned in a scoped query,
+        exactly like pre-multitenant materials chunks.
+
+        Returns [] rather than raising on any failure — callers use these
+        as optional few-shot exemplars, and an empty store must degrade to
+        plain generation rather than break a lesson.
         """
         try:
             if self.templates_table_name not in self.db.table_names():
                 return []
             query_embedding = self.model.encode(query)
             table = self.db.open_table(self.templates_table_name)
-            results = (
-                table.search(query_embedding.tolist())
-                .limit(limit)
-                .to_pandas()
-            )
+
+            search = table.search(query_embedding.tolist())
+            if user_id:
+                # Same gate as search_materials: user_id reaches us from
+                # the X-User-Id header and gets interpolated straight into
+                # the where-clause, so anything that isn't a UUID
+                # short-circuits to "no results" instead of becoming a
+                # filter fragment.
+                if not _UUID_RE.match(user_id):
+                    return []
+                try:
+                    search = search.where(f"user_id = '{user_id}'")
+                except Exception:  # noqa: BLE001
+                    pass
+            results = search.limit(limit).to_pandas()
+
+            # Defensive post-filter for the same reason as in
+            # search_materials: if the where-clause couldn't be applied
+            # against an older table schema, drop foreign-user rows here
+            # rather than hand them to a prompt builder.
             records = results.to_dict("records")
+            if user_id and "user_id" in results.columns:
+                records = [r for r in records if r.get("user_id") == user_id]
+
             return [TaskTemplate(**rec) for rec in records]
         except Exception as e:
             print(f"Error searching templates: {e}")

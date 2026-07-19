@@ -4,6 +4,7 @@ from pypdf import PdfReader
 import io
 import asyncio
 import re
+import uuid
 from typing import List, Dict, Any, Optional, Union, Tuple, Set
 from fastapi import HTTPException
 from services.ai_service import AI_Service
@@ -11,6 +12,7 @@ from services.user_service import UserService
 from utils.user_context import UserContext
 import json
 import logging
+from models.dtos.vector_db_dtos import TaskTemplate
 from models.dtos.material_dtos import (
     ProcessPdfResponse,
     GenerateQuizResponse,
@@ -49,6 +51,27 @@ _STIMULUS_BEARING_TYPES = {
 # rather than fail the whole quiz.
 _VERBATIM_NGRAM_SIZE = 12
 _VERBATIM_RETRIES = 1
+
+# Which CEFR skill each detected exercise type drills. Stored on the
+# mined task template so retrieval can match a writing request against
+# writing exemplars instead of, say, a listening transcript. Types the
+# map doesn't cover fall back to "writing" — that's where the bulk of
+# the generated-task surface lives, so it's the least surprising default.
+_EXERCISE_SKILL: Dict[str, str] = {
+    "reading_comprehension": "reading",
+    "listening_comprehension": "listening",
+    "speaking_prompt": "speaking",
+    "essay": "writing",
+    "short_answer": "writing",
+    "cloze_passage": "reading",
+    "gap_fill_grammar": "writing",
+    "gap_fill_vocab": "writing",
+    "multiple_choice": "writing",
+    "multi_select_mc": "writing",
+    "true_false": "reading",
+    "matching": "reading",
+    "sentence_reordering": "writing",
+}
 
 
 def _word_ngrams(text: str, n: int) -> Set[Tuple[str, ...]]:
@@ -427,6 +450,24 @@ class MaterialService:
                 analyzed_types = []
                 document_map = None
 
+            if document_map and document_map.exercises:
+                # Persist the exercise shapes as few-shot exemplars for
+                # later task generation. Strictly best-effort: the user's
+                # chunks are already indexed by this point, so a template
+                # write that fails must not cost them the upload.
+                try:
+                    self.vector_db_service.save_task_templates(
+                        self._build_task_templates(
+                            document_map=document_map,
+                            source=filename,
+                            owner_id=owner_id,
+                        )
+                    )
+                except Exception as e:
+                    logger.warning(
+                        "Failed to persist task templates for %s: %s", filename, e
+                    )
+
             return ProcessPdfResponse(
                 filename=filename,
                 chunks_count=len(chunks),
@@ -663,6 +704,64 @@ class MaterialService:
         Text Segments:
         {analysis_context}
         """
+
+    @staticmethod
+    def _build_task_templates(
+        document_map: DocumentMap,
+        source: str,
+        owner_id: Optional[str],
+    ) -> List[TaskTemplate]:
+        """Turn a DocumentMap's exercises into storable task templates.
+
+        Each template is a compact prose description of one exercise —
+        type, topic, subtypes, drilled grammar and a sample item. It is
+        prose rather than JSON because the text is what gets embedded,
+        and a sentence embeds far better than a serialised dict.
+
+        Note there is no CEFR level here. The classification pass reports
+        `document_kind` (TOEFL_Reading, Cambridge_FCE, ...), which implies
+        a level band but doesn't state one, and guessing a level we were
+        never told would poison retrieval with a fabricated filter. The
+        level stays empty and the retrieval side matches semantically.
+        """
+        templates: List[TaskTemplate] = []
+        for exercise in document_map.exercises:
+            exercise_type = exercise.type.strip()
+            if not exercise_type:
+                continue
+
+            lines = [f"Exercise type: {exercise_type}"]
+            if document_map.document_kind:
+                lines.append(f"Source document kind: {document_map.document_kind}")
+            if exercise.passage_topic_hint:
+                lines.append(f"Passage topic: {exercise.passage_topic_hint}")
+            if exercise.passage_word_count_estimate:
+                lines.append(
+                    f"Passage length: about {exercise.passage_word_count_estimate} words"
+                )
+            if exercise.question_count:
+                lines.append(f"Question count: {exercise.question_count}")
+            if exercise.question_subtypes:
+                lines.append(
+                    f"Question subtypes: {', '.join(exercise.question_subtypes)}"
+                )
+            if exercise.grammar_focus:
+                lines.append(f"Grammar focus: {', '.join(exercise.grammar_focus)}")
+            if exercise.example:
+                lines.append(f"Sample item: {exercise.example}")
+
+            templates.append(
+                TaskTemplate(
+                    id=str(uuid.uuid4()),
+                    template="\n".join(lines),
+                    user_id=owner_id or "",
+                    task_type=exercise_type,
+                    level="",
+                    skill=_EXERCISE_SKILL.get(exercise_type.lower(), "writing"),
+                    source=source,
+                )
+            )
+        return templates
 
     async def generate_standalone_task(
         self,
