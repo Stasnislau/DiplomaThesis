@@ -29,12 +29,65 @@ logger = logging.getLogger("ai_microservice")
 
 TaskModelType = TypeVar("TaskModelType", bound=BaseModel)
 
+# How many mined templates to inject as few-shot examples. Three conveys
+# a format without crowding out the level descriptor, which is the part
+# the generator must not lose sight of.
+_EXEMPLAR_LIMIT = 3
+# Mined templates are short by construction, but a model that stuffed a
+# whole passage into `example` shouldn't get to dominate the prompt — an
+# exemplar is a format hint, not source material.
+_EXEMPLAR_MAX_CHARS = 400
+
 
 class WritingTaskService:
     def __init__(self, vector_db_service: VectorDBService, ai_service: AI_Service):
         self.vector_db_service = vector_db_service
         self.ai_service = ai_service
         self.verification_pipeline = VerificationPipeline(ai_service)
+
+    def _retrieve_exemplars(
+        self,
+        level: str,
+        skill: str,
+        task_type: str,
+        user_context: Optional[UserContext] = None,
+    ) -> list[str]:
+        """Fetch task templates mined from the learner's own uploads to
+        use as few-shot format examples.
+
+        Entirely best-effort. An empty table, a fresh install, a vector-DB
+        error or a user who never uploaded anything all return [], and the
+        prompt builders drop the exemplar clause entirely in that case —
+        so generation behaves exactly as it did before exemplars existed.
+        A missing example must never cost the learner a task.
+
+        The query is prose rather than a hard filter on level/skill/type
+        because mined templates carry no CEFR level (the classification
+        pass never reports one). Matching semantically lets a template
+        rank on the signals it does have instead of being excluded by a
+        column that is empty for every row.
+        """
+        if not user_context or not user_context.user_id:
+            # Templates are user-scoped, so an unscoped search could only
+            # return someone else's material. Anonymous callers get none.
+            return []
+
+        query = f"{task_type} task for {skill} practice at CEFR level {level}"
+        try:
+            templates = self.vector_db_service.search_task_templates(
+                query,
+                limit=_EXEMPLAR_LIMIT,
+                user_id=user_context.user_id,
+            )
+            exemplars: list[str] = []
+            for template in templates:
+                text = (getattr(template, "template", "") or "").strip()
+                if text:
+                    exemplars.append(text[:_EXEMPLAR_MAX_CHARS])
+            return exemplars
+        except Exception as e:
+            logger.debug(f"Exemplar retrieval failed, generating without: {e}")
+            return []
 
     async def generate_writing_multiple_choice_task(
         self, language: str, level: str, user_context: Optional[UserContext] = None,
@@ -53,10 +106,17 @@ class WritingTaskService:
             topic = variety_picker.pick_topic(effective_level, session_key=session_key)
 
         seed = str(uuid.uuid4())
+        exemplars = self._retrieve_exemplars(
+            level=effective_level,
+            skill="writing",
+            task_type="multiple_choice",
+            user_context=user_context,
+        )
         prompt = writing_multiple_choice_task_prompt(
             language, level, level_context.model_dump(),
             topic=topic, keywords=keywords, weaknesses=weaknesses, seed=seed,
             ui_locale_label=user_context.ui_locale_label if user_context else None,
+            exemplars=exemplars,
         )
         response = await self.ai_service.get_ai_response(
             prompt, user_context=user_context, temperature=0.8
@@ -97,10 +157,17 @@ class WritingTaskService:
             topic = variety_picker.pick_topic(effective_level, session_key=session_key)
 
         seed = str(uuid.uuid4())
+        exemplars = self._retrieve_exemplars(
+            level=effective_level,
+            skill="writing",
+            task_type="fill_in_the_blank",
+            user_context=user_context,
+        )
         prompt = writing_fill_in_the_blank_task_prompt(
             language, level, level_context.model_dump(),
             topic=topic, keywords=keywords, weaknesses=weaknesses, seed=seed,
             ui_locale_label=user_context.ui_locale_label if user_context else None,
+            exemplars=exemplars,
         )
         response = await self.ai_service.get_ai_response(
             prompt, user_context=user_context, temperature=0.8

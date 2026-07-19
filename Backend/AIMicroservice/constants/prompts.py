@@ -19,6 +19,30 @@ def _ui_lang_clause(ui_locale_label: Optional[str], fields: list[str]) -> str:
     )
 
 
+def _exemplar_clause(exemplars: Optional[list[str]]) -> str:
+    """Render task templates mined from the learner's own uploads as
+    few-shot format examples.
+
+    Returns no clause at all when there are none, so an empty template
+    store (fresh install, user who never uploaded a PDF, retrieval error)
+    produces a byte-identical prompt to the pre-exemplar behaviour. Same
+    degrade-to-plain shape as `lesson_hint` when there's no topic.
+    """
+    if not exemplars:
+        return ""
+    blocks = "\n".join(
+        f"        --- EXAMPLE {i} ---\n        {e}"
+        for i, e in enumerate(exemplars, 1)
+    )
+    return f"""
+        FORMAT REFERENCE (mined from material this learner uploaded —
+        match the SHAPE and DIFFICULTY, never the content):
+{blocks}
+        These show what this learner's own material looks like. Do NOT
+        reuse their wording, topic, or answers — calibrate against them.
+"""
+
+
 def writing_fill_in_the_blank_task_prompt(
     language: str,
     level: str,
@@ -28,6 +52,7 @@ def writing_fill_in_the_blank_task_prompt(
     weaknesses: list[str] | None = None,
     seed: str | None = None,
     ui_locale_label: Optional[str] = None,
+    exemplars: Optional[list[str]] = None,
 ) -> str:
     lesson_hint = ""
     if topic or keywords or weaknesses:
@@ -63,7 +88,7 @@ def writing_fill_in_the_blank_task_prompt(
 
         Level proficiency description:
         {level_context}
-        {lesson_hint}
+        {lesson_hint}{_exemplar_clause(exemplars)}
         RANDOMNESS SEED: {seed or 'None'}{seed_constraint}
         *GUIDELINES:*
         1. Write one sentence in {language}. The sentence must test a key skill for {level} —
@@ -116,6 +141,7 @@ def writing_multiple_choice_task_prompt(
     weaknesses: list[str] | None = None,
     seed: str | None = None,
     ui_locale_label: Optional[str] = None,
+    exemplars: Optional[list[str]] = None,
 ) -> str:
     lesson_hint = ""
     if topic or keywords or weaknesses:
@@ -143,7 +169,7 @@ def writing_multiple_choice_task_prompt(
 
         Level proficiency description:
         {level_context}
-        {lesson_hint}
+        {lesson_hint}{_exemplar_clause(exemplars)}
         RANDOMNESS SEED: {seed or 'None'}{seed_constraint}
         *GUIDELINES:*
         1. The task is a SINGLE sentence with ONE clear objective — grammar OR vocabulary.
