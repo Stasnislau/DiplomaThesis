@@ -80,6 +80,14 @@ resource "google_compute_instance" "app" {
     }
   }
 
+  # The AI service talks to Vertex through ADC, which on GCE means the
+  # instance's service account. The default compute SA needs the
+  # cloud-platform scope, otherwise the metadata token is too narrow
+  # for aiplatform and every Gemini call 403s.
+  service_account {
+    scopes = ["https://www.googleapis.com/auth/cloud-platform"]
+  }
+
   metadata = {
     ssh-keys = "${var.ssh_user}:${file(var.ssh_public_key_path)}"
   }

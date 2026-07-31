@@ -38,6 +38,14 @@ GOOGLE_TTS_API_KEY=
 
 GROQ_API_KEY=
 
+# ── Vertex AI (Gemini) ───────────────────────────────────────────
+# Auth is ADC via the VM's service account — no key here. The trial
+# project only serves the 2.5 family, so pin the model; drop the
+# override once the billing account is upgraded.
+VERTEX_AI_PROJECT_ID=eloquent-grail-501516-e7
+VERTEX_AI_LOCATION=us-central1
+VERTEX_CHAT_MODEL=vertex_ai/gemini-2.5-pro
+
 # ── Frontend ──────────────────────────────────────────────────────
 # Replace YOUR_SERVER_IP with the actual VM public IP (terraform output instance_ip)
 VITE_API_URL=http://YOUR_SERVER_IP:3001
