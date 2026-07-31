@@ -836,6 +836,7 @@ const en = {
         // Auth microservice
         AUTH_INVALID_CREDENTIALS: "Wrong email or password. Please try again.",
         AUTH_EMAIL_TAKEN: "An account with this email already exists.",
+        AUTH_EMAIL_REQUIRED: "Enter your e-mail address.",
         AUTH_REFRESH_TOKEN_REQUIRED: "Please sign in again.",
         AUTH_REFRESH_TOKEN_INVALID: "Your session is invalid. Please sign in again.",
         AUTH_REFRESH_TOKEN_EXPIRED: "Your session has expired. Please sign in again.",
@@ -1693,6 +1694,7 @@ const pl = {
         // Auth microservice
         AUTH_INVALID_CREDENTIALS: "Nieprawidłowy email lub hasło. Spróbuj ponownie.",
         AUTH_EMAIL_TAKEN: "Konto z tym adresem e-mail już istnieje.",
+        AUTH_EMAIL_REQUIRED: "Podaj swój adres e-mail.",
         AUTH_REFRESH_TOKEN_REQUIRED: "Zaloguj się ponownie.",
         AUTH_REFRESH_TOKEN_INVALID: "Twoja sesja jest nieprawidłowa. Zaloguj się ponownie.",
         AUTH_REFRESH_TOKEN_EXPIRED: "Twoja sesja wygasła. Zaloguj się ponownie.",
@@ -2548,6 +2550,7 @@ const es = {
         // Auth microservice
         AUTH_INVALID_CREDENTIALS: "Email o contraseña incorrectos. Inténtalo de nuevo.",
         AUTH_EMAIL_TAKEN: "Ya existe una cuenta con este correo electrónico.",
+        AUTH_EMAIL_REQUIRED: "Introduce tu dirección de correo.",
         AUTH_REFRESH_TOKEN_REQUIRED: "Vuelve a iniciar sesión.",
         AUTH_REFRESH_TOKEN_INVALID: "Tu sesión no es válida. Vuelve a iniciar sesión.",
         AUTH_REFRESH_TOKEN_EXPIRED: "Tu sesión ha caducado. Vuelve a iniciar sesión.",

@@ -42,12 +42,9 @@ for (const { name, path } of PUBLIC_PAGES) {
         console.log(`\n=== A11y violations on ${name} ===\n${report}\n`);
       }
 
-      const criticalOnly = results.violations.filter(
-        (v) => v.impact === "critical",
-      );
       expect(
-        criticalOnly,
-        `Found ${criticalOnly.length} critical a11y violation(s) on ${name}`,
+        critical,
+        `Found ${critical.length} critical or serious a11y violation(s) on ${name}`,
       ).toHaveLength(0);
     });
 

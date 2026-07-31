@@ -1,15 +1,22 @@
 /* eslint-disable */
 var jumpToCode = (function init() {
+    // Classes of code we would like to highlight in the file view
     var missingCoverageClasses = ['.cbranch-no', '.cstat-no', '.fstat-no'];
-    var fileListingElements = ['td.pct.low'];
-    var notSelector = ':not(' + missingCoverageClasses.join('):not(') + ') > ';
 
+    // Elements to highlight in the file listing view
+    var fileListingElements = ['td.pct.low'];
+
+    // We don't want to select elements that are direct descendants of another match
+    var notSelector = ':not(' + missingCoverageClasses.join('):not(') + ') > '; // becomes `:not(a):not(b) > `
+
+    // Selector that finds elements on the page to which we can jump
     var selector =
         fileListingElements.join(', ') +
         ', ' +
         notSelector +
-        missingCoverageClasses.join(', ' + notSelector);
+        missingCoverageClasses.join(', ' + notSelector); // becomes `:not(a):not(b) > a, :not(a):not(b) > b`
 
+    // The NodeList of matching elements
     var missingCoverageElements = document.querySelectorAll(selector);
 
     var currentIndex;
@@ -60,11 +67,12 @@ var jumpToCode = (function init() {
             document.getElementById('fileSearch') === document.activeElement &&
             document.activeElement != null
         ) {
+            // if we're currently focused on the search input, we don't want to navigate
             return;
         }
 
         switch (event.which) {
-            case 78: // n   
+            case 78: // n
             case 74: // j
                 goToNext();
                 break;

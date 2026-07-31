@@ -118,9 +118,15 @@ def _ai_cache_put(key: str, value: str) -> None:
     _ai_cache[key] = (time.time() + _AI_CACHE_TTL, value)
 
 
+# Vertex model id, overridable per environment: a fresh GCP free-trial
+# project only serves the 2.5 family, while an upgraded billing account
+# also gets gemini-3-pro-preview. Swapping takes one env var, no rebuild.
+VERTEX_CHAT_MODEL = os.getenv("VERTEX_CHAT_MODEL", "vertex_ai/gemini-3-pro-preview")
+
+
 PROVIDER_CONFIG: Dict[str, Dict[str, Any]] = {
     "openai": {"model": "gpt-5.4-mini"},
-    "google-geminis": {"model": "vertex_ai/gemini-2.5-flash"},
+    "google-geminis": {"model": VERTEX_CHAT_MODEL},
     "mistral": {"model": "mistral/mistral-large-latest"},
     "claude": {"model": "anthropic/claude-haiku-4-5-20251001"},
     "deepseek": {
@@ -177,7 +183,7 @@ class AI_Service:
     async def get_ai_response(
         self, 
         prompt: str, 
-        model: str = "vertex_ai/gemini-2.5-flash",
+        model: str = VERTEX_CHAT_MODEL,
         response_format: Optional[Dict[str, str]] = {"type": "json_object"},
         system_prompt: str = "You are a philologist with over 20 years of experience in language education.",
         user_context: Optional[UserContext] = None,

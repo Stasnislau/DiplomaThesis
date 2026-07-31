@@ -255,6 +255,16 @@ export class UserService {
     surname: string;
     email?: string;
   }): Promise<boolean> {
+    // Same guard as getUser: an update that arrives with no identity
+    // must be refused outright, not turned into a lookup for
+    // `id: undefined` whose result decides the answer.
+    if (!userData.id) {
+      throwWithCode(
+        USER_ID_REQUIRED,
+        HttpStatus.BAD_REQUEST,
+        "User ID is required",
+      );
+    }
     const user = await this.prisma.user.findUnique({
       where: { id: userData.id },
     });

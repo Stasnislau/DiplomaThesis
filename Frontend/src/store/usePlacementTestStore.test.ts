@@ -201,4 +201,57 @@ describe("usePlacementTestStore", () => {
       expect(state.nextTask).toBe(null);
     });
   });
+
+  describe("setNextTask", () => {
+    const onScreen = {
+      id: "1",
+      type: "multiple_choice" as const,
+      question: "Already on screen?",
+      options: ["A", "B"],
+      correctAnswer: ["A"],
+    };
+
+    const prefetched = {
+      id: "2",
+      type: "fill_in_the_blank" as const,
+      question: "Prefetched?",
+      correctAnswer: ["answer"],
+    };
+
+    it("holds a prefetched question back while one is on screen", () => {
+      act(() => {
+        usePlacementTestStore
+          .getState()
+          .setTasks({ current: onScreen, next: null });
+      });
+
+      act(() => {
+        usePlacementTestStore.getState().setNextTask(prefetched);
+      });
+
+      const state = usePlacementTestStore.getState();
+      expect(state.currentTask).toEqual(onScreen);
+      expect(state.nextTask).toEqual(prefetched);
+    });
+
+    it("shows a question that arrives after the learner has answered", () => {
+      act(() => {
+        usePlacementTestStore
+          .getState()
+          .setTasks({ current: onScreen, next: null });
+      });
+
+      act(() => {
+        usePlacementTestStore.getState().advanceTasks();
+      });
+
+      act(() => {
+        usePlacementTestStore.getState().setNextTask(prefetched);
+      });
+
+      const state = usePlacementTestStore.getState();
+      expect(state.currentTask).toEqual(prefetched);
+      expect(state.nextTask).toBe(null);
+    });
+  });
 });

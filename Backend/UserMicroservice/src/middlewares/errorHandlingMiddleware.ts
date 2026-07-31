@@ -85,6 +85,10 @@ export class ErrorHandlingMiddleware implements ExceptionFilter {
     if (exception instanceof HttpException) {
       this.handleError(exception, host);
     } else {
+      // The real message stays in the server log. It can carry a
+      // connection string, a driver path, or part of a query, and the
+      // client has no use for any of that, so the response only names
+      // the stable code.
       this.logger.error(
         `Unhandled error: ${exception.message}`,
         exception.stack,
@@ -92,7 +96,7 @@ export class ErrorHandlingMiddleware implements ExceptionFilter {
       this.handleError(
         new InternalServerErrorException({
           code: USER_INTERNAL_ERROR,
-          message: exception.message || "Internal server error",
+          message: "Internal server error",
         }),
         host,
       );

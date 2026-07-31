@@ -1,5 +1,6 @@
 import * as bcrypt from "bcrypt";
 import * as request from "supertest";
+import { of } from "rxjs";
 
 import { INestApplication, ValidationPipe } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
@@ -9,6 +10,7 @@ import {
 } from "./helpers/jwt.helper";
 
 import { AppModule } from "../src/appModule";
+import { ErrorHandlingMiddleware } from "../src/middlewares/errorHandlingMiddleware";
 import { PrismaService } from "../prisma/prismaService";
 import { Role } from "@prisma/client";
 
@@ -47,6 +49,20 @@ describe("AuthController (E2E)", () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     })
+      // Without this the fixture opens a real AMQP connection during
+      // module init and the whole suite fails on a machine that has no
+      // broker running. The payloads themselves are asserted in the
+      // unit specs, so a recording stub is enough at this layer.
+      .overrideProvider("EVENT_SERVICE")
+      .useValue({
+        // `of(...)` and not a bare object: the service awaits
+        // lastValueFrom(emit(...)), which never settles on a stub that
+        // is not an Observable.
+        emit: jest.fn().mockReturnValue(of(undefined)),
+        send: jest.fn().mockReturnValue(of(undefined)),
+        connect: jest.fn().mockResolvedValue(undefined),
+        close: jest.fn(),
+      })
       .overrideProvider(PrismaService)
       .useValue({
         user: {
@@ -70,6 +86,9 @@ describe("AuthController (E2E)", () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
+    // main.ts installs this filter, so without it the suite would be
+    // asserting a different error shape from the one clients receive.
+    app.useGlobalFilters(new ErrorHandlingMiddleware());
     app.setGlobalPrefix("api");
     app.useGlobalPipes(
       new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
@@ -113,7 +132,7 @@ describe("AuthController (E2E)", () => {
       expect(prismaService.user.create).toHaveBeenCalled();
     });
 
-    it("should return 400 when email already exists", async () => {
+    it("should return 409 when email already exists", async () => {
       const existingUser = {
         email: "existing@example.com",
         password: "password123",
@@ -126,7 +145,7 @@ describe("AuthController (E2E)", () => {
       await request(app.getHttpServer())
         .post("/api/auth/register")
         .send(existingUser)
-        .expect(400);
+        .expect(409);
     });
 
     it("should return 400 when email is invalid format", async () => {
@@ -176,7 +195,11 @@ describe("AuthController (E2E)", () => {
 
       expect(response.body.success).toBe(true);
       expect(response.body.payload).toHaveProperty("accessToken");
-      expect(response.body.payload).toHaveProperty("refreshToken");
+      // The refresh token leaves in an http-only cookie so that page
+      // scripts cannot read it, which is why it is absent from the body.
+      const cookies = response.headers["set-cookie"] as unknown as string[];
+      expect(cookies.join(";")).toContain("refreshToken=");
+      expect(cookies.join(";")).toContain("HttpOnly");
     });
 
     it("should return 401 with invalid credentials", async () => {
@@ -360,22 +383,22 @@ describe("AuthController (E2E)", () => {
       expect(prismaService.credentials.update).toHaveBeenCalled();
     });
 
-    it("should return 401 when user not found", async () => {
+    it("should return 404 when no account matches the address", async () => {
       prismaService.user.findUnique.mockResolvedValue(null);
 
       await request(app.getHttpServer())
         .post("/api/auth/resetPassword")
         .send({ email: "nonexistent@example.com" })
-        .expect(401);
+        .expect(404);
     });
 
-    it("should validate email parameter", async () => {
-      await request(app.getHttpServer())
+    it("rejects a request that carries no address", async () => {
+      const res = await request(app.getHttpServer())
         .post("/api/auth/resetPassword")
         .send({})
-        .expect((res) => {
-          expect([400, 401]).toContain(res.status);
-        });
+        .expect(400);
+
+      expect(res.body.payload.code).toBe("AUTH_EMAIL_REQUIRED");
     });
   });
 

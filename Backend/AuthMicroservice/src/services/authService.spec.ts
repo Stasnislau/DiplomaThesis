@@ -18,7 +18,7 @@ import { ClientProxy } from "@nestjs/microservices";
 import { JwtService } from "@nestjs/jwt";
 import { PrismaService } from "../../prisma/prismaService";
 import { Role } from "@prisma/client";
-import { of } from "rxjs";
+import { of, throwError } from "rxjs";
 
 /**
  * Assert that a thrown HttpException carries a specific error code in
@@ -326,6 +326,23 @@ describe("AuthService", () => {
       );
       expect(prismaService.user.create).not.toHaveBeenCalled();
     });
+
+    it("still returns true when the user.created emit fails", async () => {
+      const userDto = {
+        email: "emit-fail@example.com",
+        password: "password123",
+        name: "John",
+        surname: "Doe",
+      };
+      prismaService.user.findUnique.mockResolvedValue(null);
+      prismaService.user.create.mockResolvedValue(mockUser as any);
+      (bcrypt.hash as jest.Mock).mockResolvedValue("hashedPassword123");
+      eventService.emit.mockReturnValue(
+        throwError(() => new Error("broker down")),
+      );
+
+      await expect(service.register(userDto)).resolves.toBe(true);
+    });
   });
 
   describe("generateAccessToken", () => {
@@ -482,6 +499,49 @@ describe("AuthService", () => {
         service.refreshToken("valid.token"),
         "AUTH_USER_NOT_FOUND",
       );
+    });
+
+    it("should reject when JWT verification throws", async () => {
+      jwtService.verify.mockImplementation(() => {
+        throw new Error("bad signature");
+      });
+
+      await expectThrownWithCode(
+        service.refreshToken("broken.token"),
+        "AUTH_REFRESH_TOKEN_INVALID",
+      );
+    });
+
+    it("should reject when the verified exp claim is already past", async () => {
+      jwtService.verify.mockReturnValue({
+        sub: mockUser.id,
+        exp: Math.floor(Date.now() / 1000) - 10,
+      });
+
+      await expectThrownWithCode(
+        service.refreshToken("expired.token"),
+        "AUTH_REFRESH_TOKEN_EXPIRED",
+      );
+    });
+
+    it("should revoke the token family on device fingerprint mismatch", async () => {
+      jwtService.verify.mockReturnValue({
+        sub: mockUser.id,
+        exp: Math.floor(Date.now() / 1000) + 3600,
+        dvc: "fingerprint-a",
+      });
+      prismaService.refreshToken.findUnique.mockResolvedValue(
+        mockRefreshToken as any,
+      );
+      prismaService.refreshToken.deleteMany.mockResolvedValue({ count: 1 } as any);
+
+      await expectThrownWithCode(
+        service.refreshToken("bound.token", "fingerprint-b"),
+        "AUTH_REFRESH_TOKEN_INVALID",
+      );
+      expect(prismaService.refreshToken.deleteMany).toHaveBeenCalledWith({
+        where: { userId: mockUser.id },
+      });
     });
   });
 

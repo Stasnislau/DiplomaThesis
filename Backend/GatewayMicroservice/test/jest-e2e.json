@@ -11,10 +11,12 @@
     "^.+\\.(t|j)s$": "ts-jest"
   },
   "moduleNameMapper": {
-    "^src/(.*)$": "<rootDir>/../src/$1",
-    "^prisma/(.*)$": "<rootDir>/../prisma/$1"
+    "^src/(.*)$": "<rootDir>/../src/$1"
   },
-  "setupFiles": [
-    "<rootDir>/../src/test-env.ts"
-  ]
+  "collectCoverageFrom": [
+    "../src/**/*.(t|j)s",
+    "!../src/main.ts"
+  ],
+  "coverageDirectory": "../coverage-e2e",
+  "maxWorkers": 1
 }

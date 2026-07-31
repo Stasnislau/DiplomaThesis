@@ -1,6 +1,6 @@
 """End-to-end tests with REAL LLM calls — no AI mocks.
 
-These tests hit Vertex AI (gemini-2.5-flash) so they are slow
+These tests hit Vertex AI (gemini-3-pro-preview) so they are slow
 (~10-30s each) and cost real tokens. Run explicitly:
 
     pytest tests/e2e/ -v -s

@@ -82,7 +82,13 @@
       "<rootDir>/test-env.ts"
     ],
     "collectCoverageFrom": [
-      "**/*.(t|j)s"
+      "**/*.(t|j)s",
+      "!**/main.ts",
+      "!**/appModule.ts",
+      "!**/app.module.ts",
+      "!**/*Module.ts",
+      "!**/*.module.ts",
+      "!**/*.spec.ts"
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"

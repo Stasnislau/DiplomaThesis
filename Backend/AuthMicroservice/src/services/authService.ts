@@ -23,6 +23,7 @@ import {
   AUTH_REFRESH_TOKEN_INVALID,
   AUTH_REFRESH_TOKEN_REQUIRED,
   AUTH_USER_NOT_FOUND,
+  AUTH_EMAIL_REQUIRED,
   throwWithCode,
 } from "../utils/errorCodes";
 
@@ -388,6 +389,17 @@ export class AuthService {
   }
 
   async resetPassword(email: string) {
+    // A missing e-mail used to reach failedKey() and crash on
+    // undefined.trim(), which answered 500 to what is an ordinary bad
+    // request. Reject it here with the same stable-code shape the rest
+    // of the service uses.
+    if (typeof email !== "string" || email.trim() === "") {
+      throwWithCode(
+        AUTH_EMAIL_REQUIRED,
+        HttpStatus.BAD_REQUEST,
+        "Email is required",
+      );
+    }
     const key = failedKey(email);
 
     // Per-email throttle: one reset every RESET_WINDOW_MS. Without it,

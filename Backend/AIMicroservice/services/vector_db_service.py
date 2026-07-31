@@ -159,6 +159,12 @@ class VectorDBService:
 
             if self.materials_table_name in self.db.table_names():
                 table = self.db.open_table(self.materials_table_name)
+                # A table written before uploads were scoped to an owner has no
+                # user_id column, and adding a row that carries one fails against
+                # that older schema. Widen the table once, defaulting the existing
+                # rows to the empty owner that search_materials already excludes.
+                if "user_id" not in table.schema.names:
+                    table.add_columns({"user_id": "''"})
                 table.add(data=df)
             else:
                 self.db.create_table(self.materials_table_name, data=df)

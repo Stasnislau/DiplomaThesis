@@ -1,5 +1,6 @@
 import { CreateUserMaterialDto } from "../dtos/createMaterial.dto";
-import { Injectable } from "@nestjs/common";
+import { HttpStatus, Injectable } from "@nestjs/common";
+import { USER_ID_REQUIRED, throwWithCode } from "../utils/errorCodes";
 import { Prisma } from "@prisma/client";
 import { PrismaService } from "prisma/prismaService";
 
@@ -18,6 +19,18 @@ export class MaterialService {
   }
 
   async findAllForUser(userId: string) {
+    // Every other read in this service is scoped by owner. Without
+    // this guard a call that arrives with no identity would query for
+    // `userId: undefined` and quietly return a page of nothing, which
+    // reads to the caller like an empty library rather than a refusal.
+    if (!userId) {
+      throwWithCode(
+        USER_ID_REQUIRED,
+        HttpStatus.BAD_REQUEST,
+        "User ID is required",
+      );
+    }
+
     return this.prisma.userMaterial.findMany({
       where: {
         userId,
