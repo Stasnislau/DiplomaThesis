@@ -149,7 +149,7 @@ async def test_analyze_user_audio_missing_groq_key(
         await speaking_service.analyze_user_audio(b"audio", "x.mp3", "English")
     assert exc_info.value.status_code == 500
     assert exc_info.value.detail["code"] == "SPEAKING_GROQ_KEY_MISSING"
-    assert "GROQ_API_KEY" in exc_info.value.detail["message"]
+    assert "Groq" in exc_info.value.detail["message"]
 
 
 def test_pronunciation_metrics_low_confidence_words(

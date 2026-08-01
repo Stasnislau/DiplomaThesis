@@ -156,16 +156,39 @@ Respond with a single JSON object only, no prose, with these keys:
             self._analyze_cache.pop(oldest, None)
         self._analyze_cache[key] = (time.time() + _SPEAKING_CACHE_TTL, value)
 
+    async def _resolve_groq_key(self, ctx: Optional[UserContext]) -> Optional[str]:
+        """The learner's own Groq key if they stored one, else the system key.
+
+        Transcription used to read GROQ_API_KEY from the environment and
+        nothing else, so a learner who had configured Groq in the interface
+        still got a 500 whenever the host had no key of its own.
+        """
+        if ctx is not None:
+            try:
+                token = await self.user_service.get_default_ai_token(
+                    ctx, ai_provider_id="groq"
+                )
+            except Exception as exc:  # noqa: BLE001
+                logger.info("no stored Groq token for this learner: %s", exc)
+            else:
+                if token.get("aiProviderId") == "groq" and token.get("token"):
+                    return token["token"]
+        return os.getenv("GROQ_API_KEY")
+
     async def _transcribe_audio_with_whisper(
-        self, audio_file_bytes: bytes, filename: str, language_code: str
+        self,
+        audio_file_bytes: bytes,
+        filename: str,
+        language_code: str,
+        user_context: Optional[UserContext] = None,
     ) -> WhisperTranscriptionResult:
-        api_key = os.getenv("GROQ_API_KEY")
+        api_key = await self._resolve_groq_key(user_context)
         if not api_key:
             from utils.error_codes import SPEAKING_GROQ_KEY_MISSING, raise_with_code
             raise_with_code(
                 SPEAKING_GROQ_KEY_MISSING,
                 500,
-                "GROQ_API_KEY is not configured for speech transcription.",
+                "No Groq key available: the learner has none stored and the host has none configured.",
             )
 
         ext = (filename or "recording.webm").rsplit(".", 1)[-1].lower()
@@ -451,7 +474,7 @@ Respond with a single JSON object only, no prose, with these keys:
             return cached
 
         transcription = await self._transcribe_audio_with_whisper(
-            audio_file_bytes, effective_filename, language_code
+            audio_file_bytes, effective_filename, language_code, user_context
         )
         logger.info(f"Transcription completed: {transcription.text[:100]}...")
 
@@ -734,7 +757,7 @@ Respond with a single JSON object only, no prose, with these keys:
         language_code = convert_to_language_code(language) if language else "en"
 
         transcription = await self._transcribe_audio_with_whisper(
-            audio_file_bytes, effective_filename, language_code
+            audio_file_bytes, effective_filename, language_code, user_context
         )
         pronunciation = self._compute_pronunciation_metrics(transcription)
         transcript_text = transcription.text.strip()

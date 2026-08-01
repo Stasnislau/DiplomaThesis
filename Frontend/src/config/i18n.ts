@@ -511,6 +511,8 @@ const en = {
       noProvidersBody:
         "Add your first AI provider API key above to start using advanced language features.",
       defaultBadge: "Default",
+      defaultProviderLabel: "Default provider",
+      noDefaultYet: "None selected yet",
       makeDefault: "Make default",
       deleteToken: "Remove key",
       verify: "Verify",
@@ -1598,6 +1600,8 @@ const pl = {
       noProvidersBody:
         "Dodaj powyżej pierwszy klucz API, aby zacząć korzystać z zaawansowanych funkcji.",
       defaultBadge: "Domyślny",
+      defaultProviderLabel: "Domyślny dostawca",
+      noDefaultYet: "Jeszcze nie wybrano",
       makeDefault: "Ustaw domyślny",
       deleteToken: "Usuń klucz",
       verify: "Sprawdź",
@@ -2451,6 +2455,8 @@ const es = {
       noProvidersBody:
         "Añade arriba tu primera clave API para empezar a usar las funciones avanzadas.",
       defaultBadge: "Predeterminado",
+      defaultProviderLabel: "Proveedor predeterminado",
+      noDefaultYet: "Aún no hay ninguno",
       makeDefault: "Hacer predeterminado",
       deleteToken: "Eliminar clave",
       verify: "Verificar",

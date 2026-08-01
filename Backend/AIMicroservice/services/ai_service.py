@@ -161,10 +161,18 @@ class AI_Service:
         litellm_model = model
         litellm_params: Dict[str, Any] = {}
 
+        token = None
         if user_context:
-            token = await self.user_service.get_default_ai_token(
-                user_context, ai_provider_id=ai_provider_id
-            )
+            try:
+                token = await self.user_service.get_default_ai_token(
+                    user_context, ai_provider_id=ai_provider_id
+                )
+            except Exception as exc:  # noqa: BLE001
+                # A learner who has stored no key of their own still gets a
+                # task: the call falls through to the system key below. Only
+                # a learner-supplied key that fails should surface an error.
+                logger.info("no stored token for this learner, using the system key: %s", exc)
+        if token:
             litellm_model, litellm_params = self._resolve_provider_params(
                 token.get("aiProviderId", "google-geminis"),
                 token.get("token"),
