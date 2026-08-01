@@ -114,7 +114,6 @@ async def test_analyze_user_audio_no_speech(
     assert result.transcription == ""
     assert "Could not transcribe" in result.overall_assessment
     assert result.pronunciation.fluency_score == 0.0
-    # AI feedback path must be skipped when transcription is empty
     mock_ai_service.get_ai_response.assert_not_called()
 
 
@@ -129,10 +128,6 @@ async def test_analyze_user_audio_groq_provider_error(
         with pytest.raises(HTTPException) as exc_info:
             await speaking_service.analyze_user_audio(b"audio", "x.mp3", "English")
         assert exc_info.value.status_code == 502
-        # Errors are now structured `{code, message}` dicts (see
-        # utils/error_codes.raise_with_code) so the FE can branch on
-        # `detail.code`. Substring-check the human message rather than
-        # the whole detail blob.
         assert "transcription provider error" in exc_info.value.detail["message"]
 
 
@@ -153,9 +148,6 @@ async def test_analyze_user_audio_missing_groq_key(
     with pytest.raises(HTTPException) as exc_info:
         await speaking_service.analyze_user_audio(b"audio", "x.mp3", "English")
     assert exc_info.value.status_code == 500
-    # Structured `{code, message}` error shape — see Phase 1 commit
-    # fd54c2e. Assert on the dedicated code field rather than scraping
-    # the message text.
     assert exc_info.value.detail["code"] == "SPEAKING_GROQ_KEY_MISSING"
     assert "GROQ_API_KEY" in exc_info.value.detail["message"]
 
@@ -193,6 +185,6 @@ def test_pronunciation_metrics_low_confidence_words(
 
     metrics = speaking_service._compute_pronunciation_metrics(transcription)
 
-    assert metrics.overall_confidence == 0.0  # 1.0 + (-1.2) clamped to 0
-    assert metrics.low_confidence_words  # non-empty
+    assert metrics.overall_confidence == 0.0
+    assert metrics.low_confidence_words
     assert metrics.words_per_minute is not None

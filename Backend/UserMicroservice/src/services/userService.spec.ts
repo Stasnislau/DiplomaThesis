@@ -291,7 +291,6 @@ describe("UserService", () => {
 
       expect(result.success).toBe(true);
       expect(prisma.userLanguage.create).not.toHaveBeenCalled();
-      // Existing row promoted (no-op effectively, but the call goes through)
       expect((prisma.userLanguage as any).update).toHaveBeenCalledWith({
         where: { id: "ul-1" },
         data: expect.objectContaining({ isNative: true }),
@@ -310,12 +309,10 @@ describe("UserService", () => {
 
       await service.setNativeLanguage("user-123", "lang-2");
 
-      // Old native demoted
       expect((prisma.userLanguage as any).update).toHaveBeenCalledWith({
         where: { id: "ul-1" },
         data: { isNative: false },
       });
-      // Existing target row promoted (no fresh create)
       expect((prisma.userLanguage as any).update).toHaveBeenCalledWith({
         where: { id: "ul-2" },
         data: expect.objectContaining({
@@ -338,12 +335,10 @@ describe("UserService", () => {
 
       await service.setNativeLanguage("user-123", "lang-2");
 
-      // Old native demoted
       expect((prisma.userLanguage as any).update).toHaveBeenCalledWith({
         where: { id: "ul-1" },
         data: { isNative: false },
       });
-      // New row created for lang-2
       expect(prisma.userLanguage.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           languageId: "lang-2",

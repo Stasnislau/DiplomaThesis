@@ -8,7 +8,6 @@ type FetchOptions = {
   body?: string | FormData;
 };
 
-// Mutex: only one refresh at a time; concurrent 401s share the same promise.
 let refreshPromise: Promise<void> | null = null;
 
 function buildHeaders(
@@ -17,9 +16,6 @@ function buildHeaders(
 ): Record<string, string> {
   const headers: Record<string, string> = {
     Authorization: `Bearer ${token}`,
-    // Tell the backend which UI locale to use for AI-generated user-facing
-    // text (explanations, feedback, hints). Picked up by AI's
-    // extract_user_context and threaded into every prompt.
     "X-UI-Locale": (i18n.language || "en").split("-")[0].toLowerCase(),
   };
 
@@ -43,9 +39,6 @@ function buildHeaders(
 export async function fetchWithAuth(url: URL | string, options: FetchOptions) {
   try {
     let token = getAccessToken();
-    // `credentials: "include"` is required for the httpOnly refresh
-    // cookie to ride along on /auth/refresh and /auth/logout. The
-    // gateway's CORS allows it (`credentials: true`).
     let response = await fetch(url, {
       ...options,
       headers: buildHeaders(token, options),

@@ -3,11 +3,6 @@ from collections import deque
 from typing import Deque, Dict, List
 
 
-# Massively expanded topic pool. The previous list of ~22 per tier was
-# small enough that a 3-deep history filter caused the model to cycle
-# through the same 6-7 topics repeatedly. With 60-80 per tier and the
-# same history depth, perceived repetition drops below the user's
-# attention horizon for a normal study session.
 TOPICS_BY_TIER: Dict[str, List[str]] = {
     "beginner": [
         "daily routine",
@@ -200,8 +195,6 @@ TOPICS_BY_TIER: Dict[str, List[str]] = {
 }
 
 
-# Expanded tones — the prompt picks one and the AI threads it through
-# the whole task, so even with the same topic the *flavour* changes.
 TONES: List[str] = [
     "neutral",
     "humorous",
@@ -226,8 +219,6 @@ TONES: List[str] = [
 ]
 
 
-# Listening formats by level — a wider net so the same student gets a
-# news clip, a voicemail, and a panel discussion in the same session.
 FORMATS_BY_LEVEL: Dict[str, List[str]] = {
     "beginner": [
         "short monologue",
@@ -293,10 +284,6 @@ def tier_for_level(level: str) -> str:
 
 class VarietyPicker:
     def __init__(self, history_size: int = 6) -> None:
-        # Wider history so re-rolls don't land on the same 3-cycle. With
-        # the 60-80-topic pool above, a 6-deep filter still leaves plenty
-        # of candidates and eliminates the perceptual repeats people
-        # noticed in QA.
         self._recent_topics: Dict[str, Deque[str]] = {}
         self._recent_tones: Dict[str, Deque[str]] = {}
         self._recent_formats: Dict[str, Deque[str]] = {}

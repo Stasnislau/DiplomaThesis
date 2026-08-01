@@ -21,16 +21,6 @@ export interface RecordUserErrorData {
 export class UserErrorService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /**
-   * Record a recurring error (FR6). Upsert semantics on
-   * (userId, languageId, errorType, errorText): if a matching row
-   * already exists, bump its frequency and refresh lastOccurredAt;
-   * otherwise create it.
-   *
-   * There is no DB unique constraint on that tuple, so we do the
-   * find-then-update/create dance manually — same approach the
-   * placement-test flow uses for its user-language upsert.
-   */
   async record(data: RecordUserErrorData) {
     const language = await this.prisma.language.findFirst({
       where: { code: data.languageCode },
@@ -59,8 +49,6 @@ export class UserErrorService {
         data: {
           frequency: existing.frequency + 1,
           lastOccurredAt: new Date(),
-          // Keep the latest correction/context/source — the newest
-          // grading run is the most relevant one to show the user.
           correction: data.correction,
           source: data.source,
           context: data.context ?? null,
@@ -81,10 +69,6 @@ export class UserErrorService {
     });
   }
 
-  /**
-   * List a user's recurring errors for a given language, most
-   * frequent / most recent first — the actual FR6 "log".
-   */
   async listForUser(userId: string, languageCode: string) {
     const language = await this.prisma.language.findFirst({
       where: { code: languageCode },

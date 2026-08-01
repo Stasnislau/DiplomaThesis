@@ -7,15 +7,6 @@ import { AppModule } from "../src/appModule";
 import { ErrorHandlingMiddleware } from "../src/middlewares/errorHandlingMiddleware";
 import { PrismaService } from "../prisma/prismaService";
 
-/**
- * Request and response contracts at the HTTP boundary.
- *
- * The service answers a browser and two other services, and all three
- * depend on the same two promises: a body that fails validation never
- * reaches a handler, and a failure comes back in the envelope the
- * client knows how to read. Both promises live in the pipeline, so
- * they are checked here over real requests.
- */
 describe("User contracts (HTTP boundary)", () => {
   let app: INestApplication;
   let prisma: any;

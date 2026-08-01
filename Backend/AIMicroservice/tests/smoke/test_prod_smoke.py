@@ -34,9 +34,6 @@ import pytest
 from fastapi.testclient import TestClient
 
 
-# ---------- Auth setup --------------------------------------------
-
-
 _TEST_JWT_SECRET = "smoke-test-jwt-secret-for-tests-only"
 _TEST_USER_ID = "smoke-user-00000000"
 
@@ -63,9 +60,6 @@ def _auth_headers(user_id: str = _TEST_USER_ID, ui_locale: str = "en") -> dict:
     }
 
 
-# ---------- Test fixtures: app + boundary mocks --------------------
-
-
 @pytest.fixture(autouse=True)
 def _set_jwt_secret(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("JWT_SECRET", _TEST_JWT_SECRET)
@@ -80,21 +74,15 @@ def smoke_client(monkeypatch: pytest.MonkeyPatch) -> Iterable[TestClient]:
       - User microservice HTTP (history reads/writes)
       - Vector DB (in-process Mongo replacement)
     Yields a TestClient that responds to all auth-required routes."""
-    # Set required env BEFORE importing main (which may read at import time).
     monkeypatch.setenv("PUBLIC_BASE_URL", "http://smoke.test")
 
-    # Patch the user-service HTTP path so log_task_history / history
-    # reads don't try to reach a real microservice.
     fake_user_svc_get = AsyncMock(return_value={"success": True, "payload": []})
     fake_user_svc_post = AsyncMock(return_value={"success": True, "payload": {}})
 
-    # Patch vector DB so process_pdf doesn't try to talk to Qdrant.
     fake_vector_db = MagicMock()
     fake_vector_db.save_chunks = MagicMock()
     fake_vector_db.search_materials = MagicMock(return_value=[])
 
-    # Default AI mock — returns a benign DocumentMap-like JSON. Each
-    # test overrides via .side_effect when it needs a specific shape.
     fake_ai = AsyncMock(
         return_value=json.dumps(
             {
@@ -114,12 +102,9 @@ def smoke_client(monkeypatch: pytest.MonkeyPatch) -> Iterable[TestClient]:
         )
     )
 
-    # TTS — return canned MP3 bytes.
     fake_tts_synth = MagicMock(return_value=b"smoke-mp3-bytes")
     fake_multispeaker = MagicMock(return_value=(b"smoke-mp3-bytes", []))
 
-    # Whisper — also canned. The real one is _transcribe_audio_with_whisper
-    # which we patch at the SpeakingService instance level later.
     from main import app  # noqa: WPS433
     from services import (
         ai_service as ai_service_mod,
@@ -156,17 +141,12 @@ def smoke_client(monkeypatch: pytest.MonkeyPatch) -> Iterable[TestClient]:
         "services.speaking_service.aiofiles.open"
     ) as speak_aio:
 
-        # Async-context-manager stub so `async with aiofiles.open(...)`
-        # short-circuits to an in-memory write that succeeds.
         for ao in (listen_aio, speak_aio):
             ctx = MagicMock()
             ctx.__aenter__.return_value = AsyncMock()
             ctx.__aexit__.return_value = None
             ao.return_value = ctx
 
-        # Patch Whisper transcription on the singleton SpeakingService
-        # used by the controller. Default: a usable transcript so the
-        # downstream LLM path runs.
         from models.dtos.speaking_analysis_dtos import (
             WhisperSegment,
             WhisperTranscriptionResult,
@@ -194,8 +174,6 @@ def smoke_client(monkeypatch: pytest.MonkeyPatch) -> Iterable[TestClient]:
                 raw_response={},
             )
 
-        # Reach into the actual SpeakingService singleton main.py
-        # constructed at import time.
         from main import speaking_service as speaking_singleton
 
         speaking_singleton._transcribe_audio_with_whisper = AsyncMock(  # type: ignore[method-assign]
@@ -203,7 +181,6 @@ def smoke_client(monkeypatch: pytest.MonkeyPatch) -> Iterable[TestClient]:
         )
 
         client = TestClient(app)
-        # Expose the mocks for tests that need to override side_effect.
         client.fake_ai = fake_ai  # type: ignore[attr-defined]
         client.fake_whisper_factory = _fake_whisper  # type: ignore[attr-defined]
         client.fake_tts_multispeaker = fake_multispeaker  # type: ignore[attr-defined]
@@ -215,11 +192,6 @@ def _payload(resp_json: dict) -> Any:
     """Extract `payload` from BaseResponse, asserting `success`."""
     assert resp_json.get("success") is True, f"BaseResponse not success: {resp_json}"
     return resp_json["payload"]
-
-
-# ====================================================================
-# HEALTH + AUTH + APP SHELL
-# ====================================================================
 
 
 def test_health_ok(smoke_client: TestClient) -> None:
@@ -255,11 +227,6 @@ def test_protected_endpoint_rejects_forged_user_id(smoke_client: TestClient) -> 
     assert r.status_code == 401, f"Got {r.status_code}: {r.text[:200]}"
 
 
-# ====================================================================
-# PHASE 1 — MATERIALS (PDF → DocumentMap → quiz with 7 question types)
-# ====================================================================
-
-
 def _minimal_pdf_bytes() -> bytes:
     """Real PDF the parser will accept. We use reportlab if available
     so process_pdf's pypdf reader sees a clean text page."""
@@ -269,7 +236,6 @@ def _minimal_pdf_bytes() -> bytes:
 
         buf = io.BytesIO()
         c = canvas.Canvas(buf, pagesize=letter)
-        # Enough text to clear the 30% non-text-share garbled-detector.
         c.drawString(100, 720, "Smoke test reading passage.")
         c.drawString(100, 700, "This passage is for an integration smoke test.")
         c.drawString(100, 680, "It contains plain English sentences only.")
@@ -277,9 +243,6 @@ def _minimal_pdf_bytes() -> bytes:
         c.save()
         return buf.getvalue()
     except ImportError:
-        # Fall back to a bare-minimum PDF stub (won't extract text but
-        # is a valid PDF — process_pdf will then raise PDF_NO_TEXT,
-        # which is a known clean error path we can still smoke-check).
         return b"%PDF-1.4\n%EOF\n"
 
 
@@ -304,8 +267,6 @@ def test_phase1_upload_returns_document_map(smoke_client: TestClient) -> None:
     payload = _payload(r.json())
     assert payload["filename"] == "smoke.pdf"
     assert payload["status"] == "success"
-    # The FE round-trips this back into /materials/quiz, so the wire
-    # shape must include `document_map`.
     assert "document_map" in payload, payload.keys()
 
 
@@ -324,9 +285,6 @@ def test_phase1_quiz_round_trips_document_map_and_parses_all_7_types(
         ]
     )
 
-    # The pipeline calls AI: 1× per stimulus + 1× per questions.
-    # exercise has stimulus → 2 calls. We give each call the right
-    # canned JSON via side_effect.
     stimulus_json = json.dumps({"passage": "A short generated passage about birds."})
     seven_questions_json = json.dumps(
         {
@@ -424,11 +382,6 @@ def test_phase1_quiz_round_trips_document_map_and_parses_all_7_types(
         "multi_select_mc",
         "cloze_passage",
     }, f"Variants missed: {types_seen}"
-
-
-# ====================================================================
-# PHASE 2 — LISTENING (6 question types + multi-speaker TTS)
-# ====================================================================
 
 
 def test_phase2_listening_default_mix(smoke_client: TestClient) -> None:
@@ -575,11 +528,6 @@ def test_phase2_listening_each_simple_type_round_trips(
     assert len(questions) == 1 and questions[0]["type"] == qtype
 
 
-# ====================================================================
-# PHASE 3 — SPEAKING (5 formats: read_aloud, timed, repeat, picture, monologue)
-# ====================================================================
-
-
 @pytest.mark.parametrize(
     "fmt, returned_field",
     [
@@ -714,11 +662,6 @@ def test_phase3_grade_response_rejects_unknown_format(
     assert r.status_code == 400, r.text[:300]
 
 
-# ====================================================================
-# CROSS-PHASE: localization, error contracts
-# ====================================================================
-
-
 def test_locale_header_drives_ui_language_in_prompt(
     smoke_client: TestClient,
 ) -> None:
@@ -732,8 +675,6 @@ def test_locale_header_drives_ui_language_in_prompt(
         json={"language": "English", "level": "B1", "format": "timed_response"},
         headers=_auth_headers(ui_locale="pl"),
     )
-    # The first prompt-generator call wraps "Polish" into the
-    # translation slot — find that string in any call's prompt arg.
     found_polish = False
     for call in smoke_client.fake_ai.await_args_list:
         prompt_text = call.kwargs.get("prompt", "") + " ".join(str(a) for a in call.args)
@@ -741,11 +682,6 @@ def test_locale_header_drives_ui_language_in_prompt(
             found_polish = True
             break
     assert found_polish, "X-UI-Locale: pl did not surface as 'Polish' in the prompt"
-
-
-# ====================================================================
-# RESULT-LOGGING ENDPOINTS (history + adaptive feed)
-# ====================================================================
 
 
 def test_listening_result_endpoint_writes_history(
@@ -788,12 +724,8 @@ def test_listening_result_endpoint_writes_history(
     assert payload["taskType"] == "listening"
     assert payload["score"] == 50
     meta = payload["metadata"]
-    # The adaptive consumer reads these three blindly across all
-    # task types — verify the contract is honoured here.
     assert meta["errorTypes"] == ["dictation"]
     assert meta["errorExamples"][0]["text"] == "Type what you heard."
-    # weaknesses gets populated for low scores so the next
-    # adaptive call sees "listening comprehension" as a target.
     assert "listening comprehension" in meta["weaknesses"]
 
 
@@ -868,8 +800,6 @@ def test_materials_result_endpoint_writes_history(
     meta = payload["metadata"]
     assert meta["errorTypes"] == ["true_false"]
     assert meta["documentKind"] == "TOEFL_Reading"
-    # Low score → weakness recorded with documentKind, so adaptive
-    # can target the same kind of material next time.
     assert any("TOEFL_Reading" in w for w in meta["weaknesses"])
 
 
@@ -916,7 +846,7 @@ def test_structured_error_shape_for_bad_listening_request(
     and `payload.errors[]`."""
     r = smoke_client.post(
         "/api/tasks/listening",
-        json={"level": "A1"},  # missing `language`
+        json={"level": "A1"},
         headers=_auth_headers(),
     )
     assert r.status_code == 422

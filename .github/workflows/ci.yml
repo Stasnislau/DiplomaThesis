@@ -6,7 +6,6 @@ on:
   pull_request:
     branches: [main]
 
-# Cancel any in-flight run for the same branch when a new commit lands.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -43,8 +42,6 @@ jobs:
           cache: "npm"
           cache-dependency-path: Backend/AuthMicroservice/package-lock.json
       - run: npm ci
-      # Generate Prisma client so service files that import @prisma/client
-      # have types to compile against in CI.
       - run: npx prisma generate
       - run: npx jest
 
@@ -79,7 +76,6 @@ jobs:
           cache: "npm"
           cache-dependency-path: Frontend/package-lock.json
       - run: npm ci --legacy-peer-deps
-      # Cache the Playwright browser binaries between runs.
       - uses: actions/cache@v4
         id: pw-cache
         with:
@@ -89,8 +85,6 @@ jobs:
         run: npx playwright install --with-deps chromium
       - if: steps.pw-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
-      # Tests stub all backend routes via page.route, so the dev server
-      # is enough — no real Auth/User/AI needed in CI.
       - run: echo "VITE_API_URL=http://localhost:3001" > .env
       - run: npx playwright test --project=chromium
       - if: always()

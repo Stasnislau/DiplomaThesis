@@ -23,9 +23,6 @@ function ProtectedRoute({ children, accessLevel }: ProtectedRouteProps) {
 
   const { data: aiTokens, isLoading: isTokensLoading } = useGetUserAITokens();
   const [isTokenModalOpen, setTokenModalOpen] = useState(false);
-  // Sticky-dismiss flag: once the user closes the prompt this session,
-  // don't re-pop it on every navigation. Reset implicitly the next
-  // time the page is fully reloaded (sessionStorage scope).
   const [dismissed, setDismissed] = useState<boolean>(() => {
     try {
       return sessionStorage.getItem(DISMISSED_KEY) === "1";
@@ -51,15 +48,11 @@ function ProtectedRoute({ children, accessLevel }: ProtectedRouteProps) {
     setTokenModalOpen(shouldShowTokenModal);
   }, [shouldShowTokenModal]);
 
-  // If the user actually adds a token, allow the prompt to come back
-  // in a future session (clear the dismiss flag).
   useEffect(() => {
     if ((aiTokens?.length || 0) > 0) {
       try {
         sessionStorage.removeItem(DISMISSED_KEY);
-      } catch {
-        /* private mode / disabled storage — fine */
-      }
+      } catch { void 0; }
     }
   }, [aiTokens?.length]);
 
@@ -68,9 +61,7 @@ function ProtectedRoute({ children, accessLevel }: ProtectedRouteProps) {
     setDismissed(true);
     try {
       sessionStorage.setItem(DISMISSED_KEY, "1");
-    } catch {
-      /* private mode — fall back to in-memory dismiss only */
-    }
+    } catch { void 0; }
   };
 
   if (isLoading) {
@@ -83,9 +74,6 @@ function ProtectedRoute({ children, accessLevel }: ProtectedRouteProps) {
       {children}
       <Modal
         isOpen={isTokenModalOpen}
-        // X / backdrop click: just close. The user shouldn't be
-        // teleported to /settings/ai-tokens against their will —
-        // dismissing means "I'll handle it later."
         onClose={dismissModal}
         title={t("aiTokens.tokenModalTitle")}
         description={t("aiTokens.tokenModalBody")}

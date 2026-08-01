@@ -44,8 +44,6 @@ describe("ListeningTask Component", () => {
     expect(generateBtn).not.toBeDisabled();
 
     fireEvent.click(generateBtn);
-    // Default mix sends MC + FIB; the third button (Dictation) was
-    // not toggled and must NOT be in the request.
     expect(mockCreateTask).toHaveBeenCalledWith({
       language: "Spanish",
       level: "B1",
@@ -77,7 +75,6 @@ describe("ListeningTask Component", () => {
     fireEvent.click(screen.getByText("Spanish"));
     fireEvent.click(screen.getByText("B1"));
 
-    // Toggle off both defaults.
     fireEvent.click(screen.getByText("Multiple choice"));
     fireEvent.click(screen.getByText("Fill in the blank"));
 
@@ -115,10 +112,7 @@ describe("ListeningTask Component", () => {
 
     expect(screen.getByText("Show Transcript")).toBeInTheDocument();
     fireEvent.click(screen.getByText("Show Transcript"));
-    // "Hola amigo" appears both in the revealed transcript AND in the
-    // matching-question statement, so query by all and expect ≥1.
     expect(screen.getAllByText(/Hola amigo/).length).toBeGreaterThanOrEqual(1);
-    // Speaker chip rendered next to the audio player.
     expect(screen.getByText("🗣️ Speaker 1")).toBeInTheDocument();
     expect(screen.getByText("🗣️ Speaker 2")).toBeInTheDocument();
   });

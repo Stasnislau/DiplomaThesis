@@ -1,14 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { loginViaStorage } from "./helpers/auth";
 
-/**
- * Browser paths for the pages a learner reaches after signing in.
- *
- * Each case checks that the page mounts and shows its own content
- * rather than an error boundary, which is the failure these tests are
- * here to catch: a broken lazy chunk or a route that renders nothing
- * looks fine to every layer below the browser.
- */
 test.describe("Signed-in pages", () => {
   test.beforeEach(async ({ page }) => {
     await loginViaStorage(page);

@@ -14,14 +14,6 @@ import QuestionRenderer, {
   type UserAnswerValue,
 } from "@/pages/Tasks/components/MaterialsRenderers";
 
-/**
- * Map an internal Materials task-type slug to a friendly label and an
- * emoji. The same backend slug is reused for both the type analyser
- * (which detects what's in the uploaded PDF) and the quiz generator
- * (which produces actual questions in those formats), so the renderer
- * also has to handle the analyser's older aliases like
- * `gap_fill_grammar` and `gap_fill_vocab` that map to fill-in-blank.
- */
 const MATERIALS_TYPE_LABELS: Record<string, { defaultLabel: string; emoji: string }> = {
   multiple_choice:  { defaultLabel: "Multiple choice",       emoji: "🔘" },
   multi_select_mc:  { defaultLabel: "Multi-select",          emoji: "☑️" },
@@ -42,9 +34,6 @@ interface AnalyzedType {
   example: string;
 }
 
-/** Render a human-readable form of the canonical correct answer for
- *  any of the seven QuizQuestion shapes. Used in the post-submit
- *  feedback banner. */
 function summariseCorrectAnswer(q: QuizQuestion): string {
     switch (q.type) {
         case "multiple_choice":
@@ -80,9 +69,6 @@ export const MaterialsPage: React.FC = () => {
   const [analyzedTypes, setAnalyzedTypes] = useState<AnalyzedType[]>([]);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [quiz, setQuiz] = useState<QuizQuestion[]>([]);
-  // UserAnswerValue covers every shape the seven question types can
-  // hold: string for MC/open/T-F/FIB, string[] for multi-select, and
-  // Record<string,string> for matching pairs and cloze blanks.
   const [userAnswers, setUserAnswers] = useState<Record<number, UserAnswerValue>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
   
@@ -147,7 +133,6 @@ export const MaterialsPage: React.FC = () => {
           }
       });
   };
-
 
 
   const loadMaterial = (material: UserMaterial) => {
@@ -431,11 +416,8 @@ export const MaterialsPage: React.FC = () => {
                                  </div>
                              )}
 
-                             {/* Dispatcher renders the right component for every
-                                 question type — MC, multi-select, T/F, open,
-                                 fill-in-blank, matching, cloze passage. The
-                                 inline-MC-only path that lived here before
-                                 silently mis-rendered the four other shapes. */}
+                             {
+}
                              <QuestionRenderer
                                  question={q}
                                  answer={userAnswers[idx]}
@@ -462,12 +444,6 @@ export const MaterialsPage: React.FC = () => {
                             variant="primary"
                             onClick={() => {
                                 setIsSubmitted(true);
-                                // Log to history on submit so adaptive
-                                // logic can mine the wrong answers.
-                                // Without this the materials surface
-                                // logged only the GENERATION step
-                                // (score=null) and per-session
-                                // performance was invisible.
                                 let correct = 0;
                                 const errors: { type?: string; text?: string; suggestion?: string }[] = [];
                                 quiz.forEach((q, idx) => {

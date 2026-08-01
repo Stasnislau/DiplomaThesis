@@ -16,7 +16,6 @@ import {
   AUTH_TOKEN_EXPIRED,
 } from "../utils/errorCodes";
 
-/** Error response payload structure */
 interface ErrorPayload {
   code?: string;
   message: string;
@@ -24,16 +23,11 @@ interface ErrorPayload {
   errors?: unknown;
 }
 
-/** Standard error response structure */
 interface ErrorResponseBody {
   success: false;
   payload: ErrorPayload;
 }
 
-/** Extract { code, message } from an HttpException's response. The new
- *  contract puts a structured `{ code, message }` body on the
- *  exception; older code paths may pass a raw string. We support both
- *  so a stray legacy throw doesn't crash the response shape. */
 function extractCodeAndMessage(
   exception: HttpException,
 ): { code?: string; message: string } {
@@ -46,7 +40,6 @@ function extractCodeAndMessage(
     if (typeof inner === "string") {
       message = inner;
     } else if (Array.isArray(inner)) {
-      // class-validator returns an array of validation strings.
       message = inner.join("; ");
     } else {
       message = exception.message;
@@ -113,8 +106,6 @@ export class ErrorHandlingMiddleware implements ExceptionFilter {
       const validationErrors = exception.getResponse();
       if (typeof validationErrors === "object" && validationErrors !== null) {
         const errors = validationErrors as Record<string, unknown>;
-        // class-validator's structured response carries the array
-        // under `message`; only surface it when it's actually a list.
         const inner = errors["message"];
         if (Array.isArray(inner)) {
           responseBody.payload.errors = inner;

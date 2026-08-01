@@ -43,7 +43,6 @@ interface GradeResponseRequest {
 export const gradeSpeakingResponse = async (
   input: GradeResponseRequest,
 ): Promise<SpeakingGradeResponse> => {
-  // Multipart body matches the controller's File()/Query() shape.
   const formData = new FormData();
   formData.append("audio_file", input.audioFile, input.audioFile.name);
 

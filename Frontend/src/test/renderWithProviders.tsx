@@ -1,12 +1,3 @@
-/**
- * Test render helper that wraps the UI in the providers most pages
- * assume exist (Router for `useNavigate`/`Link`, QueryClientProvider
- * for any TanStack Query hooks). i18n is initialised globally in
- * `setupTests.ts`, so it doesn't need a per-render wrapper.
- *
- * Use this instead of `render` for any component that pulls in
- * `react-router-dom` or `@tanstack/react-query`.
- */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import { ReactElement } from "react";
@@ -18,8 +9,6 @@ interface ProvidersProps {
 }
 
 function makeQueryClient() {
-  // Tests should never retry on failure — they need to assert the
-  // error path on the first call.
   return new QueryClient({
     defaultOptions: {
       queries: { retry: false, gcTime: 0 },

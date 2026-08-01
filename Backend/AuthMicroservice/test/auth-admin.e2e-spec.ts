@@ -11,16 +11,6 @@ import { PrismaService } from "../prisma/prismaService";
 import { Role } from "@prisma/client";
 import { createTestJwtToken, createTestRefreshToken } from "./helpers/jwt.helper";
 
-/**
- * The administrative half of the auth surface, plus the session paths
- * the first suite leaves open.
- *
- * Role checks live on the route through a guard, so a unit test on the
- * service cannot show whether they are attached. Every case here asks
- * the same question from a different angle: can an ordinary account
- * reach something only an administrator should, and does a session
- * path fail closed when a token is absent, stale, or forged.
- */
 describe("Auth administration and sessions (HTTP boundary)", () => {
   let app: INestApplication;
   let prisma: any;

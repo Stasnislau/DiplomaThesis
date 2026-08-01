@@ -3,14 +3,6 @@ import { fetchWithAuth } from "../fetchWithAuth";
 import { parseApiPayload } from "../parseApiResponse";
 import type { DocumentMap } from "./uploadMaterial";
 
-/**
- * Quiz question wire types — discriminated union by `type`.
- *
- * The shape mirrors the backend's Pydantic discriminated union in
- * Backend/AIMicroservice/models/dtos/material_dtos.py. The
- * MaterialsTask renderer dispatches on `type` to pick the right
- * component.
- */
 
 interface QuizQuestionBase {
   question: string;
@@ -25,7 +17,7 @@ export interface MultipleChoiceQuestion extends QuizQuestionBase {
 
 export interface OpenQuestion extends QuizQuestionBase {
   type: "open";
-  options: string[]; // always []
+  options: string[];
   correct_answer: string;
 }
 
@@ -76,11 +68,6 @@ export type QuizQuestion =
   | MultiSelectMCQuestion
   | ClozePassageQuestion;
 
-/**
- * Backend returns either a quiz object with questions, or — when no
- * relevant material was found — a plain string explaining why.
- * Callers must handle both shapes.
- */
 type QuizPayload = { questions: QuizQuestion[] } | string;
 
 interface GenerateQuizResponse {
@@ -89,18 +76,7 @@ interface GenerateQuizResponse {
 
 export interface GenerateQuizParams {
   selectedTypes?: string[];
-  /**
-   * The language the user is currently studying. When set, the backend
-   * is told to write question/options/correct_answer in this language
-   * regardless of the source PDF's language.
-   */
   targetLanguage?: string;
-  /**
-   * The DocumentMap returned from /materials/upload, round-tripped
-   * back so the backend can skip re-classification and feed Stage 2/3
-   * with the same exercises map the user saw upfront. Optional —
-   * when omitted, the backend re-derives the map from indexed material.
-   */
   documentMap?: DocumentMap;
 }
 

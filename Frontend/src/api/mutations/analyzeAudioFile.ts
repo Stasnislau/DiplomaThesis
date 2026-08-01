@@ -34,10 +34,6 @@ export interface AnalyzeSpeechRequest {
   uiLocale?: string;
 }
 
-/**
- * Analyzes the user's audio file and returns structured feedback with
- * transcription, language errors, and pronunciation metrics.
- */
 export async function analyzeSpeech(
   input: AnalyzeSpeechRequest,
 ): Promise<SpeakingAnalysisResult> {

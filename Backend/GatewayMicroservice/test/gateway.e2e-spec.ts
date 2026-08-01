@@ -8,17 +8,6 @@ import { AppModule } from "../src/app.module";
 import { ErrorHandlingMiddleware } from "../src/middlewares/errorHandlingMiddleware";
 import { GatewayService } from "../src/services/gatewayService";
 
-/**
- * HTTP-boundary tests for the gateway.
- *
- * The unit spec covers routing decisions inside GatewayService with
- * the HTTP layer bypassed. Three guarantees only exist once a real
- * request enters the Nest pipeline: the global request limit that
- * NFR5 fixes at sixty per minute, the security headers, and the
- * global prefix. Nothing verified those until this suite, so a
- * change to the throttler configuration could have passed CI
- * unnoticed.
- */
 describe("Gateway (HTTP boundary)", () => {
   let app: INestApplication;
   let handleRequest: jest.Mock;
@@ -37,7 +26,6 @@ describe("Gateway (HTTP boundary)", () => {
       .compile();
 
     const created = moduleFixture.createNestApplication();
-    // Mirror main.ts so the pipeline matches production.
     created.use(helmet());
     created.useGlobalFilters(new ErrorHandlingMiddleware());
     created.setGlobalPrefix("api");

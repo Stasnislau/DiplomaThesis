@@ -31,6 +31,12 @@ REFRESH_TOKEN_EXPIRES_IN=7d
 # ── Internal service-to-service key ──────────────────────────────
 INTERNAL_SERVICE_KEY=$(rand_hex 24)
 
+# ── Encryption of users' stored API keys ─────────────────────────
+# Raw \`openssl rand -base64 32\`, not rand_pass: secretCipher.ts needs
+# the value to decode to exactly 32 bytes, and rand_pass strips the
+# base64 alphabet down to 32 *characters*, which decodes to 24.
+KEY_ENCRYPTION_KEY=$(openssl rand -base64 32)
+
 # ── AI API Keys (users bring their own — leave blank for prod) ───
 OPENAI_API_KEY=
 OPENROUTER_API_KEY=

@@ -72,9 +72,9 @@ describe("gradeQuestion", () => {
       correct_answers: ["A", "C"],
     };
     expect(gradeQuestion(q, ["A", "C"])).toBe(true);
-    expect(gradeQuestion(q, ["C", "A"])).toBe(true); // order doesn't matter
-    expect(gradeQuestion(q, ["A"])).toBe(false); // missing one
-    expect(gradeQuestion(q, ["A", "C", "D"])).toBe(false); // extra wrong
+    expect(gradeQuestion(q, ["C", "A"])).toBe(true);
+    expect(gradeQuestion(q, ["A"])).toBe(false);
+    expect(gradeQuestion(q, ["A", "C", "D"])).toBe(false);
   });
 
   it("matching — every left must map to its canonical right", () => {
@@ -95,10 +95,10 @@ describe("gradeQuestion", () => {
     expect(
       gradeQuestion(q, {
         ephemeral: "short-lived",
-        perennial: "short-lived", // wrong pairing
+        perennial: "short-lived",
       }),
     ).toBe(false);
-    expect(gradeQuestion(q, { ephemeral: "short-lived" })).toBe(false); // missing
+    expect(gradeQuestion(q, { ephemeral: "short-lived" })).toBe(false);
   });
 
   it("cloze_passage — every blank must hit accepted answer", () => {
@@ -114,7 +114,7 @@ describe("gradeQuestion", () => {
     expect(gradeQuestion(q, { "1": "south", "2": "winter" })).toBe(true);
     expect(gradeQuestion(q, { "1": "south", "2": "the cold" })).toBe(true);
     expect(gradeQuestion(q, { "1": "north", "2": "winter" })).toBe(false);
-    expect(gradeQuestion(q, { "1": "south" })).toBe(false); // missing blank
+    expect(gradeQuestion(q, { "1": "south" })).toBe(false);
   });
 
   it("undefined answer always grades false", () => {

@@ -4,13 +4,9 @@ import { useAudioRecorder } from "../../hooks/useAudioRecorder";
 import { useEffect } from "react";
 
 interface RecorderPanelProps {
-  /** Cap session length; the recorder auto-stops at this mark. */
   maxDurationSeconds: number;
-  /** Surface the recorded file to the parent so it can be sent for grading. */
   onRecorded: (file: File) => void;
-  /** When the parent resets state (e.g. new prompt loaded), nuke recorder state too. */
   resetSignal: number;
-  /** Disable the record button (e.g. while grading is in flight). */
   disabled?: boolean;
 }
 
@@ -33,9 +29,6 @@ const RecorderPanel = ({
     onStop: onRecorded,
   });
 
-  // Reset recording state when the parent passes a new resetSignal
-  // (e.g. a new prompt was loaded). Putting it here keeps the
-  // recorder's lifecycle co-located with its UI.
   useEffect(() => {
     recorder.reset();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -107,10 +100,8 @@ const RecorderPanel = ({
 
       {recorder.error && (
         <div className="text-xs text-red-600 dark:text-red-400">
-          {/* The hook surfaces the raw browser error in `error` (often
-             OS-localized like "NotAllowedError"); we prefix it with
-             our translated mic-permission line so the user sees a
-             clear human sentence regardless of browser. */}
+          {
+}
           <p className="font-semibold">{t("tasks.micError")}</p>
           <p className="mt-0.5 opacity-80">{recorder.error}</p>
         </div>

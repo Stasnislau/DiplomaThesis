@@ -6,9 +6,6 @@ import { useTranslation } from "react-i18next";
 
 const norm = (s: string) => s.trim().toLowerCase();
 
-// Eight readable pair-tag colours. We assign one per matched pair so
-// the user can see, at a glance, which left item belongs to which
-// right item without us drawing SVG lines.
 const PAIR_TONES = [
   "bg-violet-500",
   "bg-emerald-500",
@@ -34,13 +31,8 @@ const MatchingRenderer = ({
       ? (answer as Record<string, string>)
       : {};
 
-  // Right column shuffled once per question instance — otherwise the
-  // matching task is trivial because the right side mirrors the left.
   const rightOptions = useMemo(() => {
     const rights = question.pairs.map((p) => p.right);
-    // Fisher-Yates against a deterministic seed (question.question +
-    // pair count) so re-renders don't reshuffle and disorient the user
-    // mid-task.
     const seed = (question.question.length + question.pairs.length) * 31;
     const arr = [...rights];
     let s = seed;
@@ -59,8 +51,6 @@ const MatchingRenderer = ({
 
   const pickRight = (right: string) => {
     if (revealed || pendingLeft === null) return;
-    // If this right is already paired to another left, drop that
-    // older binding so each right is used at most once.
     const next: Record<string, string> = {};
     for (const [l, r] of Object.entries(userPairs)) {
       if (l === pendingLeft || r === right) continue;
@@ -71,7 +61,6 @@ const MatchingRenderer = ({
     onChange(next);
   };
 
-  // Determine the stable pair-index for colouring (1-indexed display).
   const leftToIndex: Record<string, number> = {};
   question.pairs.forEach((p, i) => {
     leftToIndex[p.left] = i;
@@ -101,7 +90,6 @@ const MatchingRenderer = ({
   };
 
   const renderRightBadge = (right: string) => {
-    // Find which left (if any) is paired to this right.
     const matchedLeft = Object.entries(userPairs).find(
       ([, r]) => r === right,
     )?.[0];
@@ -132,7 +120,7 @@ const MatchingRenderer = ({
         })}
       </p>
       <div className="grid grid-cols-2 gap-4">
-        {/* LEFT column */}
+        {}
         <div className="space-y-2">
           {question.pairs.map((p) => {
             const paired = p.left in userPairs;
@@ -161,7 +149,7 @@ const MatchingRenderer = ({
           })}
         </div>
 
-        {/* RIGHT column (shuffled) */}
+        {}
         <div className="space-y-2">
           {rightOptions.map((r) => {
             const usedBy = Object.entries(userPairs).find(

@@ -8,12 +8,6 @@ export interface VerifyAITokenResponse {
   message: string;
 }
 
-/**
- * Two valid shapes:
- *  - { tokenId } — verify an already-saved token by id (AI will pull the
- *    raw value from User service via INTERNAL_SERVICE_KEY).
- *  - { aiProviderId, token } — verify a fresh key before saving it.
- */
 export type VerifyAITokenRequest =
   | { tokenId: string }
   | { aiProviderId: string; token: string };

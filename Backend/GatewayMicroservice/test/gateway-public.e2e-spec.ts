@@ -9,14 +9,6 @@ import helmet from "helmet";
 import { AppModule } from "../src/app.module";
 import { ErrorHandlingMiddleware } from "../src/middlewares/errorHandlingMiddleware";
 
-/**
- * The routes that work without a session, and the ones that must not.
- *
- * A public list decides which paths skip the token check. Adding an
- * entry to it by accident opens a door, and dropping one closes a door
- * that has to stay open, such as password recovery from a logged-out
- * browser. Both directions are checked here.
- */
 describe("Gateway public surface (HTTP boundary)", () => {
   let app: INestApplication;
   let http: { post: jest.Mock; request: jest.Mock };

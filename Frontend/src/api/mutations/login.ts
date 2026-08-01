@@ -5,8 +5,6 @@ import { parseApiResponse } from "../parseApiResponse";
 
 interface LoginResponse {
   accessToken: string;
-  // refreshToken is set by Auth as an httpOnly cookie; the body no
-  // longer carries it.
   message?: string;
   errors?: string[];
 }

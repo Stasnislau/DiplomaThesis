@@ -68,9 +68,6 @@ def writing_fill_in_the_blank_task_prompt(
         - Key words / phrases to test: {', '.join(keywords) if keywords else 'any relevant to the topic'}{weakness_line}
         The missing word in the blank MUST be one of the key words or phrases listed above.
         """
-    # The little gloss in parens after the blank is a learner aid, NOT a
-    # label — it should appear in the user's UI language so a Polish UI
-    # learner studying Russian sees "(iść)" rather than "(go)".
     gloss_lang = (
         ui_locale_label if ui_locale_label and ui_locale_label.strip() else "English"
     )
@@ -326,12 +323,6 @@ def verify_polish_task_prompt(task: Dict[str, Any]) -> str:
         i nie zwracaj better_task jeśli zadanie jest poprawne.
         """
 
-
-# ─── Essay tasks ──────────────────────────────────────────────────────
-# Two prompts: one to GENERATE an essay topic + scaffolding, one to
-# EVALUATE a learner's submission with a 0-100 score and structured
-# feedback. Used by both the learning-path "writing_essay" lesson type
-# and the free-practice essay flow.
 
 def writing_essay_topic_prompt(
     language: str,

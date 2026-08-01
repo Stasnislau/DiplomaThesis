@@ -25,7 +25,7 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({
           : "bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-750 border-gray-200 dark:border-gray-700"
       }`}
     >
-      {/* Unlocked glow */}
+      {}
       {isUnlocked && (
         <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-amber-300/30 to-transparent rounded-bl-full" />
       )}
@@ -56,7 +56,7 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({
         </div>
       </div>
 
-      {/* Progress */}
+      {}
       <div className="flex items-center gap-2">
         <div className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
           <div

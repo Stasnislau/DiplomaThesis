@@ -1,15 +1,3 @@
-/**
- * Translations for every lesson in AI's CURRICULUM (138 entries).
- *
- * Lives outside i18n.ts because dropping ~600 lines into the main
- * translation file made it unreadable. The lookup helper in
- * `src/utils/localizeContent.ts` reaches into these tables and falls
- * back to the raw English from the backend if a key is missing.
- *
- * Keys are camelCase slugs of the English title — see
- * `slugifyKey()` in localizeContent.ts. When backend curriculum
- * changes, run the dev script to regenerate keys.
- */
 export interface LessonText {
   title: string;
   description: string;
@@ -444,8 +432,6 @@ const ALL: Record<string, Record<string, LessonText>> = {
   es: LESSONS_ES,
 };
 
-/** Lookup `{title, description}` for a slug. Falls back through:
- *   1. requested locale → 2. English → 3. undefined (caller supplies fallback). */
 export function lookupLesson(
   slug: string,
   locale: string,

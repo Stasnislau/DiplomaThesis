@@ -1,13 +1,5 @@
 import { Page } from "@playwright/test";
 
-/**
- * Test fixtures shared across e2e specs.
- *
- * The frontend persists the access token in localStorage and the refresh
- * token in a `refreshToken` cookie, then decodes the JWT to read the
- * user role. Anything we put in `tokenPayload` must therefore be valid
- * base64-encoded JSON with `exp` in the future.
- */
 
 const TEST_USER_ID = "246f5d4e-1112-484a-a7bf-45ebbe7d0330";
 const TEST_USER_EMAIL = "test@example.com";
@@ -20,7 +12,6 @@ function base64UrlEncode(input: string): string {
     .replace(/\//g, "_");
 }
 
-/** Build an unsigned but structurally valid JWT for tests. */
 export function makeTestJwt(role: "USER" | "ADMIN" = "USER"): string {
   const header = { alg: "HS256", typ: "JWT" };
   const payload = {
@@ -39,7 +30,6 @@ export function makeTestJwt(role: "USER" | "ADMIN" = "USER"): string {
 
 interface MockAuthOptions {
   role?: "USER" | "ADMIN";
-  /** Override the user payload returned from /user/me. */
   user?: Partial<{
     id: string;
     email: string;
@@ -52,8 +42,6 @@ interface MockAuthOptions {
 const TEST_LANG_EN = "5a82a913-9d9b-412a-8b02-389a97ea4b98";
 const TEST_LANG_RU = "051bf9fd-ccc7-41aa-8e78-06a1da7fe4f9";
 
-/** Default user has English as native + Russian B1 in progress so the
- *  app skips the language-onboarding screen and goes straight to /tasks. */
 const DEFAULT_USER_LANGUAGES = [
   {
     id: "ul-native",
@@ -77,11 +65,6 @@ const DEFAULT_USER_LANGUAGES = [
   },
 ];
 
-/**
- * Wire up route mocks for the auth + user endpoints touched by the login
- * flow and most authenticated pages. Call this in beforeEach **before**
- * `page.goto()` so the routes are registered when the app boots.
- */
 export async function mockAuthRoutes(
   page: Page,
   options: MockAuthOptions = {},
@@ -159,8 +142,6 @@ export async function mockAuthRoutes(
     });
   });
 
-  // AI tokens — return at least one token so the "Add your AI token" modal
-  // does not block the UI.
   await page.route("**/user/ai-tokens*", async (route) => {
     await route.fulfill({
       status: 200,
@@ -183,9 +164,6 @@ export async function mockAuthRoutes(
     });
   });
 
-  // Generic stub for AI calls — returns an empty success payload so
-  // pages do not render their "service down" fallbacks. Specific specs
-  // can override individual routes in their own test bodies.
   await page.route("**/api/gateway/ai/**", async (route) => {
     await route.fulfill({
       status: 200,
@@ -197,11 +175,6 @@ export async function mockAuthRoutes(
   return { accessToken, refreshToken };
 }
 
-/**
- * Plant the access token directly in localStorage and the refresh token in
- * a cookie, bypassing the login UI. Faster and more deterministic than
- * filling the form when the test does not specifically exercise login.
- */
 export async function loginViaStorage(
   page: Page,
   options: MockAuthOptions = {},
@@ -217,10 +190,6 @@ export async function loginViaStorage(
   );
 }
 
-/**
- * Submit the login form against the mocked /auth/login endpoint.
- * Use this when the test needs to assert the login UI itself.
- */
 export async function loginViaUI(
   page: Page,
   email = TEST_USER_EMAIL,

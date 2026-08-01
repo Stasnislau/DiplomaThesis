@@ -10,10 +10,6 @@ export interface ExplainAnswerRequest {
   userAnswer: string;
 }
 
-/**
- * Response from the explain answer endpoint.
- * Note: Backend uses camelCase via alias_generator.
- */
 export interface ExplainAnswerResponse {
   isCorrect: boolean;
   explanation: string;

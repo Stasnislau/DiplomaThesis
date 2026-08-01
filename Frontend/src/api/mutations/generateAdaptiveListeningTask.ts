@@ -14,11 +14,6 @@ export interface AdaptiveListeningResponse {
   derivedFromHistory: boolean;
 }
 
-/**
- * Listening passage biased toward the user's recent weaknesses
- * (placement misses, speaking error categories). Falls back to the
- * regular variety picker when there's no signal.
- */
 export async function generateAdaptiveListeningTask(
   input: AdaptiveListeningRequest,
 ): Promise<AdaptiveListeningResponse> {

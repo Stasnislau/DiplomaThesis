@@ -1,10 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { loginViaStorage } from "./helpers/auth";
 
-/**
- * Smoke: /speech-analysis opens for an authenticated user and offers
- * at least one entry path (file upload, drag-and-drop hint, or record).
- */
 test.describe("Speech Analysis Page", () => {
   test.beforeEach(async ({ page }) => {
     await loginViaStorage(page);

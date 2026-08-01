@@ -9,9 +9,6 @@ def service() -> LearningPathService:
     return LearningPathService(session_factory=None)
 
 
-# ── Helpers ──────────────────────────────────────────────────────────────────
-# We keep a simple in-memory set to simulate DB state in tests.
-
 class _FakeDB:
     """Tiny in-memory stand-in for the lesson_completions table."""
 
@@ -40,8 +37,6 @@ def patched_service(service: LearningPathService, fake_db: _FakeDB) -> LearningP
     service._mark_completed = fake_db.mark_completed  # type: ignore[assignment]
     return service
 
-
-# ── Tests ────────────────────────────────────────────────────────────────────
 
 class TestCompleteLesson:
     @pytest.mark.asyncio

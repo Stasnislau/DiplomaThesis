@@ -3,13 +3,6 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { TaskHistoryController } from "./task-history.controller";
 import { TaskHistoryService } from "../services/task-history.service";
 
-/**
- * Task history has two callers: the learner through the gateway, and
- * the AI service after it grades an answer. They identify themselves
- * differently, and the entry must land on the acting learner in both
- * cases. These tests pin that, and the refusal when neither route
- * supplies an identity at all.
- */
 describe("TaskHistoryController", () => {
   let controller: TaskHistoryController;
   let service: jest.Mocked<TaskHistoryService>;

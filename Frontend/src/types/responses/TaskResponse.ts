@@ -28,7 +28,5 @@ export interface ListeningTaskResponse {
   audioUrl: string;
   transcript: string;
   questions: ListeningQuestion[];
-  /** Speaker labels in order of appearance — populated when the
-   *  audio was synthesised in multi-voice mode, empty otherwise. */
   speakers?: string[];
 }

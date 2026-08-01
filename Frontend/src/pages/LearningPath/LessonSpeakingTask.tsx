@@ -9,28 +9,11 @@ import { useTranslation } from "react-i18next";
 interface LessonSpeakingTaskProps {
   language: string;
   level: string;
-  /** Lesson topic + keywords feed into the practice-phrase prompt so
-   *  the phrase the learner records actually trains the lesson's
-   *  intended skill (e.g. "academic discussion" phrases for a
-   *  Seminar & Lecture Skills lesson). */
   topic?: string;
   keywords?: string[];
-  /** Called once with the analysis result; fires whether the learner
-   *  passed or not. The lesson page reads `pronunciation.fluencyScore`
-   *  to decide whether to mark the lesson complete. */
   onAnalyzed?: (result: SpeakingAnalysisResult) => void;
 }
 
-/**
- * Single-shot speaking practice for the lesson flow:
- *   1. Fetch a practice phrase tied to the lesson topic / level.
- *   2. User records themselves reading it (or uploads audio).
- *   3. AI analyses the recording — pronunciation + grammar errors.
- *   4. Surface the score; >=60 fluency = pass.
- *
- * Distinct from the free-practice SpeakingTask in that it skips the
- * language picker and auto-loads the phrase on mount.
- */
 const LessonSpeakingTask = ({
   language,
   level,
@@ -193,7 +176,7 @@ const LessonSpeakingTask = ({
 
   return (
     <div className="space-y-5">
-      {/* Phrase prompt */}
+      {}
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="flex items-start justify-between gap-3 mb-3">
           <span className="inline-block bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 text-xs px-2 py-1 rounded-full">
@@ -216,7 +199,7 @@ const LessonSpeakingTask = ({
         </p>
       </div>
 
-      {/* Recorder */}
+      {}
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="flex flex-wrap items-center gap-3">
           {!isRecording ? (
@@ -265,7 +248,7 @@ const LessonSpeakingTask = ({
         )}
       </div>
 
-      {/* Result */}
+      {}
       {analysisResult && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 space-y-4">
           <div className="flex items-center gap-5">

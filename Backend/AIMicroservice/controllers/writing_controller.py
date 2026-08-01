@@ -171,8 +171,6 @@ class WritingController:
                     )
                 )
 
-            # Best-effort log so the next call can see what we already
-            # targeted and avoid repeating the same exact weakness.
             await self.user_service.log_task_history(
                 user_context,
                 {
@@ -332,9 +330,6 @@ class WritingController:
                 user_context=user_context,
             )
 
-            # Log to TaskHistoryEntry — same shape as other writing
-            # results so the existing adaptive-focus deriver can read
-            # the weaknesses field.
             await self.user_service.log_task_history(
                 user_context,
                 {

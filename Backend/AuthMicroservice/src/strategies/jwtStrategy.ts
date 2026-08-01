@@ -4,7 +4,6 @@ import { ConfigService } from "@nestjs/config";
 import { Injectable } from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
 
-/** JWT Token payload structure */
 interface JwtPayload {
   sub: string;
   email: string;
@@ -13,7 +12,6 @@ interface JwtPayload {
   exp?: number;
 }
 
-/** Validated user returned from JWT strategy */
 interface ValidatedUser {
   id: string;
   email: string;

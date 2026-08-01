@@ -72,8 +72,6 @@ export class MailerService {
     const template = TEMPLATES[locale] ?? TEMPLATES.en;
 
     if (!this.enabled || !this.transporter) {
-      // Fallback for local/dev when SMTP creds are missing — keeps the
-      // event flow alive without pretending the email was sent.
       this.logger.log(
         `[mail-stub] would send password reset to ${email} (locale=${locale}): ${newPassword}`,
       );

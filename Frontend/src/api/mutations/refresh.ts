@@ -6,12 +6,6 @@ interface RefreshResponse {
   accessToken: string;
 }
 
-/**
- * Ask Auth for a new access token. The refresh token rides along in
- * the `refreshToken` httpOnly cookie set at login — the body is empty
- * by design. fetchWithAuth uses `credentials: "include"` so the
- * cookie is sent across origins (gateway → caddy → browser).
- */
 export const refresh = async () => {
   const response = await fetchWithAuth(
     `${AUTH_MICROSERVICE_URL}/auth/refresh`,

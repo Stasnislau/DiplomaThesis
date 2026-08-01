@@ -62,8 +62,6 @@ describe("DictationRenderer", () => {
         revealed={true}
       />,
     );
-    // The expected-answer hint should be hidden because the user
-    // got it right (modulo punctuation/case).
     expect(
       screen.queryByText("She left for Madrid on Tuesday morning."),
     ).not.toBeInTheDocument();

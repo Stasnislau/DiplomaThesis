@@ -219,8 +219,6 @@ describe("GatewayService", () => {
     });
 
     it("should return 401 when token validation fails", async () => {
-      // validateToken wraps any axios failure in UnauthorizedException —
-      // gateway must surface that as 401, not 500.
       (httpService.post as jest.Mock).mockReturnValue(
         throwError(() => new UnauthorizedException()),
       );
@@ -237,10 +235,6 @@ describe("GatewayService", () => {
     });
 
     it("should map non-HTTP errors to 500 with a structured payload", async () => {
-      // A non-HttpException raised inside validateToken still gets
-      // wrapped as UnauthorizedException by the catch in
-      // validateToken, but if anything fell through it should still
-      // produce the structured failure envelope.
       (httpService.post as jest.Mock).mockReturnValue(
         throwError(() => new Error("Invalid token")),
       );

@@ -12,12 +12,6 @@ export interface LogWritingResultRequest {
   questionPreview?: string;
 }
 
-/**
- * Tell AI whether the user beat the writing task that was just
- * generated. AI writes a TaskHistoryEntry whose score is 100 if
- * correct or 0 if not — the next /writing/adaptive call sees those
- * outcomes and decides what to drill (or stop drilling).
- */
 export async function logWritingResult(
   input: LogWritingResultRequest,
 ): Promise<void> {

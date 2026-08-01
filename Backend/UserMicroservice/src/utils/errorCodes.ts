@@ -1,20 +1,3 @@
-/**
- * Stable, machine-readable codes for every HttpException User raises.
- *
- * Wire contract (since the structured-error refactor):
- *   - throwWithCode() raises an HttpException whose response body is
- *     `{ code, message }`.
- *   - ErrorHandlingMiddleware reads both fields and emits
- *     `payload.code` AND `payload.message` as siblings — code is no
- *     longer embedded inside the message string.
- *   - Frontend `parseApiResponse` reads `payload.code` directly.
- *
- * Adding a new code:
- *   1. Add a constant below in the matching section.
- *   2. Add a translation key `errors.codes.<CODE>` in
- *      Frontend/src/config/i18n.ts under all locales.
- *   3. Use throwWithCode() at the call site.
- */
 import {
   BadRequestException,
   ConflictException,
@@ -25,7 +8,6 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 
-// User-domain codes ────────────────────────────────────────────────
 export const USER_ID_REQUIRED = "USER_ID_REQUIRED";
 export const USER_NOT_FOUND = "USER_NOT_FOUND";
 export const USER_LANGUAGE_ID_MISSING = "USER_LANGUAGE_ID_MISSING";
@@ -63,10 +45,6 @@ function exceptionFor(
   }
 }
 
-/**
- * Throw an HttpException whose response body is `{ code, message }`.
- * The middleware turns that into `payload: { code, message, timestamp }`.
- */
 export function throwWithCode(
   code: string,
   status: number,

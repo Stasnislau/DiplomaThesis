@@ -46,8 +46,6 @@ const TrueFalseNotGivenRenderer = ({
         const showCorrect = revealed && isCorrect;
         const showWrong = revealed && isSelected && !isCorrect;
 
-        // Tailwind doesn't pick up dynamic colour names from string
-        // interpolation, so we map the trio explicitly.
         const palette: Record<string, { idle: string; selected: string }> = {
           emerald: {
             idle: "border-emerald-200 hover:border-emerald-400 hover:bg-emerald-50 text-emerald-700 bg-white dark:bg-gray-800 dark:text-emerald-400",

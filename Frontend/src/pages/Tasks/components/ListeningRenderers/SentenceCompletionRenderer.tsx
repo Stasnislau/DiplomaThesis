@@ -6,12 +6,6 @@ import type { ListeningRendererProps } from "./types";
 
 const norm = (s: string) => s.trim().toLowerCase();
 
-/**
- * Renders the question with the `___` slot replaced by an inline
- * input. Falls back to a stand-alone input above the question text
- * when the slot marker isn't present (defensive — the prompt is
- * supposed to include `___` but models occasionally drop it).
- */
 const SentenceCompletionRenderer = ({
   question,
   answer,
@@ -44,9 +38,6 @@ const SentenceCompletionRenderer = ({
     />
   );
 
-  // Replace exactly the first run of three or more underscores. Any
-  // surplus underscores (`____`, `___ ___`) collapse into one input —
-  // the model is asked for one slot per item.
   const parts = question.question.split(/_{3,}/);
   const hasMarker = parts.length > 1;
 

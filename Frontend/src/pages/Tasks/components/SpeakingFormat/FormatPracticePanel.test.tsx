@@ -13,8 +13,6 @@ vi.mock("@/api/mutations/speakingFormat", () => ({
 describe("FormatPracticePanel", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // The recorder's media APIs aren't exercised in this test — we
-    // only verify the prompt-load + format-switch wiring.
   });
 
   it("renders all four format chips", () => {
@@ -59,7 +57,6 @@ describe("FormatPracticePanel", () => {
     fireEvent.click(screen.getByRole("button", { name: /Load task/i }));
     expect(await screen.findByText("Sample prompt")).toBeInTheDocument();
 
-    // Toggle to a different format — old prompt must disappear.
     fireEvent.click(screen.getByText(/Free monologue/));
     expect(screen.queryByText("Sample prompt")).not.toBeInTheDocument();
   });

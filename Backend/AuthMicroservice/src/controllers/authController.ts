@@ -25,9 +25,6 @@ const REFRESH_COOKIE = "refreshToken";
 const REFRESH_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 function refreshCookieOptions() {
-  // Production sits behind Caddy with HTTPS, so Secure can be hard-on.
-  // Locally (NODE_ENV !== "production") we fall back to non-Secure so
-  // the cookie still gets set on http://localhost.
   const isProd = process.env.NODE_ENV === "production";
   return {
     httpOnly: true,
@@ -40,9 +37,6 @@ function refreshCookieOptions() {
 
 type CookieRequest = ExpressRequest;
 
-/** Device fingerprint = SHA-256(User-Agent ‖ origin IP). Gateway puts
- *  the real client IP into X-Forwarded-For — falling back to req.ip
- *  is fine on direct hits (rare in prod). */
 function fingerprintFor(req: ExpressRequest): string {
   const ua = (req.headers["user-agent"] as string) ?? "";
   const xff = (req.headers["x-forwarded-for"] as string) ?? "";
@@ -64,9 +58,6 @@ export class AuthController {
       loginDto,
       fingerprintFor(req),
     );
-    // Refresh token never crosses the JS boundary on the frontend —
-    // it lives in an httpOnly cookie so XSS cannot read it. The body
-    // payload now carries only the short-lived access token.
     res.cookie(REFRESH_COOKIE, refreshToken, refreshCookieOptions());
     return {
       success: true,
@@ -80,8 +71,6 @@ export class AuthController {
     @Body("refreshToken") bodyRefreshToken: string | undefined,
     @Res({ passthrough: true }) res: Response,
   ) {
-    // Prefer the cookie. Fall back to the body for clients that
-    // haven't migrated yet (so a partial deploy doesn't break logins).
     const refreshToken = req.cookies?.[REFRESH_COOKIE] ?? bodyRefreshToken;
     const response = await this.authService.refreshToken(
       refreshToken,
@@ -108,7 +97,6 @@ export class AuthController {
       try {
         await this.authService.removeRefreshToken(refreshToken);
       } catch {
-        // Token already gone is fine; we still want to clear the cookie.
       }
     }
     res.clearCookie(REFRESH_COOKIE, { path: "/" });
@@ -127,9 +115,6 @@ export class AuthController {
     };
   }
 
-  // Public forgot-password endpoint. Per-email rate limit enforced
-  // inside AuthService so bots can't spam the victim's inbox or
-  // silently rotate their password every few seconds.
   @Post("resetPassword")
   async resetPassword(@Body("email") email: string) {
     await this.authService.resetPassword(email);

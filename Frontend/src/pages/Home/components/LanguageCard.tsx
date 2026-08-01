@@ -45,7 +45,6 @@ export const LanguageCard: React.FC<LanguageCardProps> = ({
           {t('landing.nativeSpeaker')}
         </div>
       ) :
-      /* Case 2: Learning Started */
       isStarted ? (
         <div>
           <div className="mb-4">

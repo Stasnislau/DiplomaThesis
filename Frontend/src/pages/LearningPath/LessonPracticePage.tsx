@@ -63,10 +63,6 @@ interface LessonShellProps {
   children: React.ReactNode;
 }
 
-/** Page chrome shared between the writing_essay / speaking / listening
- *  lesson flows: gradient background, back link, lesson header card.
- *  The standard quiz-flow renders its own custom layout below, so it
- *  doesn't use this. */
 const LessonShell = ({
   lesson,
   language,
@@ -244,9 +240,6 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
   const [taskCount,       setTaskCount]        = useState(0);
   const [correctCount,    setCorrectCount]     = useState(0);
   const [activeFlavour,   setActiveFlavour]    = useState<TaskFlavour>("multiple-choice");
-  // Sub-mode picker for lesson types that have more than one
-  // meaningful exercise format. Lessons that only support one mode
-  // ignore these.
   const [essayMode,    setEssayMode]    = useState<"essay" | "quiz">("essay");
   const [speakingMode, setSpeakingMode] = useState<"phrase" | "freespeak">("phrase");
 
@@ -282,10 +275,6 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
     resetFB();
     if (roll === "multiple-choice") createMC(taskPayload);
     else                            createFB(taskPayload);
-    // taskCount is incremented in handleCheck — counting "in flight"
-    // tasks before the user answers makes accuracy lie (e.g. 4 right
-    // out of 4 answered shows up as 4/5 = 80% the moment the 5th task
-    // appears on screen).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [language, level, lesson.topic, lesson.keywords, createMC, createFB, resetMC, resetFB]);
 
@@ -293,8 +282,6 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
 
   const handleCheck = () => {
     if (!currentTask || !userAnswer) return;
-    // Guard against double-submit on the same task — without this an
-    // accidental two-click on Check would inflate taskCount.
     if (isCorrect !== null) return;
 
     let correct: boolean;
@@ -365,10 +352,6 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
     );
   }
 
-  // Speaking-type lessons swap the quiz UI for a record-and-analyze
-  // flow. Pass criterion: pronunciation.fluencyScore >= 60. Two
-  // modes: read a generated phrase, or speak freely on the lesson
-  // topic — the learner picks which one to practice.
   if (lesson.type === "speaking") {
     return (
       <LessonShell
@@ -426,8 +409,6 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
     );
   }
 
-  // Listening-type lessons play an audio clip + comprehension Qs.
-  // Pass criterion: at least 60% of questions correct.
   if (lesson.type === "listening") {
     return (
       <LessonShell
@@ -452,10 +433,6 @@ const LessonPracticeContent = ({ lesson, language, level }: ContentProps) => {
     );
   }
 
-  // Writing-essay lessons offer two modes: write the full academic
-  // essay (the lesson's intended skill, AI-graded 0-100), or warm up
-  // on the lesson keywords with a quick MC + fill-in quiz. Either
-  // path completes the lesson on its own pass criterion.
   if (lesson.type === "writing_essay") {
     return (
       <LessonShell

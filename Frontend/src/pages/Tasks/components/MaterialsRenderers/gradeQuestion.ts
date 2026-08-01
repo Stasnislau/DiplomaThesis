@@ -1,22 +1,6 @@
 import type { QuizQuestion } from "@/api/mutations/generateQuiz";
 import type { UserAnswerValue } from "./types";
 
-/**
- * Per-type grading. Returns true iff the user's answer is correct
- * for that question type.
- *
- * Notes:
- *  - Comparison is case-insensitive and trim-tolerant for free-text
- *    answers — language learners commonly add a trailing space or
- *    inconsistent capitalisation, and we don't want to reject those.
- *  - For multi-answer types (multi_select_mc, matching, cloze) we
- *    treat order as irrelevant for selections but require every
- *    expected slot to be filled correctly.
- *  - "open" returns null because there's no canonical right answer
- *    on the FE — that question type is a teacher-graded reference.
- *    Renderers handle this by hiding the right/wrong badge and just
- *    showing the reference answer when revealed.
- */
 export const gradeQuestion = (
   q: QuizQuestion,
   answer: UserAnswerValue | undefined,
@@ -39,9 +23,6 @@ export const gradeQuestion = (
     }
 
     case "open":
-      // No deterministic ground-truth on the FE for free-text answers;
-      // the reference answer is shown when revealed but we don't claim
-      // correctness either way.
       return null;
 
     case "multi_select_mc": {
@@ -60,7 +41,6 @@ export const gradeQuestion = (
         return false;
       }
       const map = answer as Record<string, string>;
-      // Every left side must be matched, and to the canonical right.
       for (const pair of q.pairs) {
         if (norm(map[pair.left] ?? "") !== norm(pair.right)) return false;
       }

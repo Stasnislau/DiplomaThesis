@@ -1,15 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { mockAuthRoutes } from "./helpers/auth";
 
-/**
- * The forms a visitor meets before there is a session.
- *
- * Sign-in and registration are the only screens a learner cannot skip,
- * so their failure modes matter more than their happy path: an empty
- * submit must not navigate, a refused sign-in must leave the form
- * usable, and a server that answers with an error must not leave the
- * page blank.
- */
 test.describe("Sign-in form", () => {
   test.beforeEach(async ({ page }) => {
     await mockAuthRoutes(page);

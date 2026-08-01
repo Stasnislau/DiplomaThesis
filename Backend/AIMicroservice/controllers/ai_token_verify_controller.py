@@ -121,7 +121,6 @@ class AITokenVerifyController:
             extra_params["api_key"] = raw_token
 
             try:
-                # Tiny ping — 1 token reply, short prompt, low timeout.
                 await acompletion(
                     model=litellm_model,
                     messages=[{"role": "user", "content": "ping"}],
@@ -138,7 +137,6 @@ class AITokenVerifyController:
                 )
                 return _result(False, provider, "Invalid or expired API key")
             except RateLimitError:
-                # Rate-limit means the key is RECOGNISED — still valid.
                 return _result(
                     True,
                     provider,
@@ -147,9 +145,6 @@ class AITokenVerifyController:
             except Timeout:
                 return _result(False, provider, "Provider did not respond in time")
             except BadRequestError as exc:
-                # litellm sometimes wraps auth failures (incl. revoked Groq keys)
-                # as BadRequestError. Inspect the message for auth signals; only
-                # treat as 'valid' when the body explicitly says model issue.
                 msg = str(exc).lower()
                 logger.info(
                     "Verify got BadRequest for provider=%s: %s",
@@ -172,15 +167,12 @@ class AITokenVerifyController:
                         provider,
                         "Invalid or expired API key",
                     )
-                # Genuinely a model/parameter issue (not auth) — surface verbatim.
                 return _result(
                     False,
                     provider,
                     f"Provider rejected the request: {str(exc)[:120]}",
                 )
             except Exception as exc:
-                # Catch-all: be conservative, mark invalid. False negatives are
-                # better than false positives for a security-sensitive check.
                 logger.exception("Unexpected verify error for provider=%s", provider)
                 msg = str(exc)
                 return _result(

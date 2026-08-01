@@ -5,9 +5,6 @@ import { useTranslation } from 'react-i18next';
 
 const LoadingPage = () => {
   const { t } = useTranslation();
-  // Localised "Loading" base — `common.loading` already exists as
-  // "Loading..." / "Ładowanie..." / "Cargando...". Strip the trailing
-  // dots so we can re-add them in the animation cycle.
   const baseText = t('common.loading').replace(/\.+$/, '');
   const [loadingText, setLoadingText] = useState(baseText);
 

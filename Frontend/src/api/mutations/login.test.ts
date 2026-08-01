@@ -34,8 +34,6 @@ describe("login", () => {
 
     expect(result.success).toBe(true);
     expect(result.payload.accessToken).toBe("access-token-123");
-    // The refresh token now travels in an httpOnly cookie set by Auth,
-    // so it intentionally does not appear in the JSON payload anymore.
   });
 
   it("throws error with message when login fails", async () => {

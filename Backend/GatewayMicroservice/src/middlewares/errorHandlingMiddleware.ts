@@ -9,14 +9,12 @@ import {
 
 import { Response } from "express";
 
-/** Error response payload structure */
 interface ErrorPayload {
   message: string;
   timestamp: string;
   errors?: unknown;
 }
 
-/** Standard error response structure */
 interface ErrorResponseBody {
   success: false;
   payload: ErrorPayload;

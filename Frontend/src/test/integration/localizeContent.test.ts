@@ -1,18 +1,3 @@
-/**
- * End-to-end check that backend-sourced content (which always arrives
- * in English) gets translated correctly across en/pl/es.
- *
- * Coverage:
- *   - 16 achievements (names + descriptions)
- *   - 23 module themes
- *   - 6 lesson types
- *   - module title + description patterns ("Unit N: Theme")
- *   - 138 lesson titles + descriptions
- *
- * For non-en locales we additionally assert the result actually
- * differs from the English input — catches the "we wired the helper
- * but forgot to translate" silent regression.
- */
 import { describe, expect, it } from "vitest";
 
 import i18n from "@/config/i18n";
@@ -30,8 +15,6 @@ import {
   getLocalizedTheme,
 } from "@/utils/localizeContent";
 
-// Mirror the seed in achievementService.ts. If a name changes there,
-// this list goes stale on purpose — the test will flag it.
 const ACHIEVEMENT_SEED = [
   ["First Steps", "Complete your first placement test"],
   ["Bookworm", "Complete 10 reading tasks"],
@@ -141,7 +124,6 @@ describe("localized backend content", () => {
 
       await i18n.changeLanguage("pl");
       const plTitle = getLocalizedModuleTitle(raw);
-      // pl pattern is "Moduł {n}: {theme}", and theme switches to PL.
       expect(plTitle).toMatch(/Moduł\s+1/);
       expect(plTitle).not.toBe(raw);
 
@@ -154,8 +136,6 @@ describe("localized backend content", () => {
 
   describe("lesson types (6)", () => {
     it.each(LESSON_TYPES)("%s translated in pl/es", async (type) => {
-      // English just echoes the lowercase tag (no real translation
-      // needed there, the catalog deliberately stores the raw word).
       for (const locale of NON_EN_LOCALES) {
         await i18n.changeLanguage(locale);
         expect(getLocalizedLessonType(type)).not.toBe("");

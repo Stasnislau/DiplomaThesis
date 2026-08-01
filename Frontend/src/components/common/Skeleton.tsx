@@ -4,20 +4,12 @@ import { useTranslation } from 'react-i18next';
 
 interface SkeletonProps {
   className?: string;
-  /** Width of the skeleton. Can be a Tailwind class or CSS value */
   width?: string;
-  /** Height of the skeleton. Can be a Tailwind class or CSS value */
   height?: string;
-  /** Shape variant */
   variant?: 'text' | 'circular' | 'rectangular' | 'rounded';
-  /** Animation type */
   animation?: 'pulse' | 'wave' | 'none';
 }
 
-/**
- * Skeleton loading placeholder component.
- * Provides visual feedback while content is loading.
- */
 export const Skeleton: React.FC<SkeletonProps> = ({
   className,
   width,
@@ -61,9 +53,6 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   );
 };
 
-/**
- * Skeleton for text content with multiple lines
- */
 export const SkeletonText: React.FC<{
   lines?: number;
   className?: string;
@@ -82,9 +71,6 @@ export const SkeletonText: React.FC<{
   );
 };
 
-/**
- * Skeleton for card content
- */
 export const SkeletonCard: React.FC<{ className?: string }> = ({ className }) => {
   const { t } = useTranslation();
   return (
@@ -108,9 +94,6 @@ export const SkeletonCard: React.FC<{ className?: string }> = ({ className }) =>
   );
 };
 
-/**
- * Skeleton for task/quiz content
- */
 export const SkeletonTask: React.FC<{ className?: string }> = ({ className }) => {
   const { t } = useTranslation();
   return (
@@ -119,17 +102,17 @@ export const SkeletonTask: React.FC<{ className?: string }> = ({ className }) =>
       role="status"
       aria-label={t("a11y.loadingTask")}
     >
-      {/* Question */}
+      {}
       <Skeleton variant="rounded" height="h-16" />
       
-      {/* Options */}
+      {}
       <div className="space-y-3">
         {[1, 2, 3, 4].map((i) => (
           <Skeleton key={i} variant="rounded" height="h-12" />
         ))}
       </div>
       
-      {/* Button */}
+      {}
       <Skeleton variant="rounded" height="h-12" width="w-32" />
     </div>
   );

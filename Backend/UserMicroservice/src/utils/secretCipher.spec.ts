@@ -1,11 +1,3 @@
-/**
- * Tests for the at-rest cipher that protects learner-supplied provider
- * tokens. A token is a credential for a paid third-party account, so
- * the properties worth pinning are the ones a reviewer would ask about:
- * the ciphertext must not reveal the plaintext, a tampered row must not
- * decrypt silently, and a wrong key must fail loudly instead of
- * returning rubbish that the caller would hand to a provider.
- */
 const KEY_A = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
 const KEY_B = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=";
 

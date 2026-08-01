@@ -27,24 +27,11 @@ import {
   throwWithCode,
 } from "../utils/errorCodes";
 
-/**
- * In-memory failed-login tracker. Keyed by lowercased email so the
- * limit applies per account, not per IP — a botnet pivoting across
- * IPs against the same email still trips it. Counter resets on a
- * successful login OR after WINDOW_MS of inactivity.
- *
- * This is process-local (single Auth replica is the deploy
- * assumption); a multi-replica deploy needs Redis here.
- */
 const FAILED_LOGIN_LIMIT = 8;
 const FAILED_LOGIN_WINDOW_MS = 15 * 60 * 1000;
 interface FailedAttempt {
   count: number;
-  // Wall-clock time of the most recent failed attempt. Used to tell
-  // whether the user is still inside the rolling 15-minute window —
-  // gap of >WINDOW_MS resets the counter.
   lastAttemptAt: number;
-  // 0 when not locked. Otherwise: timestamp the lock expires.
   lockedUntil: number;
 }
 const failedLogins = new Map<string, FailedAttempt>();
@@ -52,11 +39,6 @@ function failedKey(email: string): string {
   return email.trim().toLowerCase();
 }
 
-/* Per-email password-reset throttle. Without this, any anonymous
- * caller can spam /resetPassword for a victim's email and blast their
- * inbox while silently rotating their password (since reset really
- * does mutate the credentials row). One request per 5 minutes per
- * email is more than enough for a real "I forgot" flow. */
 const RESET_WINDOW_MS = 5 * 60 * 1000;
 const resetAttempts = new Map<string, number>();
 
@@ -107,16 +89,6 @@ export class AuthService {
 
     const user = await this.validateUser(loginDto.email, loginDto.password);
     if (!user) {
-      // Roll forward the per-email failure counter. If the previous
-      // failure was within the last WINDOW_MS, increment; otherwise
-      // start a fresh window. The counter only triggers a lock when
-      // it crosses LIMIT — every failure before that is just a wrong
-      // password (UNAUTHORIZED), not a rate-limit (TOO_MANY).
-      //
-      // Previous bug: both branches of the lock-vs-no-lock ternary
-      // wrote `now + WINDOW_MS` to lockedUntil, so a single typo
-      // locked the user out for 15 minutes. Now `lockedUntil` only
-      // gets a non-zero value when count >= LIMIT.
       const insideWindow =
         !!tracked && now - tracked.lastAttemptAt < FAILED_LOGIN_WINDOW_MS;
       const attempt: FailedAttempt = insideWindow
@@ -166,13 +138,6 @@ export class AuthService {
       },
     });
 
-    // Fire-and-forget the event. Awaiting `lastValueFrom(emit(...))`
-    // here would block the HTTP response on a RabbitMQ ACK — when the
-    // broker is restarting, register hangs for ~200s and the second
-    // retry then sees AUTH_EMAIL_TAKEN. The User microservice does
-    // a lazy upsert on /me when the profile row is missing, so a
-    // dropped event is not catastrophic — the row appears on first
-    // load instead.
     this.eventService
       .emit("user.created", {
         id: user.id,
@@ -192,17 +157,6 @@ export class AuthService {
     return true;
   }
 
-  /**
-   * SHA-256 of (User-Agent ‖ first-IP-from-XFF). Bound into the
-   * refresh token as the `dvc` claim, then re-checked on /refresh —
-   * a token stolen from one machine can't be replayed from another
-   * because the fingerprint won't match.
-   *
-   * It's a heuristic, not a hard guarantee (UA can be spoofed, IP
-   * can change behind NAT) — but it raises the bar from "any
-   * exfiltrated cookie wins" to "you also need to puppet the
-   * victim's exact client headers".
-   */
   static deviceFingerprint(userAgent: string, ip: string): string {
     const crypto = require("crypto") as typeof import("crypto");
     return crypto
@@ -224,7 +178,7 @@ export class AuthService {
       data: {
         token: token,
         userId: user.id,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       },
     });
 
@@ -254,8 +208,6 @@ export class AuthService {
       );
     }
 
-    // Verify the JWT signature/exp BEFORE the DB lookup so we never
-    // reveal which tokens exist in our store via timing.
     let payload: { sub: string; email: string; exp: number; dvc?: string };
     try {
       payload = this.jwtService.verify(refreshToken, {
@@ -281,12 +233,6 @@ export class AuthService {
     });
 
     if (!refreshTokenRecord) {
-      // The JWT verifies but no row exists for it in our store.
-      // That's a re-use of a token that was already rotated away —
-      // either the legitimate user is replaying an old request OR
-      // someone stole the token after rotation. We can't tell, so we
-      // fail safe: revoke the entire token family for this user and
-      // force a fresh login.
       await this.prisma.refreshToken.deleteMany({
         where: { userId: payload.sub },
       });
@@ -300,10 +246,6 @@ export class AuthService {
       );
     }
 
-    // Device-binding check: if the token was minted with a `dvc`
-    // claim and the current request's fingerprint disagrees, treat
-    // it like a stolen-cookie replay. Empty/legacy claim is
-    // tolerated so existing sessions don't break.
     if (
       payload.dvc &&
       fingerprint &&
@@ -338,10 +280,6 @@ export class AuthService {
 
     let newRefreshToken: string | undefined;
     if (shouldRotate) {
-      // Atomically delete the old token and create the new one. If
-      // anything in this transaction throws, the old token survives
-      // and the user can retry; what we never want is "old gone, new
-      // also failed to persist" — that bricks the session.
       newRefreshToken = await this.prisma.$transaction(async (tx) => {
         await tx.refreshToken.delete({
           where: { token: refreshToken },
@@ -389,10 +327,6 @@ export class AuthService {
   }
 
   async resetPassword(email: string) {
-    // A missing e-mail used to reach failedKey() and crash on
-    // undefined.trim(), which answered 500 to what is an ordinary bad
-    // request. Reject it here with the same stable-code shape the rest
-    // of the service uses.
     if (typeof email !== "string" || email.trim() === "") {
       throwWithCode(
         AUTH_EMAIL_REQUIRED,
@@ -402,10 +336,6 @@ export class AuthService {
     }
     const key = failedKey(email);
 
-    // Per-email throttle: one reset every RESET_WINDOW_MS. Without it,
-    // anyone can spam a victim's inbox AND silently rotate their
-    // password every few seconds. Check this BEFORE the user lookup so
-    // existence-vs-non-existence enumeration is also slowed down.
     const lastAt = resetAttempts.get(key);
     const now = Date.now();
     if (lastAt && now - lastAt < RESET_WINDOW_MS) {
@@ -448,7 +378,6 @@ export class AuthService {
     const payload = this.jwtService.verify(refreshToken, {
       secret: config().refreshToken.secret,
     });
-    // Rotate when less than half the lifetime remains (< 3.5 days of 7)
     const halfLife = 7 * 24 * 60 * 60 * 0.5;
     const remaining = payload.exp - Date.now() / 1000;
     return remaining < halfLife;
@@ -481,8 +410,6 @@ export class AuthService {
         "User not found",
       );
     }
-    // Authorization: JWT guard ensures userId === requesting user's id.
-    // Old-password check below prevents unauthorized changes.
     const credentials = await this.prisma.credentials.findUnique({
       where: { userId: userId },
     });

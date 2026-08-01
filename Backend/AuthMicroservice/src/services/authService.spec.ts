@@ -20,12 +20,6 @@ import { PrismaService } from "../../prisma/prismaService";
 import { Role } from "@prisma/client";
 import { of, throwError } from "rxjs";
 
-/**
- * Assert that a thrown HttpException carries a specific error code in
- * its structured response body. Replaces the old pattern of asserting
- * the message string contained "CODE: …" — codes now live in a
- * separate `code` field on `getResponse()`.
- */
 async function expectThrownWithCode(
   promise: Promise<unknown>,
   expectedCode: string,
@@ -217,8 +211,6 @@ describe("AuthService", () => {
     });
 
     it("should throw UnauthorizedException when credentials are invalid", async () => {
-      // Distinct email to avoid contaminating other tests' state in
-      // the module-level failedLogins map.
       const loginDto = { email: "wrong-pw@example.com", password: "wrongpassword" };
       prismaService.user.findUnique.mockResolvedValue(null);
 
@@ -235,13 +227,10 @@ describe("AuthService", () => {
       const loginDto = { email: "single-fail@example.com", password: "wrong" };
       prismaService.user.findUnique.mockResolvedValue(null);
 
-      // First failure: should be plain wrong-credentials, not a lock.
       await expectThrownWithCode(
         service.login(loginDto),
         "AUTH_INVALID_CREDENTIALS",
       );
-      // Second failure: should STILL be wrong-credentials (under the
-      // 8-attempt limit). The pre-fix code would lock here.
       await expectThrownWithCode(
         service.login(loginDto),
         "AUTH_INVALID_CREDENTIALS",
@@ -252,10 +241,6 @@ describe("AuthService", () => {
       const loginDto = { email: "lock-target@example.com", password: "wrong" };
       prismaService.user.findUnique.mockResolvedValue(null);
 
-      // 8 wrong-password attempts — all should throw the bare invalid-
-      // credentials code. The 8th sets lockedUntil, but the 8th itself
-      // is still raised as INVALID_CREDENTIALS (the lock takes effect
-      // for the NEXT request).
       for (let i = 0; i < 8; i++) {
         await expectThrownWithCode(
           service.login(loginDto),
@@ -263,8 +248,6 @@ describe("AuthService", () => {
         );
       }
 
-      // 9th attempt: now we hit the lock check at the top of login()
-      // before validating creds.
       await expectThrownWithCode(
         service.login(loginDto),
         "AUTH_RATE_LIMITED",
@@ -402,7 +385,6 @@ describe("AuthService", () => {
       prismaService.refreshToken.findUnique.mockResolvedValue(
         mockRefreshToken as any,
       );
-      // exp ~6 days out — more than halfLife (3.5d), so no rotation
       jwtService.verify.mockReturnValue({
         sub: mockUser.id,
         exp: Math.floor(Date.now() / 1000) + 6 * 24 * 60 * 60,
@@ -428,7 +410,6 @@ describe("AuthService", () => {
       prismaService.refreshToken.findUnique.mockResolvedValue(
         mockRefreshToken as any,
       );
-      // exp 1h ahead — well below halfLife (3.5d), so rotation kicks in
       jwtService.verify.mockReturnValue({
         sub: mockUser.id,
         exp: Math.floor(Date.now() / 1000) + 3600,
@@ -461,8 +442,6 @@ describe("AuthService", () => {
     });
 
     it("should throw BadRequestException when refresh token is invalid", async () => {
-      // Token signature verifies but no DB row — reuse-detection
-      // path: revoke the family and reject as invalid.
       jwtService.verify.mockReturnValue({
         sub: mockUser.id,
         exp: Math.floor(Date.now() / 1000) + 3600,
@@ -476,7 +455,6 @@ describe("AuthService", () => {
         service.refreshToken("invalid.token"),
         "AUTH_REFRESH_TOKEN_INVALID",
       );
-      // Family revocation must have been triggered.
       expect(prismaService.refreshToken.deleteMany).toHaveBeenCalledWith({
         where: { userId: mockUser.id },
       });
@@ -589,8 +567,6 @@ describe("AuthService", () => {
     it("should throw NotFoundException when user not found", async () => {
       prismaService.user.findUnique.mockResolvedValue(null);
 
-      // Two distinct emails so the per-email throttle doesn't merge
-      // them into a single 429 instead of independent 404s.
       await expect(
         service.resetPassword("ghost-a@example.com"),
       ).rejects.toThrow(NotFoundException);
@@ -608,7 +584,6 @@ describe("AuthService", () => {
       );
 
       const email = "throttle-target@example.com";
-      // Stub user lookup so the first call succeeds end-to-end.
       prismaService.user.findUnique.mockResolvedValue({
         ...mockUser,
         email,

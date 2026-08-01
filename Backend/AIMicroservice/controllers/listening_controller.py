@@ -32,7 +32,6 @@ class ListeningErrorExample(BaseModel):
 class ListeningResultRequest(BaseModel):
     language: str
     level: str
-    # 0-100. Computed FE-side from correct/total.
     score: int
     questionCount: int
     correctCount: int
@@ -93,9 +92,6 @@ class ListeningController:
                 focus_keywords=keywords or None,
                 focus_weaknesses=weaknesses or None,
             )
-            # `question_types` rides on the inbound ListeningTaskRequest
-            # already; the service reads it from there. No extra
-            # plumbing needed here.
             return BaseResponse[AdaptiveListeningResponse](
                 success=True,
                 payload=AdaptiveListeningResponse(
@@ -129,8 +125,6 @@ class ListeningController:
                     "score": body.score,
                     "language": to_iso_language(body.language),
                     "metadata": {
-                        # Top-level adaptive signals — derive_adaptive_focus
-                        # reads these blindly across all task types.
                         "errorTypes": [
                             e.type for e in body.errorExamples if e.type
                         ][:5],
@@ -148,7 +142,6 @@ class ListeningController:
                             else []
                         ),
                         "targetedWeaknesses": body.targetedWeaknesses,
-                        # Bookkeeping for later analytics dashboards.
                         "questionCount": body.questionCount,
                         "correctCount": body.correctCount,
                         "questionTypes": body.questionTypes,

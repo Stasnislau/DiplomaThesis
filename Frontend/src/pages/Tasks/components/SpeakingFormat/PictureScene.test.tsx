@@ -12,7 +12,6 @@ describe("PictureScene", () => {
   it("starts in loading state with a generating-image hint", () => {
     render(<PictureScene {...props} />);
     expect(screen.getByText(/Generating image/i)).toBeInTheDocument();
-    // The <img> is in the DOM but invisible until it loads.
     expect(screen.getByAltText(props.caption)).toBeInTheDocument();
   });
 
@@ -28,11 +27,7 @@ describe("PictureScene", () => {
   it("falls back to the caption when the image fails to load", () => {
     render(<PictureScene {...props} />);
     fireEvent.error(screen.getByAltText(props.caption));
-    // Failure copy + caption should both render so the practice flow
-    // isn't blocked by an external service hiccup.
     expect(screen.getByText(/Couldn't load the image/i)).toBeInTheDocument();
-    // The caption appears twice (alt + fallback paragraph) — that's
-    // expected; just assert at least one rendered occurrence.
     expect(screen.getAllByText(props.caption).length).toBeGreaterThanOrEqual(1);
   });
 
@@ -41,7 +36,6 @@ describe("PictureScene", () => {
     fireEvent.load(screen.getByAltText(props.caption));
     const toggle = screen.getByRole("button", { name: /Show description/i });
     fireEvent.click(toggle);
-    // Now both the toggle (renamed to Hide) and the caption are visible.
     expect(
       screen.getByRole("button", { name: /Hide description/i }),
     ).toBeInTheDocument();

@@ -12,30 +12,14 @@ import { BaseResponse } from "src/types";
 import { HttpService } from "@nestjs/axios";
 import { firstValueFrom } from "rxjs";
 
-/** Request body type - can be JSON object, string, or undefined */
 type RequestBody = Record<string, unknown> | string | undefined;
 
-/** Gateway response structure */
 interface GatewayResponse {
   status: number;
   data: BaseResponse<unknown> | Record<string, unknown>;
-  /** Set-Cookie headers from the upstream service to forward verbatim. */
   setCookie?: string[];
 }
 
-/**
- * Tiny in-process token-bucket rate limiter for AI endpoints.
- *
- * Why AI-routes-only (instead of all routes): the user's API key is
- * billed per call there, so a runaway client (or accidental retry
- * loop) can drain real money in seconds. Auth/user routes are
- * cheap and self-contained — no need to gate them.
- *
- * 60 calls/hour/user is roughly one task generation per minute on
- * average — enough for normal study, far short of an abuse pattern.
- * For a multi-replica deploy this should move to Redis; with one
- * gateway replica it's adequate as-is.
- */
 const AI_LIMIT_PER_HOUR = 60;
 const AI_LIMIT_WINDOW_MS = 60 * 60 * 1000;
 
@@ -47,12 +31,7 @@ interface RateLimitBucket {
 const aiRateLimits = new Map<string, RateLimitBucket>();
 
 function pruneExpiredBuckets(now: number): void {
-  // Walk the map periodically and drop buckets whose window has
-  // closed. Without this, every test user / one-shot caller leaves
-  // a bucket sitting in memory until restart — over weeks the map
-  // grows unboundedly. We piggyback on quota-check calls so we
-  // don't need a separate timer.
-  if (aiRateLimits.size < 1024) return; // amortise: only when it matters
+  if (aiRateLimits.size < 1024) return;
   for (const [k, b] of aiRateLimits) {
     if (now - b.windowStart >= AI_LIMIT_WINDOW_MS) {
       aiRateLimits.delete(k);
@@ -99,18 +78,11 @@ export class GatewayService {
     "api/auth/login",
     "api/auth/register",
     "api/auth/refresh",
-    // Forgot-password by definition runs from a logged-out browser —
-    // requiring a JWT here would soft-brick the recovery flow.
     "api/auth/resetPassword",
     "api/languages",
-    // Health probes need to be reachable without a JWT — Docker
-    // healthchecks and any external uptime monitor never have one.
     "api/health",
   ];
 
-  // AI subpaths that actually call out to an AI provider — these
-  // are the ones we rate-limit. Other AI-service paths (e.g. /health,
-  // /ai-tokens/verify) are exempt.
   private readonly AI_RATE_LIMITED_PREFIXES = [
     "writing/",
     "listening/",
@@ -216,8 +188,6 @@ export class GatewayService {
         userData = await this.validateToken(headers);
       }
 
-      // After auth, before forwarding: gate AI-billing-bearing service
-      // calls behind a per-user-per-hour quota.
       if (
         microservice === "ai" &&
         userData &&
@@ -277,10 +247,6 @@ export class GatewayService {
           `Response from ${microservice} microservice: Status ${response.status}`,
         );
 
-        // Pass Set-Cookie through verbatim so Auth's httpOnly refresh
-        // cookie reaches the browser. Without this, /auth/login
-        // succeeds upstream but the browser never gets the cookie and
-        // /auth/refresh is permanently broken from the client side.
         const upstreamSetCookie = response.headers?.["set-cookie"];
         return {
           status: response.status,
@@ -335,10 +301,6 @@ export class GatewayService {
     } catch (error: unknown) {
       const err = error as { message?: string; status?: number };
       this.logger.error(`Unhandled error in gatewayService: ${err.message}`);
-      // Surface UnauthorizedException (and any other HttpException
-      // with an explicit status) instead of pretending every problem
-      // is a 500. Without this, an expired/missing JWT looks like a
-      // server fault to the frontend.
       const status =
         err instanceof UnauthorizedException ? 401 : err.status ?? 500;
       return {

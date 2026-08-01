@@ -72,7 +72,7 @@ describe("MultiSelectRenderer", () => {
     render(
       <MultiSelectRenderer
         question={makeQuestion()}
-        answer={["A"]} // C is correct but missed
+        answer={["A"]}
         onChange={vi.fn()}
         revealed={true}
       />,

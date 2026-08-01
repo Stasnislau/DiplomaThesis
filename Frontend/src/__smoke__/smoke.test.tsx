@@ -4,18 +4,6 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-/**
- * Smoke tests — fast checks that the FE compiles, every key page
- * mounts in JSDOM, and the discriminated-union dispatchers don't
- * throw on canonical inputs.
- *
- * These don't exercise real API calls — every fetch hook is mocked
- * to a no-op idle state. The point is to catch import errors,
- * provider misconfiguration, and missing context providers BEFORE
- * the app gets opened in a real browser.
- */
-
-// ---------- Hook + module mocks (page renders need network-less deps) ----------
 
 vi.mock("@/store/useUserStore", () => ({
   useUserStore: (selector: (state: unknown) => unknown) =>
@@ -79,18 +67,12 @@ const renderWithProviders = (ui: React.ReactElement) => {
 };
 
 
-// ---------- Page-mount smoke tests ---------------------------------
-
-
 describe("smoke: page components mount without crashing", () => {
   it("MaterialsTask renders the upload prompt", async () => {
     const { default: MaterialsTask } = await import(
       "@/pages/Tasks/components/MaterialsTask"
     );
     renderWithProviders(<MaterialsTask />);
-    // The page renders multiple PDF-related strings (header + button +
-    // helper text); we only care that *something* PDF-flavoured is
-    // there as a smoke signal, not the count.
     expect(
       screen.getAllByText(/upload|pdf|document/i).length,
     ).toBeGreaterThan(0);
@@ -127,9 +109,6 @@ describe("smoke: page components mount without crashing", () => {
     expect(screen.getByText(/Free monologue/)).toBeInTheDocument();
   });
 });
-
-
-// ---------- Dispatcher smoke (every discriminated-union case routes) -----
 
 
 describe("smoke: question dispatchers route every union variant", () => {
@@ -216,9 +195,6 @@ describe("smoke: question dispatchers route every union variant", () => {
 });
 
 
-// ---------- Grader smoke (no FE-side regressions on canonical answers) ----
-
-
 describe("smoke: graders never throw on canonical inputs", () => {
   it("Materials gradeQuestion handles every type with a correct answer", async () => {
     const { gradeQuestion } = await import(
@@ -244,7 +220,6 @@ describe("smoke: graders never throw on canonical inputs", () => {
       ],
     ];
     for (const [q, a] of cases) {
-      // Grader is allowed to return null or a boolean, never throw.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect(typeof gradeQuestion(q as any, a as any)).not.toBe("undefined");
     }
@@ -275,9 +250,6 @@ describe("smoke: graders never throw on canonical inputs", () => {
 });
 
 
-// ---------- Type-import smoke (catches accidental module breakage) -----
-
-
 describe("smoke: type modules import cleanly", () => {
   it("ListeningResponse types load", async () => {
     const mod = await import("@/types/responses/ListeningResponse");
@@ -296,14 +268,8 @@ describe("smoke: type modules import cleanly", () => {
 });
 
 
-// ---------- App-shell smoke (router builds, providers load) -------
-
-
 describe("smoke: app shell builds", () => {
   it("router config imports without errors", async () => {
-    // The router file pulls in every lazy page, so a single broken
-    // page or import cycle will surface here even if the pages
-    // above happened to work in isolation.
     await expect(
       waitFor(async () => {
         const mod = await import("@/router");

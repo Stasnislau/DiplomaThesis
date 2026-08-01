@@ -67,7 +67,6 @@ async def test_full_pipeline_on_synthetic_toefl_pdf(
        variants. The parser must route every one to the right
        discriminated-union subclass.
     """
-    # --- Stage 1: classification on the real PDF ---
     pdf_bytes = write_toefl_reading_pdf()
     classification_response = json.dumps(
         {
@@ -102,17 +101,10 @@ async def test_full_pipeline_on_synthetic_toefl_pdf(
     ex = process_result.document_map.exercises[0]
     assert ex.passage_word_count_estimate == 720
     assert ex.type == "reading_comprehension"
-    # The real pypdf parser actually ran on the synthetic PDF — this
-    # is what guards against regressions like a future change to the
-    # garbled-text heuristic accidentally rejecting valid documents.
     assert process_result.chunks_count > 0
-    # The classifier must see the actual passage text — verify by
-    # checking the prompt argument that was sent. The first AI call's
-    # `prompt` kwarg should contain a snippet from the passage.
     first_call_kwargs = mock_ai_service.get_ai_response.await_args_list[0].kwargs
     assert "Migration" in first_call_kwargs["prompt"]
 
-    # --- Stage 2 + Stage 3: drive generate_quiz with the same map ---
     stage_2_passage = (
         "Birds use multiple cues to navigate during their long journeys, "
         "from the angle of polarised sunlight on overcast mornings to "
@@ -196,7 +188,6 @@ async def test_full_pipeline_on_synthetic_toefl_pdf(
     assert isinstance(qs[2], MultiSelectMCQuizQuestion)
     assert isinstance(qs[3], MatchingQuizQuestion)
     assert isinstance(qs[4], FillInTheBlankQuizQuestion)
-    # Every passage-bound question carries the same Stage 2 stimulus.
     for q in qs:
         assert q.context_text == stage_2_passage
 
@@ -209,13 +200,8 @@ async def test_pipeline_rejects_garbled_pdf_text(
     """Heuristic guard at process_pdf level: if pypdf coughs up
     high-bit nonsense (custom-font / encrypted PDFs), we should
     refuse rather than feed the AI invalid input."""
-    # Hand-rolled bytes: dense enough in non-text control characters
-    # to cross the 30% threshold the garbled-text heuristic uses
-    # (\w / whitespace / basic punctuation are the "good" set, so we
-    # use raw control bytes that match none of those).
     garbage = "\x03\x05\x07\x0b\x0c\x0e\x10\x12" * 50
-    fake_pdf_bytes = write_toefl_reading_pdf()  # real PDF, but we'll
-    # patch the pypdf reader to return garbage text.
+    fake_pdf_bytes = write_toefl_reading_pdf()
     from unittest.mock import patch
 
     with patch("services.material_service.PdfReader") as MockReader:
@@ -228,5 +214,4 @@ async def test_pipeline_rejects_garbled_pdf_text(
 
         with pytest.raises(HTTPException) as exc_info:
             await material_service.process_pdf(fake_pdf_bytes, "garbled.pdf")
-        # 400 with the dedicated PDF_GARBLED_TEXT code.
         assert exc_info.value.status_code == 400

@@ -7,27 +7,12 @@ from google.api_core.client_options import ClientOptions
 from google.cloud import texttospeech
 
 
-# Multi-speaker transcripts come in tagged like:
-#   [Speaker 1]: Hello there.
-#   [Speaker 2]: Hi! How are you?
-# This regex matches a speaker tag at the start of a logical line.
-# We tolerate variable whitespace and either ASCII or Cyrillic
-# "Speaker"/"Спикер" labels — the LLM tends to localise.
 _SPEAKER_TAG_RE = re.compile(
     r"^\s*\[\s*([^\]]+?)\s*\]\s*:\s*",
     flags=re.MULTILINE,
 )
 
 
-# Chirp 3 HD is Google's current top voice family across all our
-# target languages. It supersedes Neural2 (older, less natural on
-# intonation) and Wavenet (oldest, only viable option for PL/RU
-# before Chirp). The mythological/astronomical voice names are
-# universal across languages — picking the same five names per
-# language keeps the pool consistent without losing voice variety.
-# Chirp 3 HD supports `speaking_rate` (required for our CEFR pace
-# scaling) but ignores `pitch`, `volumeGainDb`, and SSML — the
-# synthesize call already uses pitch=0 so this isn't a regression.
 LANGUAGE_VOICE_POOLS = {
     "english": {
         "code": "en-US",
@@ -104,9 +89,6 @@ LANGUAGE_VOICE_POOLS = {
 FALLBACK_LANGUAGE = "english"
 
 
-# Per-level speaking-rate multipliers for Google TTS. 1.0 = native pace.
-# Sub-1.0 stretches the audio without pitching it (speaking_rate is
-# duration-based, not pitch-shift), which is exactly what beginners need.
 _LEVEL_RATE = {
     "A0": 0.70,
     "A1": 0.80,
@@ -191,8 +173,6 @@ class TTSService:
         Falls back to single-voice synthesis when the text contains
         no speaker tags.
         """
-        # Pull speaker tags + segments. If none found, this is a
-        # plain monologue and we can defer to the single-voice path.
         segments = _split_by_speaker_tags(text)
         if not segments:
             return self.synthesize(text, language, level), []
@@ -204,10 +184,6 @@ class TTSService:
         language_code = pool["code"]
         rate = _speaking_rate_for_level(level)
 
-        # Stable speaker → voice mapping. Walking insertion order so
-        # the first speaker who shows up gets voice[0], second gets
-        # voice[1], etc. Wraps around when pool is smaller than the
-        # speaker count (rare — pools have 3-6 voices).
         speaker_to_voice: dict[str, str] = {}
         speakers_in_order: list[str] = []
         for label, _ in segments:

@@ -49,7 +49,7 @@ describe("ErrorHandlingMiddleware", () => {
         expect.objectContaining({
           success: false,
           payload: expect.objectContaining({
-            message: "Bad Request Exception", // NestJS default message wrapper for plain BadRequestException
+            message: "Bad Request Exception",
             errors: ["validation email failed"]
           })
         })

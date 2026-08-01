@@ -32,24 +32,16 @@ export const TaskPage: React.FC = () => {
   const { t } = useTranslation();
   const [language, setLanguage] = useState("");
   const [level, setLevel] = useState("");
-  // Per-question user answer. UserAnswerValue spans every shape the
-  // 7 Materials variants need (string | string[] | Record<id,value>).
   const [userAnswer, setUserAnswer] = useState<UserAnswerValue | undefined>(
     undefined,
   );
   const [revealed, setRevealed] = useState(false);
-  // The variant the picker rolled for the current generation. Drives
-  // which renderer mounts: writing → QuestionRenderer; listening →
-  // QuizListeningCard; speaking → FormatPracticePanel; essay (subset
-  // of writing) → EssayTask.
   const [activeVariant, setActiveVariant] = useState<QuizVariant | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState<QuizQuestion | null>(
     null,
   );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Bumped on every Generate Task click so the listening / speaking
-  // sub-widgets force-remount and refetch.
   const [genCounter, setGenCounter] = useState(0);
 
   useEffect(() => {
@@ -75,9 +67,6 @@ export const TaskPage: React.FC = () => {
 
     if (variant.kind === "writing") {
       if (variant.type === "essay") {
-        // Essay flow is fully self-contained inside <EssayTask />.
-        // No typed-task fetch — the inner component generates its
-        // own prompt and grades it via /writing/essay/evaluate.
         return;
       }
       setIsLoading(true);
@@ -96,10 +85,6 @@ export const TaskPage: React.FC = () => {
       return;
     }
 
-    // Listening / speaking sub-widgets manage their own fetch +
-    // recording + grading lifecycle. We just mount them by setting
-    // activeVariant; each panel picks up the new genCounter and
-    // refetches.
   };
 
   const handleCheckAnswer = () => {
@@ -219,7 +204,7 @@ export const TaskPage: React.FC = () => {
               </div>
             )}
 
-            {/* WRITING — essay sub-flow */}
+            {}
             {activeVariant?.kind === "writing" &&
               activeVariant.type === "essay" &&
               language &&
@@ -233,7 +218,7 @@ export const TaskPage: React.FC = () => {
                 </div>
               )}
 
-            {/* WRITING — MC / FIB / T-F / multi-select / matching / cloze / open */}
+            {}
             {activeVariant?.kind === "writing" &&
               activeVariant.type !== "essay" &&
               currentQuestion && (
@@ -289,7 +274,7 @@ export const TaskPage: React.FC = () => {
                 </div>
               )}
 
-            {/* LISTENING — audio + question with adaptive history-logging */}
+            {}
             {activeVariant?.kind === "listening" && language && level && (
               <div className="mt-8">
                 <QuizListeningCard
@@ -301,7 +286,7 @@ export const TaskPage: React.FC = () => {
               </div>
             )}
 
-            {/* SPEAKING — single rolled format, auto-loads, no second click */}
+            {}
             {activeVariant?.kind === "speaking" && language && level && (
               <div className="mt-8">
                 <QuizSpeakingCard

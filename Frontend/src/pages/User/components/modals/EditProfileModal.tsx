@@ -55,10 +55,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
           onClose();
         })
         .catch(() => {
-          // Error is already exposed via the `error` field from the
-          // useUpdateUser hook and rendered inline below; we just need
-          // to swallow the rejection here so React doesn't complain
-          // about an unhandled promise.
         });
     } else {
       onClose();

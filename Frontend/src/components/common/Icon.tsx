@@ -16,8 +16,6 @@ const Icon = React.forwardRef<HTMLDivElement, IconProps>(
         className={cn('flex items-center justify-center', className)}
         {...props}
         aria-label={alt}
-        // An image role without a name is a serious WCAG failure, so an icon
-        // that carries no caption is decoration and announces itself as such.
         role={alt ? 'img' : 'presentation'}
       >
         {SvgIcon && <SvgIcon aria-hidden={!alt} style={{ color: fill }} />}

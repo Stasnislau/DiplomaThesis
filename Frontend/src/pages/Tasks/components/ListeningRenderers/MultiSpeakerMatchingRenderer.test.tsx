@@ -24,7 +24,6 @@ describe("MultiSpeakerMatchingRenderer", () => {
         revealed={false}
       />,
     );
-    // 2 statements × 2 speakers = 4 chip buttons total.
     expect(screen.getAllByRole("button", { name: /Speaker 1/i })).toHaveLength(2);
     expect(screen.getAllByRole("button", { name: /Speaker 2/i })).toHaveLength(2);
   });
@@ -39,7 +38,6 @@ describe("MultiSpeakerMatchingRenderer", () => {
         revealed={false}
       />,
     );
-    // Pick "Speaker 1" for the first statement.
     const firstSpeakerOneChip = screen.getAllByRole("button", { name: /Speaker 1/i })[0];
     fireEvent.click(firstSpeakerOneChip);
     expect(onChange).toHaveBeenCalledWith({ "0": "Speaker 1" });

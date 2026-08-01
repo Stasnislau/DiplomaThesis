@@ -5,12 +5,6 @@ import type { ListeningRendererProps } from "./types";
 
 const norm = (s: string) => s.trim().toLowerCase();
 
-/**
- * Lists each statement as a row with a row-of-buttons speaker
- * picker. We use buttons rather than a native <select> because the
- * speaker count is small (2-3) and chips are easier to scan while
- * the audio plays.
- */
 const MultiSpeakerMatchingRenderer = ({
   question,
   answer,

@@ -40,12 +40,8 @@ const FormatPracticePanel = ({ language, level }: FormatPracticePanelProps) => {
   const [isLoadingPrompt, setIsLoadingPrompt] = useState(false);
   const [isGrading, setIsGrading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Bumped whenever a fresh prompt is loaded — RecorderPanel watches
-  // it and resets its internal state so a stale recording doesn't
-  // bleed into the new prompt.
   const [resetSignal, setResetSignal] = useState(0);
 
-  // Wipe stale state when the user switches format mid-session.
   useEffect(() => {
     setPrompt(null);
     setRecordedFile(null);
@@ -65,9 +61,6 @@ const FormatPracticePanel = ({ language, level }: FormatPracticePanelProps) => {
       setPrompt(data);
       setResetSignal((s) => s + 1);
     } catch (e) {
-      // Map backend `code` (AI_RESPONSE_PARSE_FAILED, AI_API_KEY_MISSING…)
-      // through useLocalizedError so the user sees a translated string,
-      // not the raw English server message or "[object Object]".
       setError(localizeError(e, t("tasks.analysisFailed")));
     } finally {
       setIsLoadingPrompt(false);
@@ -114,7 +107,7 @@ const FormatPracticePanel = ({ language, level }: FormatPracticePanelProps) => {
         </div>
       </div>
 
-      {/* Format selector */}
+      {}
       <div className="flex flex-wrap gap-2">
         {SPEAKING_FORMATS.map((f) => {
           const meta = FORMAT_META[f];
@@ -155,15 +148,12 @@ const FormatPracticePanel = ({ language, level }: FormatPracticePanelProps) => {
           : t("tasks.loadPrompt", { defaultValue: "Load task" })}
       </Button>
 
-      {/* Prompt display */}
+      {}
       {prompt && (
         <div className="space-y-3">
           <div className="rounded-2xl border border-indigo-200 dark:border-indigo-800 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-5">
-            {/* Picture-description format leads with the actual
-                image — the whole point is "describe what you see",
-                not "describe this paragraph". The text-scene falls
-                back to a caption (in case Pollinations is slow or
-                returned a corrupted image). */}
+            {
+}
             {prompt.format === "picture_description" && prompt.imageUrl ? (
               <PictureScene
                 imageUrl={prompt.imageUrl}

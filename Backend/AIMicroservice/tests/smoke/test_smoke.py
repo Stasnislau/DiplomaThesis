@@ -16,17 +16,12 @@ import importlib
 import pytest
 
 
-# ---------- App boot + route registration --------------------------
-
-
 def test_main_app_imports_and_constructs() -> None:
     """Every change to `main.py` or any imported controller risks
     breaking app construction. This test catches that before the
     container is even rebuilt."""
     main = importlib.import_module("main")
     assert main.app is not None
-    # FastAPI exposes registered routes via `.routes`. We don't pin
-    # the count (it grows over time), just sanity-check it's > 0.
     assert len(main.app.routes) > 5
 
 
@@ -57,9 +52,6 @@ def test_route_is_registered(expected_path: str) -> None:
     )
 
 
-# ---------- Per-controller import smoke ----------------------------
-
-
 @pytest.mark.parametrize(
     "module_name",
     [
@@ -77,9 +69,6 @@ def test_controller_imports(module_name: str) -> None:
     assert module is not None
 
 
-# ---------- Service-class import smoke -----------------------------
-
-
 @pytest.mark.parametrize(
     "module_name, attr",
     [
@@ -95,9 +84,6 @@ def test_service_class_is_importable(module_name: str, attr: str) -> None:
     module = importlib.import_module(module_name)
     cls = getattr(module, attr, None)
     assert cls is not None, f"{attr} not exported from {module_name}"
-
-
-# ---------- Discriminated-union DTO smoke --------------------------
 
 
 def test_quiz_question_union_routes_every_known_type() -> None:
@@ -176,9 +162,6 @@ def test_speaking_format_catalog_is_consistent() -> None:
     for f in formats:
         assert is_known_format(f)
     assert not is_known_format("not_a_real_format")
-
-
-# ---------- Health endpoint via TestClient -------------------------
 
 
 def test_health_endpoint_returns_200() -> None:

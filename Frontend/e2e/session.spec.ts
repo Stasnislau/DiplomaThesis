@@ -1,15 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { loginViaStorage, mockAuthRoutes } from "./helpers/auth";
 
-/**
- * Session behaviour in the browser.
- *
- * These paths only exist once a real page is running: the guard that
- * keeps a signed-out visitor off a protected route, the redirect that
- * keeps a signed-in learner off the sign-in form, and the recovery when
- * the stored token is gone or unusable. A component test cannot show
- * any of them, because the router and the storage are what decide.
- */
 test.describe("Session in the browser", () => {
   test("keeps a signed-out visitor off the learning path", async ({ page }) => {
     await mockAuthRoutes(page);

@@ -154,10 +154,6 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
 export class AchievementService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /**
-   * Seed all achievement definitions into the database.
-   * Uses upsert to avoid duplicates.
-   */
   async seedAchievements(): Promise<number> {
     let created = 0;
     for (const def of ACHIEVEMENT_DEFINITIONS) {
@@ -184,9 +180,6 @@ export class AchievementService {
     return created;
   }
 
-  /**
-   * Get all achievements with user's progress.
-   */
   async getUserAchievements(userId: string) {
     const achievements = await this.prisma.achievement.findMany({
       where: {
@@ -216,9 +209,6 @@ export class AchievementService {
     });
   }
 
-  /**
-   * Get all achievements (including hidden ones that the user has unlocked).
-   */
   async getAllUserAchievements(userId: string) {
     const [visible, unlockedHidden] = await Promise.all([
       this.getUserAchievements(userId),
@@ -258,10 +248,6 @@ export class AchievementService {
     return [...visible, ...hiddenUnlocked];
   }
 
-  /**
-   * Update progress for a specific achievement.
-   * Automatically unlocks if progress >= maxProgress.
-   */
   async updateProgress(
     userId: string,
     achievementName: string,
@@ -331,9 +317,6 @@ export class AchievementService {
     return result;
   }
 
-  /**
-   * Get count of unlocked achievements for a user.
-   */
   async getUnlockedCount(userId: string): Promise<number> {
     return this.prisma.userAchievement.count({
       where: {

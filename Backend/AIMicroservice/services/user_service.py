@@ -41,10 +41,6 @@ class TaskHistoryEntry(TypedDict, total=False):
 
 
 class UserErrorEntry(TypedDict, total=False):
-    # ISO 639-1 code (en/pl/...) — the User service resolves it to a
-    # languageId. errorType mirrors IdentifiedError.error_type
-    # (Grammar/Vocabulary/Phrasing/Fluency). source is the skill that
-    # produced it, e.g. "speaking".
     languageCode: str
     errorText: str
     correction: str

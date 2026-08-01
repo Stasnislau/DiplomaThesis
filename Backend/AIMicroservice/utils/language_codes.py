@@ -11,7 +11,6 @@ from typing import Optional
 
 
 _LANG_TO_ISO = {
-    # Common full names — keys are lowercased before lookup.
     "english": "en",
     "polish": "pl",
     "spanish": "es",
@@ -25,7 +24,6 @@ _LANG_TO_ISO = {
     "japanese": "ja",
     "korean": "ko",
     "chinese": "zh",
-    # Already-iso identifiers we accept passthrough.
     "en": "en",
     "pl": "pl",
     "es": "es",
@@ -49,7 +47,6 @@ def to_iso_language(value: Optional[str]) -> Optional[str]:
     key = value.strip().lower()
     if not key:
         return None
-    # Locale-tagged form: "en-US" → "en".
     if "-" in key:
         key = key.split("-", 1)[0]
     return _LANG_TO_ISO.get(key)

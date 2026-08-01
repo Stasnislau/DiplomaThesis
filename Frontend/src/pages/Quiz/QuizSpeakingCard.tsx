@@ -19,8 +19,6 @@ import RecorderPanel from "@/pages/Tasks/components/SpeakingFormat/RecorderPanel
 interface QuizSpeakingCardProps {
   language: string;
   level: string;
-  /** Picker already rolled the format. We just render that one — no
-   *  selector, no extra clicks. Auto-load the prompt on mount. */
   format: SpeakingFormat;
 }
 

@@ -172,7 +172,6 @@ const en = {
       fluencyGood: "Good",
       fluencyFair: "Fair",
       fluencyNeedsWork: "Needs Work",
-      // Listening / Speaking / Materials sections
       listeningTask: "Listening Task",
       listenCarefully: "Listen carefully and answer the questions",
       selectLanguageAndLevel: "Please select both language and level.",
@@ -200,7 +199,6 @@ const en = {
       unclearPronunciation: "Unclear Pronunciation Detected",
       nextExercise: "⟳ Next Exercise",
       generateExercise: "▶ Generate Exercise",
-      // MaterialsTask remaining
       previouslyAnalyzed: "Previously Analyzed Materials",
       newFile: "← New File",
       generatingTasks: "Generating Tasks...",
@@ -211,7 +209,6 @@ const en = {
       taskTypeCount_one: "{{count}} task type",
       taskTypeCount_other: "{{count}} task types",
       analyzeAndExtract: "Analyze & Extract Task Types",
-      // Quiz / TaskComponent labels
       optionLabel: "Option {{letter}}",
       answerInputAria: "Answer input",
       acceptedAnswers: "Accepted answers: ",
@@ -230,7 +227,6 @@ const en = {
         garbled: "The text in this PDF came out as gibberish — usually a scanned document or a custom embedded font. Try a different PDF, or run OCR before uploading.",
         aiRejected: "The AI couldn't produce a useful analysis from this PDF — its text is probably too noisy or too short. Try a cleaner or longer document.",
       },
-      // ---------- Phase 1+2+3 additions ---------------------------
       questionLabel: "Question",
       questionTypes: "Question types",
       pickAtLeastOneType: "Pick at least one question type.",
@@ -246,7 +242,6 @@ const en = {
       dictationHint: "Type the sentence exactly as you heard it.",
       fillBlank: "answer",
       fillEachBlank: "Fill in each blank.",
-      // Speaking — guided practice
       modeFreeAnalyze: "Free analyze",
       modeGuided: "Guided practice",
       guidedPractice: "Guided practice",
@@ -261,7 +256,6 @@ const en = {
       coherenceScore: "Coherence",
       vocabularyScore: "Vocabulary",
       matchPercent: "Match",
-      // Listening question type chip labels.
       questionType: {
         multiple_choice: "Multiple choice",
         fill_in_the_blank: "Fill in the blank",
@@ -270,7 +264,6 @@ const en = {
         sentence_completion: "Sentence completion",
         multi_speaker_matching: "Match speakers",
       },
-      // Speaking format chip labels.
       speakingFormat: {
         read_aloud: "Read aloud",
         timed_response: "Timed response (30s)",
@@ -794,10 +787,6 @@ const en = {
       unauthorized: "You are not authorized",
       notFound: "Resource not found",
       generic: "Something went wrong. Please try again.",
-      // Backend error codes — single source of truth for user-facing copy
-      // when the AI raises HTTPException via raise_with_code(...).
-      // Keep the keys identical to the constants in
-      // Backend/AIMicroservice/utils/error_codes.py.
       codes: {
         AUTH_MISSING_USER: "Your session expired. Please sign in again.",
         AUTH_INVALID_TOKEN: "Authentication failed. Please sign in again.",
@@ -833,7 +822,6 @@ const en = {
         USER_SERVICE_BAD_RESPONSE: "User service returned an unexpected response.",
         USER_SERVICE_BAD_REQUEST: "User service rejected the request.",
         USER_TOKENS_EMPTY: "You haven't added any AI tokens yet. Add one in Settings → AI Tokens.",
-        // Auth microservice
         AUTH_INVALID_CREDENTIALS: "Wrong email or password. Please try again.",
         AUTH_EMAIL_TAKEN: "An account with this email already exists.",
         AUTH_EMAIL_REQUIRED: "Enter your e-mail address.",
@@ -846,7 +834,6 @@ const en = {
         AUTH_AUTHORIZATION_FAILED: "Authorization failed. Please sign in again.",
         AUTH_INTERNAL_ERROR: "Something went wrong on our end. Please try again.",
         AUTH_RATE_LIMITED: "Too many attempts. Please wait a few minutes and try again.",
-        // User microservice
         USER_ID_REQUIRED: "User ID is required.",
         USER_NOT_FOUND: "User not found.",
         USER_LANGUAGE_ID_MISSING: "Language ID is missing.",
@@ -1094,7 +1081,6 @@ const pl = {
         garbled: "Tekst PDF-a po wyciągnięciu okazał się nieczytelny — zwykle to skan albo niestandardowa czcionka. Wybierz inny PDF lub uruchom OCR przed wysyłką.",
         aiRejected: "AI nie potrafił przygotować sensownej analizy tego PDF — tekst jest prawdopodobnie zbyt zaszumiony lub zbyt krótki. Spróbuj czystszego lub dłuższego dokumentu.",
       },
-      // ---------- Phase 1+2+3 additions ---------------------------
       questionLabel: "Pytanie",
       questionTypes: "Typy pytań",
       pickAtLeastOneType: "Wybierz co najmniej jeden typ pytania.",
@@ -1691,7 +1677,6 @@ const pl = {
         USER_SERVICE_BAD_RESPONSE: "Usługa użytkownika zwróciła nieoczekiwaną odpowiedź.",
         USER_SERVICE_BAD_REQUEST: "Usługa użytkownika odrzuciła żądanie.",
         USER_TOKENS_EMPTY: "Nie masz jeszcze żadnych tokenów AI. Dodaj w Ustawienia → Tokeny AI.",
-        // Auth microservice
         AUTH_INVALID_CREDENTIALS: "Nieprawidłowy email lub hasło. Spróbuj ponownie.",
         AUTH_EMAIL_TAKEN: "Konto z tym adresem e-mail już istnieje.",
         AUTH_EMAIL_REQUIRED: "Podaj swój adres e-mail.",
@@ -1704,7 +1689,6 @@ const pl = {
         AUTH_AUTHORIZATION_FAILED: "Autoryzacja nie powiodła się. Zaloguj się ponownie.",
         AUTH_INTERNAL_ERROR: "Coś poszło nie tak po naszej stronie. Spróbuj ponownie.",
         AUTH_RATE_LIMITED: "Zbyt wiele prób. Odczekaj kilka minut i spróbuj ponownie.",
-        // User microservice
         USER_ID_REQUIRED: "Identyfikator użytkownika jest wymagany.",
         USER_NOT_FOUND: "Nie znaleziono użytkownika.",
         USER_LANGUAGE_ID_MISSING: "Brak identyfikatora języka.",
@@ -1951,7 +1935,6 @@ const es = {
         garbled: "El texto extraído del PDF salió como caracteres incomprensibles — normalmente un escaneado o una fuente embebida personalizada. Prueba con otro PDF o pásalo por OCR antes de subirlo.",
         aiRejected: "La IA no pudo generar un análisis útil de este PDF — su texto es probablemente demasiado ruidoso o demasiado corto. Prueba con un documento más limpio o más largo.",
       },
-      // ---------- Phase 1+2+3 additions ---------------------------
       questionLabel: "Pregunta",
       questionTypes: "Tipos de preguntas",
       pickAtLeastOneType: "Elige al menos un tipo de pregunta.",
@@ -2547,7 +2530,6 @@ const es = {
         USER_SERVICE_BAD_RESPONSE: "El servicio de usuario devolvió una respuesta inesperada.",
         USER_SERVICE_BAD_REQUEST: "El servicio de usuario rechazó la petición.",
         USER_TOKENS_EMPTY: "Aún no has añadido tokens de IA. Añade uno en Configuración → Tokens AI.",
-        // Auth microservice
         AUTH_INVALID_CREDENTIALS: "Email o contraseña incorrectos. Inténtalo de nuevo.",
         AUTH_EMAIL_TAKEN: "Ya existe una cuenta con este correo electrónico.",
         AUTH_EMAIL_REQUIRED: "Introduce tu dirección de correo.",
@@ -2560,7 +2542,6 @@ const es = {
         AUTH_AUTHORIZATION_FAILED: "La autorización falló. Vuelve a iniciar sesión.",
         AUTH_INTERNAL_ERROR: "Algo salió mal por nuestra parte. Inténtalo de nuevo.",
         AUTH_RATE_LIMITED: "Demasiados intentos. Espera unos minutos e inténtalo de nuevo.",
-        // User microservice
         USER_ID_REQUIRED: "Se requiere el ID de usuario.",
         USER_NOT_FOUND: "Usuario no encontrado.",
         USER_LANGUAGE_ID_MISSING: "Falta el ID de idioma.",
@@ -2589,10 +2570,6 @@ i18n.use(initReactI18next).init({
   },
   lng: "en",
   fallbackLng: "en",
-  // Strip region tags so navigator.language="en-US" isn't persisted in
-  // localStorage as "en-US" (which then bleeds into our X-UI-Locale
-  // header and would force the AI prompt's locale_label fallback).
-  // Match against the language part only and never load region resources.
   load: "languageOnly",
   supportedLngs: ["en", "pl", "es"],
   nonExplicitSupportedLngs: true,
@@ -2605,10 +2582,6 @@ i18n.use(initReactI18next).init({
   },
 });
 
-// Hard-normalize the persisted localStorage value once at boot. If a
-// previous session saved "en-US" / "pl-PL" / etc, rewrite it to the
-// short code so the very next request out of fetchWithAuth uses the
-// canonical form even before any user interaction.
 try {
   const stored =
     typeof window !== "undefined" && window.localStorage
@@ -2621,8 +2594,6 @@ try {
       void i18n.changeLanguage(short);
     }
   }
-} catch {
-  // localStorage may be unavailable (SSR, sandboxed iframes) — skip silently.
-}
+} catch { void 0; }
 
 export default i18n;

@@ -1,15 +1,3 @@
-/**
- * Production-grade frontend smoke: each Phase 1+2+3 user flow is
- * driven through to completion with mocked network calls.
- *
- * Mocking strategy: static vi.mock at module load (hoisted by
- * vitest), then each test overrides the relevant hook/mutation
- * return value via the exported references. This avoids the
- * resetModules + doMock + dynamic-import dance, which was timing
- * out on this codebase because the i18n init (loaded by
- * setupTests) keeps the module graph hot and any reset blows that
- * away.
- */
 
 import "@testing-library/jest-dom";
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -22,11 +10,9 @@ import {
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-// JSDOM doesn't ship audio playback APIs.
 window.HTMLMediaElement.prototype.play = vi.fn();
 window.HTMLMediaElement.prototype.pause = vi.fn();
 
-// ---------- Hook mocks (hoisted) ----------------------------------
 
 vi.mock("@/store/useUserStore", () => ({
   useUserStore: (selector: (state: unknown) => unknown) =>
@@ -102,11 +88,6 @@ const renderWithProviders = (ui: React.ReactElement) => {
     </QueryClientProvider>,
   );
 };
-
-
-// ====================================================================
-// PHASE 1 — MATERIALS user flow
-// ====================================================================
 
 
 describe("PROD smoke: Phase 1 Materials end-to-end", () => {
@@ -185,7 +166,6 @@ describe("PROD smoke: Phase 1 Materials end-to-end", () => {
     await waitFor(() => {
       expect(screen.getByText("What's the topic?")).toBeInTheDocument();
     });
-    // All three options must render — proves MC dispatcher fired.
     expect(screen.getByText("birds")).toBeInTheDocument();
     expect(screen.getByText("cars")).toBeInTheDocument();
     expect(screen.getByText("food")).toBeInTheDocument();
@@ -235,7 +215,6 @@ describe("PROD smoke: Phase 1 Materials end-to-end", () => {
     await waitFor(() => {
       expect(screen.getByText("MC?")).toBeInTheDocument();
     });
-    // Each question prompt confirms its renderer mounted.
     expect(screen.getByText("Open?")).toBeInTheDocument();
     expect(screen.getByText("She ___ home.")).toBeInTheDocument();
     expect(screen.getByText("Birds fly.")).toBeInTheDocument();
@@ -244,11 +223,6 @@ describe("PROD smoke: Phase 1 Materials end-to-end", () => {
     expect(screen.getByText("Fill.")).toBeInTheDocument();
   });
 });
-
-
-// ====================================================================
-// PHASE 2 — LISTENING user flow
-// ====================================================================
 
 
 describe("PROD smoke: Phase 2 Listening end-to-end", () => {
@@ -330,11 +304,6 @@ describe("PROD smoke: Phase 2 Listening end-to-end", () => {
 });
 
 
-// ====================================================================
-// PHASE 3 — SPEAKING (guided practice) user flow
-// ====================================================================
-
-
 describe("PROD smoke: Phase 3 Speaking guided practice end-to-end", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -389,19 +358,11 @@ describe("PROD smoke: Phase 3 Speaking guided practice end-to-end", () => {
     );
     renderWithProviders(<FormatPracticePanel language="English" level="B1" />);
     fireEvent.click(screen.getByRole("button", { name: /Load task/i }));
-    // useLocalizedError maps the code → the EN translation
-    // ("No AI API key set for this provider. Add one in Settings →
-    // AI Tokens.") — substring is enough.
     await waitFor(() => {
       expect(screen.getByText(/AI API key/i)).toBeInTheDocument();
     });
   });
 });
-
-
-// ====================================================================
-// SpeakingTask mode toggle (free analyze ↔ guided practice)
-// ====================================================================
 
 
 describe("PROD smoke: SpeakingTask mode toggle", () => {

@@ -11,10 +11,6 @@ import {
 export class UserAITokensService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** Decrypt the stored envelope to its plaintext token. Rows still
-   *  in plaintext from before encrypt-at-rest landed are detected via
-   *  `looksEncrypted` and passed through, so the service keeps working
-   *  during the migration window. */
   private readPlaintext(stored: string): string {
     return looksEncrypted(stored) ? decryptSecret(stored) : stored;
   }
@@ -56,10 +52,7 @@ export class UserAITokensService {
       include: {
         aiProvider: true,
       },
-      orderBy: [
-        { isDefault: "desc" }, // Default s first
-        { createdAt: "desc" },
-      ],
+      orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
     });
 
     return tokens.map((t) => {

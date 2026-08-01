@@ -6,7 +6,6 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
     groups:
-      # Bundle minor + patch dev-dep bumps so we don't drown in PRs.
       dev-dependencies:
         dependency-type: development
         update-types: [minor, patch]

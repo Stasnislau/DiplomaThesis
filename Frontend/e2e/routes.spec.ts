@@ -1,14 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { loginViaStorage, mockAuthRoutes } from "./helpers/auth";
 
-/**
- * Every route the router declares, opened in a real browser.
- *
- * Each page is a lazily loaded chunk, so a route that nobody visits in
- * CI can break silently: a bad import path or a renamed export only
- * shows when the chunk is actually fetched. These tests fetch all of
- * them, and separately check that the guarded ones stay guarded.
- */
 test.describe("Routes for a signed-in learner", () => {
   test.beforeEach(async ({ page }) => {
     await loginViaStorage(page);

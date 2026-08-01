@@ -16,12 +16,6 @@ import { AuthenticatedRequest } from "src/types/AuthenticatedRequest";
 export class UserErrorController {
   constructor(private readonly userErrorService: UserErrorService) {}
 
-  /**
-   * Record a recurring error (FR6). Designed to be called by the AI
-   * microservice after grading (speaking analysis, essay evaluation),
-   * never by the end user directly — without the internal-service-key
-   * gate any USER could forge an arbitrary error log for themselves.
-   */
   @Post()
   async record(
     @Request() req: AuthenticatedRequest,
@@ -50,10 +44,6 @@ export class UserErrorController {
     return { success: true, payload: result };
   }
 
-  /**
-   * List the signed-in user's recurring errors for a language,
-   * ordered most-frequent then most-recent — the visible FR6 log.
-   */
   @Get()
   async list(
     @Request() req: AuthenticatedRequest,

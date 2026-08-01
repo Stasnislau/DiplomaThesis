@@ -64,14 +64,14 @@ const LessonCard = ({ lesson, onStart }: LessonCardProps) => {
         }
       `}
     >
-      {/* Lesson Header */}
+      {}
       <div
         className={`flex items-start gap-3 p-4 ${!isLocked ? "cursor-pointer" : ""}`}
         onClick={() => !isLocked && setExpanded((e) => !e)}
         role={!isLocked ? "button" : undefined}
         aria-expanded={expanded}
       >
-        {/* Status icon */}
+        {}
         <div className={`
           h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 text-lg
           ${isCompleted
@@ -108,10 +108,10 @@ const LessonCard = ({ lesson, onStart }: LessonCardProps) => {
         </div>
       </div>
 
-      {/* Expanded Content */}
+      {}
       {expanded && !isLocked && (
         <div className="px-4 pb-4 border-t border-gray-100 dark:border-gray-700 pt-3">
-          {/* Keywords */}
+          {}
           <div className="mb-3">
             <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
               {t("learningPath.lessonCard.keywordsTitle")}
@@ -128,7 +128,7 @@ const LessonCard = ({ lesson, onStart }: LessonCardProps) => {
             </div>
           </div>
 
-          {/* Start Button */}
+          {}
           <button
             onClick={onStart}
             className="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors duration-200 shadow-sm hover:shadow"
@@ -156,11 +156,11 @@ const ModuleCard = ({ module, onLessonStart, language, level }: ModuleCardProps)
 
   return (
     <div className="relative md:pl-20">
-      {/* Connector Dot */}
+      {}
       <div className={`absolute left-5 top-8 w-7 h-7 rounded-full border-4 border-white dark:border-gray-900 z-10 hidden md:block shadow-md ${module.progress === 100 ? "bg-green-500" : module.progress > 0 ? "bg-indigo-600" : "bg-gray-300 dark:bg-gray-600"}`} />
 
       <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden transition-all hover:shadow-xl">
-        {/* Module Header */}
+        {}
         <div
           className="p-5 cursor-pointer select-none"
           onClick={() => setCollapsed((c) => !c)}
@@ -188,7 +188,7 @@ const ModuleCard = ({ module, onLessonStart, language, level }: ModuleCardProps)
             </div>
           </div>
 
-          {/* Progress Bar */}
+          {}
           <div className="mt-3">
             <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
               <div
@@ -199,7 +199,7 @@ const ModuleCard = ({ module, onLessonStart, language, level }: ModuleCardProps)
           </div>
         </div>
 
-        {/* Lessons */}
+        {}
         {!collapsed && (
           <div className="px-4 pb-4 space-y-2 border-t border-gray-100 dark:border-gray-700 pt-4">
             {module.lessons.map((lesson) => (
@@ -264,7 +264,7 @@ const LearningPathPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-10 transition-colors duration-300">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        {/* Header */}
+        {}
         <div className="mb-8">
           <Link to="/" className="inline-flex items-center gap-1 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 mb-4">
             ← {t("nav.home")}
@@ -283,7 +283,7 @@ const LearningPathPage = () => {
               </p>
             </div>
 
-            {/* Overall progress */}
+            {}
             <div className="w-full sm:w-48 flex-shrink-0">
               <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1.5">
                 <span>{t("learningPath.overallProgress")}</span>
@@ -300,7 +300,7 @@ const LearningPathPage = () => {
           </div>
         </div>
 
-        {/* Level Legend */}
+        {}
         <div className="flex flex-wrap gap-2 mb-6">
           {Object.entries(LEVEL_COLORS).map(([lvl, c]) => (
             <span key={lvl} className={`text-xs font-bold px-3 py-1 rounded-full border ${c.bg} ${c.text} ${c.border}`}>
@@ -309,9 +309,9 @@ const LearningPathPage = () => {
           ))}
         </div>
 
-        {/* Modules */}
+        {}
         <div className="space-y-6 relative">
-          {/* Connection Line */}
+          {}
           <div className="absolute left-8 top-8 bottom-8 w-1 bg-gray-200 dark:bg-gray-700 hidden md:block rounded-full" />
 
           {learningPath.modules.map((module) => (

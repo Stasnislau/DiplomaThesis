@@ -8,7 +8,6 @@ import { ChevronDownIcon, PersonIcon, ExitIcon } from "@radix-ui/react-icons";
 
 interface UserMenuProps {
   className?: string;
-  /** Optional override; when omitted we read the real user from the store. */
   username?: string;
 }
 
@@ -21,11 +20,6 @@ export const UserMenu: React.FC<UserMenuProps> = ({
   const { logout } = useAuthStore();
   const user = useUserStore((s) => s.user);
 
-  // Compose a display name from the live user; fall back to the email
-  // local-part if name/surname haven't loaded yet, and only finally to
-  // the literal "User" placeholder. The previous default param was a
-  // hardcoded "User" that hid the real identity even after /user/me
-  // had returned.
   const displayName = username
     ?? (user?.name?.trim() ? `${user.name}${user.surname ? ` ${user.surname[0]}.` : ""}` : null)
     ?? user?.email?.split("@")[0]

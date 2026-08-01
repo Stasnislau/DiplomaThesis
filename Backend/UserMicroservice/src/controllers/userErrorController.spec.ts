@@ -4,13 +4,6 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { UserErrorController } from "./userErrorController";
 import { UserErrorService } from "../services/userErrorService";
 
-/**
- * The error log is written by the AI service after it grades an answer,
- * never by the learner. That gate is the only thing standing between a
- * learner and a forged log of someone else's mistakes, so it is checked
- * from both sides here: a call without the shared key is refused, and a
- * call with it is scoped to the identity the gateway forwarded.
- */
 describe("UserErrorController", () => {
   let controller: UserErrorController;
   let service: jest.Mocked<UserErrorService>;

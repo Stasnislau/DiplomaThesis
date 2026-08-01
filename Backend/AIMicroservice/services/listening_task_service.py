@@ -24,9 +24,6 @@ tts_service = TTSService()
 PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "")
 
 
-# Canonical question types this service understands. Anything else in
-# the user's request_question_types is silently dropped — we don't
-# crash on unknown types, but we also don't pass them to the prompt.
 _KNOWN_TYPES = {
     "multiple_choice",
     "fill_in_the_blank",
@@ -118,11 +115,6 @@ class ListeningTaskService:
         if not questions:
             raise ValueError("Failed to parse AI response for listening task")
 
-        # Multi-speaker synth when the transcript carries `[Speaker N]:`
-        # tags; otherwise fall back to single-voice. This isolates the
-        # FE-visible audio pipeline from whether we actually had
-        # multi_speaker_matching items in the set — sometimes a model
-        # produces dialogue regardless.
         try:
             loop = asyncio.get_running_loop()
             audio_bytes, speakers = await loop.run_in_executor(
@@ -180,11 +172,6 @@ class ListeningTaskService:
         is_dictation_only: bool,
         needs_dialogue: bool,
     ) -> str:
-        # Length / shape of the transcript varies by what's being
-        # tested. Dictation-only sessions need ONE short clip the
-        # user can transcribe verbatim; multi-speaker sessions need
-        # a dialogue with explicit speaker tags; everything else
-        # uses the historical 100-150 word monologue.
         if is_dictation_only:
             transcript_clause = (
                 f"1. Generate ONE short, clean sentence in {language} of about "
@@ -225,9 +212,6 @@ class ListeningTaskService:
                 "Then create 3-4 questions, mixing the requested types."
             )
 
-        # Per-type schema reminders so the model knows the exact
-        # wire shape for each variant. Only emit the ones the user
-        # asked for to keep the prompt focused.
         schema_lines = []
         if "multiple_choice" in question_types:
             schema_lines.append(

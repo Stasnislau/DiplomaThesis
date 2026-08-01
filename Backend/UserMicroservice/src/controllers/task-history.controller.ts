@@ -23,11 +23,6 @@ import {
 export class TaskHistoryController {
   constructor(private readonly historyService: TaskHistoryService) {}
 
-  /**
-   * Create a history entry. Reachable by:
-   *   1. End user via gateway → records own activity (rare; usually AI logs).
-   *   2. AI service via x-internal-service-key with x-user-id of the acting user.
-   */
   @Post()
   async create(
     @Request() req: AuthenticatedRequest,

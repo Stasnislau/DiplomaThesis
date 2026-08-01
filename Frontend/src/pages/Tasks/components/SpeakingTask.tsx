@@ -25,9 +25,6 @@ const SpeakingTask = () => {
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [audioURL, setAudioURL] = useState<string>("");
   const [language, setLanguage] = useState<string>(LANGUAGES[0].code);
-  // Top-level mode toggle. Free analyze = the historic record-and-
-  // get-feedback flow. Guided practice = Phase 3 format-driven
-  // prompts with rubric-based grading.
   const [mode, setMode] = useState<"free_analyze" | "guided">("free_analyze");
   const [guidedLevel, setGuidedLevel] = useState<string>("B1");
   const { analyzeAudioFile, isLoading: isAnalyzingAudioFile } = useAnalyzeAudioFile();
@@ -185,7 +182,7 @@ const SpeakingTask = () => {
 
   return (
     <div className="space-y-6">
-      {/* Mode toggle: free analyze vs guided practice */}
+      {}
       <div className="grid grid-cols-2 gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-2xl">
         {(["free_analyze", "guided"] as const).map((m) => {
           const isOn = mode === m;
@@ -211,7 +208,7 @@ const SpeakingTask = () => {
 
       {mode === "guided" ? (
         <>
-          {/* Language Selection (shared with free-analyze visually below) */}
+          {}
           <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 rounded-2xl p-6 border border-indigo-100 dark:border-gray-600">
             <label className="text-sm font-semibold text-gray-800 dark:text-gray-100 mb-3 block">
               🌍 {t("languages.chooseLanguage")}
@@ -286,8 +283,6 @@ const SpeakingTask = () => {
   );
 };
 
-// Original free-analyze body extracted into its own component so the
-// mode toggle above can swap between flows without duplicating JSX.
 interface FreeAnalyzeFlowProps {
   t: ReturnType<typeof useTranslation>["t"];
   i18n: ReturnType<typeof useTranslation>["i18n"];
@@ -337,7 +332,7 @@ const FreeAnalyzeFlow = ({
     <div className="space-y-6">
       <PracticePhraseBlock language={language} />
 
-      {/* Language Selection */}
+      {}
       <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 rounded-2xl p-6 border border-indigo-100 dark:border-gray-600 transition-colors duration-300">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
@@ -367,7 +362,7 @@ const FreeAnalyzeFlow = ({
         </div>
       </div>
 
-      {/* Recording Section */}
+      {}
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm transition-colors duration-300">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-900/50 flex items-center justify-center">
@@ -438,7 +433,7 @@ const FreeAnalyzeFlow = ({
         )}
       </div>
 
-      {/* Audio Preview */}
+      {}
       {audioURL && (
         <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 dark:from-indigo-900/20 dark:via-purple-900/20 dark:to-pink-900/20 rounded-2xl p-6 border border-indigo-200 dark:border-indigo-800 shadow-sm transition-colors duration-300">
           <div className="flex items-center justify-between mb-4">
@@ -467,7 +462,7 @@ const FreeAnalyzeFlow = ({
         </div>
       )}
 
-      {/* Analyze Button */}
+      {}
       <Button
         onClick={handleAnalyzeClick}
         disabled={isAnalyzingAudioFile || !audioFile}
@@ -478,19 +473,19 @@ const FreeAnalyzeFlow = ({
         {isAnalyzingAudioFile ? t("tasks.analyzingSpeech") : t("tasks.analyzeSpeech")}
       </Button>
 
-      {/* Error Message */}
+      {}
       {errorMessage && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-700 dark:text-red-400 text-sm">
           {errorMessage}
         </div>
       )}
 
-      {/* Structured Analysis Results */}
+      {}
       {analysisResult && (
         <div className="space-y-5">
-          {/* Pronunciation Metrics Cards */}
+          {}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {/* Fluency Score */}
+            {}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
               <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">{t("speakingResults.fluencyLabel")}</p>
               <div className="flex items-end gap-2">
@@ -510,7 +505,7 @@ const FreeAnalyzeFlow = ({
               </p>
             </div>
 
-            {/* Confidence */}
+            {}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
               <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">{t("speakingResults.clarityLabel")}</p>
               <span className={`text-2xl font-bold ${getConfidenceColor(analysisResult.pronunciation.overallConfidence)}`}>
@@ -519,7 +514,7 @@ const FreeAnalyzeFlow = ({
               <p className="text-xs text-gray-400 mt-1">{t("speakingResults.confidenceCaption")}</p>
             </div>
 
-            {/* WPM */}
+            {}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
               <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">{t("speakingResults.speedLabel")}</p>
               <span className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -530,7 +525,7 @@ const FreeAnalyzeFlow = ({
               <p className="text-xs text-gray-400 mt-1">{t("speakingResults.wpmCaption")}</p>
             </div>
 
-            {/* Avg Pause */}
+            {}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
               <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">{t("speakingResults.pausesLabel")}</p>
               <span className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -542,7 +537,7 @@ const FreeAnalyzeFlow = ({
             </div>
           </div>
 
-          {/* Low Confidence Words */}
+          {}
           {analysisResult.pronunciation.lowConfidenceWords.length > 0 && (
             <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-2">
@@ -564,7 +559,7 @@ const FreeAnalyzeFlow = ({
             </div>
           )}
 
-          {/* Transcription */}
+          {}
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
             <div className="bg-gradient-to-r from-indigo-500 to-purple-500 px-5 py-3 flex items-center gap-2">
               <span className="text-white">📝</span>
@@ -582,7 +577,7 @@ const FreeAnalyzeFlow = ({
             </div>
           </div>
 
-          {/* Overall Assessment */}
+          {}
           <div className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/10 dark:to-teal-900/10 rounded-2xl border border-emerald-200 dark:border-emerald-800 p-5">
             <div className="flex items-center gap-2 mb-3">
               <span className="text-emerald-500">📊</span>
@@ -593,7 +588,7 @@ const FreeAnalyzeFlow = ({
             </p>
           </div>
 
-          {/* Identified Errors */}
+          {}
           {analysisResult.identifiedErrors.length > 0 && (
             <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
               <div className="bg-gradient-to-r from-red-500 to-rose-500 px-5 py-3 flex items-center justify-between">
@@ -633,7 +628,7 @@ const FreeAnalyzeFlow = ({
             </div>
           )}
 
-          {/* Positive Points & Areas for Improvement */}
+          {}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {analysisResult.positivePoints.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-5">

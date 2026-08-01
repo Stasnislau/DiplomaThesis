@@ -8,16 +8,6 @@ import { ErrorHandlingMiddleware } from "../src/middlewares/errorHandlingMiddlew
 import { PrismaService } from "../prisma/prismaService";
 import { encryptSecret } from "../src/utils/secretCipher";
 
-/**
- * HTTP-boundary tests for the resources a learner owns: uploaded
- * materials, achievements, placement results, and provider keys.
- *
- * Each of these lives behind either the forwarded identity or the
- * shared service key, and both gates sit in the request pipeline
- * rather than in the services. A unit test calling a service method
- * directly cannot tell whether the gate is wired to the route at all,
- * which is what these cases establish.
- */
 describe("User resources (HTTP boundary)", () => {
   let app: INestApplication;
   let prisma: any;

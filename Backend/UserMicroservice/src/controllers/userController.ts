@@ -48,12 +48,6 @@ export class UserController {
     });
   }
 
-  /**
-   * Record XP earned and advance the daily streak counter.
-   * Internal-only — callers must supply the shared service key in
-   * x-internal-service-key. Without this guard any authenticated user
-   * could award themselves unlimited XP by just POSTing here.
-   */
   @Post("me/activity")
   async recordActivity(
     @Request() req: AuthenticatedRequest,
@@ -75,9 +69,6 @@ export class UserController {
     return { success: true, payload: result };
   }
 
-  // ADMIN-only — exposes every account's email/name/createdAt. Without
-  // the guard, any authenticated USER could list all PII of every user
-  // on the platform.
   @Get("users")
   @UseGuards(RolesGuard)
   @Roles("ADMIN")

@@ -9,23 +9,9 @@ interface LessonFreeSpeakTaskProps {
   language: string;
   topic: string;
   keywords: string[];
-  /** Same contract as LessonSpeakingTask: lesson page reads
-   *  pronunciation.fluencyScore from the analysis result and decides
-   *  pass/fail (>=60). */
   onAnalyzed?: (result: SpeakingAnalysisResult) => void;
 }
 
-/**
- * Open-ended speaking practice — no target phrase. The learner sees
- * the lesson topic + keyword scaffolding and is asked to talk for
- * 30-60 seconds on it. Their recording goes through the same
- * /speaking/analyze endpoint, which transcribes whatever they said
- * and scores pronunciation, grammar and fluency on the spoken text.
- *
- * Distinct from LessonSpeakingTask (which generates a phrase to
- * read aloud) — this trains the learner's ability to produce their
- * own sentences, not just pronounce given ones.
- */
 const LessonFreeSpeakTask = ({
   language,
   topic,
@@ -46,9 +32,6 @@ const LessonFreeSpeakTask = ({
 
   const { analyzeAudioFile, isLoading: isAnalyzing } = useAnalyzeAudioFile();
 
-  // Free recordings are larger than the phrase-read ones. Free up the
-  // ObjectURL when the component unmounts or the URL changes so we
-  // don't hold the audio blob in memory after the learner moves on.
   useEffect(() => {
     return () => {
       if (audioURL) URL.revokeObjectURL(audioURL);
@@ -147,7 +130,7 @@ const LessonFreeSpeakTask = ({
 
   return (
     <div className="space-y-5">
-      {/* Prompt */}
+      {}
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
         <span className="inline-block bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 text-xs px-2 py-1 rounded-full mb-3">
           🎤 {t("lessonFreeSpeak.label")}
@@ -172,7 +155,7 @@ const LessonFreeSpeakTask = ({
         )}
       </div>
 
-      {/* Recorder */}
+      {}
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="flex flex-wrap items-center gap-3">
           {!isRecording ? (

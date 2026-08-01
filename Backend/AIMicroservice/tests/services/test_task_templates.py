@@ -86,10 +86,6 @@ def _stub_search_result(service: VectorDBService, rows: list) -> MagicMock:
     return search
 
 
-# --------------------------------------------------------------------------
-# Storage scoping
-# --------------------------------------------------------------------------
-
 def test_search_task_templates_rejects_non_uuid_user_id() -> None:
     """The _UUID_RE gate is what keeps user_id out of the where-clause as
     an injectable fragment. A non-UUID must short-circuit to no results,
@@ -178,10 +174,6 @@ def test_save_task_templates_noop_on_empty_list() -> None:
     service.db.open_table.assert_not_called()
 
 
-# --------------------------------------------------------------------------
-# Mining templates out of an upload
-# --------------------------------------------------------------------------
-
 def test_build_task_templates_carries_owner_and_skill() -> None:
     document_map = DocumentMap(
         document_kind="Cambridge_FCE",
@@ -209,8 +201,6 @@ def test_build_task_templates_carries_owner_and_skill() -> None:
     assert templates[0].task_type == "reading_comprehension"
     assert templates[0].skill == "reading"
     assert templates[1].skill == "writing"
-    # The template text is what gets embedded, so the retrieval signals
-    # have to actually be in it.
     body = templates[0].template
     assert "urban beekeeping" in body
     assert "main_idea, inference" in body
@@ -242,8 +232,6 @@ def test_build_task_templates_anonymous_upload_gets_empty_owner() -> None:
         document_map=document_map, source="x.pdf", owner_id=None
     )
 
-    # Empty string, never None — a None would break the LanceDB column
-    # type, and "" is what a scoped search already refuses to return.
     assert templates[0].user_id == ""
 
 
@@ -287,7 +275,6 @@ async def test_process_pdf_persists_task_templates(
     mock_vector_db.save_task_templates.assert_called_once()
     saved = mock_vector_db.save_task_templates.call_args[0][0]
     assert [t.task_type for t in saved] == ["reading_comprehension"]
-    # Scoped to the uploader, exactly like the chunks written alongside.
     assert saved[0].user_id == OWNER_ID
     assert mock_vector_db.save_chunks.call_args.kwargs["user_id"] == OWNER_ID
 
@@ -336,10 +323,6 @@ async def test_process_pdf_skips_templates_for_legacy_shape(
     mock_vector_db.save_task_templates.assert_not_called()
 
 
-# --------------------------------------------------------------------------
-# Retrieval + prompt injection
-# --------------------------------------------------------------------------
-
 def test_retrieve_exemplars_returns_template_bodies(
     writing_service: WritingTaskService,
     mock_vector_db: MagicMock,
@@ -359,8 +342,6 @@ def test_retrieve_exemplars_returns_template_bodies(
         "Exercise type: multiple_choice",
         "Exercise type: gap_fill_grammar",
     ]
-    # The search must be scoped — an unscoped call is the bug this whole
-    # user_id path exists to prevent.
     assert mock_vector_db.search_task_templates.call_args.kwargs["user_id"] == OWNER_ID
 
 
@@ -373,8 +354,6 @@ def test_retrieve_exemplars_without_user_context_is_empty(
     )
 
     assert exemplars == []
-    # Anonymous callers must not trigger a search at all — a scoped
-    # search is impossible and an unscoped one would leak.
     mock_vector_db.search_task_templates.assert_not_called()
 
 
@@ -450,7 +429,6 @@ def test_empty_exemplars_leave_prompt_byte_identical(builder) -> None:
 
     assert builder(*args, seed="abc", exemplars=None) == baseline
     assert builder(*args, seed="abc", exemplars=[]) == baseline
-    # No exemplar scaffolding may survive into the no-exemplar prompt.
     assert "FORMAT REFERENCE" not in baseline
     assert "--- EXAMPLE" not in baseline
 
@@ -470,8 +448,6 @@ def test_exemplars_appear_in_prompt(builder) -> None:
     assert "Grammar focus: past perfect" in prompt
     assert "--- EXAMPLE 1 ---" in prompt
     assert "--- EXAMPLE 2 ---" in prompt
-    # Exemplars calibrate format only; copying the learner's own material
-    # back at them would defeat the point.
     assert "Do NOT" in prompt
 
 

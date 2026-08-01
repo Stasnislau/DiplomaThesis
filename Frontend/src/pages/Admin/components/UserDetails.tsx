@@ -58,7 +58,7 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ user, onUserDeleted })
       <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">{t("admin.userDetails")}</h2>
 
       <div className="space-y-6">
-        {/* User Info */}
+        {}
         <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -107,7 +107,7 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ user, onUserDeleted })
           </div>
         )}
 
-        {/* Actions */}
+        {}
         <div className="space-y-3">
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">Actions</h3>
 

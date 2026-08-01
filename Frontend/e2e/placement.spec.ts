@@ -8,8 +8,6 @@ import { loginViaStorage } from "./helpers/auth";
 
 test.describe("Placement Test Userflow", () => {
   test.beforeEach(async ({ page }) => {
-    // Placement test only makes sense for a user who has not yet been
-    // placed in any learning language — otherwise the page short-circuits.
     await loginViaStorage(page, {
       user: {
         languages: [
@@ -28,10 +26,6 @@ test.describe("Placement Test Userflow", () => {
     });
   });
 
-  // TODO: /placement renders only the layout shell when the AI stub
-  // returns null. The page logic depends on a richer task payload than the
-  // current generic mock supplies; flesh this out with proper /placement
-  // route ordering (helper stub registered AFTER spec-specific routes).
   test.skip("completes placement test using mocked AI responses", async ({
     page,
   }) => {

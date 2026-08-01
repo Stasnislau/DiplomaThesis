@@ -141,7 +141,7 @@ export const ProfilePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-10 transition-colors duration-300">
-      {/* Profile Header */}
+      {}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 mb-8 relative transition-colors duration-300">
           <div className="absolute top-8 right-8">
@@ -231,7 +231,7 @@ export const ProfilePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Preferences Section */}
+      {}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 transition-colors duration-300">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">

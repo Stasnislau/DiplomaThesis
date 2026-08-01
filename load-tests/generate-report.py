@@ -25,7 +25,6 @@ def main():
     data = json.loads(Path(sys.argv[1]).read_text())
     metrics = data.get("metrics", {})
 
-    # Overall HTTP metrics
     http_dur = metrics.get("http_req_duration", {}).get("values", {})
     http_reqs = metrics.get("http_reqs", {}).get("values", {})
     http_fails = metrics.get("http_req_failed", {}).get("values", {})
@@ -46,7 +45,6 @@ def main():
     print(f"  Max:      {ms(http_dur.get('max', 0))}")
     print()
 
-    # Custom metrics
     custom = ["login_duration", "profile_duration",
               "languages_duration", "learning_path_duration"]
     labels = {
@@ -72,7 +70,6 @@ def main():
             )
     print()
 
-    # LaTeX table output
     print("=" * 60)
     print("LATEX TABLE (copy into thesis)")
     print("=" * 60)

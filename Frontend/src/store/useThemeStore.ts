@@ -10,9 +10,6 @@ interface ThemeState {
   toggleTheme: () => void;
 }
 
-/**
- * Determines if dark mode should be active based on theme setting
- */
 const getIsDark = (theme: Theme): boolean => {
   if (theme === "system") {
     return window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -20,9 +17,6 @@ const getIsDark = (theme: Theme): boolean => {
   return theme === "dark";
 };
 
-/**
- * Applies the theme to the document
- */
 const applyTheme = (isDark: boolean): void => {
   if (isDark) {
     document.documentElement.classList.add("dark");

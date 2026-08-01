@@ -14,7 +14,6 @@ from services.ai_service import AI_Service
 from services.learning_path_service import LearningPathService
 from controllers.learning_path_controller import LearningPathController
 
-# from services.bielik_service import Bielik_Service
 from middlewares.error_handling_middleware import ErrorHandlingMiddleware
 from services.vector_db_service import VectorDBService
 from controllers.placement_controller import PlacementController
@@ -56,7 +55,7 @@ async def _audio_janitor() -> None:
         (os.path.join("static", "audio"), float(os.environ.get("AUDIO_TTL_HOURS", "24"))),
         (os.path.join("static", "images"), float(os.environ.get("IMAGE_TTL_HOURS", "24"))),
     ]
-    sleep_seconds = 60 * 60  # one sweep per hour
+    sleep_seconds = 60 * 60
     while True:
         try:
             for directory, ttl_hours in sweep_dirs:
@@ -71,8 +70,6 @@ async def _audio_janitor() -> None:
                             os.remove(path)
                             removed += 1
                     except OSError:
-                        # File raced with another writer or permissions
-                        # changed underfoot. Skip; we'll catch it next pass.
                         continue
                 if removed:
                     logger.info("Janitor removed %d expired files in %s", removed, directory)
@@ -140,9 +137,6 @@ All responses follow the `BaseResponse` schema:
     },
 )
 
-# A fresh checkout (CI, a new clone) has no static/ — it is gitignored
-# and only created at runtime when audio is written. StaticFiles raises
-# at construction if the directory is missing, so ensure it exists first.
 os.makedirs("static", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -168,7 +162,6 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization", "X-User-Id", "X-User-Email", "X-User-Role", "X-Internal-Service-Key"],
 )
 
-# Instantiate common services
 ai_service = AI_Service()
 vector_db_service = VectorDBService()
 
@@ -182,39 +175,29 @@ app.include_router(
     prefix="/api",
 )
 
-# PLACEMENT #
 placement_service = PlacementService(ai_service, vector_db_service)
 placement_controller = PlacementController(placement_service)
 app.include_router(placement_controller.get_router(), prefix="/api")
 
-# SPEAKING #
-# Imagen 3 renders the picture-description scene. Initialised once at
-# startup so we don't pay Vertex SDK warm-up cost on every request.
-# Self-disables and falls back to Pollinations if credentials are
-# absent — see ImageService for the guard logic.
 image_service = ImageService()
 speaking_service = SpeakingService(ai_service, image_service)
 speaking_controller = SpeakingController(speaking_service, _writing_user_service)
 app.include_router(speaking_controller.get_router(), prefix="/api")
 
-# LISTENING #
 listening_task_service = ListeningTaskService(ai_service)
 listening_controller = ListeningController(listening_task_service, _writing_user_service)
 app.include_router(listening_controller.get_router(), prefix="/api")
 
-# LEARNING PATH #
 from database.connection import async_session
 learning_path_service = LearningPathService(session_factory=async_session)
 learning_path_controller = LearningPathController(learning_path_service)
 app.include_router(learning_path_controller.get_router(), prefix="/api")
 
-# MATERIALS #
 app.include_router(
     material_router,
     prefix="/api",
 )
 
-# AI TOKEN VERIFY #
 app.include_router(
     AITokenVerifyController().get_router(),
     prefix="/api",
@@ -245,17 +228,6 @@ async def log_requests(request: Request, call_next: Callable[[Request], Awaitabl
     response = await call_next(request)
     logger.info(f"Response: {response.status_code}")
     return response
-
-
-# NB: do NOT replace every 404 response here — that would clobber the
-# legitimate `raise_with_code(CODE, 404, "...")` responses our handlers
-# emit (e.g. "INPUT_VALIDATION_FAILED: Token id … not found"), erasing
-# the structured code the frontend's parseApiError relies on.
-#
-# Unmatched-route 404s come from Starlette's default handler with the
-# body `{"detail": "Not Found"}` — that's already a shape our frontend
-# handles (it falls through to the generic translation), so we leave
-# it alone.
 
 
 if __name__ == "__main__":

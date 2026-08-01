@@ -124,8 +124,6 @@ const WritingTask = ({ initialLanguage, initialLevel, initialTaskType }: Writing
     }
     setIsCorrect(isAnswerCorrect);
 
-    // Persist the outcome so /writing/adaptive can see whether this
-    // task was actually beaten. Best-effort — UI never blocks on it.
     if (language && level && currentTaskData) {
       const backendLanguage =
         language.charAt(0).toUpperCase() + language.slice(1);
@@ -139,11 +137,6 @@ const WritingTask = ({ initialLanguage, initialLevel, initialTaskType }: Writing
         targetedWeaknesses: targetedWeaknesses ?? [],
         questionPreview: currentTaskData.question?.slice(0, 160),
       }).catch((err) => {
-        // Logging is non-critical: a transient error here just means
-        // the next adaptive call has slightly less signal. Keep it
-        // visible in dev tools though — silent failure here would
-        // hide a regression where the entire adaptive loop stops
-        // recording results.
         console.warn("logWritingResult failed:", err);
       });
     }
@@ -166,7 +159,7 @@ const WritingTask = ({ initialLanguage, initialLevel, initialTaskType }: Writing
 
   return (
     <div className="space-y-6">
-      {/* Language Selection */}
+      {}
       <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 rounded-2xl p-6 border border-indigo-100 dark:border-gray-600 transition-colors duration-300">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
@@ -196,7 +189,7 @@ const WritingTask = ({ initialLanguage, initialLevel, initialTaskType }: Writing
         </div>
       </div>
 
-      {/* Level Selection */}
+      {}
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm transition-colors duration-300">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center">
@@ -224,7 +217,7 @@ const WritingTask = ({ initialLanguage, initialLevel, initialTaskType }: Writing
         </div>
       </div>
 
-      {/* Task Type Selection */}
+      {}
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm transition-colors duration-300">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
@@ -274,10 +267,8 @@ const WritingTask = ({ initialLanguage, initialLevel, initialTaskType }: Writing
             </Button>
           </TabsContent>
         </Tabs>
-        {/* Adaptive — biases the next task toward the user's recent
-            weaknesses (placement misses, low-score topics, speech
-            errors). Falls back to the regular variety picker when
-            there's no history yet. */}
+        {
+}
         <button
           type="button"
           onClick={handleAdaptive}

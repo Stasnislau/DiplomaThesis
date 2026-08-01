@@ -5,15 +5,6 @@ import { of } from "rxjs";
 
 import { GatewayService } from "./gatewayService";
 
-/**
- * The per-learner hourly quota on generation calls. Every one of those
- * calls is billed by the provider, so a client stuck in a retry loop
- * would drain a paid key within minutes. The main spec covers routing;
- * these tests cover the quota itself, which no other test touches.
- *
- * The bucket map lives in module scope, so each test uses its own
- * learner id to stay independent of the others.
- */
 describe("GatewayService (generation quota)", () => {
   let service: GatewayService;
   let httpService: any;

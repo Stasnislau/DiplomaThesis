@@ -35,9 +35,6 @@ import { HealthController } from "./controllers/healthController";
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    // UserDataMiddleware reads x-user-* headers; the /health probe
-    // doesn't need (and shouldn't get) those headers from anyone, so
-    // we exclude it explicitly.
     consumer
       .apply(UserDataMiddleware)
       .exclude({ path: "api/health", method: 0 })

@@ -1,17 +1,3 @@
-/**
- * Cross-service catalog test: for every error code declared in any
- * backend (AI / Auth / User), the frontend i18n catalog must
- * have a translation in en, pl, and es.
- *
- * Without this, adding a new code to the backend silently produces
- * raw `errors.codes.MY_NEW_CODE` strings on the user's screen until
- * someone notices in QA. This test runs in CI on every commit and
- * fails fast.
- *
- * It reads the source files directly (regex over constants) instead
- * of importing them, because AI is Python and the Nest files
- * use NestJS-only imports we don't want to drag into vitest.
- */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -19,15 +5,11 @@ import { describe, expect, it } from "vitest";
 
 import i18n from "@/config/i18n";
 
-// Frontend lives at <repo>/Frontend; the backends sit one level up.
 const REPO_ROOT = join(__dirname, "../../../..");
 
 interface CodeSource {
   label: string;
   path: string;
-  /** Matches lines of the form `export const NAME = "NAME"` (TS) or
-   *  `NAME = "NAME"` (Python). The capture group is the constant
-   *  name — by convention that's also the wire code. */
   regex: RegExp;
 }
 
@@ -78,7 +60,6 @@ describe("error-code catalog consistency", () => {
         async ({ code }) => {
           await i18n.changeLanguage(locale);
           const text = i18n.t(`errors.codes.${code}`);
-          // i18next returns the key itself when missing.
           expect(text, `${locale} missing errors.codes.${code}`).not.toBe(
             `errors.codes.${code}`,
           );

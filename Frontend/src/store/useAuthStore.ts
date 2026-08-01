@@ -40,8 +40,6 @@ export const useAuthStore = create<AuthState>((set, _get) => ({
         const accessToken = data.payload.accessToken;
         localStorage.setItem("accessToken", accessToken);
 
-        // The refresh token is now set server-side as an httpOnly
-        // cookie — JS can't (and shouldn't) touch it.
 
         let userRole = null;
         try {
@@ -75,7 +73,6 @@ export const useAuthStore = create<AuthState>((set, _get) => ({
     }
   },
   logout: () => {
-    // Server clears the refresh-token cookie as part of /auth/logout.
     apiLogout();
     localStorage.removeItem("accessToken");
     queryClient.clear();

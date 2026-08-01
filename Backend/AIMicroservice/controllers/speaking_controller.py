@@ -33,8 +33,6 @@ class PracticePhraseResponse(BaseModel):
     derivedFromHistory: bool = False
 
 
-# Singleton TTSService — read_after_me uses it. Safe to share: no
-# per-call mutable state, just an authenticated client wrapper.
 _tts_service: TTSService | None = None
 
 
@@ -78,9 +76,6 @@ class SpeakingController:
                 ui_locale=ui_locale,
             )
 
-            # FR6 — persist each identified error to the user's recurring
-            # error log (upsert on the User side). Best-effort: a failure
-            # here must not break the analysis the user is waiting on.
             from utils.language_codes import to_iso_language
 
             language_code = to_iso_language(language)
@@ -150,9 +145,6 @@ class SpeakingController:
             )
             focus = WritingTaskService.derive_adaptive_focus(history)
 
-            # repeat_after_me wants TTS audio of the target phrase.
-            # Inject the synthesizer as a callable so the service stays
-            # decoupled and mockable.
             tts = _get_tts_service()
             tts_callable = tts.synthesize if body.format == "repeat_after_me" else None
 
@@ -165,8 +157,6 @@ class SpeakingController:
                 focus_weaknesses=focus["weaknesses"] or None,
                 tts_synthesizer=tts_callable,
             )
-            # Surface adaptive provenance to the FE so it can show the
-            # "targeting from history" hint.
             result.targetedWeaknesses = focus["weaknesses"]
             result.derivedFromHistory = bool(
                 focus["weaknesses"] or focus["keywords"] or focus["topic"]

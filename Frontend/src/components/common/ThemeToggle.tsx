@@ -8,10 +8,6 @@ interface ThemeToggleProps {
   showLabel?: boolean;
 }
 
-/**
- * Theme toggle button with sun/moon icons
- * Accessible and keyboard navigable
- */
 export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className, showLabel = false }) => {
   const { isDark, toggleTheme } = useThemeStore();
   const { t } = useTranslation();
@@ -34,7 +30,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className, showLabel =
         aria-pressed={isDark}
         title={switchLabel}
       >
-        {/* Sun Icon */}
+        {}
         <svg
           className={cn(
             'h-5 w-5 transition-all duration-300',
@@ -53,7 +49,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className, showLabel =
           />
         </svg>
         
-        {/* Moon Icon */}
+        {}
         <svg
           className={cn(
             'absolute h-5 w-5 transition-all duration-300',
@@ -82,9 +78,6 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className, showLabel =
   );
 };
 
-/**
- * Theme selector dropdown for settings pages
- */
 export const ThemeSelector: React.FC<{ className?: string }> = ({ className }) => {
   const { theme, setTheme } = useThemeStore();
   const { t } = useTranslation();

@@ -1,13 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { mockAuthRoutes } from "./helpers/auth";
 
-/**
- * Auth E2E tests — Registration, Login, Logout flows.
- *
- * Routes are mocked via helpers/auth.ts so these tests do not depend on
- * a backend or seeded data. Assertions are unconditional: a missing
- * link should fail the test, not silently pass.
- */
 
 test.describe("Registration", () => {
   test("shows the registration form", async ({ page }) => {
@@ -28,7 +21,6 @@ test.describe("Registration", () => {
     await expect(submitBtn).toBeVisible();
     await submitBtn.click();
 
-    // Form must NOT navigate away with empty inputs (validation should block).
     await expect(page).toHaveURL(/register/);
   });
 
@@ -73,8 +65,6 @@ test.describe("Login", () => {
     await page.fill('input[type="password"]', "wrongpassword");
     await page.locator('button[type="submit"]').click();
 
-    // Either we surface an error (preferred) or we stay on the login page.
-    // Both are valid UX, but at least one MUST be true.
     const errorEl = page.locator(
       '[role="alert"], .text-red-500, .text-red-400, .error',
     );

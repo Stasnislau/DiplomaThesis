@@ -61,12 +61,12 @@ async def test_adjust_difficulty_streak_resets_after_miss(placement_service: Pla
     """One miss must reset the streak — three correct after a miss must
     bump exactly once, not multiple times."""
     placement_service.current_level = "B1"
-    placement_service.adjust_difficulty(was_correct=True)   # streak=[T]
-    placement_service.adjust_difficulty(was_correct=False)  # drop to A2, streak reset
+    placement_service.adjust_difficulty(was_correct=True)
+    placement_service.adjust_difficulty(was_correct=False)
     assert placement_service.current_level == "A2"
-    placement_service.adjust_difficulty(was_correct=True)   # streak=[T]
+    placement_service.adjust_difficulty(was_correct=True)
     assert placement_service.current_level == "A2"
-    placement_service.adjust_difficulty(was_correct=True)   # streak=[T,T] -> bump
+    placement_service.adjust_difficulty(was_correct=True)
     assert placement_service.current_level == "B1"
 
 

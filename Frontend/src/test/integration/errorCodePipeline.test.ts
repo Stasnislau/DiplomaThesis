@@ -1,24 +1,3 @@
-/**
- * End-to-end test of the error-code contract — the path a single
- * failing backend response actually walks before its message lands
- * in front of the user.
- *
- *     fetch Response (FastAPI shape OR gateway-wrapped shape)
- *         ↓
- *     parseApiResponse — splits envelope, throws ApiError
- *         ↓
- *     ApiError carries .code
- *         ↓
- *     useLocalizedError(err) — looks up errors.codes.CODE
- *         ↓
- *     localized string surfaces in the UI
- *
- * If anything breaks in that chain a real user sees raw English
- * instead of a translation, so this test pins each step against the
- * next. Both AI's `{detail: "CODE: msg"}` and the gateway's
- * `{success: false, payload: {message: "CODE: msg"}}` shapes are
- * exercised against every locale we ship.
- */
 import { describe, expect, it } from "vitest";
 import { renderHook } from "@testing-library/react";
 
@@ -28,16 +7,13 @@ import { parseApiResponse } from "@/api/parseApiResponse";
 import { useLocalizedError } from "@/utils/useLocalizedError";
 
 const SAMPLE_CODES = [
-  // AI
   "AUTH_MISSING_USER",
   "PDF_NO_TEXT",
   "AI_RATE_LIMITED",
   "USER_TOKENS_EMPTY",
-  // Auth
   "AUTH_INVALID_CREDENTIALS",
   "AUTH_EMAIL_TAKEN",
   "AUTH_REFRESH_TOKEN_EXPIRED",
-  // User
   "USER_NOT_FOUND",
   "USER_LANGUAGE_ALREADY_ADDED",
   "USER_AI_TOKEN_NOT_FOUND",
@@ -110,14 +86,9 @@ describe("error-code contract end-to-end", () => {
         for (const code of SAMPLE_CODES) {
           const err = new ApiError(code, "english fallback");
           const text = result.current(err);
-          // i18next returns the key itself when no entry exists; that
-          // would mean we forgot to translate this code in this locale.
           expect(text, `missing translation for ${code} in ${locale}`).not.toBe(
             `errors.codes.${code}`,
           );
-          // It also shouldn't accidentally reuse the english fallback —
-          // pl/es should produce something different from the dev-facing
-          // English message we put on the wire.
           if (locale !== "en") {
             expect(text, `${code} not actually translated in ${locale}`)
               .not.toBe("english fallback");
@@ -137,7 +108,6 @@ describe("error-code contract end-to-end", () => {
     it("falls back to errors.generic when there's no code at all", async () => {
       await i18n.changeLanguage("en");
       const { result } = renderHook(() => useLocalizedError());
-      // Plain Error with no message — should land on the generic.
       const text = result.current(new Error(""));
       expect(text).toBe(i18n.t("errors.generic"));
     });

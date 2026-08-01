@@ -115,11 +115,6 @@ def client() -> Iterable[TestClient]:
         yield TestClient(app)
 
 
-# ==================================================================
-# WRITING
-# ==================================================================
-
-
 class TestWritingFlows:
     def test_fill_in_blank(self, client: TestClient) -> None:
         r = client.post(
@@ -204,11 +199,6 @@ class TestWritingFlows:
         assert p.get("explanation"), f"no explanation: {p}"
 
 
-# ==================================================================
-# SPEAKING
-# ==================================================================
-
-
 class TestSpeakingFlows:
     def test_practice_phrase(self, client: TestClient) -> None:
         r = client.post(
@@ -276,11 +266,6 @@ class TestSpeakingFlows:
         assert p["targetPhrase"]
 
 
-# ==================================================================
-# LISTENING
-# ==================================================================
-
-
 class TestListeningFlows:
     @pytest.fixture(autouse=True)
     def _mock_tts(self) -> None:
@@ -328,11 +313,6 @@ class TestListeningFlows:
         assert task.get("type") == "listening" or task.get("questions"), (
             f"unexpected adaptive listening payload: {p}"
         )
-
-
-# ==================================================================
-# PLACEMENT
-# ==================================================================
 
 
 class TestPlacementFlows:

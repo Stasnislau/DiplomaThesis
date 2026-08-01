@@ -2,12 +2,6 @@ import { expect, test } from "@playwright/test";
 
 import AxeBuilder from "@axe-core/playwright";
 
-/**
- * Automated Accessibility (a11y) audit using axe-core.
- *
- * Scans each public page for WCAG 2.1 violations.
- * Any violations will fail the test and produce a detailed report.
- */
 
 const PUBLIC_PAGES = [
   { name: "Login", path: "/login" },

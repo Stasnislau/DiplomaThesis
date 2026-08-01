@@ -16,20 +16,11 @@ interface LessonQuickQuizProps {
   level: string;
   topic: string;
   keywords: string[];
-  /** Fired exactly once when the learner crosses the pass threshold
-   *  (CORRECT_TO_PASS correct answers). Lesson page completes the
-   *  lesson on that signal. */
   onPassed?: () => void;
 }
 
 type Flavour = "multiple-choice" | "fill-blank";
 
-/**
- * Compact reusable quiz: alternating multiple-choice / fill-in-blank
- * questions over the lesson topic + keywords. Used both as an
- * alternative mode for writing_essay lessons (so the learner can warm
- * up on the lesson vocabulary) and reused by the regular quiz lessons.
- */
 const LessonQuickQuiz = ({
   language,
   level,

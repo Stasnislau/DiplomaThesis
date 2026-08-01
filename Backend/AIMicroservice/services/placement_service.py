@@ -18,7 +18,6 @@ from models.dtos.placement_dtos import PlacementAnswer, PlacementTestAnswer
 
 
 LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"]
-# Drop a placement session after this much idle time (no answers).
 SESSION_TTL_SECONDS = 60 * 30
 
 
@@ -30,8 +29,6 @@ class _PlacementSession:
     difficulty). State now keyed by user_id with a soft TTL.
     """
     current_level: str = "A1"
-    # Recent correctness flags, most-recent-last. Used for the 2-of-3 streak
-    # rule below — far less jumpy than +1/-1 every answer.
     recent: List[bool] = field(default_factory=list)
     last_touched: float = field(default_factory=time.time)
 
@@ -42,9 +39,6 @@ class PlacementService:
         self.vector_db_service = vector_db_service
         self.writing_task_service = WritingTaskService(vector_db_service, ai_service)
         self.user_service = UserService()
-        # In-process per-user state. For multi-replica deploys this would
-        # need to live in Redis; for the current single AI-service container
-        # an in-memory dict is fine.
         self._sessions: Dict[str, _PlacementSession] = {}
 
     @property
@@ -58,8 +52,6 @@ class PlacementService:
 
     @current_level.setter
     def current_level(self, value: str) -> None:
-        # Tests in test_placement_service.py poke this directly. Keep them
-        # working by writing into a synthetic session.
         sess = self._sessions.setdefault("__test__", _PlacementSession())
         sess.current_level = value
         sess.last_touched = time.time()
@@ -68,7 +60,6 @@ class PlacementService:
         key = user_context.user_id if user_context else "placement_anonymous"
         sess = self._sessions.get(key)
         now = time.time()
-        # GC stale sessions on every touch — cheap and bounded.
         for k in list(self._sessions.keys()):
             if now - self._sessions[k].last_touched > SESSION_TTL_SECONDS:
                 del self._sessions[k]
@@ -105,12 +96,6 @@ class PlacementService:
             return task
 
         except HTTPException:
-            # The downstream task service already raised a structured
-            # HTTPException — preserve it so the {code, message} body
-            # reaches the client untouched. Wrapping in `raise Exception`
-            # would stringify the structured detail into a confusing
-            # nested "PLACEMENT_GENERATION_FAILED: 502: AI_BAD_GATEWAY: …"
-            # blob.
             raise
         except Exception as e:
             raise Exception(f"Failed to generate placement task: {e}")
@@ -128,13 +113,12 @@ class PlacementService:
         if not was_correct:
             if idx > 0:
                 sess.current_level = LEVELS[idx - 1]
-            sess.recent = []  # reset streak after a miss
+            sess.recent = []
             return
 
-        # Correct answer: count correct-in-last-3.
         if sum(sess.recent) >= 2 and idx < len(LEVELS) - 1:
             sess.current_level = LEVELS[idx + 1]
-            sess.recent = []  # reset streak after a bump
+            sess.recent = []
 
     def adjust_difficulty(self, was_correct: bool) -> None:
         """Backwards-compat for unit tests that call the old method
@@ -261,31 +245,21 @@ LOCALIZATION (HARD RULE):
                             "confidence": evaluation.confidence,
                             "totalQuestions": total_questions,
                             "correctAnswers": correct_answers,
-                            # Save the structured weakness list — this
-                            # is the primary signal /writing/adaptive,
-                            # /listening/adaptive and the speaking
-                            # practice-phrase generator read from.
                             "weaknesses": list(evaluation.weaknesses or []),
                             "strengths": list(evaluation.strengths or []),
                         },
                     },
                 )
 
-                # Award "First Steps" achievement for completing any
-                # placement test.
                 await self.user_service.post_achievement_progress(
                     user_context, "First Steps", 1
                 )
 
-                # "Level Up" only fires for B1 and above — reaching
-                # those levels means the learner has cleared A-level
-                # material which is the intent of the achievement.
                 if evaluation.level in ("B1", "B2", "C1", "C2"):
                     await self.user_service.post_achievement_progress(
                         user_context, "Level Up", 1
                     )
 
-                # XP for completing a placement test (50 points).
                 await self.user_service.log_activity(user_context, 50)
 
             return evaluation

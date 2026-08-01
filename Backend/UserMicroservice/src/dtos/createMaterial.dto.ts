@@ -1,6 +1,5 @@
 import { IsArray, IsNotEmpty, IsString } from "class-validator";
 
-/** Structure for analyzed material type */
 interface AnalyzedMaterialType {
   type: string;
   count?: number;

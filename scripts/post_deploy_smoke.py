@@ -53,14 +53,9 @@ FULL = os.getenv("SMOKE_FULL", "0") == "1"
 TIMEOUT = int(os.getenv("SMOKE_TIMEOUT_SEC", "15"))
 VERBOSE = os.getenv("SMOKE_VERBOSE", "0") == "1"
 
-# Self-signed certs are normal for ad-hoc deployments. Don't fail
-# the smoke just because the deploy uses a custom cert.
 _SSL_CTX = ssl.create_default_context()
 _SSL_CTX.check_hostname = False
 _SSL_CTX.verify_mode = ssl.CERT_NONE
-
-
-# ---------- HTTP helpers ------------------------------------------
 
 
 @dataclass
@@ -109,13 +104,10 @@ def post(path: str, *, payload: Optional[dict] = None, **kwargs: Any) -> Respons
     return _request("POST", f"{API_URL}{path}", body=body, headers=headers, **kwargs)
 
 
-# ---------- Test framework (bare-bones, stdlib-only) --------------
-
-
 @dataclass
 class CheckResult:
     name: str
-    status: str  # "pass" | "fail" | "skip"
+    status: str
     detail: str
     elapsed_ms: int
 
@@ -174,9 +166,6 @@ def assert_json_field(resp: Response, dotted_path: str, ctx: str = "") -> Any:
     return cursor
 
 
-# ---------- Health / reachability ---------------------------------
-
-
 @check("Gateway /api/health responds 200")
 def _gateway_health() -> None:
     r = get("/api/health")
@@ -206,14 +195,8 @@ def _frontend_index() -> None:
     except Exception as e:
         raise AssertionError(f"Frontend unreachable at {FRONTEND_URL}: {e}")
     assert status == 200, f"Frontend returned {status}"
-    # The Vite-built shell ships a <div id="root"> and at least one
-    # script tag — checking both catches "served nothing" and "served
-    # raw template without bundle" failures separately.
     assert 'id="root"' in body, "Frontend index missing #root mount point"
     assert "<script" in body, "Frontend index has no script tags — bundle wasn't included"
-
-
-# ---------- Public auth surface (no token needed) ----------------
 
 
 @check("Auth login rejects bad credentials with structured error code")
@@ -225,8 +208,6 @@ def _auth_login_rejects() -> None:
             "password": "definitely-wrong",
         },
     )
-    # Acceptable: 400 / 401 / 422 — we don't care which the auth
-    # service uses, only that it isn't a server crash.
     assert r.status in (
         400,
         401,
@@ -237,12 +218,6 @@ def _auth_login_rejects() -> None:
 
 @check("Languages catalog endpoint returns a non-empty list")
 def _languages_endpoint() -> None:
-    # Languages live on the User microservice (mounted via the
-    # gateway under /api/gateway/user/languages). Public endpoint —
-    # no auth header required — so it exercises gateway routing +
-    # user-service reachability + DB connectivity in one hop.
-    # We try a couple of prefix variants so the smoke survives a
-    # routing reshuffle.
     candidates = [
         "/api/gateway/user/languages",
         "/api/gateway/auth/languages",
@@ -263,9 +238,6 @@ def _languages_endpoint() -> None:
     )
 
 
-# ---------- Critical user flow (only when SMOKE_FULL=1) ----------
-
-
 _TEST_USER_EMAIL = ""
 _TEST_USER_PASSWORD = "Sm0k3-Te$t-Pa$$w0rd!"
 _TEST_USER_TOKEN = ""
@@ -273,8 +245,6 @@ _TEST_USER_TOKEN = ""
 
 def _signup_test_user() -> tuple[str, str]:
     email = f"smoke-{uuid.uuid4().hex[:10]}@smoketest.local"
-    # Auth UserDto requires email/password/name/surname (all
-    # IsNotEmpty + ≤100 chars); see Backend/AuthMicroservice/src/dtos/userDto.ts.
     r = post(
         "/api/gateway/auth/auth/register",
         payload={
@@ -293,9 +263,6 @@ def _login(email: str, password: str) -> str:
         "/api/gateway/auth/auth/login",
         payload={"email": email, "password": password},
     )
-    # NestJS returns 201 (Created) by default for POST handlers unless
-    # explicitly @HttpCode-overridden. Auth service login uses the
-    # default, so 201 is the success status here.
     assert r.status in (200, 201), f"Login failed: {r.status} {r.body[:200]}"
     token = (
         (r.json or {}).get("payload", {}).get("accessToken")
@@ -338,16 +305,10 @@ def _full_speaking_prompt() -> None:
         payload={"language": "English", "level": "B1", "format": "timed_response"},
         headers={"Authorization": f"Bearer {_TEST_USER_TOKEN}"},
     )
-    # 200 if AI key is configured; 400/500 with AI_API_KEY_MISSING is
-    # also acceptable (means the deploy is wired but the test user
-    # doesn't have an AI token configured) — both prove the endpoint
-    # exists and routes correctly.
     assert r.status in (200, 400, 422, 500), (
         f"practice-prompt returned unexpected {r.status}: {r.body[:200]}"
     )
     if r.status == 500 and r.json:
-        # Surface the structured `code` so it's clear in the smoke log
-        # whether this is a deploy issue or a missing token.
         code = (r.json.get("detail") or {}).get("code", "?")
         assert code in (
             "AI_API_KEY_MISSING",
@@ -371,9 +332,6 @@ def _full_listening_request() -> None:
         },
         headers={"Authorization": f"Bearer {_TEST_USER_TOKEN}"},
     )
-    # Same logic — 200 on success, 400/500 with a known code on
-    # missing AI/TTS infra. Anything else means the route or DTO is
-    # broken on the deploy.
     assert r.status in (200, 400, 422, 500), (
         f"listening returned unexpected {r.status}: {r.body[:200]}"
     )
@@ -428,9 +386,6 @@ def _full_listening_question_type_catalog() -> None:
                 },
             )
         except (urllib.error.URLError, TimeoutError, Exception) as e:
-            # urllib raises URLError on socket timeout — it's not a
-            # validation failure, so we count it as "type accepted,
-            # AI is just slow". The smoke is for wiring, not load.
             if "timed out" not in str(e).lower():
                 raise
             continue
@@ -476,9 +431,6 @@ def _full_speaking_grade_known_unknown_split() -> None:
         skip("set SMOKE_FULL=1 to run")
     if not _TEST_USER_TOKEN:
         skip("no token from signup step")
-    # We send a tiny WAV-shaped placeholder. Whisper will reject it as
-    # garbage but the smoke test only cares that the route reaches
-    # the service.
     fake_audio = b"RIFF\x24\x08\x00\x00WAVEfmt \x10\x00\x00\x00"
     boundary = "----smoke-boundary"
     body = (
@@ -489,7 +441,6 @@ def _full_speaking_grade_known_unknown_split() -> None:
 
     base = "/api/gateway/ai/speaking/grade-response"
 
-    # Unknown format → 400/422.
     r_unknown = _request(
         "POST",
         f"{API_URL}{base}?language=English&format=made_up&promptText=x",
@@ -503,8 +454,6 @@ def _full_speaking_grade_known_unknown_split() -> None:
         f"unknown format should 4xx, got {r_unknown.status}: {r_unknown.body[:200]}"
     )
 
-    # Known format → not 422 (downstream AI/Whisper may still fail
-    # with 5xx + a known code, that's fine).
     r_known = _request(
         "POST",
         f"{API_URL}{base}?language=English&format=timed_response&promptText=x",
@@ -525,7 +474,6 @@ def _full_materials_upload_round_trip() -> None:
         skip("set SMOKE_FULL=1 to run")
     if not _TEST_USER_TOKEN:
         skip("no token from signup step")
-    # Smallest valid PDF that has text content the parser can extract.
     pdf_bytes = (
         b"%PDF-1.4\n"
         b"1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n"
@@ -551,24 +499,13 @@ def _full_materials_upload_round_trip() -> None:
         },
         body=body,
     )
-    # Accepted shape outcomes:
-    # - 200: full parse + AI classification succeeded.
-    # - 400 + PDF_NO_TEXT/PDF_GARBLED_TEXT: PDF rejected at parse,
-    #   route+contract still verified.
-    # - 422 + AI key missing: AI call failed with a known code.
     assert r.status in (200, 400, 422, 500), (
         f"materials upload returned unexpected {r.status}: {r.body[:200]}"
     )
     if r.status == 200:
-        # Sanity-check the rich payload contract — proves the FE will
-        # receive what it expects to round-trip into /materials/quiz.
         payload = (r.json or {}).get("payload", {})
         assert "filename" in payload, f"missing filename: {payload}"
-        # `document_map` may be null on parse-edge, but the field must exist.
         assert "document_map" in payload, f"missing document_map: {payload}"
-
-
-# ---------- Runner ------------------------------------------------
 
 
 def _run_all() -> int:

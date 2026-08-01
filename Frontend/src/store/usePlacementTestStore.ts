@@ -71,9 +71,6 @@ export const usePlacementTestStore = create<PlacementTestStore>((set) => ({
   setLanguage: (language: Language) => set({ language }),
   setTasks: (tasks) =>
     set({ currentTask: tasks.current, nextTask: tasks.next }),
-  // A prefetched question can arrive after the learner has already answered,
-  // which leaves the current slot empty and the screen on a loading spinner.
-  // Filling the empty slot straight away keeps the next question on screen.
   setNextTask: (task) =>
     set((state) =>
       state.currentTask ? { nextTask: task } : { currentTask: task, nextTask: null }

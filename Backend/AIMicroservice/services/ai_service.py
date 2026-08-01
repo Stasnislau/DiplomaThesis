@@ -26,11 +26,6 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 
-# Retry tunables. Free OpenRouter endpoints in particular hand out
-# "no endpoints found" / 502 / timeout when capacity is exhausted —
-# usually transient, gone in a second or two. Three attempts with
-# exp-backoff + jitter is enough to ride out those blips without
-# making the user wait forever.
 _AI_RETRY_MAX_ATTEMPTS = 3
 _AI_RETRY_BASE_DELAY_S = 1.0
 _AI_RETRY_MAX_DELAY_S = 8.0
@@ -47,9 +42,6 @@ def _is_retryable(exc: BaseException) -> bool:
     if isinstance(exc, (Timeout, RateLimitError)):
         return True
     if isinstance(exc, NotFoundError):
-        # OpenRouter signals "free model at capacity" with a 404 body
-        # like {"error":{"message":"No endpoints found for X"}}. That
-        # IS transient — a retry usually finds a free slot.
         return "no endpoints" in str(exc).lower()
     if isinstance(exc, AuthenticationError):
         return False
@@ -57,27 +49,10 @@ def _is_retryable(exc: BaseException) -> bool:
         return False
     if isinstance(exc, HTTPException):
         return False
-    # Treat any other exception (network, 5xx, unexpected) as worth
-    # one or two retries before giving up.
     return True
 
 
-# In-process AI response cache. Two motivations:
-#   1) Cost — repeated calls with identical inputs don't bill the
-#      provider twice. A user re-clicking 'Generate' or two parallel
-#      requests for the same placement-task-with-same-seed share a
-#      single completion.
-#   2) Latency — Groq cold paths can spike 5-10s; warm cache hit is
-#      microseconds.
-# Notes / caveats:
-#   - This is per-process. With a single AI-service replica that's fine;
-#     for multi-replica deploys this should move to Redis.
-#   - We DON'T cache when temperature > 0.5 (the call site asked for
-#     creativity — caching would defeat that).
-#   - The cache key includes the user's API token (because litellm
-#     dispatches requests by it), so two users with different keys
-#     won't share entries even on identical prompts.
-_AI_CACHE_TTL = 60 * 10  # 10 minutes
+_AI_CACHE_TTL = 60 * 10
 _AI_CACHE_MAX = 256
 _ai_cache: Dict[str, Tuple[float, str]] = {}
 
@@ -118,9 +93,6 @@ def _ai_cache_put(key: str, value: str) -> None:
     _ai_cache[key] = (time.time() + _AI_CACHE_TTL, value)
 
 
-# Vertex model id, overridable per environment: a fresh GCP free-trial
-# project only serves the 2.5 family, while an upgraded billing account
-# also gets gemini-3-pro-preview. Swapping takes one env var, no rebuild.
 VERTEX_CHAT_MODEL = os.getenv("VERTEX_CHAT_MODEL", "vertex_ai/gemini-3-pro-preview")
 
 
@@ -134,10 +106,6 @@ PROVIDER_CONFIG: Dict[str, Dict[str, Any]] = {
         "api_base": "https://api.deepseek.com",
     },
     "groq": {"model": "groq/llama-3.3-70b-versatile"},
-    # OpenRouter is the meta-router that fronts every other lab. The
-    # default routes to Sonnet 4.6 (best quality/$ ratio at 1M ctx),
-    # but the model is overridable via OPENROUTER_MODEL so swapping to
-    # opus-4.7 / gpt-5.4 / a :free model takes one env var, no rebuild.
     "openrouter": {
         "model": os.getenv(
             "OPENROUTER_MODEL", "openrouter/anthropic/claude-sonnet-4.6"
@@ -212,9 +180,6 @@ class AI_Service:
         if model and not user_context and ai_provider_id is None:
             litellm_model = model
 
-        # Cache only deterministic-ish calls. Anything above temp 0.5 is
-        # asking for creative variety (e.g. task generation), which is
-        # exactly the case where a cache hit would hurt.
         cacheable = temperature <= 0.5
         cache_key = None
         if cacheable:
@@ -260,9 +225,6 @@ class AI_Service:
                 last_exc = exc
                 if attempt >= _AI_RETRY_MAX_ATTEMPTS or not _is_retryable(exc):
                     break
-                # Exp backoff with full jitter so simultaneous retries
-                # from concurrent requests don't synchronise into a
-                # thundering herd at the upstream.
                 base = min(
                     _AI_RETRY_MAX_DELAY_S,
                     _AI_RETRY_BASE_DELAY_S * (2 ** (attempt - 1)),
@@ -279,8 +241,6 @@ class AI_Service:
                 await asyncio.sleep(delay)
 
         if chat_response is None:
-            # All attempts exhausted — translate the last exception to
-            # a structured HTTP error using the same mapping as before.
             exc = last_exc
             if isinstance(exc, AuthenticationError):
                 from utils.error_codes import AI_AUTH_FAILED, raise_with_code

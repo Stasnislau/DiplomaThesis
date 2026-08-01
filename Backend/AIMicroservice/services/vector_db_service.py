@@ -10,10 +10,6 @@ from models.dtos.vector_db_dtos import SpecificSkillContext, FullLevelContext, S
 from models.dtos.material_dtos import ChunkMetadata
 from typing import List, Union, Optional, Dict, Any
 
-# Strict UUID format check used to gate user_id before it's
-# interpolated into a LanceDB where-clause. Anything that doesn't
-# match short-circuits to "no results" rather than risking a
-# malformed/injected filter expression.
 _UUID_RE = re.compile(
     r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
 )
@@ -148,9 +144,6 @@ class VectorDBService:
                     "vector": embeddings[i].tolist(),
                     "source": metadatas[i].source,
                     "chunk_index": metadatas[i].chunk_index,
-                    # Empty string instead of None — LanceDB schema needs
-                    # a stable column type, and an empty string still
-                    # disambiguates pre-multitenant rows from post.
                     "user_id": user_id or "",
                 }
                 data.append(record)
@@ -159,10 +152,6 @@ class VectorDBService:
 
             if self.materials_table_name in self.db.table_names():
                 table = self.db.open_table(self.materials_table_name)
-                # A table written before uploads were scoped to an owner has no
-                # user_id column, and adding a row that carries one fails against
-                # that older schema. Widen the table once, defaulting the existing
-                # rows to the empty owner that search_materials already excludes.
                 if "user_id" not in table.schema.names:
                     table.add_columns({"user_id": "''"})
                 table.add(data=df)
@@ -196,11 +185,6 @@ class VectorDBService:
 
             search = table.search(query_embedding.tolist())
             if user_id:
-                # `user_id` arrives via the X-User-Id header (validated
-                # JWT-derived UUID in our flow). Reject anything that
-                # doesn't look like a UUID before pasting it into the
-                # where-clause, so a malformed header can never inject
-                # SQL fragments into the LanceDB query.
                 if not _UUID_RE.match(user_id):
                     return []
                 try:
@@ -209,14 +193,10 @@ class VectorDBService:
                     pass
             results_df = search.limit(limit).to_pandas()
 
-            # Defensive post-filter: even if the where-clause can't be
-            # applied (older table schema), drop foreign-user rows here.
             records = results_df.to_dict("records")
             if user_id and "user_id" in results_df.columns:
                 records = [r for r in records if r.get("user_id") == user_id]
 
-            # Strip the user_id field before constructing MaterialChunk
-            # so we don't have to widen the dto for an internal-only key.
             for r in records:
                 r.pop("user_id", None)
 
@@ -242,13 +222,7 @@ class VectorDBService:
             embeddings = self.model.encode([t.template for t in templates])
             data = []
             for i, template in enumerate(templates):
-                # `distance` only exists on rows that came back OUT of a
-                # search. Persisting it would add a column that no freshly
-                # built template has, so a search-then-resave round trip
-                # would break the schema.
                 record = template.model_dump(exclude={"distance"})
-                # A null id makes LanceDB type the column as null, after
-                # which every later row that does carry an id is rejected.
                 record["id"] = template.id or str(uuid.uuid4())
                 record["vector"] = embeddings[i].tolist()
                 data.append(record)
@@ -289,11 +263,6 @@ class VectorDBService:
 
             search = table.search(query_embedding.tolist())
             if user_id:
-                # Same gate as search_materials: user_id reaches us from
-                # the X-User-Id header and gets interpolated straight into
-                # the where-clause, so anything that isn't a UUID
-                # short-circuits to "no results" instead of becoming a
-                # filter fragment.
                 if not _UUID_RE.match(user_id):
                     return []
                 try:
@@ -302,10 +271,6 @@ class VectorDBService:
                     pass
             results = search.limit(limit).to_pandas()
 
-            # Defensive post-filter for the same reason as in
-            # search_materials: if the where-clause couldn't be applied
-            # against an older table schema, drop foreign-user rows here
-            # rather than hand them to a prompt builder.
             records = results.to_dict("records")
             if user_id and "user_id" in results.columns:
                 records = [r for r in records if r.get("user_id") == user_id]

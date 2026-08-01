@@ -68,7 +68,6 @@ describe("MatchingRenderer", () => {
         revealed={false}
       />,
     );
-    // User decides "lasting" actually goes with ephemeral.
     fireEvent.click(screen.getByText("ephemeral"));
     fireEvent.click(screen.getByText("lasting"));
     expect(onChange).toHaveBeenCalledWith({ ephemeral: "lasting" });

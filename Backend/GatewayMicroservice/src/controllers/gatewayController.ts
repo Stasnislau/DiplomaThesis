@@ -19,8 +19,6 @@ export class GatewayController {
         body,
         req,
       );
-      // Forward Set-Cookie from upstream verbatim — Auth's httpOnly
-      // refresh cookie depends on this round-trip.
       if (response.setCookie && response.setCookie.length > 0) {
         res.setHeader("Set-Cookie", response.setCookie);
       }

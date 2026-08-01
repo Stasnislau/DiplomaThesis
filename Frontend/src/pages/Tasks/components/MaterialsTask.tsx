@@ -29,22 +29,14 @@ const MaterialsTask = () => {
   const [view, setView] = useState<"upload" | "history" | "ready" | "quiz">("upload");
   const [analyzedTypes, setAnalyzedTypes] = useState<AnalyzedType[]>([]);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-  // The DocumentMap from /materials/upload — round-tripped to
-  // /materials/quiz so the backend can skip re-classification and
-  // drive Stage 2/3 from the same exercises the user picked types from.
   const [documentMap, setDocumentMap] = useState<DocumentMap | null>(null);
   const [quiz, setQuiz] = useState<QuizQuestion[]>([]);
   const [quizError, setQuizError] = useState<string | null>(null);
-  // Per-question user answer. Shape varies by question type (string,
-  // string[], or {id: value}); the renderer & grader interpret it.
   const [userAnswers, setUserAnswers] = useState<
     Record<number, UserAnswerValue>
   >({});
   const [revealedAnswers, setRevealedAnswers] = useState<Record<number, boolean>>({});
 
-  // The user is currently practising whichever non-native language they
-  // have started. UserLanguage only carries languageId, so we resolve the
-  // human-readable name through the languages catalogue.
   const userLanguages = useUserStore((s) => s.userLanguages);
   const { languages: availableLanguages } = useAvailableLanguages();
   const startedLearningLink = userLanguages.find(
@@ -79,10 +71,6 @@ const MaterialsTask = () => {
         }
         setAnalyzedTypes(types);
         setSelectedTypes(types.map(t => t.type));
-        // Stash the rich DocumentMap so handleGenerateQuiz can hand
-        // it back to the backend instead of triggering a fresh
-        // classification call. Null when the response didn't include
-        // one (older backend / parser fallback path).
         setDocumentMap(data.document_map ?? null);
         setView("ready");
 
@@ -122,8 +110,6 @@ const MaterialsTask = () => {
           setView("quiz");
           return;
         }
-        // Backend returned a string explanation (e.g. "No relevant material...")
-        // or an unexpected shape. Surface a friendly i18n'd message.
         const backendMessage =
           typeof payload === "string" ? payload : "";
         setQuizError(
@@ -132,8 +118,6 @@ const MaterialsTask = () => {
       }
     });
   };
-
-
 
 
   const loadMaterial = (material: UserMaterial) => {
@@ -171,20 +155,11 @@ const MaterialsTask = () => {
     setView("upload");
   };
 
-  // Persist materials-quiz session result to history once the user
-  // has revealed every question. Mirrors the listening pattern: the
-  // adaptive loop pulls these entries blindly, so the wrong-answer
-  // examples we send now drive future task generation. Without this
-  // the materials surface logged ONLY the generation step (with
-  // score=null), so per-session performance was a black hole.
   const loggedKeyRef = useRef<string | null>(null);
   useEffect(() => {
     if (quiz.length === 0) return;
     const revealedCount = Object.values(revealedAnswers).filter(Boolean).length;
     if (revealedCount < quiz.length) return;
-    // Stable key: question prompts joined. Quiz array reference would
-    // change on re-mount but content stays — we want to log once per
-    // unique generation.
     const sessionKey = quiz.map((q) => q.question).join("|").slice(0, 200);
     if (loggedKeyRef.current === sessionKey) return;
     loggedKeyRef.current = sessionKey;
@@ -196,8 +171,6 @@ const MaterialsTask = () => {
       if (verdict === true) {
         correct += 1;
       } else if (verdict === false) {
-        // Build a human-readable suggestion per type so adaptive
-        // task generation has real text to riff on.
         let suggestion = "";
         if (q.type === "matching") {
           suggestion = q.pairs
@@ -230,11 +203,8 @@ const MaterialsTask = () => {
           suggestion: suggestion.slice(0, 160),
         });
       }
-      // verdict === null (open questions) — neither right nor wrong;
-      // we skip those so the score % isn't biased by self-grading.
     });
 
-    // Only count gradeable questions in the score denominator.
     const gradeable = quiz.filter(
       (q, idx) => gradeQuestion(q, userAnswers[idx]) !== null,
     ).length;
@@ -343,12 +313,6 @@ const MaterialsTask = () => {
           </div>
 
           {uploadError && (() => {
-            // ApiError carries a `code` parsed from the backend's
-            // `CODE: english fallback` detail. localizeError() looks it
-            // up via t(`errors.codes.${code}`) with the English message
-            // as defaultValue, so any code we forgot to translate still
-            // reads sensibly. The code is also rendered as a small
-            // mono-font badge so support requests can quote it verbatim.
             const code =
               uploadError && typeof uploadError === "object" && "code" in uploadError
                 ? (uploadError as { code?: string }).code
@@ -377,7 +341,7 @@ const MaterialsTask = () => {
         </div>
       )}
 
-      {/* History Section */}
+      {}
       {view === "history" && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="flex items-center gap-3 mb-4">
@@ -440,7 +404,7 @@ const MaterialsTask = () => {
         </div>
       )}
 
-      {/* Analyze Button */}
+      {}
       {view === "upload" && (
         <Button
           onClick={handleUpload}
@@ -453,10 +417,10 @@ const MaterialsTask = () => {
         </Button>
       )}
 
-      {/* Ready Section - Task Types Selection */}
+      {}
       {view === "ready" && (
         <div className="space-y-6">
-          {/* Success Banner */}
+          {}
           <div className="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl p-6 shadow-lg">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center">
@@ -471,7 +435,7 @@ const MaterialsTask = () => {
             </div>
           </div>
 
-          {/* Task Types */}
+          {}
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
@@ -537,7 +501,7 @@ const MaterialsTask = () => {
             )}
           </div>
 
-          {/* Generate Button */}
+          {}
           <Button
             onClick={handleGenerateQuiz}
             disabled={isGeneratingQuiz || (analyzedTypes.length > 0 && selectedTypes.length === 0)}
@@ -548,7 +512,7 @@ const MaterialsTask = () => {
             {isGeneratingQuiz ? t("tasks.generatingTasks") : t("tasks.generateSimilar")}
           </Button>
 
-          {/* Quiz generation error (e.g. "No relevant material found...") */}
+          {}
           {quizError && (
             <div className="mt-2 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800 flex items-start gap-3">
               <span className="text-xl shrink-0" aria-hidden="true">⚠️</span>
@@ -560,10 +524,10 @@ const MaterialsTask = () => {
         </div>
       )}
 
-      {/* Quiz Section */}
+      {}
       {view === "quiz" && (
         <div className="space-y-6">
-          {/* Quiz Header */}
+          {}
           <div className="bg-gradient-to-r from-violet-500 to-purple-500 rounded-2xl p-6 shadow-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -585,7 +549,7 @@ const MaterialsTask = () => {
             </div>
           </div>
 
-          {/* Questions */}
+          {}
           {quiz.map((q, idx) => {
             const isRevealed = !!revealedAnswers[idx];
             const verdict = isRevealed ? gradeQuestion(q, userAnswers[idx]) : null;
@@ -594,7 +558,7 @@ const MaterialsTask = () => {
                 key={idx}
                 className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden"
               >
-                {/* Question Header */}
+                {}
                 <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 px-6 py-4 border-b border-gray-200">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -613,7 +577,7 @@ const MaterialsTask = () => {
                   </div>
                 </div>
 
-                {/* Question Content */}
+                {}
                 <div className="p-6">
                   {q.context_text && q.type !== "cloze_passage" && (
                     <div className="mb-5 p-4 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-200 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line max-h-72 overflow-y-auto">
@@ -631,7 +595,7 @@ const MaterialsTask = () => {
                     revealed={isRevealed}
                   />
 
-                  {/* Show / Hide answer toggle */}
+                  {}
                   <button
                     onClick={() => toggleRevealAnswer(idx)}
                     className={cn(
@@ -644,7 +608,7 @@ const MaterialsTask = () => {
                       : t("tasks.showAnswer", { defaultValue: "Show Answer" })}
                   </button>
 
-                  {/* Verdict line — green/red/neutral depending on grade. */}
+                  {}
                   {isRevealed && verdict !== null && (
                     <div
                       className={cn(
@@ -667,7 +631,7 @@ const MaterialsTask = () => {
             );
           })}
           
-          {/* Generate More Button */}
+          {}
           <Button
             onClick={handleGenerateQuiz}
             disabled={isGeneratingQuiz}

@@ -23,10 +23,6 @@ const eventService = ClientProxyFactory.create({
 });
 
 async function main() {
-  // Refuse to plant a known-credentials admin row in production. The
-  // password is read from env (or randomly generated and printed
-  // once) so a checked-in literal can never become a live admin
-  // account.
   const isProd = process.env.NODE_ENV === "production";
   if (isProd && !process.env.SEED_ADMIN_PASSWORD) {
     console.error(
@@ -37,7 +33,7 @@ async function main() {
   const adminEmail = process.env.SEED_ADMIN_EMAIL ?? "admin@admin.com";
   const adminPassword =
     process.env.SEED_ADMIN_PASSWORD ??
-    (isProd ? "" : "admin"); // dev-only fallback
+    (isProd ? "" : "admin");
 
   await eventService.connect();
 

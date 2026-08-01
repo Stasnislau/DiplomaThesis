@@ -6,12 +6,12 @@ from pydantic.alias_generators import to_camel
 class LessonDto(BaseModel):
     id: str
     title: str
-    topic: str                   # Human-readable topic, e.g. "Greetings & Introductions"
-    description: str             # Short lesson description
-    status: str                  # LOCKED, UNLOCKED, COMPLETED
-    type: str                    # theory, vocabulary, grammar, practice, listening, speaking
-    keywords: List[str]          # Key vocab / grammar points for this lesson
-    duration_minutes: int        # Estimated duration
+    topic: str
+    description: str
+    status: str
+    type: str
+    keywords: List[str]
+    duration_minutes: int
 
     model_config = ConfigDict(
         alias_generator=to_camel,

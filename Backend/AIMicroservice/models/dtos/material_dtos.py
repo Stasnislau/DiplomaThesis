@@ -50,30 +50,6 @@ class ProcessPdfResponse(BaseModel):
     document_map: Optional[DocumentMap] = None
 
 
-# -----------------------------------------------------------------
-# Quiz question variants (Phase 1.7 — discriminated union by `type`).
-# -----------------------------------------------------------------
-#
-# Each subclass defines the exact shape the AI must produce for that
-# question type. The shared base captures fields every variant has.
-# Pydantic's `discriminator="type"` then routes incoming JSON to the
-# right variant at parse time, giving us strict validation without a
-# manual switch.
-#
-# Wire-shape rules (the prompts must echo these):
-# - `multiple_choice`:    options[3-4], correct_answer is one of them.
-# - `open`:               correct_answer free text, options=[].
-# - `fill_in_the_blank`:  question contains "___"; correct_answer is
-#                         either a string or a list of accepted variants.
-# - `true_false`:         correct_answer is the literal "true" or "false".
-# - `matching`:           pairs[] — each {left, right}; "right" is the
-#                         canonical correct match for "left".
-# - `multi_select_mc`:    options[], correct_answers[] with ≥2 items.
-# - `cloze_passage`:      passage_with_blanks contains "{{1}} {{2}} ..."
-#                         markers; blanks[] gives id + correct_answer
-#                         per marker.
-
-
 class _QuestionBase(BaseModel):
     question: str
     context_text: Optional[str] = None
@@ -149,8 +125,6 @@ QuizQuestion = Annotated[
 ]
 
 
-# Single-question parser the service uses to validate each item the AI
-# returns and route it to the correct variant.
 QuizQuestionAdapter: TypeAdapter[QuizQuestion] = TypeAdapter(QuizQuestion)
 
 

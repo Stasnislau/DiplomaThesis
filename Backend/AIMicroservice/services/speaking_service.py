@@ -39,7 +39,7 @@ GROQ_TRANSCRIPTION_URL = "https://api.groq.com/openai/v1/audio/transcriptions"
 GROQ_WHISPER_MODEL = os.getenv("GROQ_WHISPER_MODEL", "whisper-large-v3-turbo")
 
 
-_SPEAKING_CACHE_TTL = 60 * 60  # 1h
+_SPEAKING_CACHE_TTL = 60 * 60
 _SPEAKING_CACHE_MAX = 64
 
 
@@ -51,14 +51,7 @@ class SpeakingService:
     ):
         self.ai_service = ai_service
         self.user_service = UserService()
-        # Imagen 3 is the primary renderer for picture-description.
-        # If callers don't supply one we spin a default instance —
-        # if env vars are missing it silently disables itself and
-        # the speaking flow falls back to Pollinations transparently.
         self.image_service = image_service or ImageService()
-        # (cache_key) -> (expires_at, response). cache_key is sha256 of
-        # (audio bytes, language, ui_locale) — so re-clicking 'Analyze'
-        # on the same recording doesn't bill the provider twice.
         self._analyze_cache: Dict[str, Tuple[float, "SpeakingAnalysisResponse"]] = {}
 
     async def generate_practice_phrase(
@@ -119,7 +112,6 @@ Respond with a single JSON object only, no prose, with these keys:
         try:
             data = json.loads(raw)
         except Exception:
-            # Fall back: treat the raw response as the phrase itself.
             data = {"phrase": raw.strip()[:200], "focus": "", "translation": ""}
         if not isinstance(data, dict) or not data.get("phrase"):
             from utils.error_codes import (
@@ -160,8 +152,6 @@ Respond with a single JSON object only, no prose, with these keys:
 
     def _cache_put(self, key: str, value: "SpeakingAnalysisResponse") -> None:
         if len(self._analyze_cache) >= _SPEAKING_CACHE_MAX:
-            # Evict the oldest entry — cheap O(n) on tiny dict, no need
-            # for an OrderedDict here.
             oldest = min(self._analyze_cache.items(), key=lambda kv: kv[1][0])[0]
             self._analyze_cache.pop(oldest, None)
         self._analyze_cache[key] = (time.time() + _SPEAKING_CACHE_TTL, value)
@@ -482,10 +472,6 @@ Respond with a single JSON object only, no prose, with these keys:
         pronunciation = self._compute_pronunciation_metrics(transcription)
         logger.info(f"Pronunciation metrics: confidence={pronunciation.overall_confidence}, fluency={pronunciation.fluency_score}")
 
-        # Guard: if Whisper itself is unsure about what was said, the
-        # downstream AI 'language analysis' is just hallucinating errors
-        # against garbage transcription. Short-circuit with a clear
-        # message instead of charging the user's API key for noise.
         if pronunciation.overall_confidence < 0.4:
             logger.info(
                 "Skipping AI feedback — overall_confidence=%.2f below threshold",
@@ -536,12 +522,6 @@ Respond with a single JSON object only, no prose, with these keys:
         if user_context:
             from utils.language_codes import to_iso_language
 
-            # Top-3 most frequent error categories (e.g. "grammar",
-            # "vocabulary", "phrasing") become reusable adaptive
-            # signals. We also save the raw error list so the speaking
-            # practice-phrase generator can pick a specific issue to
-            # drill — e.g. "you said 'I don't know nothing'" → drill a
-            # phrase on double negation.
             from collections import Counter
 
             error_categories = Counter(
@@ -584,14 +564,6 @@ Respond with a single JSON object only, no prose, with these keys:
         self._cache_put(cache_key, result)
         return result
 
-    # -----------------------------------------------------------------
-    # Phase 3 — format-driven speaking flow.
-    #
-    # generate_speaking_prompt() emits whatever a given format needs to
-    # display before the user records (a question, a phrase + TTS, a
-    # scene description, a topic). grade_speaking_response() takes the
-    # user's recording back, transcribes it, and grades it per-format.
-    # -----------------------------------------------------------------
 
     async def generate_speaking_prompt(
         self,
@@ -663,9 +635,6 @@ Respond with a single JSON object only, no prose, with these keys:
             phrase = phrase_payload["phrase"]
             audio_url: Optional[str] = None
             if tts_synthesizer is not None:
-                # Synthesise the phrase to MP3 and write to the same
-                # static/audio directory the listening flow uses, so
-                # the FE just plays the URL.
                 try:
                     loop = asyncio.get_running_loop()
                     audio_bytes = await loop.run_in_executor(
@@ -698,10 +667,6 @@ Respond with a single JSON object only, no prose, with these keys:
                 user_context=user_context,
             )
             visual_prompt_text = prompt.get("visual_prompt") or prompt["scene"]
-            # Primary: Imagen 3 via Vertex AI — sharper scenes, fewer
-            # mangled subjects. Falls back to Pollinations on any
-            # failure (credentials missing, quota exhausted, network)
-            # so the speaking flow never hard-fails on an image issue.
             image_url = await self.image_service.generate(visual_prompt_text)
             if not image_url:
                 image_url = _build_pollinations_url(visual_prompt_text)
@@ -734,8 +699,6 @@ Respond with a single JSON object only, no prose, with these keys:
                 rubricHints=FORMAT_RUBRIC_HINTS["free_monologue"],
             )
 
-        # Defensive — controllers gate on is_known_format(), so we
-        # should never get here. Surface a clear error if we do.
         from utils.error_codes import AI_RESPONSE_PARSE_FAILED, raise_with_code
 
         raise_with_code(
@@ -790,8 +753,6 @@ Respond with a single JSON object only, no prose, with these keys:
                 ),
             )
 
-        # repeat_after_me has its own deterministic grading path —
-        # the LLM contributes nothing useful when the target is fixed.
         if format == "repeat_after_me" and target_phrase:
             wer = _word_error_rate(target_phrase, transcript_text)
             match_pct = round(max(0.0, min(1.0, 1.0 - wer)) * 100, 1)
@@ -819,8 +780,6 @@ Respond with a single JSON object only, no prose, with these keys:
             )
             return response
 
-        # Content-graded formats — delegate to the LLM with
-        # format-specific rubric hints.
         rubric_hints = FORMAT_RUBRIC_HINTS.get(format, [])
         grade_data = await self._grade_with_rubric(
             transcript_text=transcript_text,
@@ -873,9 +832,6 @@ Respond with a single JSON object only, no prose, with these keys:
         try:
             from utils.language_codes import to_iso_language
 
-            # Pick the best single score we have to populate the
-            # history's "score" column. Match% for repeat_after_me;
-            # contentScore for everything else; fall back to fluency.
             score: Optional[int] = None
             if response.matchPercent is not None:
                 score = int(round(response.matchPercent))
@@ -907,11 +863,8 @@ Respond with a single JSON object only, no prose, with these keys:
                 },
             )
         except Exception as e:
-            # History logging is best-effort — never block the grade
-            # response on a downstream failure.
             logger.warning("History logging for speaking grade failed: %s", e)
 
-    # ---------- Internal helpers ---------------------------------------
 
     @staticmethod
     def _build_focus_clause(
@@ -1005,9 +958,6 @@ English prompts.
         data = await self._call_and_parse_json(
             prompt, user_context=user_context, fallback_key="scene"
         )
-        # Make sure visual_prompt is present even if the model dropped
-        # it; fall back to the scene text. Pollinations URL-encodes
-        # whatever we hand it.
         if not data.get("visual_prompt"):
             data["visual_prompt"] = data.get("scene", "")
         return data
@@ -1080,10 +1030,6 @@ Return JSON only: {{"topic": "<topic in {language}, 1-2 sentences>",
             (ui_locale or "en").split("-")[0].lower(), "English"
         )
 
-        # Format-specific score fields the LLM should emit. We always
-        # ask for content_score; coherence/vocabulary only when they
-        # belong in the rubric so we don't pollute the JSON for
-        # formats that don't use them.
         score_fields = ['"content_score": <0-100>']
         if format in ("picture_description", "free_monologue"):
             score_fields.append('"coherence_score": <0-100>')
@@ -1135,8 +1081,6 @@ identified_errors length: 0 to 5. error_type stays in English. Output valid JSON
             return json.loads(raw)
         except Exception as e:
             logger.warning("Speaking grade JSON parse failed: %s", e)
-            # Don't blow up the whole response — return an empty
-            # rubric grade and let the FE render whatever it has.
             return {
                 "overall_assessment": "Could not parse grading output. Try again.",
                 "positive_points": [],
@@ -1158,16 +1102,6 @@ identified_errors length: 0 to 5. error_type stays in English. Output valid JSON
         return f"{public_base}/static/audio/{file_name}"
 
 
-# ---------- Module-level helpers ---------------------------------------
-
-
-# Pollinations.ai is open, no-API-key, no-registration text-to-image.
-# We hit GET https://image.pollinations.ai/prompt/<urlencoded prompt>
-# and the service returns a PNG directly. The free tier caches by
-# (prompt, seed, model), so the same scene description is reproducible
-# across page reloads — useful for the practice-loop UX. We pin
-# `model=flux` because at the time of writing it's the highest-quality
-# SDXL-tier free model on the platform and supports realistic photos.
 _POLLINATIONS_BASE = "https://image.pollinations.ai/prompt/"
 _POLLINATIONS_PARAMS = {
     "model": "flux",
@@ -1231,8 +1165,6 @@ def _word_error_rate(reference: str, hypothesis: str) -> float:
     hyp = _tokens(hypothesis)
     if not ref:
         return 1.0 if hyp else 0.0
-    # Levenshtein on word tokens — O(len(ref)*len(hyp)). Phrases here
-    # are short (≤30 words), so the quadratic cost is irrelevant.
     n, m = len(ref), len(hyp)
     dp = [[0] * (m + 1) for _ in range(n + 1)]
     for i in range(n + 1):

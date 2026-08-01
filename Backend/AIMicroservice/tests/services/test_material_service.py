@@ -66,7 +66,7 @@ async def test_process_pdf_legacy_types_shape(
         assert isinstance(result, ProcessPdfResponse)
         assert result.filename == "test.pdf"
         assert result.status == "success"
-        assert result.document_map is None  # legacy shape -> no map
+        assert result.document_map is None
 
         mock_vector_db.save_chunks.assert_called_once()
         args, _ = mock_vector_db.save_chunks.call_args
@@ -109,7 +109,6 @@ async def test_process_pdf_document_map_shape(
         assert ex.type == "reading_comprehension"
         assert ex.passage_word_count_estimate == 720
         assert "main_idea" in ex.question_subtypes
-        # Legacy view derived for FE chips:
         assert len(result.analyzed_types) == 1
 
 
@@ -125,7 +124,6 @@ async def test_generate_quiz_with_passed_document_map(
     mock_vector_db.search_materials.return_value = [
         MaterialChunk(text="topic anchor chunk", source="doc", chunk_index=0, vector=[0.1])
     ]
-    # Two AI calls in order: stimulus (passage), then questions.
     mock_ai_service.get_ai_response.side_effect = [
         '{"passage": "Generated passage about birds. ' * 5 + '"}',
         '{"questions": [{"question": "What is the topic?",'
@@ -153,9 +151,7 @@ async def test_generate_quiz_with_passed_document_map(
     assert isinstance(result, GenerateQuizResponse)
     assert isinstance(result.quiz, QuizContent)
     assert len(result.quiz.questions) == 1
-    assert result.quiz.questions[0].context_text  # passage attached
-    # Two AI calls: stimulus + questions. No classification call when
-    # the caller provides the map.
+    assert result.quiz.questions[0].context_text
     assert mock_ai_service.get_ai_response.await_count == 2
 
 
@@ -207,9 +203,6 @@ async def test_generate_quiz_no_materials(
     assert "No relevant material" in result.quiz
 
 
-# ---------- Verbatim-check unit tests (Phase 1.6) -----------------
-
-
 def test_word_ngrams_below_n_is_empty() -> None:
     assert _word_ngrams("only three words here", n=12) == set()
 
@@ -234,7 +227,6 @@ def test_verbatim_overlap_detects_12_word_match() -> None:
 
 def test_verbatim_overlap_ignores_short_overlap() -> None:
     src = "The quick brown fox jumps over the lazy dog."
-    # Independent prose sharing only short ngrams — should not trigger.
     candidate = (
         "Foxes are clever animals that frequently outwit larger predators "
         "by using their environment to their advantage in unexpected ways."
@@ -244,15 +236,11 @@ def test_verbatim_overlap_ignores_short_overlap() -> None:
 
 def test_verbatim_overlap_punctuation_invariant() -> None:
     src = "She left for Madrid on Tuesday morning before anyone could stop her there."
-    # Same phrase, different punctuation/case — must still be caught.
     candidate = (
         "Yes — She LEFT for MADRID, on Tuesday morning before anyone could "
         "stop her there. End."
     )
     assert _has_verbatim_overlap(candidate, [src], n=12) is True
-
-
-# ---------- Discriminated-union adapter tests (Phase 1.7) ---------
 
 
 def test_adapter_routes_multiple_choice() -> None:
@@ -469,7 +457,6 @@ async def test_stimulus_retries_on_verbatim_overlap(
     mock_vector_db.search_materials.return_value = [
         MaterialChunk(text=source_phrase, source="doc", chunk_index=0, vector=[0.1]),
     ]
-    # Stimulus draft #1 copies; draft #2 is clean; then questions.
     bad_passage = source_phrase + " and many other variables."
     good_passage = (
         "Birds adjust their journeys each year as climate, daylight, and "
@@ -496,14 +483,9 @@ async def test_stimulus_retries_on_verbatim_overlap(
 
     result = await material_service.generate_quiz(document_map=doc_map)
     assert isinstance(result.quiz, QuizContent)
-    # 1 retry on stimulus + 1 questions call = 3 AI calls total.
     assert mock_ai_service.get_ai_response.await_count == 3
-    # The accepted passage shouldn't be the copied one.
     ctx = result.quiz.questions[0].context_text or ""
     assert source_phrase not in ctx
-
-
-# ---------- Option-dedupe tests (FIX-1) -----------------------------
 
 
 def test_dedupe_preserve_order_drops_exact_duplicates() -> None:
@@ -556,8 +538,6 @@ async def test_generate_questions_drops_mc_with_duplicate_options(
         MaterialChunk(text="x", source="doc", chunk_index=0, vector=[0.1])
     ]
     mock_ai_service.get_ai_response.side_effect = [
-        # 1st call: questions list with one BAD MC (dup options) and
-        # one GOOD MC. Pipeline must drop the bad one only.
         '{"questions": ['
         '{"type":"multiple_choice","question":"Q1","options":["диагностировать","диагнозировать","диагностицировать","диагностировать"],"correct_answer":"диагностировать"},'
         '{"type":"multiple_choice","question":"Q2","options":["A","B","C"],"correct_answer":"A"}'
@@ -574,14 +554,11 @@ async def test_generate_questions_drops_mc_with_duplicate_options(
 
     result = await material_service.generate_quiz(document_map=doc_map)
     assert isinstance(result.quiz, QuizContent)
-    # Dedupe collapses Q1's options from 4 → 3 (one byte-dup), so the
-    # question is salvaged with 3 distinct options. Q2 untouched.
     assert len(result.quiz.questions) == 2
     q1 = result.quiz.questions[0]
     assert isinstance(q1, MultipleChoiceQuizQuestion)
     assert len(q1.options) == 3, f"Q1 still has dup options: {q1.options}"
     assert "диагностировать" in q1.options
-    # And the correct_answer must still be in the surviving option set.
     assert q1.correct_answer in q1.options
 
 
@@ -610,7 +587,6 @@ async def test_generate_questions_drops_matching_with_duplicate_lefts(
     )
     result = await material_service.generate_quiz(document_map=doc_map)
     assert isinstance(result.quiz, QuizContent)
-    # Only the second matching survives (first had dup lefts).
     assert len(result.quiz.questions) == 1
     q = result.quiz.questions[0]
     assert isinstance(q, MatchingQuizQuestion)

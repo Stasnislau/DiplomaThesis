@@ -4,14 +4,6 @@ import { PrismaService } from "../../prisma/prismaService";
 import { UserAITokensService } from "./user-ai-tokens.service";
 import { encryptSecret } from "../utils/secretCipher";
 
-/**
- * Covers the paths around the default provider key that the main spec
- * leaves open: promoting one key to default, deleting a key, and the
- * masking that keeps a full credential out of any response. A learner
- * may hold several keys, and exactly one of them drives generation, so
- * a promotion that fails to demote the previous default would send
- * calls to the wrong paid account.
- */
 describe("UserAITokensService (default key and masking)", () => {
   let service: UserAITokensService;
   let prisma: any;

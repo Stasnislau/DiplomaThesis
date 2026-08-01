@@ -6,17 +6,6 @@ import { useTranslation } from "react-i18next";
 
 const norm = (s: string) => s.trim().toLowerCase();
 
-/**
- * Renders a connected passage with inline blanks. Backend uses
- * `{{1}} {{2}} ...` markers in `passage_with_blanks`; we split on
- * those and intersperse <input>s with the blank's `id`.
- *
- * If the passage has fewer markers than `blanks` declares, leftover
- * blanks get rendered after the passage so the user can still see
- * and answer them. The reverse (more markers than blanks) is treated
- * by ignoring the extra markers — the AI prompt forbids this but we
- * stay defensive.
- */
 const MARKER_RE = /\{\{\s*([^}]+?)\s*\}\}/g;
 
 const ClozePassageRenderer = ({
@@ -31,9 +20,6 @@ const ClozePassageRenderer = ({
       ? (answer as Record<string, string>)
       : {};
 
-  // Pre-compute the segments split between markers, plus the matched
-  // blank ids in order. Memoised because tokenising on every keystroke
-  // would be wasteful.
   const segments = useMemo(() => {
     const parts: Array<{ kind: "text"; value: string } | { kind: "blank"; id: string }> = [];
     let lastIndex = 0;
@@ -120,16 +106,11 @@ const ClozePassageRenderer = ({
           ) : declaredBlankIds.has(seg.id) ? (
             <Fragment key={i}>{renderBlankInput(seg.id)}</Fragment>
           ) : (
-            // Marker the prompt produced but didn't declare in `blanks`.
-            // Render it as plain text so the passage stays readable
-            // instead of dropping content silently.
             <Fragment key={i}>{`{{${seg.id}}}`}</Fragment>
           ),
         )}
       </div>
       {orphanBlanks.length > 0 && (
-        // Defensive: blanks declared but never referenced by a marker.
-        // Render them as a fallback list so the user can still answer.
         <div className="space-y-2">
           {orphanBlanks.map((b) => (
             <div key={b.id} className="flex items-center gap-2">

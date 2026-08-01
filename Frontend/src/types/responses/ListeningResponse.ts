@@ -1,9 +1,3 @@
-/**
- * Listening question variants — mirrors the discriminated union in
- * Backend/AIMicroservice/models/responses/listening_task_response.py.
- * Wire field names stay camelCase to match the existing
- * `correctAnswer` convention from the original two listening types.
- */
 
 interface ListeningQuestionBase {
   question: string;
@@ -57,7 +51,6 @@ export type ListeningQuestion =
   | ListeningSentenceCompletionQuestion
   | ListeningMultiSpeakerMatchingQuestion;
 
-/** Canonical question-type tokens accepted by the backend. */
 export const LISTENING_QUESTION_TYPES = [
   "multiple_choice",
   "fill_in_the_blank",

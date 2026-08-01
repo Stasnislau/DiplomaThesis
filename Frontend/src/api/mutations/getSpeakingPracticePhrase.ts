@@ -15,12 +15,6 @@ export interface PracticePhraseResponse {
   derivedFromHistory: boolean;
 }
 
-/**
- * Ask AI for a single sentence to read aloud, biased toward the
- * user's recent speaking weaknesses. Pair with /speaking/analyze:
- * the user records themselves saying this phrase, the analyzer
- * scores their pronunciation/grammar against it.
- */
 export async function getSpeakingPracticePhrase(
   input: PracticePhraseRequest,
 ): Promise<PracticePhraseResponse> {

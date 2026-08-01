@@ -9,15 +9,6 @@ import helmet from "helmet";
 import { AppModule } from "../src/app.module";
 import { ErrorHandlingMiddleware } from "../src/middlewares/errorHandlingMiddleware";
 
-/**
- * What the gateway passes through and what it stops.
- *
- * Everything a browser sends reaches a service through this one
- * process, so the questions worth pinning are about fidelity: does the
- * body arrive unchanged, does a header the service needs survive, and
- * does anything the caller should not see leak back. None of it is
- * visible below the HTTP layer.
- */
 describe("Gateway contracts (HTTP boundary)", () => {
   let app: INestApplication;
   let http: { post: jest.Mock; request: jest.Mock };

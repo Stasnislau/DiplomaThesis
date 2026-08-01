@@ -4,25 +4,9 @@ import cn from "@/utils/cn";
 
 interface PictureSceneProps {
   imageUrl: string;
-  /** Plain-text caption used as alt-text and as the visual fallback
-   *  when the image fails to load (network error, Pollinations 500,
-   *  ad blocker that nukes external images, etc.). */
   caption: string;
 }
 
-/**
- * Picture-description prompt renderer. Pollinations.ai serves the
- * actual image directly from a GET URL — no API key, no preflight,
- * just a slow-ish first byte while their backend renders the scene.
- *
- * UX:
- *  - Render the image at native aspect ratio with rounded corners.
- *  - Show a shimmer/spinner over a 4:3 placeholder while it loads.
- *  - On load failure, swap to the text caption so the practice
- *    flow doesn't get blocked just because an external service blipped.
- *  - The caption is hidden by default once the image renders, but
- *    a small "Show description" toggle reveals it for accessibility.
- */
 const PictureScene = ({ imageUrl, caption }: PictureSceneProps) => {
   const { t } = useTranslation();
   const [status, setStatus] = useState<"loading" | "ok" | "error">("loading");

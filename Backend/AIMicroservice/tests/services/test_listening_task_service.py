@@ -47,9 +47,6 @@ def _patch_audio_pipeline(audio_bytes: bytes = b"audio", speakers=None):
     )
 
 
-# ---------- Adapter routing (Phase 2.1) ----------------------------
-
-
 def test_adapter_routes_dictation() -> None:
     q = ListeningQuestionAdapter.validate_python(
         {
@@ -128,9 +125,6 @@ def test_adapter_rejects_single_speaker_matching() -> None:
         )
 
 
-# ---------- TTS speaker-tag splitter (Phase 2.3) -------------------
-
-
 def test_split_by_speaker_tags_returns_empty_for_monologue() -> None:
     assert _split_by_speaker_tags("Just a normal sentence.") == []
 
@@ -151,9 +145,6 @@ def test_split_by_speaker_tags_tolerates_whitespace() -> None:
     text = "  [ Anchor ]:  Welcome to the show.\n[ Guest ] :   Thanks for having me."
     segs = _split_by_speaker_tags(text)
     assert [s for s, _ in segs] == ["Anchor", "Guest"]
-
-
-# ---------- Service flows ------------------------------------------
 
 
 @pytest.mark.asyncio
@@ -193,7 +184,7 @@ async def test_create_listening_task_default_mix(
     assert isinstance(result, ListeningTaskResponse)
     assert isinstance(result.questions[0], MultipleChoiceQuestion)
     assert isinstance(result.questions[1], FillInTheBlankQuestion)
-    assert result.speakers == []  # monologue
+    assert result.speakers == []
 
 
 @pytest.mark.asyncio
@@ -228,9 +219,6 @@ async def test_create_listening_task_dictation_mode(
 
     assert isinstance(result.questions[0], DictationQuestion)
     assert result.questions[0].correctAnswer == sentence
-    # Prompt must reference 10-18 word target for dictation, not the
-    # 100-150 word default — this guards against regressions where the
-    # branch logic gets reordered.
     sent_prompt = mock_ai_service.get_ai_response.await_args.args[0]
     assert "10-18 words" in sent_prompt
 
@@ -311,7 +299,7 @@ async def test_create_listening_task_drops_malformed_questions(
                 {
                     "type": "true_false_not_given",
                     "question": "?",
-                    "correctAnswer": "maybe",  # invalid
+                    "correctAnswer": "maybe",
                 },
             ],
         }

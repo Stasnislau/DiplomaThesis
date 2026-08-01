@@ -27,9 +27,6 @@ const FreeEssayTask = ({
   const { t } = useTranslation();
   const [language, setLanguage] = useState(initialLanguage || "");
   const [level, setLevel] = useState(initialLevel || "");
-  // Force a remount of the inner EssayTask when the user picks a new
-  // language or level — without this, the inner state holds onto the
-  // stale generated prompt.
   const [resetKey, setResetKey] = useState(0);
 
   useEffect(() => {

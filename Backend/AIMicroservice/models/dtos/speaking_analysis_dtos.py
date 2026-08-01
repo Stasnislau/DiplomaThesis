@@ -5,7 +5,6 @@ class WhisperWord(BaseModel):
     word: str
     start: Optional[float] = None
     end: Optional[float] = None
-    # score: Optional[float] = None # score/confidence per word is not standard in Whisper TranscriptionResponse
 
 class WhisperSegment(BaseModel):
     id: Optional[int] = None
@@ -18,7 +17,6 @@ class WhisperSegment(BaseModel):
     avg_logprob: Optional[float] = None
     compression_ratio: Optional[float] = None
     no_speech_prob: Optional[float] = None
-    # words: Optional[List[WhisperWord]] = None # verbose_json might provide this, depends on LiteLLM's parsing
 
 class WhisperTranscriptionResult(BaseModel):
     text: str

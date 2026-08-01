@@ -16,8 +16,6 @@ export function useGenerateAdaptiveTask() {
   >({
     mutationFn: (input) => generateAdaptiveTask(input),
     onSuccess: () => {
-      // History changed (new "adaptive" entry was logged), invalidate
-      // any history-bound query so the UI reflects it.
       queryClient.invalidateQueries({
         predicate: (q) => q.queryKey[0] === "getHistory",
       });

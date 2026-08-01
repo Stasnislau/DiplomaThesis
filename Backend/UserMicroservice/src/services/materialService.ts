@@ -19,10 +19,6 @@ export class MaterialService {
   }
 
   async findAllForUser(userId: string) {
-    // Every other read in this service is scoped by owner. Without
-    // this guard a call that arrives with no identity would query for
-    // `userId: undefined` and quietly return a page of nothing, which
-    // reads to the caller like an empty library rather than a refusal.
     if (!userId) {
       throwWithCode(
         USER_ID_REQUIRED,

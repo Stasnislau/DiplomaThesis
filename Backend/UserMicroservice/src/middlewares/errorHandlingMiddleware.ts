@@ -17,7 +17,6 @@ import {
   USER_TOKEN_EXPIRED,
 } from "../utils/errorCodes";
 
-/** Error response payload structure */
 interface ErrorPayload {
   code?: string;
   message: string;
@@ -25,15 +24,11 @@ interface ErrorPayload {
   errors?: unknown;
 }
 
-/** Standard error response structure */
 interface ErrorResponseBody {
   success: false;
   payload: ErrorPayload;
 }
 
-/** Pull { code, message } out of an HttpException — supports both the
- *  new structured `{ code, message }` body and the legacy plain-string
- *  message so a stray throw doesn't break the response shape. */
 function extractCodeAndMessage(
   exception: HttpException,
 ): { code?: string; message: string } {
@@ -85,10 +80,6 @@ export class ErrorHandlingMiddleware implements ExceptionFilter {
     if (exception instanceof HttpException) {
       this.handleError(exception, host);
     } else {
-      // The real message stays in the server log. It can carry a
-      // connection string, a driver path, or part of a query, and the
-      // client has no use for any of that, so the response only names
-      // the stable code.
       this.logger.error(
         `Unhandled error: ${exception.message}`,
         exception.stack,

@@ -13,9 +13,6 @@ async function bootstrap() {
   app.useGlobalFilters(new ErrorHandlingMiddleware());
   app.useGlobalPipes(new ValidationPipe());
   app.setGlobalPrefix("api");
-  // cookie-parser is required for refresh-token cookie reads on
-  // /auth/refresh and /auth/logout. Without it req.cookies is
-  // undefined and refresh silently fails.
   app.use(cookieParser());
   app.enableCors({
     origin: [

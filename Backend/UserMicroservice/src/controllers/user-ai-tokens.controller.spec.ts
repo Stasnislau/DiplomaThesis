@@ -96,8 +96,6 @@ describe("UserAITokensController", () => {
     });
 
     it("should return unmasked tokens if internal key is present", async () => {
-      // Tests run without docker-compose env vars; set the expected key
-      // explicitly so the controller's isInternal check matches.
       const previousKey = process.env.INTERNAL_SERVICE_KEY;
       process.env.INTERNAL_SERVICE_KEY = "supersecretbridgekey";
 

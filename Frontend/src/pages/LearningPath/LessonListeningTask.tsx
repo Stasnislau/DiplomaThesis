@@ -16,24 +16,9 @@ import { logListeningResult } from "@/api/mutations/logListeningResult";
 interface LessonListeningTaskProps {
   language: string;
   level: string;
-  /** Fired once with the final correct-count when the user has
-   *  answered every question. Lesson page decides pass/fail
-   *  (>= 60% correct). */
   onCompleted?: (correctCount: number, totalCount: number) => void;
 }
 
-/**
- * Single listening exercise scoped to a lesson:
- *   - Auto-loads one task (audio + 3-4 mixed-format comprehension
- *     questions: MC, FIB, dictation, true/false/not-given, sentence
- *     completion, multi-speaker matching).
- *   - Walks the learner through each question with the same
- *     ListeningQuestionRenderer the free-practice page uses, so all
- *     six question types render identically in both contexts.
- *   - When all questions are answered, surfaces a per-question
- *     correct/wrong breakdown and calls onCompleted so the lesson
- *     page can mark the lesson complete on a passing score.
- */
 const LessonListeningTask = ({
   language,
   level,
@@ -43,9 +28,6 @@ const LessonListeningTask = ({
 
   const { createListeningTask, isLoading, error, data, reset } =
     useCreateListeningTask();
-  // The backend response carries six possible question shapes via the
-  // ListeningQuestion union; the legacy `ListeningTaskResponse` wrapper
-  // typing predates that union, so we narrow once at the boundary.
   const [task, setTask] = useState<
     | (Omit<ListeningTaskResponse, "questions"> & {
         questions: ListeningQuestion[];
@@ -76,8 +58,6 @@ const LessonListeningTask = ({
 
   useEffect(() => {
     if (data) {
-      // Cast through unknown — runtime has the rich ListeningQuestion
-      // union, the legacy DTO type does not yet.
       const narrowed = data as unknown as Omit<
         ListeningTaskResponse,
         "questions"
@@ -96,10 +76,6 @@ const LessonListeningTask = ({
     if (!completed && allAnswered && total > 0) {
       setCompleted(true);
       onCompleted?.(correctCount, total);
-      // Persist to history so the adaptive layer learns from
-      // listening misses inside lessons (the standalone listening
-      // surface logs separately). Fire-and-forget — don't block
-      // lesson completion on a logging hiccup.
       if (task && language && level) {
         const score = Math.round((correctCount / total) * 100);
         const errorExamples = task.questions

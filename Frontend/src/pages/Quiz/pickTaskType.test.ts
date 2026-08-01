@@ -27,8 +27,6 @@ describe("isEssayAllowedForLevel", () => {
 });
 
 describe("pickQuizTaskType", () => {
-  // Make a deterministic LCG so the Monte Carlo runs are
-  // reproducible and don't hammer Math.random ordering.
   const makeRng = (seed: number) => () => {
     seed = (seed * 1103515245 + 12345) & 0x7fffffff;
     return seed / 0x7fffffff;
@@ -43,7 +41,6 @@ describe("pickQuizTaskType", () => {
   });
 
   it("never returns B1+-only types below B1", () => {
-    // matching, multi_select_mc, cloze_passage, open are also gated.
     const forbidden: QuizTaskType[] = [
       "essay",
       "multi_select_mc",
@@ -59,7 +56,6 @@ describe("pickQuizTaskType", () => {
     for (const f of forbidden) {
       expect(seen.has(f)).toBe(false);
     }
-    // A1/A2 catalog is MC + FIB + true_false.
     expect(seen.has("multiple_choice")).toBe(true);
     expect(seen.has("fill_in_the_blank")).toBe(true);
     expect(seen.has("true_false")).toBe(true);
@@ -106,7 +102,6 @@ describe("pickQuizTaskType", () => {
       const t = pickQuizTaskType("B1", rng);
       if (t === "multiple_choice" || t === "fill_in_the_blank") mcOrFib++;
     }
-    // 22 + 22 = 44 → ~44%. Allow ±5pp.
     const pct = (mcOrFib / N) * 100;
     expect(pct).toBeGreaterThan(38);
     expect(pct).toBeLessThan(50);
@@ -131,7 +126,6 @@ describe("pickQuizVariant", () => {
     expect(kinds.has("writing")).toBe(true);
     expect(kinds.has("listening")).toBe(true);
     expect(kinds.has("speaking")).toBe(true);
-    // Nothing else.
     for (const k of kinds) {
       expect(["writing", "listening", "speaking"]).toContain(k);
     }
@@ -145,11 +139,9 @@ describe("pickQuizVariant", () => {
         )
         .map((v) => v.format),
     );
-    // Forbidden below B1.
     expect(speakingFormats.has("free_monologue")).toBe(false);
     expect(speakingFormats.has("picture_description")).toBe(false);
     expect(speakingFormats.has("timed_response")).toBe(false);
-    // Allowed below B1.
     expect(speakingFormats.has("read_aloud")).toBe(true);
     expect(speakingFormats.has("repeat_after_me")).toBe(true);
   });
@@ -162,11 +154,9 @@ describe("pickQuizVariant", () => {
         )
         .map((v) => v.questionType),
     );
-    // Forbidden below B1.
     expect(listeningTypes.has("true_false_not_given")).toBe(false);
     expect(listeningTypes.has("sentence_completion")).toBe(false);
     expect(listeningTypes.has("multi_speaker_matching")).toBe(false);
-    // Allowed below B1.
     expect(listeningTypes.has("multiple_choice")).toBe(true);
     expect(listeningTypes.has("fill_in_the_blank")).toBe(true);
     expect(listeningTypes.has("dictation")).toBe(true);

@@ -8,13 +8,6 @@ export interface AnalyzedType {
   example: string;
 }
 
-/**
- * Mirrors `DocumentExercise` in
- * Backend/AIMicroservice/models/dtos/material_dtos.py. Drives
- * Stage 2/3 of quiz generation; carries enough metadata for the
- * backend to know how long each stimulus passage should be and what
- * subtypes of questions to drill.
- */
 export interface DocumentExercise {
   type: string;
   passage_word_count_estimate?: number | null;
@@ -40,12 +33,6 @@ interface UploadMaterialResponse {
   document_map?: DocumentMap | null;
 }
 
-/**
- * Backwards-compatible re-export: old call sites still import
- * `UploadMaterialError` from this module, but the thrown value is
- * just an ApiError now (the structured `code` was always the point
- * of this class — and ApiError has it).
- */
 export { ApiError as UploadMaterialError };
 
 export const uploadMaterial = async (

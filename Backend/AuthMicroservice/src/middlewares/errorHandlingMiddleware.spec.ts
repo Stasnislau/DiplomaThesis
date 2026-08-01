@@ -41,7 +41,6 @@ describe("ErrorHandlingMiddleware", () => {
       middleware.catch(exception, mockHost);
 
       expect(mockResponse.status).toHaveBeenCalledWith(401);
-      // Code is now a separate field on payload — not embedded in message.
       expect(mockResponse.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,

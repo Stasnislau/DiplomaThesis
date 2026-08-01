@@ -12,10 +12,6 @@ logger = logging.getLogger(__name__)
 PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "")
 
 
-# Imagen 3 generally available models. `imagen-3.0-generate-002` is the
-# current standard-quality model — best balance of detail and cost for
-# picture-description scenes. `imagen-3.0-fast-generate-001` is ~2x
-# cheaper but loses fidelity on multi-subject scenes; we don't use it.
 _DEFAULT_MODEL = "imagen-3.0-generate-002"
 
 
@@ -88,8 +84,6 @@ class ImageService:
         cleaned = (visual_prompt or "").strip()
         if not cleaned:
             return None
-        # Imagen rejects extremely long prompts; the LLM occasionally
-        # spills a paragraph here, trim defensively.
         cleaned = cleaned[:1500]
 
         try:
@@ -107,9 +101,6 @@ class ImageService:
             logger.warning("Imagen returned no images for prompt: %s", cleaned[:80])
             return None
 
-        # `_image_bytes` is the SDK's documented but underscored accessor.
-        # `.save()` is the alternative but writes through synchronous
-        # filesystem calls we'd rather avoid in async context.
         image_bytes = getattr(images[0], "_image_bytes", None)
         if not image_bytes:
             logger.warning("Imagen response had empty bytes — falling back.")

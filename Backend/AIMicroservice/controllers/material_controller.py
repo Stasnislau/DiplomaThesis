@@ -24,10 +24,6 @@ def get_material_service() -> MaterialService:
 class GenerateQuizRequest(BaseModel):
     selected_types: Optional[List[str]] = None
     target_language: Optional[str] = None
-    # When the FE round-trips the DocumentMap from /materials/upload,
-    # we skip the re-classification step and feed Stage 2/3 directly.
-    # Optional so older clients still work — backend re-derives the
-    # map from indexed material when this is missing.
     document_map: Optional[DocumentMap] = None
 
 
@@ -78,9 +74,6 @@ async def upload_pdf(request: Request, file: UploadFile = File(...), service: Ma
         logger.info("PDF processed successfully.")
         return BaseResponse[ProcessPdfResponse](success=True, payload=result)
     except HTTPException:
-        # process_pdf raises HTTPException with structured detail codes
-        # (PDF_NO_TEXT / PDF_GARBLED_TEXT / PDF_AI_REJECTED). Pass them
-        # through unchanged so the frontend can branch on the prefix.
         raise
     except Exception as e:
         logger.error(f"Error uploading/processing PDF: {str(e)}", exc_info=True)

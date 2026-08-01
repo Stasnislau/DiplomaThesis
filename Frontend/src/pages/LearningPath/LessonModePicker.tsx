@@ -11,13 +11,6 @@ interface LessonModePickerProps {
   onChange: (key: string) => void;
 }
 
-/**
- * Pill-style segmented control for letting the learner choose how to
- * practice a lesson. We use it for lesson types that have more than
- * one meaningful exercise format — e.g. writing_essay can be a full
- * essay OR a quick fill-in-blank quiz over the lesson keywords;
- * speaking can be reading a phrase OR free-speaking on a topic.
- */
 const LessonModePicker = ({
   modes,
   active,

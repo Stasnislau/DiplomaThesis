@@ -50,21 +50,10 @@ export class UserService {
       return { success: true, payload: user };
     }
 
-    // Lazy upsert: the `user.created` event from Auth may not have
-    // landed yet (RabbitMQ outage / message dropped). Auth has
-    // already created the credentials row, so the gateway-validated
-    // `id` in the request is authoritative — synthesise the missing
-    // profile from the headers we just got. Without this, /me 404s
-    // forever for any user whose registration event was lost.
     if (!fallback?.email) {
       throwWithCode(USER_NOT_FOUND, HttpStatus.NOT_FOUND, "User not found");
     }
 
-    // The user.created event from Auth carries name + surname; in the
-    // rare case where it never arrived (lazy upsert path) we don't
-    // know them. Use an empty string placeholder; the user can fill
-    // their profile via PUT /updateUser. The schema requires non-null
-    // strings, so empty is the cleanest sentinel here.
     const created = await this.prisma.user.create({
       data: {
         id,
@@ -117,13 +106,6 @@ export class UserService {
       throwWithCode(USER_NOT_FOUND, HttpStatus.NOT_FOUND, "User not found");
     }
 
-    // Idempotent set-native flow:
-    //   1. Demote whatever was previously the user's native language.
-    //   2. If they already had a row for the target language (any
-    //      level), promote it to native; otherwise create one.
-    // Without this the call would either 409 "already added" when
-    // re-picking the same language, or end up with two `isNative=true`
-    // rows when switching native.
     const existingNative = user.languages.find((l) => l.isNative);
     if (existingNative && existingNative.languageId !== languageId) {
       await this.prisma.userLanguage.update({
@@ -255,9 +237,6 @@ export class UserService {
     surname: string;
     email?: string;
   }): Promise<boolean> {
-    // Same guard as getUser: an update that arrives with no identity
-    // must be refused outright, not turned into a lookup for
-    // `id: undefined` whose result decides the answer.
     if (!userData.id) {
       throwWithCode(
         USER_ID_REQUIRED,
@@ -323,15 +302,6 @@ export class UserService {
     };
   }
 
-  /**
-   * Record activity for the day: add xpGained to the user's total XP,
-   * maintain the daily streak counter, and update streak-based achievements.
-   *
-   * Streak rules (UTC day boundaries):
-   *   - No previous activity OR gap > 1 day  → reset streak to 1
-   *   - Last activity was yesterday            → streak += 1
-   *   - Last activity was today                → keep (idempotent same-day)
-   */
   async updateActivity(
     userId: string,
     xpGained: number,
@@ -342,7 +312,6 @@ export class UserService {
     }
 
     const now = new Date();
-    // Start-of-day in UTC — compare calendar days, not timestamps.
     const todayUTC = new Date(
       Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
     );
@@ -351,7 +320,6 @@ export class UserService {
     let streakIncreasedToday = false;
 
     if (!user.lastActivityDate) {
-      // First ever activity.
       newStreak = 1;
       streakIncreasedToday = true;
     } else {
@@ -366,15 +334,8 @@ export class UserService {
         (todayUTC.getTime() - lastUTC.getTime()) / (1000 * 60 * 60 * 24),
       );
 
-      if (diffDays === 0) {
-        // Same calendar day — no streak change (idempotent).
-      } else if (diffDays === 1) {
-        // Consecutive day — extend streak.
-        newStreak = user.streak + 1;
-        streakIncreasedToday = true;
-      } else {
-        // Gap of 2+ days — streak broken.
-        newStreak = 1;
+      if (diffDays !== 0) {
+        newStreak = diffDays === 1 ? user.streak + 1 : 1;
         streakIncreasedToday = true;
       }
     }
@@ -390,8 +351,6 @@ export class UserService {
       },
     });
 
-    // Only award streak achievements when the streak actually moved
-    // forward (new day), not on repeated same-day calls.
     if (streakIncreasedToday) {
       await Promise.allSettled([
         this.achievementService.updateProgress(userId, "On Fire", 1),
@@ -403,9 +362,6 @@ export class UserService {
     return { xp: newXp, streak: newStreak };
   }
 
-  // Returns the user's native-language ISO code (en/pl/es). Falls back
-  // to "en" if the user has no profile yet or no native language picked
-  // — used by the mailer to localise password-reset templates.
   async getUserLocale(userId: string): Promise<string> {
     const native = await this.prisma.userLanguage.findFirst({
       where: { userId, isNative: true },

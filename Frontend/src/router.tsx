@@ -6,11 +6,6 @@ import WithTopBar from "./components/layout/WithTopBar";
 import { createBrowserRouter } from "react-router-dom";
 import { lazyWithRetry } from "./utils/lazyWithRetry";
 
-// Every lazy route goes through lazyWithRetry — when a stale tab
-// asks for a chunk that's been replaced by a newer deploy, the
-// helper auto-reloads the page once instead of crashing inside
-// Suspense with the cryptic 'text/html is not a valid JavaScript
-// MIME type' error.
 const AITokensPage = lazyWithRetry(() => import("./pages/User/AITokens"));
 const AdminDashboardPage = lazyWithRetry(() => import("./pages/Admin/AdminDashboardPage").then(module => ({ default: module.AdminDashboardPage })));
 const LandingPage = lazyWithRetry(() => import("./pages/Home/LandingPage").then(module => ({ default: module.LandingPage })));

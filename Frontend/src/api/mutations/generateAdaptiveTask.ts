@@ -18,12 +18,6 @@ export interface AdaptiveTaskResponse {
   derivedFromHistory: boolean;
 }
 
-/**
- * Ask AI for a writing task biased toward the user's recent
- * weaknesses (placement misses, low-score topics, speaking errors).
- * If history is empty AI falls back to the regular variety
- * picker — the call is always safe.
- */
 export async function generateAdaptiveTask(
   input: AdaptiveTaskRequest,
 ): Promise<AdaptiveTaskResponse> {

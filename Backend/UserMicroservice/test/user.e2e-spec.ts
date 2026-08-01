@@ -7,17 +7,6 @@ import { AppModule } from "../src/appModule";
 import { ErrorHandlingMiddleware } from "../src/middlewares/errorHandlingMiddleware";
 import { PrismaService } from "../prisma/prismaService";
 
-/**
- * HTTP-boundary tests for the User service.
- *
- * Unit tests already cover the service methods with the controller
- * bypassed. What they cannot show is whether the wiring in between
- * holds: the global prefix, the middleware that turns the gateway's
- * forwarded headers into `req.user`, and the roles guard that keeps
- * ordinary accounts out of the admin listing. Those only exist once
- * a real request travels through the Nest pipeline, so they are
- * checked here over supertest with the database mocked.
- */
 describe("User service (HTTP boundary)", () => {
   let app: INestApplication;
   let prisma: any;
@@ -61,7 +50,6 @@ describe("User service (HTTP boundary)", () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
-    // Mirror main.ts so the test exercises the same pipeline as production.
     app.useGlobalFilters(new ErrorHandlingMiddleware());
     app.useGlobalPipes(new ValidationPipe());
     app.setGlobalPrefix("api");

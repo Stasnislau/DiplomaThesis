@@ -12,10 +12,6 @@ interface ModalProps {
   description?: string;
   children: React.ReactNode;
   className?: string;
-  /** 
-   * Accessible label for screen readers when title is not visible.
-   * Required if title prop is not provided for accessibility compliance.
-   */
   ariaLabel?: string;
 }
 
@@ -39,7 +35,7 @@ export const Modal: React.FC<ModalProps> = ({
           )}
           aria-describedby={description ? undefined : undefined}
         >
-          {/* Title is required for accessibility - use VisuallyHidden if not visible */}
+          {}
           {title ? (
             <Dialog.Title className="m-0 text-lg font-medium text-gray-900 dark:text-white mb-4">
               {title}
@@ -50,7 +46,7 @@ export const Modal: React.FC<ModalProps> = ({
             </VisuallyHidden.Root>
           )}
 
-          {/* Description is optional but improves accessibility */}
+          {}
           {description ? (
             <Dialog.Description className="mb-5 mt-2.5 text-[15px] leading-normal text-gray-600 dark:text-gray-400">
               {description}

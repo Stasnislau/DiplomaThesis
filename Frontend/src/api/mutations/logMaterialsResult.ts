@@ -11,15 +11,11 @@ export interface MaterialsErrorExample {
 export interface LogMaterialsResultRequest {
   language?: string;
   level?: string;
-  /** 0-100 — round((correctCount / questionCount) * 100). */
   score: number;
   questionCount: number;
   correctCount: number;
   questionTypes?: string[];
   errorExamples?: MaterialsErrorExample[];
-  /** From DocumentMap.document_kind — lets the adaptive layer know
-   *  which kind of material the user struggled with (e.g.
-   *  TOEFL_Reading vs Murphy_Grammar). */
   documentKind?: string;
 }
 

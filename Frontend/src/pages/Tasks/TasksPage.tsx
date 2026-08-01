@@ -71,7 +71,7 @@ const TasksPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-10 transition-colors duration-300">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Back link */}
+        {}
         <Link
           to="/"
           className="inline-flex items-center gap-2 text-gray-600 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 transition-colors duration-200 mb-6 group"
@@ -81,7 +81,7 @@ const TasksPage = () => {
         </Link>
 
 
-        {/* Header */}
+        {}
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 mb-6 transition-colors duration-300">
           <div className="flex items-center gap-4">
             <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shadow-md">
@@ -98,7 +98,7 @@ const TasksPage = () => {
           </div>
         </div>
 
-        {/* Quick Shortcuts */}
+        {}
         <div className="mb-6">
           <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-1">
             Quick Actions
@@ -125,7 +125,7 @@ const TasksPage = () => {
           </div>
         </div>
 
-        {/* Tasks Tabs */}
+        {}
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 transition-colors duration-300">
           <Tabs defaultValue={defaultTab} className="w-full">
             <TabsList className="w-full flex flex-wrap gap-2 bg-gray-100 dark:bg-gray-700 p-1.5 rounded-xl mb-6 h-auto">

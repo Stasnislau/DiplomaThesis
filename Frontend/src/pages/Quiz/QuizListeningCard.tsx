@@ -17,23 +17,9 @@ import cn from "@/utils/cn";
 interface QuizListeningCardProps {
   language: string;
   level: string;
-  /** Sub-type the picker rolled. We forward a single-element list to
-   *  the listening generator so it produces ONLY this variant —
-   *  Quiz is meant to be quick-fire, not a 4-question session. */
   questionType: ListeningQuestionType;
 }
 
-/**
- * Quiz-route listening widget. Mounts when the picker rolls
- * `kind: "listening"`. Self-contained — fetches its own task,
- * streams audio inline, walks the user through the questions, and
- * fires `logListeningResult` once every question has been revealed.
- *
- * Why a separate component vs reusing ListeningTask: that one is a
- * standalone page with its own language/level pickers, adaptive
- * button, and full-width layout. We only want the question card
- * inside Quiz, so we mount the inner machinery directly.
- */
 const QuizListeningCard = ({
   language,
   level,
@@ -47,9 +33,6 @@ const QuizListeningCard = ({
   const [answers, setAnswers] = useState<Record<number, ListeningAnswerValue>>({});
   const [revealed, setRevealed] = useState<Record<number, boolean>>({});
 
-  // Single-shot fetch on mount. Re-keying on language+level+questionType
-  // would force a refetch but the parent already remounts via key
-  // when those change, so the effect runs exactly once per session.
   useEffect(() => {
     let cancelled = false;
     setIsLoading(true);
@@ -86,10 +69,6 @@ const QuizListeningCard = ({
       ? gradeListeningQuestion(currentQuestion, answers[idx])
       : null;
 
-  // Once every question has been revealed, log the session result so
-  // adaptive sees Quiz listening outcomes (errorExamples + score).
-  // Mirrors the ListeningTask trigger; loggedRef prevents double-log
-  // from re-renders.
   const loggedRef = useRef(false);
   useEffect(() => {
     if (!data || loggedRef.current) return;

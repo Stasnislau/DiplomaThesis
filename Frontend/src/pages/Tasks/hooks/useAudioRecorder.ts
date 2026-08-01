@@ -5,7 +5,6 @@ interface RecorderState {
   audioFile: File | null;
   audioUrl: string;
   error: string | null;
-  /** Seconds elapsed since `start()` was called. Resets each session. */
   elapsedSeconds: number;
 }
 
@@ -16,9 +15,7 @@ interface RecorderControls {
 }
 
 interface UseAudioRecorderOptions {
-  /** Auto-stop after this many seconds. Omit for unlimited. */
   maxDurationSeconds?: number;
-  /** Called once stop fires (user-initiated or auto). */
   onStop?: (file: File) => void;
 }
 
@@ -37,15 +34,6 @@ const fileExtFor = (mime: string): string => {
   return "webm";
 };
 
-/**
- * Mic-recording hook with optional max-duration auto-stop.
- *
- * Why a hook (vs the inline ref-juggling in SpeakingTask): the new
- * format-driven flow needs the same recording behaviour with a timer
- * cap, and copying the MediaRecorder dance into every renderer would
- * fork four near-identical 60-line blocks. The hook centralises mime
- * detection, URL revocation, and stream cleanup.
- */
 export const useAudioRecorder = (
   options: UseAudioRecorderOptions = {},
 ): RecorderState & RecorderControls => {
@@ -61,16 +49,10 @@ export const useAudioRecorder = (
   const streamRef = useRef<MediaStream | null>(null);
   const tickIntervalRef = useRef<number | null>(null);
   const onStopRef = useRef<typeof onStop>(onStop);
-  // Mirror audioUrl in a ref so the unmount cleanup can revoke the
-  // CURRENT blob URL, not the stale empty-string captured at mount.
-  // Without this ref the cleanup useEffect (which deliberately runs
-  // with [] deps so it only fires once) would call
-  // URL.revokeObjectURL("") and leak every blob the user recorded.
   const audioUrlRef = useRef<string>("");
   useEffect(() => {
     audioUrlRef.current = audioUrl;
   }, [audioUrl]);
-  // Keep onStop fresh without retriggering start() callback identity.
   useEffect(() => {
     onStopRef.current = onStop;
   }, [onStop]);
@@ -132,13 +114,10 @@ export const useAudioRecorder = (
 
       recorder.start();
       setIsRecording(true);
-      // Tick every second so the timer in the UI updates.
       tickIntervalRef.current = window.setInterval(() => {
         setElapsedSeconds((s) => {
           const next = s + 1;
           if (maxDurationSeconds && next >= maxDurationSeconds) {
-            // Defer the stop call to avoid mutating recorder
-            // state inside the tick microtask.
             queueMicrotask(() => {
               if (recorder.state !== "inactive") recorder.stop();
             });
@@ -167,9 +146,7 @@ export const useAudioRecorder = (
     if (recorderRef.current && recorderRef.current.state !== "inactive") {
       try {
         recorderRef.current.stop();
-      } catch {
-        // ignore — we're nuking state anyway
-      }
+      } catch { void 0; }
     }
     if (audioUrl) URL.revokeObjectURL(audioUrl);
     teardownStream();
@@ -181,24 +158,16 @@ export const useAudioRecorder = (
     setElapsedSeconds(0);
   }, [audioUrl, teardownStream, teardownTimer]);
 
-  // Cleanup on unmount. We deliberately keep `[]` deps so this only
-  // fires once on tear-down — the current blob URL comes from
-  // `audioUrlRef`, which the effect above keeps in sync.
   useEffect(() => {
     return () => {
       teardownStream();
       teardownTimer();
       if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current);
-      // Stop any in-flight recorder so the browser releases the mic
-      // even if the consumer unmounts mid-recording without calling
-      // stop() first (e.g. user navigates away).
       const r = recorderRef.current;
       if (r && r.state !== "inactive") {
         try {
           r.stop();
-        } catch {
-          // The recorder may already be in a torn-down state — ignore.
-        }
+        } catch { void 0; }
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -81,16 +81,13 @@ class SpeakingGradeResponse(BaseModel):
     identifiedErrors: List[IdentifiedError] = Field(default_factory=list)
     pronunciation: PronunciationMetrics
 
-    # Format-specific scores (0-100). Each is optional; only the
-    # subset the format uses is populated.
-    contentScore: Optional[int] = None       # timed_response, picture, monologue
-    coherenceScore: Optional[int] = None     # picture, monologue
-    vocabularyScore: Optional[int] = None    # picture, monologue
-    wordErrorRate: Optional[float] = None    # repeat_after_me (0-1, lower = better)
-    matchPercent: Optional[float] = None     # repeat_after_me (0-100, higher = better)
+    contentScore: Optional[int] = None
+    coherenceScore: Optional[int] = None
+    vocabularyScore: Optional[int] = None
+    wordErrorRate: Optional[float] = None
+    matchPercent: Optional[float] = None
 
 
-# Default duration per format. Used when the request doesn't override.
 FORMAT_DEFAULT_DURATION: dict = {
     "read_aloud": 20,
     "timed_response": 30,
@@ -100,8 +97,6 @@ FORMAT_DEFAULT_DURATION: dict = {
 }
 
 
-# Rubric hints baked into prompts and surfaced to the FE so the
-# learner knows what they're being graded on before they speak.
 FORMAT_RUBRIC_HINTS: dict = {
     "read_aloud": ["pronunciation accuracy", "fluency"],
     "timed_response": ["task achievement", "grammar accuracy", "vocabulary range"],

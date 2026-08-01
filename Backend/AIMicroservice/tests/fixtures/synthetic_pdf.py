@@ -20,9 +20,6 @@ from reportlab.platypus import (
 )
 
 
-# ~720 words — sized to TOEFL Reading. Topic: bird migration. Style
-# is encyclopaedic / expository to mirror what a TOEFL passage feels
-# like.
 _PASSAGE_BIRD_MIGRATION = """
 Migration is one of the most striking phenomena in the animal kingdom,
 and birds are perhaps its most accomplished practitioners. Across the

@@ -75,7 +75,7 @@ describe("ClozePassageRenderer", () => {
       passage_with_blanks: "Text with only {{1}}.",
       blanks: [
         { id: "1", correct_answer: "x" },
-        { id: "2", correct_answer: "y" }, // orphan — no marker for it
+        { id: "2", correct_answer: "y" },
       ],
     };
     render(

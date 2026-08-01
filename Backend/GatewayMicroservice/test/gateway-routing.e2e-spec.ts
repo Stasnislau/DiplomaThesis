@@ -9,16 +9,6 @@ import helmet from "helmet";
 import { AppModule } from "../src/app.module";
 import { ErrorHandlingMiddleware } from "../src/middlewares/errorHandlingMiddleware";
 
-/**
- * Routing and authentication at the HTTP boundary.
- *
- * The gateway is the only public address of the platform, so the
- * decisions it makes on every request matter more than the code behind
- * them: which service a path belongs to, whether a token is checked
- * before forwarding, and what a caller sees when a service behind it
- * is down. These run against the real service with only the outbound
- * HTTP client replaced.
- */
 describe("Gateway routing (HTTP boundary)", () => {
   let app: INestApplication;
   let http: { post: jest.Mock; request: jest.Mock };

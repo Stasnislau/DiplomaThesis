@@ -1,11 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { loginViaStorage } from "./helpers/auth";
 
-/**
- * Smoke: /learning-path opens for an authenticated user and renders
- * either the populated path, an empty state, or a graceful service-down
- * fallback. Without a fully-mocked AI backend we accept any of those.
- */
 test.describe("Learning Path Page", () => {
   test.beforeEach(async ({ page }) => {
     await loginViaStorage(page);

@@ -2,20 +2,6 @@ from typing import List, Literal, Union, Annotated
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 
 
-# -----------------------------------------------------------------
-# Listening question variants — discriminated union by `type`.
-#
-# Wire shape mirrors what the LLM is told to output in
-# Backend/AIMicroservice/services/listening_task_service.py.
-# Frontend (Frontend/src/api/mutations/createListeningTask.ts +
-# pages/Tasks/components/ListeningRenderers/) dispatches on `type`.
-#
-# Naming kept camelCase on the wire to match the existing
-# `correctAnswer` convention from the original two variants — moving
-# to snake_case here would break every old client mid-flight.
-# -----------------------------------------------------------------
-
-
 class _ListeningQuestionBase(BaseModel):
     question: str
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
@@ -96,8 +82,4 @@ class ListeningTaskResponse(BaseModel):
     audioUrl: str
     transcript: str
     questions: List[ListeningQuestion]
-    # Tags identifying which speakers were synthesised in the audio.
-    # Empty / single-entry list for monologue tasks; populated when a
-    # multi_speaker_matching question is in the set so the FE can
-    # render speaker chips alongside the audio player.
     speakers: List[str] = Field(default_factory=list)

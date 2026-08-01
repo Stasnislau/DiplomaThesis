@@ -8,15 +8,9 @@ import { useTranslation } from "react-i18next";
 interface EssayTaskProps {
   language: string;
   level: string;
-  /** Lesson topic / theme hint passed to the AI generator. Optional. */
   topic?: string;
   keywords?: string[];
-  /** Foreign-key into TaskHistoryEntry so the back-end can attribute
-   *  the result to a specific lesson (used by learning-path
-   *  completion). Free-practice doesn't pass it. */
   lessonId?: string;
-  /** Called once with the score so the parent (lesson page) can mark
-   *  the lesson complete on a passing grade. */
   onEvaluated?: (evaluation: EssayEvaluation) => void;
 }
 
@@ -50,9 +44,6 @@ const EssayTask = ({
 
   const [essay, setEssay] = useState("");
 
-  // Auto-generate the prompt on mount + when language/level/topic
-  // change. Without this the user lands on a blank screen and has to
-  // hunt for a button.
   useEffect(() => {
     if (!language || !level) return;
     setEssay("");
@@ -61,7 +52,6 @@ const EssayTask = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [language, level, topic]);
 
-  // Bubble the evaluation up so the parent can act on a pass.
   useEffect(() => {
     if (evaluation) onEvaluated?.(evaluation);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -117,7 +107,7 @@ const EssayTask = ({
 
   return (
     <div className="space-y-6">
-      {/* Prompt panel */}
+      {}
       {prompt && !evaluation && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-start justify-between gap-3 mb-4">
@@ -165,7 +155,7 @@ const EssayTask = ({
         </div>
       )}
 
-      {/* Editor */}
+      {}
       {prompt && !evaluation && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
           <textarea
@@ -202,7 +192,7 @@ const EssayTask = ({
         </div>
       )}
 
-      {/* Result */}
+      {}
       {evaluation && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 space-y-5">
           <div className="flex items-center gap-5">

@@ -8,7 +8,6 @@ class FakeMediaRecorder {
   onstop: (() => void) | null = null;
   mimeType = "audio/webm";
 
-  // We expose the most-recent instance so tests can drive lifecycle.
   static last: FakeMediaRecorder | null = null;
 
   constructor(_stream: MediaStream, _options?: MediaRecorderOptions) {
@@ -19,8 +18,6 @@ class FakeMediaRecorder {
   }
   stop() {
     this.state = "inactive";
-    // Push a fake chunk and fire onstop synchronously so the hook's
-    // file-assembly path runs.
     this.ondataavailable?.({ data: new Blob(["fake-bytes"], { type: this.mimeType }) });
     this.onstop?.();
   }
@@ -41,7 +38,6 @@ const installFakeGetUserMedia = (shouldFail = false) => {
       getUserMedia: shouldFail
         ? vi.fn().mockRejectedValue(new Error("denied"))
         : vi.fn().mockResolvedValue({
-            // Minimal MediaStream stub — only `getTracks().forEach()` is used.
             getTracks: () => [{ stop: vi.fn() }],
           } as unknown as MediaStream),
     },
@@ -49,8 +45,6 @@ const installFakeGetUserMedia = (shouldFail = false) => {
 };
 
 const installFakeObjectURL = () => {
-  // JSDOM has URL.createObjectURL but it returns blob: URIs; fine,
-  // but we stub revokeObjectURL too so revoke calls don't throw.
   if (!(globalThis.URL as any).createObjectURL) {
     (globalThis.URL as any).createObjectURL = vi.fn(() => "blob:fake");
   }
@@ -96,13 +90,8 @@ describe("useAudioRecorder", () => {
     await act(async () => {
       await result.current.start();
     });
-    // Advance the timer past the cap. The hook's tick runs at 1Hz and
-    // queues a microtask to call recorder.stop() once it reaches the
-    // limit, which fires onstop synchronously and flips state.
     await act(async () => {
       vi.advanceTimersByTime(2000);
-      // Yield twice so the queued microtask + the resulting state
-      // updates both flush before we assert.
       await Promise.resolve();
       await Promise.resolve();
     });
@@ -135,16 +124,11 @@ describe("useAudioRecorder", () => {
   });
 
   it("unmounting mid-recording stops the recorder and revokes the URL", async () => {
-    // Spy on URL.revokeObjectURL to confirm the cleanup path actually
-    // releases the blob — this guards against a regression where the
-    // unmount cleanup captured the stale empty `audioUrl` from mount
-    // time and silently called revokeObjectURL("").
     const revokeSpy = vi.spyOn(URL, "revokeObjectURL");
     const { result, unmount } = renderHook(() => useAudioRecorder());
     await act(async () => {
       await result.current.start();
     });
-    // Drive a stop so a real blob URL gets produced.
     await act(async () => {
       result.current.stop();
       await Promise.resolve();

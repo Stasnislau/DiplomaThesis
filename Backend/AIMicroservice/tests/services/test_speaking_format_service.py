@@ -45,9 +45,6 @@ def speaking_service(mock_ai_service: MagicMock) -> SpeakingService:
     return SpeakingService(mock_ai_service)
 
 
-# ---------- Helpers / format catalog ------------------------------
-
-
 def test_is_known_format() -> None:
     assert is_known_format("read_aloud")
     assert is_known_format("timed_response")
@@ -83,9 +80,6 @@ def test_rubric_hints_cover_every_format() -> None:
         assert isinstance(hints, list) and len(hints) >= 1
 
 
-# ---------- WER helper --------------------------------------------
-
-
 def test_tokens_strips_punct_and_lowercases() -> None:
     assert _tokens("Hello, World!") == ["hello", "world"]
 
@@ -95,7 +89,6 @@ def test_word_error_rate_zero_for_identical() -> None:
 
 
 def test_word_error_rate_one_substitution() -> None:
-    # 5-word reference, 1 substitution → WER = 1/5 = 0.2
     wer = _word_error_rate(
         "She left for Madrid today.", "She left for Berlin today."
     )
@@ -110,9 +103,6 @@ def test_word_error_rate_full_mismatch() -> None:
 def test_word_error_rate_empty_reference() -> None:
     assert _word_error_rate("", "anything") == 1.0
     assert _word_error_rate("", "") == 0.0
-
-
-# ---------- Prompt generation per format --------------------------
 
 
 @pytest.mark.asyncio
@@ -158,8 +148,6 @@ async def test_generate_prompt_picture_description_includes_image_url(
     assert out.durationSeconds == 60
     assert out.imageUrl, "picture_description MUST include an imageUrl"
     assert out.imageUrl.startswith("https://image.pollinations.ai/prompt/")
-    # The visual_prompt key terms should be URL-encoded into the path,
-    # not silently dropped.
     assert "coffee" in out.imageUrl
 
 
@@ -188,7 +176,7 @@ def test_pollinations_url_encodes_special_chars() -> None:
     reaches Pollinations intact instead of being truncated by a proxy."""
     url = _build_pollinations_url("a café & a baguette, Paris")
     assert url.startswith("https://image.pollinations.ai/prompt/")
-    assert "%20" in url or "%" in url  # at least one encoding occurred
+    assert "%20" in url or "%" in url
     assert "model=flux" in url
     assert "nologo=true" in url
 
@@ -196,10 +184,8 @@ def test_pollinations_url_encodes_special_chars() -> None:
 def test_pollinations_url_clamps_long_prompts() -> None:
     """Pollinations rejects URLs above ~2KB. We cap the prompt at
     600 chars so the encoded URL stays well inside that ceiling."""
-    long_prompt = "lorem ipsum " * 200  # ~2400 chars raw
+    long_prompt = "lorem ipsum " * 200
     url = _build_pollinations_url(long_prompt)
-    # The path segment after /prompt/ shouldn't blow past ~1800 chars
-    # encoded (3× headroom for %20s).
     path_segment = url.split("/prompt/", 1)[1].split("?", 1)[0]
     assert len(path_segment) <= 1800
 
@@ -216,7 +202,7 @@ def test_dedupe_translation_drops_identical() -> None:
     `translation` (UI lang == target lang case), we hide the
     translation so the FE doesn't render the same paragraph twice."""
     assert _dedupe_translation("Hello", "Hello") == ""
-    assert _dedupe_translation("Hello", " hello ") == ""  # case + whitespace
+    assert _dedupe_translation("Hello", " hello ") == ""
 
 
 def test_dedupe_translation_keeps_real_translation() -> None:
@@ -296,9 +282,6 @@ async def test_generate_prompt_unknown_format_raises(
         )
 
 
-# ---------- Grading per format ------------------------------------
-
-
 def _whisper_transcription(text: str) -> WhisperTranscriptionResult:
     return WhisperTranscriptionResult(
         text=text,
@@ -309,7 +292,7 @@ def _whisper_transcription(text: str) -> WhisperTranscriptionResult:
                 start=0.0,
                 end=2.0,
                 text=text,
-                avg_logprob=-0.2,  # high confidence
+                avg_logprob=-0.2,
                 no_speech_prob=0.05,
             )
         ],
@@ -343,7 +326,6 @@ async def test_grade_repeat_after_me_perfect_match(
     assert isinstance(out, SpeakingGradeResponse)
     assert out.matchPercent == 100.0
     assert out.wordErrorRate == 0.0
-    # No LLM call: WER path is fully deterministic.
     mock_ai_service.get_ai_response.assert_not_called()
 
 
@@ -351,8 +333,8 @@ async def test_grade_repeat_after_me_perfect_match(
 async def test_grade_repeat_after_me_partial_match(
     speaking_service: SpeakingService, mock_ai_service: MagicMock
 ) -> None:
-    target = "She left for Madrid today"  # 5 words
-    transcribed = "She left for Berlin today"  # 1 substitution
+    target = "She left for Madrid today"
+    transcribed = "She left for Berlin today"
     speaking_service._transcribe_audio_with_whisper = AsyncMock(
         return_value=_whisper_transcription(transcribed)
     )
@@ -365,7 +347,6 @@ async def test_grade_repeat_after_me_partial_match(
         prompt_text=target,
         target_phrase=target,
     )
-    # 1/5 errors → WER 0.2 → 80% match
     assert out.wordErrorRate == 0.2
     assert out.matchPercent == 80.0
 
@@ -398,8 +379,6 @@ async def test_grade_timed_response_uses_llm_rubric(
     )
     assert out.format == "timed_response"
     assert out.contentScore == 75
-    # Coherence/vocabulary are NOT requested for timed_response, so
-    # they stay None even if the LLM returned them.
     assert out.coherenceScore is None
 
 

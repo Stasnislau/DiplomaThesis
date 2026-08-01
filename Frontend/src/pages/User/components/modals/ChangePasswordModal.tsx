@@ -47,9 +47,6 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
         onClose();
       })
       .catch(() => {
-        // Mutation `error` state is rendered inline below — the empty
-        // catch only exists to swallow the rejection so React doesn't
-        // log "unhandled promise rejection".
       });
   };
 

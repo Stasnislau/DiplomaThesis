@@ -81,14 +81,9 @@ const AITokensPage: React.FC = () => {
   const addToast = useToastsStore((s) => s.addToast);
   const localizeError = useLocalizedError();
   const [verifyingId, setVerifyingId] = React.useState<string | null>(null);
-  // Per-token last verify status: 'valid' | 'invalid' — drives inline badge.
   const [verifyStatus, setVerifyStatus] = React.useState<
     Record<string, "valid" | "invalid">
   >({});
-  // Two-stage delete: first click arms the confirm UI, second click
-  // actually deletes. Without this an accidental click on the trash
-  // icon nukes the credential immediately. Keyed by token id so each
-  // row arms independently.
   const [pendingDeleteId, setPendingDeleteId] = React.useState<string | null>(
     null,
   );
@@ -133,9 +128,6 @@ const AITokensPage: React.FC = () => {
         severity: result.valid ? "success" : "error",
       });
     } catch (e) {
-      // The mutation throws an ApiError when the backend used
-      // raise_with_code(); useLocalizedError() picks up the code and
-      // renders a localized string instead of the raw English fallback.
       setVerifyStatus((s) => ({ ...s, [tokenId]: "invalid" }));
       addToast({
         title: t("aiTokens.verifyInvalidTitle"),
@@ -177,7 +169,7 @@ const AITokensPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300 py-10">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        {/* Back link */}
+        {}
         <Link
           to="/profile"
           className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200 mb-6 group"
@@ -186,7 +178,7 @@ const AITokensPage: React.FC = () => {
           <span className="font-medium">{t("aiTokens.backToProfile")}</span>
         </Link>
 
-        {/* Header Card */}
+        {}
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg dark:shadow-gray-900/50 p-8 mb-6 transition-colors duration-300">
           <div className="flex items-center gap-4 mb-2">
             <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shadow-md">
@@ -201,7 +193,7 @@ const AITokensPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Disclaimer Card */}
+        {}
         <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/50 rounded-3xl p-6 mb-6">
           <h2 className="text-base font-semibold text-indigo-900 dark:text-indigo-200 mb-2">
             {t("aiTokens.disclaimerTitle")}
@@ -236,7 +228,7 @@ const AITokensPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Form Card */}
+        {}
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg dark:shadow-gray-900/50 p-8 mb-6 transition-colors duration-300">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t("aiTokens.addNewProvider")}</h2>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -299,7 +291,7 @@ const AITokensPage: React.FC = () => {
           </form>
         </div>
 
-        {/* Tokens List Card */}
+        {}
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg dark:shadow-gray-900/50 p-8 transition-colors duration-300">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t("aiTokens.connectedProviders")}</h2>
@@ -472,7 +464,7 @@ const AITokensPage: React.FC = () => {
           )}
         </div>
 
-        {/* Footer hint */}
+        {}
         <p className="text-center text-gray-500 dark:text-gray-400 text-sm mt-6">
           🔒 {t("aiTokens.keysEncrypted")}
         </p>

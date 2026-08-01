@@ -26,17 +26,10 @@ from models.dtos.material_dtos import (
 )
 
 
-# Stimulus length guidance is driven by the LLM's own
-# `passage_word_count_estimate`. These constants only kick in when
-# the estimate is missing or absurd, so we still produce a passage
-# rather than a 50-word stub or a 3000-word essay.
 _DEFAULT_PASSAGE_WORDS = 350
 _MIN_PASSAGE_WORDS = 80
 _MAX_PASSAGE_WORDS = 1200
 
-# Exercise types that genuinely need a stimulus passage. Anything
-# else (isolated grammar gap-fill, vocab MCQ on standalone sentences)
-# skips Stage 2.
 _STIMULUS_BEARING_TYPES = {
     "reading_comprehension",
     "listening_comprehension",
@@ -44,19 +37,9 @@ _STIMULUS_BEARING_TYPES = {
     "sentence_reordering",
 }
 
-# Verbatim-overlap settings. A stimulus that shares a 12-word
-# contiguous chunk with the source PDF is almost certainly copy-paste
-# masquerading as "new", so we retry once with a stronger anti-copy
-# instruction. After the retry budget we accept whatever we have
-# rather than fail the whole quiz.
 _VERBATIM_NGRAM_SIZE = 12
 _VERBATIM_RETRIES = 1
 
-# Which CEFR skill each detected exercise type drills. Stored on the
-# mined task template so retrieval can match a writing request against
-# writing exemplars instead of, say, a listening transcript. Types the
-# map doesn't cover fall back to "writing" — that's where the bulk of
-# the generated-task surface lives, so it's the least surprising default.
 _EXERCISE_SKILL: Dict[str, str] = {
     "reading_comprehension": "reading",
     "listening_comprehension": "listening",
@@ -158,14 +141,6 @@ class MaterialService:
                     "No selectable text found. The PDF is likely a scan or has its text encoded with a custom font.",
                 )
 
-            # Detect garbled text from custom-font / encrypted-encoding PDFs.
-                        # pypdf still 'extracts' something, but it comes out as
-            # high-bit nonsense like '\x03URWRNRĄ\x03' that no LLM can
-            # parse and that triggers Groq's json_validate_failed when
-            # asked for a structured response. Cheap heuristic: count
-            # the share of characters that aren't word characters,
-            # whitespace, or basic punctuation. Above 30% means the
-            # extraction is garbage.
             import re as _re
             non_text = sum(
                 1 for c in text
@@ -212,9 +187,6 @@ class MaterialService:
             ui_lang = (
                 getattr(user_context, "ui_locale_label", None) or "English"
             )
-            # `example` and `passage_excerpt_for_style` stay verbatim
-            # from the source — they're style anchors for the
-            # generation step, not user-visible labels.
             type_locale_clause = (
                 f"\n\nWrite the `type` and `document_kind` fields in {ui_lang}. "
                 "Keep `example`, `passage_excerpt_for_style`, `passage_topic_hint`, "
@@ -335,12 +307,6 @@ class MaterialService:
                     user_context=user_context
                 )
             except HTTPException as exc:
-                # Groq sometimes returns 400 json_validate_failed on borderline
-                # PDFs (the prompt produces a string with characters that
-                # don't pass strict JSON validation, e.g. unescaped Unicode
-                # control characters). Retry once WITHOUT strict mode and
-                # parse loosely; if that still fails, surface a friendly
-                # message instead of bubbling a raw 502.
                 if exc.status_code in (400, 502):
                     logger.warning(
                         "Strict JSON mode failed on type analysis (%s); "
@@ -368,24 +334,16 @@ class MaterialService:
             analyzed_types: Union[List[Dict[str, Any]], List[Any]] = []
 
             try:
-                # Tolerate models that wrap JSON in ``` fences when strict mode is off.
                 cleaned = response_json_str.strip()
                 if cleaned.startswith("```"):
                     cleaned = cleaned.strip("`")
                     cleaned = cleaned.lstrip("json").strip()
                 analyzed_data = json.loads(cleaned)
 
-                # New shape: {document_kind, exercises: [...]}.
-                # Old shape (still tolerated as fallback): {types: [...]}.
                 if isinstance(analyzed_data, dict) and "exercises" in analyzed_data:
                     try:
                         document_map = DocumentMap.model_validate(analyzed_data)
                     except Exception as parse_err:
-                        # Pydantic validation may reject if a model
-                        # returned `null` for a list field or used a
-                        # non-string `type`. Coerce loosely and retry
-                        # — better to surface a partial map than to
-                        # drop everything.
                         logger.warning(
                             "Strict DocumentMap validation failed (%s); falling back to loose parse.",
                             parse_err,
@@ -422,9 +380,6 @@ class MaterialService:
                             exercises=loose_exercises,
                         )
 
-                    # Derive the legacy `analyzed_types` view from
-                    # exercises so existing frontend chip rendering
-                    # keeps working until it's migrated to the rich map.
                     analyzed_types = [
                         QuestionTypeExample(
                             type=ex.type,
@@ -451,10 +406,6 @@ class MaterialService:
                 document_map = None
 
             if document_map and document_map.exercises:
-                # Persist the exercise shapes as few-shot exemplars for
-                # later task generation. Strictly best-effort: the user's
-                # chunks are already indexed by this point, so a template
-                # write that fails must not cost them the upload.
                 try:
                     self.vector_db_service.save_task_templates(
                         self._build_task_templates(
@@ -513,11 +464,6 @@ class MaterialService:
                 else None
             )
 
-            # Stage 1: get a DocumentMap. Trust the one the caller
-            # passed in if they did; otherwise re-derive it from a
-            # representative slice of the indexed material so we
-            # don't lose continuity when the FE doesn't round-trip
-            # the map.
             if document_map is None or not document_map.exercises:
                 document_map = await self._classify_indexed_material(
                     user_context=user_context,
@@ -530,10 +476,6 @@ class MaterialService:
                     quiz="No relevant material found to generate tasks.",
                 )
 
-            # Filter exercises by user's chip selection. The FE sends
-            # the exact strings it displayed, which match
-            # `exercise.type` verbatim (case-insensitive guard for
-            # safety).
             exercises = self._filter_exercises(
                 document_map.exercises, selected_types
             )
@@ -548,7 +490,6 @@ class MaterialService:
                 getattr(user_context, "ui_locale_label", None) or "English"
             )
 
-            # Stages 2+3 for every exercise, in parallel.
             per_exercise_results = await asyncio.gather(
                 *(
                     self._build_questions_for_exercise(
@@ -627,9 +568,6 @@ class MaterialService:
         returns the resulting DocumentMap. Best-effort: returns None
         if classification fails.
         """
-        # A neutral query so the spread covers passages and exercises
-        # alike; the old "exercises questions tasks" query starved
-        # reading passages from the retrieved set.
         relevant_docs = self.vector_db_service.search_materials(
             "passage paragraph exercise question task",
             limit=12,
@@ -644,9 +582,6 @@ class MaterialService:
         ui_lang = (
             getattr(user_context, "ui_locale_label", None) or "English"
         )
-        # Reuse the exact same instruction set as process_pdf — the
-        # only difference is `analysis_context` is sourced from the
-        # vector DB rather than the freshly-parsed PDF chunks.
         prompt = self._build_classification_prompt(
             analysis_context=analysis_context, ui_lang=ui_lang
         )
@@ -674,9 +609,6 @@ class MaterialService:
 
     @staticmethod
     def _build_classification_prompt(analysis_context: str, ui_lang: str) -> str:
-        # Mirror the prompt used by process_pdf so re-classification
-        # produces the same shape. Kept as a static helper to avoid
-        # duplicating the long instruction block.
         type_locale_clause = (
             f"\n\nWrite the `type` and `document_kind` fields in {ui_lang}. "
             "Keep `example`, `passage_excerpt_for_style`, `passage_topic_hint`, "
@@ -791,10 +723,6 @@ class MaterialService:
             if isinstance(user_context, UserContext)
             else None
         )
-        # Build subtypes from the type itself so the prompt has
-        # something to anchor on. Cloze passages need a stimulus
-        # (the picker triggers Stage 2 automatically); MC/FIB/T-F
-        # are self-contained.
         exercise = DocumentExercise(
             type=task_type,
             passage_word_count_estimate=200 if task_type == "cloze_passage" else None,
@@ -856,11 +784,6 @@ class MaterialService:
 
     @staticmethod
     def _needs_stimulus(exercise: DocumentExercise) -> bool:
-        # An exercise needs Stage 2 if its type implies a passage OR if
-        # the LLM gave us a non-trivial passage_word_count_estimate.
-        # Either signal is sufficient — sometimes the LLM tags a passage
-        # with a fuzzy type but still estimates length; sometimes the
-        # type is canonical but estimate is null.
         if exercise.type.strip().lower() in _STIMULUS_BEARING_TYPES:
             return True
         wc = exercise.passage_word_count_estimate
@@ -888,10 +811,6 @@ class MaterialService:
         topic_hint = (exercise.passage_topic_hint or "").strip()
         style_excerpt = (exercise.passage_excerpt_for_style or "").strip()
 
-        # Pull a few topic-anchored chunks for thematic flavor; the
-        # generator is told NOT to copy them, only to match register.
-        # We also hand these chunks to the verbatim-check so the
-        # comparison set matches what the model actually saw.
         topic_query = topic_hint or exercise.type.replace("_", " ")
         topic_chunks = self.vector_db_service.search_materials(
             topic_query,
@@ -900,9 +819,6 @@ class MaterialService:
         )
         topic_anchor_texts = [str(d.text) for d in topic_chunks]
         topic_anchor = "\n\n".join(topic_anchor_texts)[:2400]
-        # The style excerpt is also a piece of source text the model
-        # saw — include it in the anti-copy comparison set so a model
-        # that "matches style" by pasting the sample gets caught.
         comparison_corpus = topic_anchor_texts + (
             [style_excerpt] if style_excerpt else []
         )
@@ -975,23 +891,16 @@ class MaterialService:
                 attempt + 1,
                 exercise.type,
             )
-            # On retry, prepend an explicit warning. We don't echo the
-            # offending span back at the model — that just gives it
-            # ideas about what it can and can't say. We just demand
-            # a from-scratch rewrite.
             attempt_prompt = (
                 "PREVIOUS ATTEMPT WAS REJECTED: the passage you produced "
                 "contained a verbatim phrase from the source document. "
                 "Rewrite from scratch. Do NOT reuse any phrase of 12+ words "
                 "found in the source.\n\n" + base_prompt
             )
-            passage = candidate  # keep last attempt as fallback after budget
+            passage = candidate
 
         return passage
 
-    # Question types each exercise type may produce. The Stage 3
-    # prompt tells the model which to pick from; the parser then
-    # routes each item to the right discriminated-union variant.
     _ALLOWED_QUESTION_TYPES: Dict[str, List[str]] = {
         "reading_comprehension": [
             "multiple_choice",
@@ -1019,9 +928,6 @@ class MaterialService:
 
     @classmethod
     def _allowed_question_types(cls, exercise_type: str) -> List[str]:
-        # Default allow-list when the exercise type is something the
-        # taxonomy doesn't recognise — safest is to let the model pick
-        # any of the broadly-applicable variants.
         return cls._ALLOWED_QUESTION_TYPES.get(
             exercise_type.strip().lower(),
             ["multiple_choice", "true_false", "fill_in_the_blank", "open"],
@@ -1082,9 +988,6 @@ class MaterialService:
         allowed = self._allowed_question_types(exercise.type)
         type_catalog = ", ".join(f'"{t}"' for t in allowed)
 
-        # Schemas inlined per type so the model knows exactly which
-        # fields to emit. We only show schemas for the allowed types
-        # to keep the prompt focused.
         per_type_schemas = []
         if "multiple_choice" in allowed:
             per_type_schemas.append(
@@ -1189,19 +1092,8 @@ class MaterialService:
         for raw in raw_questions:
             if not isinstance(raw, dict):
                 continue
-            # Inject the stimulus into context_text when the model
-            # forgot to and a stimulus exists. This keeps the wire
-            # contract consistent for the frontend.
             if stimulus and not raw.get("context_text"):
                 raw["context_text"] = stimulus
-            # Dedupe options before validation. Models occasionally
-            # produce e.g. ["диагностировать", "диагнозировать",
-            # "диагностицировать", "диагностировать"] — two of those
-            # are byte-identical and the user picks one of them and
-            # gets "Correct!" without learning anything. Strip
-            # adjacent-equal-after-trim duplicates before we hand the
-            # question to the FE; if dedup leaves <2 options, drop
-            # the whole item rather than render a broken question.
             if raw.get("type") in ("multiple_choice", "multi_select_mc"):
                 deduped = _dedupe_preserve_order(raw.get("options") or [])
                 if len(deduped) < 2:
@@ -1212,11 +1104,6 @@ class MaterialService:
                     )
                     continue
                 raw["options"] = deduped
-                # multi_select_mc keeps `correct_answers` (plural).
-                # multiple_choice picks ONE — verify the canonical
-                # answer is still in the deduped option set; if it
-                # was the dropped duplicate, we have to fail
-                # gracefully instead of returning an unanswerable item.
                 if raw.get("type") == "multiple_choice":
                     ca = str(raw.get("correct_answer") or "").strip().lower()
                     options_normalized = [
@@ -1229,9 +1116,6 @@ class MaterialService:
                         )
                         continue
             elif raw.get("type") == "matching":
-                # Matching bug variant: identical lefts or identical
-                # rights. The renderer pairs by `left` so dup lefts
-                # silently overwrite each other. Drop the item.
                 pairs = raw.get("pairs") or []
                 lefts = [str(p.get("left") or "").strip() for p in pairs]
                 rights = [str(p.get("right") or "").strip() for p in pairs]

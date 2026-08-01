@@ -44,9 +44,8 @@ const GradeDisplay = ({ result }: GradeDisplayProps) => {
 
   return (
     <div className="space-y-4">
-      {/* Score grid — varies by format. WER/match for repeat_after_me;
-          content/coherence/vocab for the LLM-graded ones; fluency
-          always present from pronunciation metrics. */}
+      {
+}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <ScoreCard
           label={t("speakingResults.fluencyLabel")}
@@ -84,7 +83,7 @@ const GradeDisplay = ({ result }: GradeDisplayProps) => {
         />
       </div>
 
-      {/* Transcription */}
+      {}
       <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
         <div className="bg-gradient-to-r from-indigo-500 to-purple-500 px-5 py-3 flex items-center gap-2">
           <span className="text-white">📝</span>
@@ -99,7 +98,7 @@ const GradeDisplay = ({ result }: GradeDisplayProps) => {
         </div>
       </div>
 
-      {/* Overall assessment */}
+      {}
       <div className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/10 dark:to-teal-900/10 rounded-2xl border border-emerald-200 dark:border-emerald-800 p-5">
         <h3 className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 mb-2">
           {t("speakingResults.overallAssessmentTitle")}
@@ -109,7 +108,7 @@ const GradeDisplay = ({ result }: GradeDisplayProps) => {
         </p>
       </div>
 
-      {/* Errors */}
+      {}
       {result.identifiedErrors.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl border border-rose-200 dark:border-rose-800 shadow-sm overflow-hidden">
           <div className="bg-gradient-to-r from-rose-500 to-red-500 px-5 py-3">
@@ -135,7 +134,7 @@ const GradeDisplay = ({ result }: GradeDisplayProps) => {
         </div>
       )}
 
-      {/* Strengths / improvements */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {result.positivePoints.length > 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-5">

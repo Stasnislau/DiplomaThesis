@@ -7,7 +7,6 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   className?: string;
   isLoading?: boolean;
   variant?: "primary" | "secondary" | "tertiary" | "danger" | "destructive";
-  /** Accessible label for screen readers when button content is not descriptive */
   ariaLabel?: string;
 }
 

@@ -18,10 +18,6 @@ interface DispatcherProps {
   revealed: boolean;
 }
 
-/**
- * Dispatches a quiz question to the renderer that knows its shape.
- * Single source of truth for the FE's question-type → component map.
- */
 const QuestionRenderer = ({
   question,
   answer,

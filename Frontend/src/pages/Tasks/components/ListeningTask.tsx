@@ -27,7 +27,6 @@ const LANGUAGES = [
 
 const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
-// Default selection on first mount — historic behaviour.
 const DEFAULT_SELECTED_TYPES: ListeningQuestionType[] = [
   "multiple_choice",
   "fill_in_the_blank",
@@ -51,8 +50,6 @@ const ListeningTask = () => {
   );
   const [currentTaskData, setCurrentTaskData] = useState<ListeningTaskResponse | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  // Per-question answers — shape varies by question type, the
-  // dispatcher and grader interpret each entry.
   const [userAnswers, setUserAnswers] = useState<Record<number, ListeningAnswerValue>>({});
   const [revealed, setRevealed] = useState<Record<number, boolean>>({});
   const [showTranscript, setShowTranscript] = useState<boolean>(false);
@@ -108,12 +105,6 @@ const ListeningTask = () => {
       ? gradeListeningQuestion(currentQuestion, userAnswers[currentQuestionIndex])
       : null;
 
-  // History logging — fires ONCE when the user has revealed every
-  // question in the current set. We track a loggedKey so a subsequent
-  // re-render or audio-replay doesn't double-log; the key is reset
-  // whenever fresh data lands. Without this, listening sessions
-  // never reached /tasks/listening/result and the adaptive loop
-  // had zero signal from listening misses.
   const loggedKeyRef = useRef<string | null>(null);
   useEffect(() => {
     if (!currentTaskData) return;
@@ -121,8 +112,6 @@ const ListeningTask = () => {
     if (totalQs === 0) return;
     const revealedCount = Object.values(revealed).filter(Boolean).length;
     if (revealedCount < totalQs) return;
-    // Stable key per session: language + level + transcript hash
-    // (use audioUrl which is unique per generation).
     const sessionKey = `${language}|${level}|${currentTaskData.audioUrl}`;
     if (loggedKeyRef.current === sessionKey) return;
     loggedKeyRef.current = sessionKey;
@@ -134,8 +123,6 @@ const ListeningTask = () => {
       if (verdict === true) {
         correct += 1;
       } else if (verdict === false) {
-        // Record only WRONG answers — derive_adaptive_focus picks
-        // up to 3 errorExamples per session, prioritising recency.
         let suggestion = "";
         switch (q.type) {
           case "multiple_choice":
@@ -177,16 +164,13 @@ const ListeningTask = () => {
       errorExamples: errorExamples.slice(0, 5),
       targetedWeaknesses: adaptiveTargets,
     }).catch((err) => {
-      // Best-effort: a 500 here shouldn't block the user from
-      // moving on. We surface in dev tools so a regression where
-      // the endpoint goes down doesn't disappear silently.
       console.warn("logListeningResult failed:", err);
     });
   }, [revealed, currentTaskData, userAnswers, language, level, adaptiveTargets]);
 
   return (
     <div className="space-y-6">
-      {/* Language Selection */}
+      {}
       <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/50 dark:to-purple-950/50 rounded-2xl p-6 border border-indigo-100 dark:border-indigo-900/50">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
@@ -214,7 +198,7 @@ const ListeningTask = () => {
         </div>
       </div>
 
-      {/* Level Selection */}
+      {}
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center">
@@ -241,7 +225,7 @@ const ListeningTask = () => {
         </div>
       </div>
 
-      {/* Question type selector */}
+      {}
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/50 flex items-center justify-center">
@@ -283,7 +267,7 @@ const ListeningTask = () => {
         )}
       </div>
 
-      {/* Generate Button */}
+      {}
       <Button
         onClick={handleCreateTask}
         disabled={!language || !level || selectedTypes.length === 0 || isLoading || adaptiveLoading}
@@ -294,7 +278,7 @@ const ListeningTask = () => {
         {isLoading ? t("common.generating") : t("tasks.generateListeningTask")}
       </Button>
 
-      {/* Adaptive */}
+      {}
       <button
         type="button"
         onClick={async () => {
@@ -350,7 +334,7 @@ const ListeningTask = () => {
 
       {currentTaskData && (
         <div className="space-y-4">
-          {/* Audio Player */}
+          {}
           <div className="bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl p-6 shadow-lg">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
@@ -376,7 +360,7 @@ const ListeningTask = () => {
             )}
           </div>
 
-          {/* Transcript Toggle */}
+          {}
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm transition-colors duration-300">
             <button
               onClick={() => setShowTranscript(!showTranscript)}
@@ -407,7 +391,7 @@ const ListeningTask = () => {
             )}
           </div>
 
-          {/* Question Card */}
+          {}
           {currentQuestion && (
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-lg">
               <div className="flex items-center justify-between mb-6">
@@ -425,7 +409,7 @@ const ListeningTask = () => {
                   </div>
                 </div>
 
-                {/* Per-question type chip */}
+                {}
                 <span className="text-xs font-medium text-indigo-700 bg-indigo-100 dark:bg-indigo-900/40 dark:text-indigo-300 px-3 py-1 rounded-full">
                   {t(`tasks.questionType.${currentQuestion.type}`, {
                     defaultValue: QUESTION_TYPE_LABELS[currentQuestion.type].defaultLabel,
@@ -433,9 +417,8 @@ const ListeningTask = () => {
                 </span>
               </div>
 
-              {/* Question prompt — for sentence_completion the renderer
-                  itself shows the question text with inline blank,
-                  so suppress the duplicate here. */}
+              {
+}
               {currentQuestion.type !== "sentence_completion" && (
                 <p className="text-base font-medium text-gray-900 dark:text-gray-100 mb-5">
                   {currentQuestion.question}
@@ -479,7 +462,7 @@ const ListeningTask = () => {
                 </div>
               )}
 
-              {/* Navigation */}
+              {}
               <div className="flex justify-between mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <Button
                   onClick={() => setCurrentQuestionIndex((prev) => Math.max(0, prev - 1))}

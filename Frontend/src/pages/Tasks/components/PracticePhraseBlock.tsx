@@ -10,20 +10,10 @@ import {
 const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
 
 interface Props {
-  /** Same `language` value the speaking analyzer uses (lower-case
-   *  English label like "english", "polish"). AI title-cases it. */
   language: string;
-  /** Optional callback so the parent (SpeakingTask) can bind the
-   *  recording UI to the phrase the learner just got. */
   onPhraseChosen?: (phrase: string) => void;
 }
 
-/**
- * Adaptive practice-phrase widget. Lives at the top of the speaking
- * page. Generates one sentence per click, biased toward the user's
- * recent weaknesses; the user then records themselves reading it
- * aloud through the existing speaking analyzer.
- */
 export function PracticePhraseBlock({ language, onPhraseChosen }: Props) {
   const { t } = useTranslation();
   const [level, setLevel] = useState<string>("B1");
