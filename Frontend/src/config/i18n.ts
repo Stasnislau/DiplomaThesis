@@ -408,6 +408,9 @@ const en = {
 
     materialsPage: {
       title: "Task Generator",
+      analysisComplete: "Analysis Complete",
+      foundTypesIn: "I found the following types of exercises in",
+      selectToPractise: "Select the ones you want to practice:",
       subtitle: "Upload a document, and I'll generate similar exercises for you.",
       uploadNewFile: "Upload New File",
       newUpload: "New Upload",
@@ -1264,6 +1267,9 @@ const pl = {
 
     materialsPage: {
       title: "Generator zadań",
+      analysisComplete: "Analiza zakończona",
+      foundTypesIn: "Znalazłem następujące typy ćwiczeń w pliku",
+      selectToPractise: "Wybierz te, które chcesz przećwiczyć:",
       subtitle: "Wgraj dokument, a wygeneruję na jego podstawie podobne ćwiczenia.",
       uploadNewFile: "Wgraj nowy plik",
       newUpload: "Nowy plik",
@@ -2120,6 +2126,9 @@ const es = {
 
     materialsPage: {
       title: "Generador de tareas",
+      analysisComplete: "Análisis completado",
+      foundTypesIn: "He encontrado los siguientes tipos de ejercicios en",
+      selectToPractise: "Selecciona los que quieras practicar:",
       subtitle: "Sube un documento y te generaré ejercicios similares.",
       uploadNewFile: "Subir un nuevo archivo",
       newUpload: "Nueva subida",

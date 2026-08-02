@@ -44,6 +44,27 @@ def _document_map_from(parsed: Dict[str, Any]) -> DocumentMap:
     )
 
 
+def attach_shared_passage(
+    questions: List[Dict[str, Any]], stimulus: Optional[str]
+) -> List[Dict[str, Any]]:
+    shared = (stimulus or "").strip()
+    shown = False
+    for raw in questions:
+        own = str(raw.get("context_text") or "").strip()
+        if not shared:
+            raw["context_text"] = own or None
+            continue
+        if not own:
+            own = shared
+            raw["context_text"] = shared
+        if own == shared:
+            if shown:
+                raw["context_text"] = None
+            else:
+                shown = True
+    return questions
+
+
 def _question_stem(raw: Dict[str, Any]) -> str:
     for key in QUESTION_KEYS:
         value = raw.get(key)
@@ -1114,25 +1135,10 @@ class MaterialService:
         parsed = json.loads(cleaned)
         raw_questions = parsed.get("questions") or []
 
-        shared_passage = (stimulus or "").strip()
-        passage_shown = False
-
-        out: List[QuizQuestion] = []
+        usable: List[Dict[str, Any]] = []
         for raw in raw_questions:
             if not isinstance(raw, dict):
                 continue
-            own_context = str(raw.get("context_text") or "").strip()
-            if not shared_passage:
-                raw["context_text"] = own_context or None
-            else:
-                if not own_context:
-                    own_context = shared_passage
-                    raw["context_text"] = shared_passage
-                if own_context == shared_passage:
-                    if passage_shown:
-                        raw["context_text"] = None
-                    else:
-                        passage_shown = True
             if not _question_stem(raw):
                 logger.warning(
                     "Dropping %s question — the model returned no question text (keys: %s)",
@@ -1140,6 +1146,12 @@ class MaterialService:
                     sorted(raw.keys()),
                 )
                 continue
+            usable.append(raw)
+
+        attach_shared_passage(usable, stimulus)
+
+        out: List[QuizQuestion] = []
+        for raw in usable:
             if raw.get("type") in ("multiple_choice", "multi_select_mc"):
                 deduped = _dedupe_preserve_order(raw.get("options") or [])
                 if len(deduped) < 2:

@@ -1,7 +1,7 @@
 import pytest
 
 from models.dtos.material_dtos import DocumentExercise
-from services.material_service import MaterialService
+from services.material_service import MaterialService, attach_shared_passage
 
 PASSAGE = "Charles Darwin sailed on the H.M.S. Beagle and studied finches."
 
@@ -44,40 +44,20 @@ def test_a_word_count_alone_no_longer_forces_a_passage():
     assert MaterialService._needs_stimulus(exercise) is False
 
 
-def _attach(raw_questions, stimulus):
-    """Mirror of the attachment rules applied in _generate_questions."""
-    shared = (stimulus or "").strip()
-    shown = False
-    for raw in raw_questions:
-        own = str(raw.get("context_text") or "").strip()
-        if not shared:
-            raw["context_text"] = own or None
-            continue
-        if not own:
-            own = shared
-            raw["context_text"] = shared
-        if own == shared:
-            if shown:
-                raw["context_text"] = None
-            else:
-                shown = True
-    return raw_questions
-
-
 def test_the_shared_passage_appears_under_the_first_question_only():
-    items = _attach([{}, {}, {}], PASSAGE)
+    items = attach_shared_passage([{}, {}, {}], PASSAGE)
     assert [item["context_text"] for item in items] == [PASSAGE, None, None]
 
 
 def test_a_repeated_copy_of_the_shared_passage_is_dropped():
-    items = _attach(
+    items = attach_shared_passage(
         [{"context_text": PASSAGE}, {"context_text": PASSAGE}], PASSAGE
     )
     assert [item["context_text"] for item in items] == [PASSAGE, None]
 
 
 def test_a_question_with_its_own_context_keeps_it():
-    items = _attach(
+    items = attach_shared_passage(
         [{}, {"context_text": "A different mini-context."}, {}], PASSAGE
     )
     assert items[0]["context_text"] == PASSAGE
@@ -86,5 +66,61 @@ def test_a_question_with_its_own_context_keeps_it():
 
 
 def test_without_a_stimulus_no_question_carries_a_passage():
-    items = _attach([{}, {"context_text": ""}, {"context_text": "   "}], None)
+    items = attach_shared_passage([{}, {"context_text": ""}, {"context_text": "   "}], None)
     assert [item["context_text"] for item in items] == [None, None, None]
+
+
+def test_a_dropped_first_question_does_not_take_the_passage_with_it():
+    """The stem check runs before attachment, so the passage lands on the
+    first question that actually survives."""
+    survivors = [{"type": "multiple_choice"}, {"type": "true_false"}]
+
+    attach_shared_passage(survivors, PASSAGE)
+
+    assert survivors[0]["context_text"] == PASSAGE
+    assert survivors[1]["context_text"] is None
+
+
+@pytest.mark.asyncio
+async def test_the_generator_drops_stemless_items_before_attaching_the_passage(
+    monkeypatch,
+):
+    service = MaterialService.__new__(MaterialService)
+    payload = {
+        "questions": [
+            {"type": "multiple_choice", "options": ["a", "b"], "correct_answer": "a"},
+            {
+                "type": "multiple_choice",
+                "question": "What drives the change?",
+                "options": ["Natural selection", "Genetic drift"],
+                "correct_answer": "Natural selection",
+            },
+            {
+                "type": "true_false",
+                "question": "Darwin sailed on the Beagle.",
+                "correct_answer": "true",
+            },
+        ]
+    }
+
+    class _Stub:
+        async def get_ai_response(self, **_kwargs):
+            import json
+
+            return json.dumps(payload)
+
+    service.ai_service = _Stub()
+    questions = await service._generate_questions(
+        exercise=DocumentExercise(type="reading_comprehension"),
+        stimulus=PASSAGE,
+        ui_lang="English",
+        target_language=None,
+        user_context=None,
+    )
+
+    assert [q.question for q in questions] == [
+        "What drives the change?",
+        "Darwin sailed on the Beagle.",
+    ]
+    assert questions[0].context_text == PASSAGE
+    assert questions[1].context_text is None
