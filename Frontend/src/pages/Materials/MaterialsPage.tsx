@@ -416,8 +416,12 @@ export const MaterialsPage: React.FC = () => {
                                  </div>
                              )}
 
-                             {
-}
+                             {q.question && (
+                                 <p className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-6">
+                                     {q.question}
+                                 </p>
+                             )}
+
                              <QuestionRenderer
                                  question={q}
                                  answer={userAnswers[idx]}
