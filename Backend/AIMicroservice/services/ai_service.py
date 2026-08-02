@@ -93,7 +93,7 @@ def _ai_cache_put(key: str, value: str) -> None:
     _ai_cache[key] = (time.time() + _AI_CACHE_TTL, value)
 
 
-VERTEX_CHAT_MODEL = os.getenv("VERTEX_CHAT_MODEL", "vertex_ai/gemini-3-pro-preview")
+VERTEX_CHAT_MODEL = os.getenv("VERTEX_CHAT_MODEL", "vertex_ai/gemini-3-flash-preview")
 
 
 PROVIDER_CONFIG: Dict[str, Dict[str, Any]] = {

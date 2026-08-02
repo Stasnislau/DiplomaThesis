@@ -50,7 +50,7 @@ GROQ_API_KEY=
 # override once the billing account is upgraded.
 VERTEX_AI_PROJECT_ID=eloquent-grail-501516-e7
 VERTEX_AI_LOCATION=us-central1
-VERTEX_CHAT_MODEL=vertex_ai/gemini-2.5-pro
+VERTEX_CHAT_MODEL=vertex_ai/gemini-3-flash-preview
 
 # ── Frontend ──────────────────────────────────────────────────────
 # Replace YOUR_SERVER_IP with the actual VM public IP (terraform output instance_ip)

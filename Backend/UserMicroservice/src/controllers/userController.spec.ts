@@ -176,21 +176,74 @@ describe("UserController", () => {
   });
 
   describe("Event Handlers", () => {
+    const ack = jest.fn();
+    const nack = jest.fn();
+    const message = { fields: { deliveryTag: 1 } };
+    const context = {
+      getChannelRef: () => ({ ack, nack }),
+      getMessage: () => message,
+    } as never;
+
+    beforeEach(() => {
+      ack.mockClear();
+      nack.mockClear();
+    });
+
     it("should handle user.created", async () => {
-      await controller.handleUserCreated(mockUser);
+      await controller.handleUserCreated(mockUser, context);
       expect(userService.createUser).toHaveBeenCalledWith(mockUser);
     });
 
     it("should handle user.updatedRole", async () => {
       const payload = { id: "user-123", role: "ADMIN" };
-      await controller.handleUserUpdatedRole(payload);
+      await controller.handleUserUpdatedRole(payload, context);
       expect(userService.updateUserRole).toHaveBeenCalledWith(payload);
     });
 
     it("should handle user.deleted", async () => {
       const payload = { id: "user-123" };
-      await controller.handleUserDeleted(payload);
+      await controller.handleUserDeleted(payload, context);
       expect(userService.deleteUser).toHaveBeenCalledWith(payload);
+    });
+
+    it("acknowledges the message only after the profile is written", async () => {
+      const order: string[] = [];
+      userService.createUser.mockImplementation(async () => {
+        order.push("createUser");
+        return undefined as never;
+      });
+      ack.mockImplementation(() => order.push("ack"));
+
+      await controller.handleUserCreated(mockUser, context);
+
+      expect(order).toEqual(["createUser", "ack"]);
+      expect(nack).not.toHaveBeenCalled();
+    });
+
+    it("drops the message without requeueing when the handler throws", async () => {
+      userService.deleteUser.mockRejectedValue(new Error("database is down"));
+
+      await controller.handleUserDeleted({ id: "user-123" }, context);
+
+      expect(ack).not.toHaveBeenCalled();
+      expect(nack).toHaveBeenCalledWith(message, false, false);
+    });
+
+    it("leaves the message unacknowledged while the handler is still running", async () => {
+      let release: () => void = () => undefined;
+      userService.updateUserRole.mockImplementation(
+        () => new Promise<never>((resolve) => (release = resolve as never)),
+      );
+
+      const pending = controller.handleUserUpdatedRole(
+        { id: "user-123", role: "ADMIN" },
+        context,
+      );
+      expect(ack).not.toHaveBeenCalled();
+
+      release();
+      await pending;
+      expect(ack).toHaveBeenCalledTimes(1);
     });
 
     it("should handle password.reset and forward to mailer with locale", async () => {
@@ -201,7 +254,7 @@ describe("UserController", () => {
         newPassword: "new-uuid-pass",
       };
 
-      await controller.handlePasswordReset(payload);
+      await controller.handlePasswordReset(payload, context);
 
       expect(userService.getUserLocale).toHaveBeenCalledWith("user-123");
       expect(mailerService.sendPasswordReset).toHaveBeenCalledWith(
@@ -219,7 +272,7 @@ describe("UserController", () => {
         newPassword: "another-pass",
       };
 
-      await controller.handlePasswordReset(payload);
+      await controller.handlePasswordReset(payload, context);
 
       expect(mailerService.sendPasswordReset).toHaveBeenCalledWith(
         "newbie@test.com",

@@ -3,6 +3,7 @@ import {
   Controller,
   ForbiddenException,
   Get,
+  Logger,
   Post,
   Put,
   Request,
@@ -12,7 +13,7 @@ import { Language, User } from "@prisma/client";
 
 import { AuthenticatedRequest } from "src/types/AuthenticatedRequest";
 import { BaseResponse } from "src/types/BaseResponse";
-import { EventPattern } from "@nestjs/microservices";
+import { Ctx, EventPattern, Payload, RmqContext } from "@nestjs/microservices";
 import { UserService } from "../services/userService";
 import { MailerService } from "../services/mailerService";
 import { Roles } from "../guards/roles.decorator";
@@ -20,6 +21,8 @@ import { RolesGuard } from "../guards/rolesGuard";
 
 @Controller("")
 export class UserController {
+  private readonly logger = new Logger(UserController.name);
+
   constructor(
     private userService: UserService,
     private mailerService: MailerService,
@@ -102,39 +105,75 @@ export class UserController {
     };
   }
 
+  private async settle(
+    pattern: string,
+    context: RmqContext,
+    handle: () => Promise<unknown>,
+  ): Promise<void> {
+    const channel = context.getChannelRef();
+    const message = context.getMessage();
+    try {
+      await handle();
+      channel.ack(message);
+    } catch (error) {
+      this.logger.error(
+        `handler for ${pattern} failed, dropping the message`,
+        error instanceof Error ? error.stack : String(error),
+      );
+      channel.nack(message, false, false);
+    }
+  }
+
   @EventPattern("user.created")
-  async handleUserCreated(userData: {
-    id: string;
-    email: string;
-    name: string;
-    surname: string;
-    role: string;
-    createdAt: Date;
-  }) {
-    await this.userService.createUser(userData);
+  async handleUserCreated(
+    @Payload()
+    userData: {
+      id: string;
+      email: string;
+      name: string;
+      surname: string;
+      role: string;
+      createdAt: Date;
+    },
+    @Ctx() context: RmqContext,
+  ) {
+    await this.settle("user.created", context, () =>
+      this.userService.createUser(userData),
+    );
   }
 
   @EventPattern("user.updatedRole")
-  async handleUserUpdatedRole(userData: { id: string; role: string }) {
-    await this.userService.updateUserRole(userData);
+  async handleUserUpdatedRole(
+    @Payload() userData: { id: string; role: string },
+    @Ctx() context: RmqContext,
+  ) {
+    await this.settle("user.updatedRole", context, () =>
+      this.userService.updateUserRole(userData),
+    );
   }
 
   @EventPattern("user.deleted")
-  async handleUserDeleted(userData: { id: string }) {
-    await this.userService.deleteUser(userData);
+  async handleUserDeleted(
+    @Payload() userData: { id: string },
+    @Ctx() context: RmqContext,
+  ) {
+    await this.settle("user.deleted", context, () =>
+      this.userService.deleteUser(userData),
+    );
   }
 
   @EventPattern("password.reset")
-  async handlePasswordReset(payload: {
-    id: string;
-    email: string;
-    newPassword: string;
-  }) {
-    const locale = await this.userService.getUserLocale(payload.id);
-    await this.mailerService.sendPasswordReset(
-      payload.email,
-      payload.newPassword,
-      locale,
-    );
+  async handlePasswordReset(
+    @Payload() payload: { id: string; email: string; newPassword: string },
+    @Ctx() context: RmqContext,
+  ) {
+    await this.settle("password.reset", context, async () => {
+      const locale = await this.userService.getUserLocale(payload.id);
+      await this.mailerService.sendPasswordReset(
+        payload.email,
+        payload.newPassword,
+        locale,
+      );
+    });
   }
 }

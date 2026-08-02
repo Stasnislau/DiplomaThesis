@@ -492,7 +492,7 @@ const en = {
       billingNotice:
         "⚠️ Heads-up: every action that calls the AI (generating tasks, evaluating answers, speaking analysis, listening transcripts) is billed against the API key you provide. We don't add any markup, but you do pay the provider directly.",
       securityNotice:
-        "🛡️ However, in the era of Claude Mythos every server can be hacked, so we suggest constraining the budget assigned to the API key on the provider's side (most providers expose a hard monthly cap or per-key spend limit).",
+        "🛡️ Any server can be compromised, so we suggest setting a spend limit on the API key at the provider (most providers expose a hard monthly cap or a per-key limit).",
       whereToGetKey: "Where to get a key",
       privacyNote:
         "Your keys are stored only in your account on this server and are never shared with anyone else.",
@@ -1581,7 +1581,7 @@ const pl = {
       billingNotice:
         "⚠️ Uwaga: każda akcja korzystająca z AI (generowanie zadań, ocena odpowiedzi, analiza mówienia, transkrypcja słuchania) jest rozliczana z Twojego klucza API. Nie pobieramy żadnej prowizji — płacisz dostawcy bezpośrednio.",
       securityNotice:
-        "🛡️ Pamiętaj jednak, że w erze Mitologii Claude'a każdy serwer można zhakować — zalecamy ustawić limit budżetu dla klucza API po stronie dostawcy (większość udostępnia twardy miesięczny cap albo per-key spend limit).",
+        "🛡️ Każdy serwer można naruszyć, dlatego zalecamy ustawić limit wydatków dla klucza API po stronie dostawcy (większość udostępnia twardy miesięczny limit albo limit na klucz).",
       whereToGetKey: "Gdzie zdobyć klucz",
       privacyNote:
         "Twoje klucze są przechowywane wyłącznie w Twoim koncie na tym serwerze i nie są nikomu udostępniane.",
@@ -2436,7 +2436,7 @@ const es = {
       billingNotice:
         "⚠️ Aviso: cada acción que utilice la IA (generar tareas, evaluar respuestas, análisis del habla, transcripción de escucha) se facturará a la clave API que proporciones. No añadimos ningún margen — pagas directamente al proveedor.",
       securityNotice:
-        "🛡️ Sin embargo, en la era del Mito de Claude cualquier servidor puede ser hackeado, así que recomendamos limitar el presupuesto asignado a la clave API en el panel del proveedor (la mayoría exponen un tope mensual estricto o un límite de gasto por clave).",
+        "🛡️ Cualquier servidor puede verse comprometido, así que recomendamos fijar un límite de gasto para la clave API en el panel del proveedor (la mayoría ofrece un tope mensual o un límite por clave).",
       whereToGetKey: "Dónde obtener una clave",
       privacyNote:
         "Tus claves se almacenan solo en tu cuenta de este servidor y nunca se comparten con nadie.",

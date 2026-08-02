@@ -28,8 +28,9 @@ async function bootstrap() {
       urls: [configService.get<string>("rabbitmq.url")],
       queue: configService.get<string>("rabbitmq.queue"),
       queueOptions: {
-        durable: false,
+        durable: true,
       },
+      noAck: false,
     },
   });
   await app.startAllMicroservices();

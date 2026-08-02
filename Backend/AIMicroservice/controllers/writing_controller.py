@@ -142,7 +142,14 @@ class WritingController:
             history = await self.user_service.get_recent_history(
                 user_context, limit=20
             )
-            focus = WritingTaskService.derive_adaptive_focus(history)
+            from utils.language_codes import to_iso_language
+            recurring = []
+            language_code = to_iso_language(body.language)
+            if language_code:
+                recurring = await self.user_service.get_recurring_errors(
+                    user_context, language_code
+                )
+            focus = WritingTaskService.derive_adaptive_focus(history, recurring)
             topic: Optional[str] = focus["topic"]
             keywords: list[str] = focus["keywords"]
             weaknesses: list[str] = focus["weaknesses"]
@@ -269,7 +276,14 @@ class WritingController:
             history = await self.user_service.get_recent_history(
                 user_context, limit=20
             )
-            focus = WritingTaskService.derive_adaptive_focus(history)
+            from utils.language_codes import to_iso_language
+            recurring = []
+            language_code = to_iso_language(body.language)
+            if language_code:
+                recurring = await self.user_service.get_recurring_errors(
+                    user_context, language_code
+                )
+            focus = WritingTaskService.derive_adaptive_focus(history, recurring)
 
             question = await material_service.generate_standalone_task(
                 task_type=body.taskType,

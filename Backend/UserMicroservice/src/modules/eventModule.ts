@@ -14,8 +14,9 @@ import { ConfigService, ConfigModule } from "@nestjs/config";
             urls: [configService.get<string>("rabbitmq.url")],
             queue: configService.get<string>("rabbitmq.queue"),
             queueOptions: {
-              durable: false,
+              durable: true,
             },
+            persistent: true,
           },
         }),
         inject: [ConfigService],

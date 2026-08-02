@@ -274,6 +274,38 @@ class UserService:
             return []
         return payload
 
+    async def get_recurring_errors(
+        self, ctx: UserContext, language_code: str
+    ) -> List[Dict[str, Any]]:
+        """Pull the log of errors this learner keeps repeating (FR6).
+
+        Every graded speaking answer writes its faults here, and the User
+        service counts how often each one returns. The rows come back
+        ordered by that count, so the caller can take the worst few and
+        aim the next generated task at them.
+
+        Returns [] on any failure, for the same reason as the history
+        above: a generated task must still arrive when the log is
+        unreachable.
+        """
+        try:
+            headers = ctx.to_forward_headers()
+            headers["x-internal-service-key"] = _internal_key()
+            data = await self._get(
+                f"/user-errors?languageCode={language_code}", headers
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("get_recurring_errors failed: %s", exc)
+            return []
+
+        if not isinstance(data, dict) or not data.get("success"):
+            return []
+
+        payload = data.get("payload", [])
+        if not isinstance(payload, list):
+            return []
+        return payload
+
     async def get_default_ai_token(
         self, ctx: UserContext, ai_provider_id: Optional[str] = None
     ) -> UserAIToken:

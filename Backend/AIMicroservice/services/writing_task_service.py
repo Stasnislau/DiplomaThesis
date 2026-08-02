@@ -286,13 +286,22 @@ class WritingTaskService:
     @staticmethod
     def derive_adaptive_focus(
         history_entries: list[Dict[str, Any]],
+        recurring_errors: Optional[list[Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
         """Extract a (topic, keywords, weaknesses) focus from the user's
         recent history rows. Used by the /writing/adaptive endpoint to
         bias the next generated task toward what the user is actually
         struggling with.
 
+        Two sources feed it. `history_entries` carries what the learner
+        has just done, and `recurring_errors` carries the log of faults
+        that keep coming back (FR6), already ordered by how often each
+        one returned. The log speaks first, because an error seen nine
+        times matters more than one low score last Tuesday.
+
         Heuristics:
+          - Recurring errors contribute their correction as a weakness
+            and their text as a keyword, worst first.
           - Placement entries contribute their stored `weaknesses` claim
             from metadata (the AI's structured assessment).
           - Speaking entries with `errorCount >= 3` contribute the most
@@ -310,6 +319,20 @@ class WritingTaskService:
         weaknesses: list[str] = []
         keywords: list[str] = []
         topics: list[str] = []
+
+        for row in (recurring_errors or [])[:3]:
+            if not isinstance(row, dict):
+                continue
+            correction = row.get("correction")
+            if isinstance(correction, str) and correction.strip():
+                weaknesses.append(correction.strip())
+            error_type = row.get("errorType")
+            if isinstance(error_type, str) and error_type.strip():
+                weaknesses.append(error_type.strip())
+            text = row.get("errorText")
+            if isinstance(text, str) and text.strip():
+                keywords.append(text.strip())
+
         for entry in history_entries:
             meta = entry.get("metadata") or {}
             ttype = entry.get("taskType")
