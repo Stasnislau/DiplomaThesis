@@ -1,5 +1,5 @@
 from typing import List, Union, Any, Dict, Optional, Annotated, Literal
-from pydantic import BaseModel, Field, ConfigDict, TypeAdapter
+from pydantic import BaseModel, Field, ConfigDict, TypeAdapter, field_validator
 
 
 class ChunkMetadata(BaseModel):
@@ -29,6 +29,20 @@ class DocumentExercise(BaseModel):
     question_subtypes: List[str] = Field(default_factory=list)
     grammar_focus: List[str] = Field(default_factory=list)
     example: str = ""
+
+    @field_validator("question_subtypes", "grammar_focus", mode="before")
+    @classmethod
+    def _coerce_to_list(cls, value: Any) -> List[str]:
+        if value is None:
+            return []
+        if isinstance(value, str):
+            text = value.strip()
+            if text.lower() in {"", "null", "none", "n/a", "-"}:
+                return []
+            return [text]
+        if isinstance(value, (list, tuple)):
+            return [str(item).strip() for item in value if str(item).strip()]
+        return []
 
 
 class DocumentMap(BaseModel):
