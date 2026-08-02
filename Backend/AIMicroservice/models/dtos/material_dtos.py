@@ -1,5 +1,12 @@
 from typing import List, Union, Any, Dict, Optional, Annotated, Literal
-from pydantic import BaseModel, Field, ConfigDict, TypeAdapter, field_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    ConfigDict,
+    TypeAdapter,
+    field_validator,
+    model_validator,
+)
 
 
 class ChunkMetadata(BaseModel):
@@ -64,11 +71,38 @@ class ProcessPdfResponse(BaseModel):
     document_map: Optional[DocumentMap] = None
 
 
+QUESTION_KEYS = (
+    "question",
+    "question_text",
+    "prompt",
+    "stem",
+    "instruction",
+    "text",
+    "title",
+)
+
+
 class _QuestionBase(BaseModel):
     question: str
     context_text: Optional[str] = None
 
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _recover_question(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        for key in QUESTION_KEYS:
+            value = data.get(key)
+            if isinstance(value, (list, tuple)):
+                value = " ".join(str(part) for part in value)
+            text = str(value or "").strip()
+            if text and text.lower() not in {"null", "none", "n/a", "-"}:
+                data["question"] = text
+                return data
+        data["question"] = ""
+        return data
 
 
 class MultipleChoiceQuizQuestion(_QuestionBase):

@@ -188,8 +188,8 @@ async def test_full_pipeline_on_synthetic_toefl_pdf(
     assert isinstance(qs[2], MultiSelectMCQuizQuestion)
     assert isinstance(qs[3], MatchingQuizQuestion)
     assert isinstance(qs[4], FillInTheBlankQuizQuestion)
-    for q in qs:
-        assert q.context_text == stage_2_passage
+    assert qs[0].context_text == stage_2_passage
+    assert all(q.context_text is None for q in qs[1:])
 
 
 @pytest.mark.asyncio

@@ -23,7 +23,19 @@ from models.dtos.material_dtos import (
     DocumentMap,
     DocumentExercise,
     QuestionTypeExample,
+    QUESTION_KEYS,
 )
+
+
+def _question_stem(raw: Dict[str, Any]) -> str:
+    for key in QUESTION_KEYS:
+        value = raw.get(key)
+        if isinstance(value, (list, tuple)):
+            value = " ".join(str(part) for part in value)
+        text = str(value or "").strip()
+        if text and text.lower() not in {"null", "none", "n/a", "-"}:
+            return text
+    return ""
 
 
 _DEFAULT_PASSAGE_WORDS = 350
@@ -784,10 +796,7 @@ class MaterialService:
 
     @staticmethod
     def _needs_stimulus(exercise: DocumentExercise) -> bool:
-        if exercise.type.strip().lower() in _STIMULUS_BEARING_TYPES:
-            return True
-        wc = exercise.passage_word_count_estimate
-        return isinstance(wc, int) and wc >= _MIN_PASSAGE_WORDS
+        return exercise.type.strip().lower() in _STIMULUS_BEARING_TYPES
 
     @staticmethod
     def _clamp_word_count(estimate: Optional[int]) -> int:
@@ -1088,12 +1097,32 @@ class MaterialService:
         parsed = json.loads(cleaned)
         raw_questions = parsed.get("questions") or []
 
+        shared_passage = (stimulus or "").strip()
+        passage_shown = False
+
         out: List[QuizQuestion] = []
         for raw in raw_questions:
             if not isinstance(raw, dict):
                 continue
-            if stimulus and not raw.get("context_text"):
-                raw["context_text"] = stimulus
+            own_context = str(raw.get("context_text") or "").strip()
+            if not shared_passage:
+                raw["context_text"] = own_context or None
+            else:
+                if not own_context:
+                    own_context = shared_passage
+                    raw["context_text"] = shared_passage
+                if own_context == shared_passage:
+                    if passage_shown:
+                        raw["context_text"] = None
+                    else:
+                        passage_shown = True
+            if not _question_stem(raw):
+                logger.warning(
+                    "Dropping %s question — the model returned no question text (keys: %s)",
+                    raw.get("type"),
+                    sorted(raw.keys()),
+                )
+                continue
             if raw.get("type") in ("multiple_choice", "multi_select_mc"):
                 deduped = _dedupe_preserve_order(raw.get("options") or [])
                 if len(deduped) < 2:
