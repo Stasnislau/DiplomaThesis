@@ -27,6 +27,23 @@ from models.dtos.material_dtos import (
 )
 
 
+def _document_map_from(parsed: Dict[str, Any]) -> DocumentMap:
+    kept: List[DocumentExercise] = []
+    for index, raw in enumerate(parsed.get("exercises") or []):
+        if not isinstance(raw, dict):
+            continue
+        try:
+            kept.append(DocumentExercise.model_validate(raw))
+        except Exception as exc:  # noqa: BLE001
+            logger.warning(
+                "Skipping exercise %d of the document map: %s", index, exc
+            )
+    return DocumentMap(
+        document_kind=str(parsed.get("document_kind") or "Mixed"),
+        exercises=kept,
+    )
+
+
 def _question_stem(raw: Dict[str, Any]) -> str:
     for key in QUESTION_KEYS:
         value = raw.get(key)
@@ -614,7 +631,7 @@ class MaterialService:
                 cleaned = cleaned.strip("`").lstrip("json").strip()
             parsed = json.loads(cleaned)
             if isinstance(parsed, dict) and "exercises" in parsed:
-                return DocumentMap.model_validate(parsed)
+                return _document_map_from(parsed)
         except Exception as e:
             logger.warning("Re-classification JSON parse failed: %s", e)
         return None

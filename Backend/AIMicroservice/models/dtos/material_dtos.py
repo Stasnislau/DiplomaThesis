@@ -28,7 +28,7 @@ class DocumentExercise(BaseModel):
     may not always estimate every field.
     """
 
-    type: str
+    type: str = ""
     passage_word_count_estimate: Optional[int] = None
     passage_topic_hint: Optional[str] = None
     passage_excerpt_for_style: Optional[str] = None
@@ -36,6 +36,23 @@ class DocumentExercise(BaseModel):
     question_subtypes: List[str] = Field(default_factory=list)
     grammar_focus: List[str] = Field(default_factory=list)
     example: str = ""
+
+    @model_validator(mode="before")
+    @classmethod
+    def _recover_type(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        for key in ("type", "exercise_type", "task_type", "kind"):
+            text = str(data.get(key) or "").strip()
+            if text and text.lower() not in {"null", "none", "n/a", "-"}:
+                data["type"] = text
+                return data
+        word_count = data.get("passage_word_count_estimate")
+        if isinstance(word_count, int) and word_count > 0:
+            data["type"] = "reading_comprehension"
+        else:
+            data["type"] = ""
+        return data
 
     @field_validator("question_subtypes", "grammar_focus", mode="before")
     @classmethod
