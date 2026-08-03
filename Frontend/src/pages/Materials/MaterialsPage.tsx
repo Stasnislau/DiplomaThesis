@@ -258,7 +258,7 @@ export const MaterialsPage: React.FC = () => {
                                         </div>
                                     </div>
                                     <div className="text-indigo-600 font-medium text-sm">
-                                        Open →
+                                        {t("materialsPage.openMaterial", { defaultValue: "Open" })} →
                                     </div>
                                 </CardContent>
                             </Card>
@@ -434,7 +434,7 @@ export const MaterialsPage: React.FC = () => {
 
                              {isSubmitted && isCorrect === false && (
                                  <div className="mt-4 p-3 bg-red-50 text-red-800 rounded-lg border border-red-100">
-                                     <strong>{t("tasks.correctAnswer", { defaultValue: "Correct answer:" })}</strong>{" "}
+                                     <strong>{t("materialsPage.correctAnswer", { defaultValue: "Correct answer:" })}</strong>{" "}
                                      {summariseCorrectAnswer(q)}
                                  </div>
                              )}

@@ -124,3 +124,53 @@ async def test_the_generator_drops_stemless_items_before_attaching_the_passage(
     ]
     assert questions[0].context_text == PASSAGE
     assert questions[1].context_text is None
+
+
+@pytest.mark.asyncio
+async def test_a_question_dropped_by_option_dedupe_does_not_take_the_passage(
+    monkeypatch,
+):
+    service = MaterialService.__new__(MaterialService)
+    payload = {
+        "questions": [
+            {
+                "type": "multiple_choice",
+                "question": "Which one is correct?",
+                "options": ["Natural selection", " natural selection "],
+                "correct_answer": "Natural selection",
+            },
+            {
+                "type": "multiple_choice",
+                "question": "What did Darwin study on the Galapagos?",
+                "options": ["Finches", "Whales"],
+                "correct_answer": "Finches",
+            },
+            {
+                "type": "true_false",
+                "question": "Darwin sailed on the Beagle.",
+                "correct_answer": "true",
+            },
+        ]
+    }
+
+    class _Stub:
+        async def get_ai_response(self, **_kwargs):
+            import json
+
+            return json.dumps(payload)
+
+    service.ai_service = _Stub()
+    questions = await service._generate_questions(
+        exercise=DocumentExercise(type="reading_comprehension"),
+        stimulus=PASSAGE,
+        ui_lang="English",
+        target_language=None,
+        user_context=None,
+    )
+
+    assert [q.question for q in questions] == [
+        "What did Darwin study on the Galapagos?",
+        "Darwin sailed on the Beagle.",
+    ]
+    assert questions[0].context_text == PASSAGE
+    assert questions[1].context_text is None

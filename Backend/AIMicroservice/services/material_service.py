@@ -44,22 +44,33 @@ def _document_map_from(parsed: Dict[str, Any]) -> DocumentMap:
     )
 
 
-def attach_shared_passage(
-    questions: List[Dict[str, Any]], stimulus: Optional[str]
-) -> List[Dict[str, Any]]:
+def _read_context(item: Any) -> Optional[str]:
+    if isinstance(item, dict):
+        return item.get("context_text")
+    return getattr(item, "context_text", None)
+
+
+def _write_context(item: Any, value: Optional[str]) -> None:
+    if isinstance(item, dict):
+        item["context_text"] = value
+    else:
+        setattr(item, "context_text", value)
+
+
+def attach_shared_passage(questions: List[Any], stimulus: Optional[str]) -> List[Any]:
     shared = (stimulus or "").strip()
     shown = False
-    for raw in questions:
-        own = str(raw.get("context_text") or "").strip()
+    for item in questions:
+        own = str(_read_context(item) or "").strip()
         if not shared:
-            raw["context_text"] = own or None
+            _write_context(item, own or None)
             continue
         if not own:
             own = shared
-            raw["context_text"] = shared
+            _write_context(item, shared)
         if own == shared:
             if shown:
-                raw["context_text"] = None
+                _write_context(item, None)
             else:
                 shown = True
     return questions
@@ -1148,8 +1159,6 @@ class MaterialService:
                 continue
             usable.append(raw)
 
-        attach_shared_passage(usable, stimulus)
-
         out: List[QuizQuestion] = []
         for raw in usable:
             if raw.get("type") in ("multiple_choice", "multi_select_mc"):
@@ -1191,4 +1200,6 @@ class MaterialService:
                     item_err,
                 )
                 continue
+
+        attach_shared_passage(out, stimulus)
         return out
