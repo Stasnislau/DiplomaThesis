@@ -18,6 +18,7 @@ from models.dtos.material_dtos import (
     MultiSelectMCQuizQuestion,
     MatchingQuizQuestion,
     ClozePassageQuizQuestion,
+    OpenQuizQuestion,
     FillInTheBlankQuizQuestion,
 )
 from models.dtos.vector_db_dtos import MaterialChunk
@@ -167,6 +168,26 @@ async def test_full_pipeline_on_synthetic_toefl_pdf(
                     "correct_answer": ["field"],
                     "context_text": stage_2_passage,
                 },
+                {
+                    "type": "cloze_passage",
+                    "question": "Fill each blank in the passage below.",
+                    "passage_with_blanks": (
+                        "Birds read {{1}} light on overcast mornings and the {{2}} "
+                        "of the stars at night."
+                    ),
+                    "blanks": [
+                        {"id": "1", "correct_answer": "polarised"},
+                        {"id": "2", "correct_answer": "rotation"},
+                    ],
+                    "context_text": None,
+                },
+                {
+                    "type": "open",
+                    "question": "Explain why an internal compass helps a bird under an overcast sky.",
+                    "options": [],
+                    "correct_answer": "The magnetic sense works without sunlight or stars.",
+                    "context_text": stage_2_passage,
+                },
             ]
         }
     )
@@ -182,12 +203,14 @@ async def test_full_pipeline_on_synthetic_toefl_pdf(
     assert isinstance(quiz_result, GenerateQuizResponse)
     assert isinstance(quiz_result.quiz, QuizContent)
     qs = quiz_result.quiz.questions
-    assert len(qs) == 5
+    assert len(qs) == 7
     assert isinstance(qs[0], MultipleChoiceQuizQuestion)
     assert isinstance(qs[1], TrueFalseQuizQuestion)
     assert isinstance(qs[2], MultiSelectMCQuizQuestion)
     assert isinstance(qs[3], MatchingQuizQuestion)
     assert isinstance(qs[4], FillInTheBlankQuizQuestion)
+    assert isinstance(qs[5], ClozePassageQuizQuestion)
+    assert isinstance(qs[6], OpenQuizQuestion)
     assert qs[0].context_text == stage_2_passage
     assert all(q.context_text is None for q in qs[1:])
 
