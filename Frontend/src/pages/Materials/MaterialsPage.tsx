@@ -175,7 +175,7 @@ export const MaterialsPage: React.FC = () => {
                 {view === "upload" && (
                   <Card>
                     <CardHeader>
-                      <CardTitle>Upload Material (PDF)</CardTitle>
+                      <CardTitle>{t("materialsPage.uploadMaterial", { defaultValue: "Upload Material (PDF)" })}</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-12 bg-gray-50 hover:bg-gray-100 transition-colors">
