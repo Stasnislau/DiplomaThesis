@@ -270,11 +270,7 @@ describe("smoke: type modules import cleanly", () => {
 
 describe("smoke: app shell builds", () => {
   it("router config imports without errors", async () => {
-    await expect(
-      waitFor(async () => {
-        const mod = await import("@/router");
-        expect(mod.router).toBeDefined();
-      }),
-    ).resolves.not.toThrow();
+    const mod = await import("@/router");
+    expect(mod.router).toBeDefined();
   });
 });

@@ -16,9 +16,9 @@ variable "zone" {
 }
 
 variable "machine_type" {
-  description = "VM machine type"
+  description = "VM machine type. The stack needs 8 GB, so e2-medium (4 GB) is not enough."
   type        = string
-  default     = "e2-medium"
+  default     = "e2-standard-2"
 }
 
 variable "ssh_public_key_path" {

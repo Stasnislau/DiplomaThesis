@@ -84,8 +84,9 @@ test.describe("Routes for a signed-in learner", () => {
     await page.waitForURL("**/history**", { timeout: 15000 });
 
     await page.goBack();
+    await page.waitForURL("**/profile**", { timeout: 15000 });
 
-    await expect(page).toHaveURL(/\/profile/, { timeout: 15000 });
+    await expect(page).toHaveURL(/\/profile/);
   });
 
   test("renders a page after a hard reload of a deep route", async ({

@@ -41,8 +41,19 @@ def mock_ai_service() -> MagicMock:
 
 
 @pytest.fixture
-def speaking_service(mock_ai_service: MagicMock) -> SpeakingService:
-    return SpeakingService(mock_ai_service)
+def mock_image_service() -> MagicMock:
+    """Keep the suite offline: the real ImageService reaches Vertex AI."""
+    svc = MagicMock()
+    svc.enabled = False
+    svc.generate = AsyncMock(return_value=None)
+    return svc
+
+
+@pytest.fixture
+def speaking_service(
+    mock_ai_service: MagicMock, mock_image_service: MagicMock
+) -> SpeakingService:
+    return SpeakingService(mock_ai_service, image_service=mock_image_service)
 
 
 def test_is_known_format() -> None:
