@@ -228,22 +228,19 @@ def test_protected_endpoint_rejects_forged_user_id(smoke_client: TestClient) -> 
 
 
 def _minimal_pdf_bytes() -> bytes:
-    """Real PDF the parser will accept. We use reportlab if available
-    so process_pdf's pypdf reader sees a clean text page."""
-    try:
-        from reportlab.pdfgen import canvas
-        from reportlab.lib.pagesizes import letter
+    """Real PDF the parser will accept, so process_pdf's pypdf reader
+    sees a clean text page."""
+    from reportlab.pdfgen import canvas
+    from reportlab.lib.pagesizes import letter
 
-        buf = io.BytesIO()
-        c = canvas.Canvas(buf, pagesize=letter)
-        c.drawString(100, 720, "Smoke test reading passage.")
-        c.drawString(100, 700, "This passage is for an integration smoke test.")
-        c.drawString(100, 680, "It contains plain English sentences only.")
-        c.showPage()
-        c.save()
-        return buf.getvalue()
-    except ImportError:
-        return b"%PDF-1.4\n%EOF\n"
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=letter)
+    c.drawString(100, 720, "Smoke test reading passage.")
+    c.drawString(100, 700, "This passage is for an integration smoke test.")
+    c.drawString(100, 680, "It contains plain English sentences only.")
+    c.showPage()
+    c.save()
+    return buf.getvalue()
 
 
 def test_phase1_upload_returns_document_map(smoke_client: TestClient) -> None:
@@ -255,8 +252,6 @@ def test_phase1_upload_returns_document_map(smoke_client: TestClient) -> None:
       - DocumentMap parsing,
       - BaseResponse wrapping."""
     pdf = _minimal_pdf_bytes()
-    if pdf == b"%PDF-1.4\n%EOF\n":
-        pytest.skip("reportlab missing — can't synthesise a real PDF")
 
     r = smoke_client.post(
         "/api/materials/upload",

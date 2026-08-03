@@ -29,10 +29,13 @@ class UserContext:
     ui_locale: str = "en"
 
     def to_forward_headers(self) -> Dict[str, str]:
-        """Headers we forward to the User microservice so it can authorize/identify the user."""
+        """Identity the User microservice needs on an internal call.
+
+        The learner's own bearer token stays here: User resolves the caller
+        from these headers once the shared service key has opened the route,
+        so forwarding the token would spread a credential no one reads.
+        """
         headers: Dict[str, str] = {}
-        if self.authorization:
-            headers["authorization"] = self.authorization
         if self.user_id:
             headers["x-user-id"] = self.user_id
         if self.user_email:

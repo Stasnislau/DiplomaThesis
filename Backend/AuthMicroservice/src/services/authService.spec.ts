@@ -343,7 +343,7 @@ describe("AuthService", () => {
         },
         expect.objectContaining({
           secret: expect.any(String),
-          expiresIn: expect.any(String),
+          expiresIn: "1h",
         }),
       );
     });
@@ -366,7 +366,7 @@ describe("AuthService", () => {
         }),
         expect.objectContaining({
           secret: expect.any(String),
-          expiresIn: expect.any(String),
+          expiresIn: "7d",
         }),
       );
       expect(prismaService.refreshToken.create).toHaveBeenCalledWith({

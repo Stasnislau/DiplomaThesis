@@ -26,7 +26,7 @@ test.describe("Placement Test Userflow", () => {
     });
   });
 
-  test.skip("completes placement test using mocked AI responses", async ({
+  test("completes placement test using mocked AI responses", async ({
     page,
   }) => {
     await page.route("**/api/gateway/ai/placement/task", async (route) => {
@@ -70,27 +70,20 @@ test.describe("Placement Test Userflow", () => {
       });
     });
 
-    await page.goto("/placement");
-
-    await page.click('img[alt="Polish"]');
-    await page.click('button:has-text("Start Test")');
+    await page.goto("/placement/test/pl");
 
     await expect(
-      page.locator(
-        `text=${PLACEMENT_MOCK_POLISH_A1.question.replace("_______", "")}`,
-      ),
+      page.getByRole("heading", { name: /Placement Test: Polish/ }),
     ).toBeVisible();
+    await expect(page.locator("text=Question 1 of 15")).toBeVisible();
 
     await page.click(
       `button:has-text("${PLACEMENT_MOCK_POLISH_A1.correctAnswer[0]}")`,
     );
 
-    await page.click('button:has-text("Check Answer")');
+    await page.click('button:has-text("Submit")');
 
-    await expect(page.locator("text=Excellent!")).toBeVisible();
-
-    await page.click('button:has-text("Continue")');
-
-    await expect(page.locator("text=A1")).toBeVisible();
+    await expect(page.locator("text=Question 2 of 15")).toBeVisible();
+    await expect(page.locator('button:has-text("Submit")')).toBeDisabled();
   });
 });
