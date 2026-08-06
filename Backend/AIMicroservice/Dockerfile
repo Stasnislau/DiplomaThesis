@@ -22,7 +22,7 @@
 #    instant.
 
 # ── Stage 1: dependency layer ──────────────────────────────────────
-FROM python:3.11-slim AS deps
+FROM python:3.14-slim AS deps
 
 WORKDIR /app
 
