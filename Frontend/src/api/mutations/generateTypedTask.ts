@@ -10,7 +10,8 @@ export type TypedTaskType =
   | "multi_select_mc"
   | "matching"
   | "cloze_passage"
-  | "open";
+  | "open"
+  | "reading_comprehension";
 
 interface TypedTaskRequest {
   language: string;

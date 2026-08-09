@@ -82,7 +82,6 @@ def post_live(
 @pytest.fixture(autouse=True)
 def _env_and_throttle(monkeypatch: pytest.MonkeyPatch) -> None:
     assert GROQ_KEY, "GROQ_API_KEY must be set: these tests call a real provider"
-    monkeypatch.setenv("JWT_SECRET", _TEST_JWT_SECRET)
     monkeypatch.setenv("PUBLIC_BASE_URL", "http://e2e.test")
     time.sleep(RATE_LIMIT_PAUSE)
 

@@ -140,7 +140,6 @@ services:
     environment:
       USER_MICROSERVICE_URL: http://user:3004/api
       INTERNAL_SERVICE_KEY: ${INTERNAL_SERVICE_KEY:?INTERNAL_SERVICE_KEY must be set}
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set (same as Auth)}
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-12345}@postgres-ai:5432/aidb
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}

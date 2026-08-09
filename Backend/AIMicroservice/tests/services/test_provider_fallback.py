@@ -144,3 +144,95 @@ class TestTranscriptionWiring:
         await speaking._transcribe_audio_with_whisper(b"audio", "a.webm", "en", LEARNER)
 
         assert seen["auth"] == "Bearer learner-key"
+
+
+class _Reply:
+    """Minimal stand-in for a litellm completion response."""
+
+    def __init__(self, content: str) -> None:
+        self.choices = [type("C", (), {"message": type("M", (), {"content": content})()})()]
+
+
+async def _no_sleep(_seconds):
+    return None
+
+
+class TestProviderFailover:
+    """UC7 alternative flow 3a: the provider a learner selected fails for its
+    whole retry budget, and the request runs once more on the system default.
+    Before this, a learner with a broken Groq key met a 504 and no task."""
+
+    @pytest.mark.asyncio
+    async def test_falls_back_to_the_default_when_the_learner_provider_fails(
+        self, ai, monkeypatch
+    ):
+        import services.ai_service as module
+        from litellm.exceptions import Timeout
+
+        ai.user_service.get_default_ai_token.return_value = {
+            "aiProviderId": "groq",
+            "token": "learner-key",
+        }
+        monkeypatch.setattr(module.asyncio, "sleep", _no_sleep)
+        seen = []
+
+        async def flaky(**kwargs):
+            seen.append(kwargs["model"])
+            if kwargs["model"].startswith("groq/"):
+                raise Timeout("upstream timed out", "groq", "groq")
+            return _Reply("from the default")
+
+        monkeypatch.setattr(module, "acompletion", flaky)
+
+        out = await ai.get_ai_response("prompt", user_context=LEARNER)
+
+        assert out == "from the default"
+        assert seen.count("groq/llama-3.3-70b-versatile") == 3, "retry budget unused"
+        assert seen[-1] == module.PROVIDER_CONFIG["google-geminis"]["model"]
+
+    @pytest.mark.asyncio
+    async def test_a_call_already_on_the_default_is_not_retried_twice(
+        self, ai, monkeypatch
+    ):
+        import services.ai_service as module
+        from litellm.exceptions import Timeout
+
+        ai.user_service.get_default_ai_token.return_value = {
+            "aiProviderId": "google-geminis",
+            "token": None,
+        }
+        monkeypatch.setattr(module.asyncio, "sleep", _no_sleep)
+        calls = []
+
+        async def always_times_out(**kwargs):
+            calls.append(kwargs["model"])
+            raise Timeout("upstream timed out", "vertex_ai", "vertex_ai")
+
+        monkeypatch.setattr(module, "acompletion", always_times_out)
+
+        with pytest.raises(HTTPException) as exc_info:
+            await ai.get_ai_response("prompt", user_context=LEARNER)
+
+        assert exc_info.value.status_code == 504
+        assert len(calls) == 3, "the default must not run a second budget"
+
+    @pytest.mark.asyncio
+    async def test_a_failing_fallback_still_surfaces_the_error(self, ai, monkeypatch):
+        import services.ai_service as module
+        from litellm.exceptions import Timeout
+
+        ai.user_service.get_default_ai_token.return_value = {
+            "aiProviderId": "groq",
+            "token": "learner-key",
+        }
+        monkeypatch.setattr(module.asyncio, "sleep", _no_sleep)
+
+        async def always_times_out(**kwargs):
+            raise Timeout("upstream timed out", "any", "any")
+
+        monkeypatch.setattr(module, "acompletion", always_times_out)
+
+        with pytest.raises(HTTPException) as exc_info:
+            await ai.get_ai_response("prompt", user_context=LEARNER)
+
+        assert exc_info.value.status_code == 504

@@ -95,9 +95,13 @@ def _ai_cache_put(key: str, value: str) -> None:
 
 VERTEX_CHAT_MODEL = os.getenv("VERTEX_CHAT_MODEL", "vertex_ai/gemini-3-flash-preview")
 
+# The provider a request falls back to when the one the learner selected fails
+# for its whole retry budget (UC7 alternative flow 3a).
+_DEFAULT_PROVIDER_ID = "google-geminis"
+
 
 PROVIDER_CONFIG: Dict[str, Dict[str, Any]] = {
-    "openai": {"model": "gpt-5.4-mini"},
+    "openai": {"model": "gpt-5.2"},
     "google-geminis": {"model": VERTEX_CHAT_MODEL},
     "mistral": {"model": "mistral/mistral-large-latest"},
     "claude": {"model": "anthropic/claude-haiku-4-5-20251001"},
@@ -148,9 +152,64 @@ class AI_Service:
             )
         return model, extra_params
 
+    async def _complete_with_retries(
+        self,
+        litellm_model: str,
+        litellm_params: Dict[str, Any],
+        messages: list,
+        response_format: Optional[Dict[str, str]],
+        temperature: float,
+    ) -> Tuple[Any, Optional[BaseException]]:
+        """Call one provider up to _AI_RETRY_MAX_ATTEMPTS times.
+
+        Returns the response and None on success, or None and the last
+        exception when every attempt failed. Errors raised by this service
+        itself keep propagating, because a retry cannot change them.
+        """
+        last_exc: Optional[BaseException] = None
+        for attempt in range(1, _AI_RETRY_MAX_ATTEMPTS + 1):
+            try:
+                chat_response = await acompletion(
+                    model=litellm_model,
+                    messages=messages,
+                    response_format=response_format,
+                    timeout=180,
+                    temperature=temperature,
+                    **litellm_params,
+                )
+                if attempt > 1:
+                    logger.info(
+                        "AI call succeeded on retry %d/%d (model=%s)",
+                        attempt,
+                        _AI_RETRY_MAX_ATTEMPTS,
+                        litellm_model,
+                    )
+                return chat_response, None
+            except HTTPException:
+                raise
+            except BaseException as exc:
+                last_exc = exc
+                if attempt >= _AI_RETRY_MAX_ATTEMPTS or not _is_retryable(exc):
+                    break
+                base = min(
+                    _AI_RETRY_MAX_DELAY_S,
+                    _AI_RETRY_BASE_DELAY_S * (2 ** (attempt - 1)),
+                )
+                delay = random.uniform(0.0, base)
+                logger.warning(
+                    "AI call attempt %d/%d failed (%s: %s); retrying in %.2fs",
+                    attempt,
+                    _AI_RETRY_MAX_ATTEMPTS,
+                    type(exc).__name__,
+                    str(exc)[:200],
+                    delay,
+                )
+                await asyncio.sleep(delay)
+        return None, last_exc
+
     async def get_ai_response(
-        self, 
-        prompt: str, 
+        self,
+        prompt: str,
         model: str = VERTEX_CHAT_MODEL,
         response_format: Optional[Dict[str, str]] = {"type": "json_object"},
         system_prompt: str = "You are a philologist with over 20 years of experience in language education.",
@@ -174,13 +233,13 @@ class AI_Service:
                 logger.info("no stored token for this learner, using the system key: %s", exc)
         if token:
             litellm_model, litellm_params = self._resolve_provider_params(
-                token.get("aiProviderId", "google-geminis"),
+                token.get("aiProviderId", _DEFAULT_PROVIDER_ID),
                 token.get("token"),
                 require_api_key=True,
             )
         else:
             litellm_model, litellm_params = self._resolve_provider_params(
-                ai_provider_id or "google-geminis",
+                ai_provider_id or _DEFAULT_PROVIDER_ID,
                 api_key=None,
                 require_api_key=False,
             )
@@ -204,49 +263,45 @@ class AI_Service:
                 logger.info("ai_service cache hit (model=%s)", litellm_model)
                 return cached
 
-        chat_response = None
-        last_exc: Optional[BaseException] = None
-        for attempt in range(1, _AI_RETRY_MAX_ATTEMPTS + 1):
-            try:
-                chat_response = await acompletion(
-                    model=litellm_model,
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": prompt},
-                    ],
-                    response_format=response_format,
-                    timeout=180,
-                    temperature=temperature,
-                    **litellm_params,
-                )
-                if attempt > 1:
-                    logger.info(
-                        "AI call succeeded on retry %d/%d (model=%s)",
-                        attempt,
-                        _AI_RETRY_MAX_ATTEMPTS,
-                        litellm_model,
-                    )
-                break
-            except HTTPException:
-                raise
-            except BaseException as exc:
-                last_exc = exc
-                if attempt >= _AI_RETRY_MAX_ATTEMPTS or not _is_retryable(exc):
-                    break
-                base = min(
-                    _AI_RETRY_MAX_DELAY_S,
-                    _AI_RETRY_BASE_DELAY_S * (2 ** (attempt - 1)),
-                )
-                delay = random.uniform(0.0, base)
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": prompt},
+        ]
+        chat_response, last_exc = await self._complete_with_retries(
+            litellm_model, litellm_params, messages, response_format, temperature
+        )
+
+        # UC7 alternative flow 3a: a provider the learner selected can fail for
+        # the whole retry budget. The request then runs once more on the system
+        # default instead of failing, and only a second failure reaches the
+        # learner. A call already on the default has nowhere to fall back to.
+        if chat_response is None and token:
+            fallback_model, fallback_params = self._resolve_provider_params(
+                _DEFAULT_PROVIDER_ID, api_key=None, require_api_key=False
+            )
+            if fallback_model != litellm_model:
                 logger.warning(
-                    "AI call attempt %d/%d failed (%s: %s); retrying in %.2fs",
-                    attempt,
+                    "provider %s failed after %d attempts (%s); falling back to %s",
+                    litellm_model,
                     _AI_RETRY_MAX_ATTEMPTS,
-                    type(exc).__name__,
-                    str(exc)[:200],
-                    delay,
+                    type(last_exc).__name__,
+                    fallback_model,
                 )
-                await asyncio.sleep(delay)
+                fallback_response, fallback_exc = await self._complete_with_retries(
+                    fallback_model,
+                    fallback_params,
+                    messages,
+                    response_format,
+                    temperature,
+                )
+                if fallback_response is not None:
+                    chat_response = fallback_response
+                    litellm_model = fallback_model
+                    # The cache key names the provider the learner asked for,
+                    # so an answer from the default must not be stored under it.
+                    cache_key = None
+                else:
+                    last_exc = fallback_exc or last_exc
 
         if chat_response is None:
             exc = last_exc

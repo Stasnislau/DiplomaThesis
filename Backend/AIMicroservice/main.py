@@ -112,7 +112,7 @@ This service provides AI-powered endpoints for:
 - **Materials**: Analyze and manage learning materials
 
 ### Authentication
-All endpoints require JWT authentication via the `X-User-Id`, `X-User-Email` headers passed from the Gateway.
+All endpoints read the caller identity from the `X-User-Id`, `X-User-Email` and `X-User-Role` headers that the Gateway attaches after it validates the token.
 
 ### Response Format
 All responses follow the `BaseResponse` schema:

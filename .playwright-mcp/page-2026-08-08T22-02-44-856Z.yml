@@ -1,0 +1,187 @@
+- generic [active] [ref=e1]:
+  - navigation "Quick Links" [ref=e2]:
+    - heading "Navigation" [level=1]
+    - list [ref=e3]:
+      - listitem [ref=e4]:
+        - link "Skip to Content" [ref=e5] [cursor=pointer]:
+          - /url: "#main-content"
+  - generic [ref=e6]:
+    - generic [ref=e9]:
+      - link "WWW.COE.INT" [ref=e11] [cursor=pointer]:
+        - /url: https://www.coe.int
+      - generic [ref=e12]:
+        - link "Human Rights" [ref=e13] [cursor=pointer]:
+          - /url: https://www.coe.int/web/portal/human-rights-navigation
+        - link "Democracy" [ref=e14] [cursor=pointer]:
+          - /url: https://www.coe.int/web/portal/democracy-navigation
+        - link "Rule of Law" [ref=e15] [cursor=pointer]:
+          - /url: https://www.coe.int/web/portal/rule-of-law-navigation
+      - generic [ref=e16]: About us
+      - generic [ref=e21]:
+        - link "English" [ref=e24] [cursor=pointer]:
+          - /url: "#"
+        - link "Connect " [ref=e27] [cursor=pointer]:
+          - /url: https://www.coe.int/en/c/portal/login?p_l_id=138813948
+          - text: Connect
+          - generic [ref=e28]: 
+        - link "" [ref=e30] [cursor=pointer]:
+          - /url: https://search.coe.int/public
+    - generic [ref=e34]:
+      - link [ref=e36] [cursor=pointer]:
+        - /url: https://www.coe.int
+      - heading [level=1] [ref=e40]:
+        - link "Common European Framework of Reference for Languages (CEFR)" [ref=e41] [cursor=pointer]:
+          - /url: https://www.coe.int/en/web/common-european-framework-reference-languages
+    - navigation "Site Pages" [ref=e43]:
+      - list [ref=e45]:
+        - listitem [ref=e46]:
+          - link "Home" [ref=e47] [cursor=pointer]:
+            - /url: https://www.coe.int/en/web/common-european-framework-reference-languages/home
+        - listitem [ref=e48]:
+          - link "News and events" [ref=e49] [cursor=pointer]:
+            - /url: https://www.coe.int/en/web/common-european-framework-reference-languages/newsroom
+        - listitem [ref=e50]:
+          - button "The framework ▼" [ref=e51] [cursor=pointer]
+        - listitem [ref=e52]:
+          - button "Key concepts ▼" [ref=e53] [cursor=pointer]
+        - listitem [ref=e54]:
+          - button "Descriptors ▼" [ref=e55] [cursor=pointer]
+        - listitem [ref=e56]:
+          - button "Ideas for implementation ▼" [ref=e57] [cursor=pointer]
+        - listitem [ref=e58]:
+          - button "Resources ▼" [ref=e59] [cursor=pointer]
+    - generic [ref=e61]:
+      - navigation "Breadcrumb" [ref=e68]:
+        - text: "You are here:"
+        - list "Breadcrumb" [ref=e69]:
+          - listitem [ref=e70]:
+            - link "Democracy and Human Dignity" [ref=e71] [cursor=pointer]:
+              - /url: /en/web/democracy-and-human-dignity
+          - listitem [ref=e72]:
+            - text: 
+            - link "Common European Framework of Reference for Languages (CEFR)" [ref=e73] [cursor=pointer]:
+              - /url: /en/web/common-european-framework-reference-languages
+          - listitem [ref=e74]:
+            - text: 
+            - link "Resources" [ref=e75] [cursor=pointer]:
+              - /url: https://www.coe.int/en/web/common-european-framework-reference-languages/resources
+          - listitem [ref=e76]:
+            - text: 
+            - link "Council of Europe documents" [ref=e77] [cursor=pointer]:
+              - /url: https://www.coe.int/en/web/common-european-framework-reference-languages/documents
+          - listitem [ref=e78]:  CEFR Companion Volume and its language versions
+      - heading "CEFR Companion Volume and its language versions" [level=1] [ref=e79]
+      - generic [ref=e80]:
+        - link "Share on Bluesky" [ref=e81] [cursor=pointer]:
+          - /url: https://bsky.app/intent/compose?text=https://www.coe.int/en/web/common-european-framework-reference-languages/cefr-companion-volume-and-its-language-versions
+        - link "Share on X (Twitter)" [ref=e82] [cursor=pointer]:
+          - /url: https://x.com/intent/post?text=https://www.coe.int/en/web/common-european-framework-reference-languages/cefr-companion-volume-and-its-language-versions
+        - link "Share on Facebook" [ref=e83] [cursor=pointer]:
+          - /url: https://www.facebook.com/sharer.php?u=https://www.coe.int/en/web/common-european-framework-reference-languages/cefr-companion-volume-and-its-language-versions
+        - link "Share on Linkedin" [ref=e84] [cursor=pointer]:
+          - /url: http://www.linkedin.com/shareArticle?mini=true&url=https://www.coe.int/en/web/common-european-framework-reference-languages/cefr-companion-volume-and-its-language-versions
+        - link "Send this page" [ref=e85] [cursor=pointer]:
+          - /url: mailto:?body=https://www.coe.int/en/web/common-european-framework-reference-languages/cefr-companion-volume-and-its-language-versions
+      - main [ref=e86]:
+        - generic [ref=e97]:
+          - paragraph [ref=e98]:
+            - link [ref=e99] [cursor=pointer]:
+              - /url: https://rm.coe.int/common-european-framework-of-reference-for-languages-learning-teaching/16809ea0d4
+              - strong [ref=e100]: CEFR - Companion volume (2020)
+          - paragraph [ref=e101]:
+            - link "French version" [ref=e102] [cursor=pointer]:
+              - /url: https://rm.coe.int/cadre-europeen-commun-de-reference-pour-les-langues-apprendre-enseigne/1680a4e270
+            - text: (version française)
+          - paragraph [ref=e103]:
+            - link "Arabic version" [ref=e104] [cursor=pointer]:
+              - /url: https://rm.coe.int/-/1680a52d51
+            - text: (النسخة العربية)
+          - paragraph [ref=e105]:
+            - link "Azerbaijani version" [ref=e106] [cursor=pointer]:
+              - /url: https://rm.coe.int/cefr-cv-2020-azerbaijani/1680b3335b
+            - text: (azərbaycan versiyası)
+          - paragraph [ref=e107]:
+            - link "Basque version" [ref=e108] [cursor=pointer]:
+              - /url: https://rm.coe.int/eemb-liburu-osagarria/1680a90009
+            - text: (euskarazko bertsioa)
+          - paragraph [ref=e109]:
+            - link "Czech version" [ref=e110] [cursor=pointer]:
+              - /url: https://rm.coe.int/cefr-cv-2020-czech/48802a57c7
+            - text: (česká verze)
+          - paragraph [ref=e111]:
+            - link "Danish version" [ref=e112] [cursor=pointer]:
+              - /url: https://rm.coe.int/cefr-cv-danish/1680b65538
+            - text: (dansk version)
+          - paragraph [ref=e113]:
+            - link "Estonian version" [ref=e114] [cursor=pointer]:
+              - /url: https://rm.coe.int/cefr-cv-2020-estonian/1680b4007f
+            - text: (eestikeelne versioon)
+          - paragraph [ref=e115]:
+            - link "German version" [ref=e116] [cursor=pointer]:
+              - /url: https://rm.coe.int/cefr-cv-2018-german/48802a849a
+            - text: "- translation of the 2018 edition (Deutsche Fassung - Übersetzung der Ausgabe von 2018)"
+          - paragraph [ref=e117]:
+            - link "Italian version" [ref=e118] [cursor=pointer]:
+              - /url: https://rm.coe.int/quadro-comune-europeo-di-riferimento-per-le-lingue-apprendimento-inseg/1680a52d52
+            - text: (versione italiana)
+          - paragraph [ref=e119]:
+            - link "Latvian version" [ref=e120] [cursor=pointer]:
+              - /url: https://rm.coe.int/cefr-cv-2020-latvian/1680b40080
+            - text: (latviešu versija)
+          - paragraph [ref=e121]:
+            - link "Slovak version" [ref=e122] [cursor=pointer]:
+              - /url: https://rm.coe.int/cefr-cv-2020-slovak/48802b2a8c
+            - text: (slovenská verzia)
+          - paragraph [ref=e123]:
+            - link "Slovenian version" [ref=e124] [cursor=pointer]:
+              - /url: https://rm.coe.int/cefr-cv-2020-slovenian/1680b6ac82
+            - text: (slovenska različica)
+          - paragraph [ref=e125]:
+            - link "Spanish version" [ref=e126] [cursor=pointer]:
+              - /url: https://rm.coe.int/marco-comun-europeo-de-referencia-para-las-lenguas-aprendizaje-ensenan/1680a52d53
+            - text: (versión en español)
+          - paragraph [ref=e127]:
+            - link "Turkish version" [ref=e128] [cursor=pointer]:
+              - /url: https://rm.coe.int/cefr-cv-2020-turkish/1680b6ac83
+            - text: (türkçe versiyonu)
+          - paragraph [ref=e129]:
+            - link "International Sign Language" [ref=e130] [cursor=pointer]:
+              - /url: https://rm.coe.int/cefr-cv-2020-international-sign-language/1680b3b2eb
+            - text: (translated from the orginal version)
+    - contentinfo [ref=e133]:
+      - button "logo Council of Europe Council of Europe Portal " [ref=e135]:
+        - generic [ref=e136] [cursor=pointer]:
+          - img "logo Council of Europe" [ref=e137]
+          - generic [ref=e138]:
+            - text: Council of Europe Portal
+            - generic [ref=e139]: 
+      - text: 
+      - generic [ref=e141]:
+        - generic [ref=e142]:
+          - strong [ref=e143]: Council of Europe
+          - text: ","
+          - generic [ref=e144]: Avenue de l'Europe F-67075 Strasbourg Cedex, France
+          - text: "- Tel. +33 (0)3 88 41 20 00"
+        - link "Disclaimer - © Council of Europe 2026 - © Photo credit" [ref=e145] [cursor=pointer]:
+          - /url: https://www.coe.int/web/portal/disclaimer
+        - text: "-"
+        - link "Contact" [ref=e146] [cursor=pointer]:
+          - /url: https://www.coe.int/web/portal/contacts
+  - generic [ref=e148]:
+    - generic [ref=e149]:
+      - generic [ref=e150] [cursor=pointer]
+      - generic [ref=e156]: English
+      - generic [ref=e160]:
+        - generic [ref=e161]:
+          - generic [ref=e162]: Privacy on this site
+          - paragraph [ref=e163]: We collect and process your data on this site to better understand how it is used. If you accept, we'll collect and use your data for analytics. For more information, see our privacy policy.
+          - link "Privacy policy" [ref=e164] [cursor=pointer]:
+            - /url: https://www.coe.int/web/portal/privacy-notice
+        - generic [ref=e165]:
+          - button "Accept" [ref=e166] [cursor=pointer]
+          - button "Decline" [ref=e167] [cursor=pointer]
+    - generic [ref=e168]:
+      - link "Piwik PRO":
+        - /url: https://piwik.pro/?utm_source=App&utm_medium=Consent_Pop_Up&utm_campaign=Consent_Manager_Pop_Up
+        - img "Piwik PRO" [ref=e169] [cursor=pointer]
+      - generic [ref=e178]: Powered by

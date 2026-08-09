@@ -786,7 +786,11 @@ class MaterialService:
         )
         exercise = DocumentExercise(
             type=task_type,
-            passage_word_count_estimate=200 if task_type == "cloze_passage" else None,
+            passage_word_count_estimate=(
+                200
+                if task_type in ("cloze_passage", "reading_comprehension")
+                else None
+            ),
             passage_topic_hint=topic,
             question_count=1,
             question_subtypes=[],

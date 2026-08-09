@@ -10,6 +10,7 @@ export type QuizWritingType =
   | "matching"
   | "cloze_passage"
   | "open"
+  | "reading_comprehension"
   | "essay";
 
 export type QuizVariant =
@@ -47,6 +48,7 @@ const WRITING_FROM_B1: WeightedOption<QuizWritingType>[] = [
   { type: "multi_select_mc", weight: 12 },
   { type: "matching", weight: 12 },
   { type: "cloze_passage", weight: 7 },
+  { type: "reading_comprehension", weight: 7 },
   { type: "open", weight: 5 },
   { type: "essay", weight: 7 },
 ];

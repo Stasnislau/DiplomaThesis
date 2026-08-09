@@ -59,6 +59,7 @@ class TypedTaskRequest(BaseModel):
         "matching",
         "cloze_passage",
         "open",
+        "reading_comprehension",
     ] = Field(default="multiple_choice")
     model_config = {"populate_by_name": True}
 

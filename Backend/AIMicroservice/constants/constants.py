@@ -65,7 +65,7 @@ AVAILABLE_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"]
 
 AVAILABLE_MODELS = [
     {"name": "Mistral", "model": "mistral-large-latest"},
-    {"name": "OpenAI", "model": "gpt-5.4-mini"},
+    {"name": "OpenAI", "model": "gpt-5.2"},
 ]
 
 AVAILABLE_LANGUAGES_CODES = {

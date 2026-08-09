@@ -39,9 +39,7 @@ _TEST_USER_ID = "smoke-user-00000000"
 
 
 def _make_smoke_token(user_id: str = _TEST_USER_ID) -> str:
-    """Mint a real HS256 token signed with the test JWT_SECRET so the
-    extract_user_context path runs end-to-end (instead of being
-    short-circuited by the internal-service-key fallback)."""
+    """Mint the bearer token the gateway forwards on a learner request."""
     return jwt.encode(
         {"sub": user_id, "iat": int(time.time())},
         _TEST_JWT_SECRET,
@@ -58,11 +56,6 @@ def _auth_headers(user_id: str = _TEST_USER_ID, ui_locale: str = "en") -> dict:
         "X-User-Role": "user",
         "X-UI-Locale": ui_locale,
     }
-
-
-@pytest.fixture(autouse=True)
-def _set_jwt_secret(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("JWT_SECRET", _TEST_JWT_SECRET)
 
 
 @pytest.fixture
@@ -215,10 +208,13 @@ def test_protected_endpoint_rejects_no_auth(smoke_client: TestClient) -> None:
     assert r.status_code in (401, 422), f"Got {r.status_code}: {r.text[:200]}"
 
 
-def test_protected_endpoint_rejects_forged_user_id(smoke_client: TestClient) -> None:
-    """X-User-Id that doesn't match the JWT sub must be rejected."""
+def test_protected_endpoint_rejects_a_missing_identity_header(
+    smoke_client: TestClient,
+) -> None:
+    """The identity comes from X-User-Id, which the gateway attaches after
+    Auth validates the token. A request without it must 401, not 500."""
     headers = _auth_headers()
-    headers["X-User-Id"] = "definitely-not-the-jwt-sub"
+    del headers["X-User-Id"]
     r = smoke_client.post(
         "/api/tasks/listening",
         json={"language": "English", "level": "A1"},

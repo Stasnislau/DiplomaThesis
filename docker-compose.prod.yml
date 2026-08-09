@@ -119,7 +119,6 @@ services:
     environment:
       USER_MICROSERVICE_URL: http://user:3004/api
       INTERNAL_SERVICE_KEY: ${INTERNAL_SERVICE_KEY:?INTERNAL_SERVICE_KEY must be set}
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set (same value as Auth)}
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-12345}@postgres:5432/aidb
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
@@ -129,7 +128,7 @@ services:
       GROQ_API_KEY: ${GROQ_API_KEY:-}
       VERTEX_AI_PROJECT_ID: ${VERTEX_AI_PROJECT_ID:-}
       VERTEX_AI_LOCATION: ${VERTEX_AI_LOCATION:-us-central1}
-      VERTEX_CHAT_MODEL: ${VERTEX_CHAT_MODEL:-vertex_ai/gemini-3-pro-preview}
+      VERTEX_CHAT_MODEL: ${VERTEX_CHAT_MODEL:-vertex_ai/gemini-3-flash-preview}
     depends_on:
       postgres:
         condition: service_healthy
