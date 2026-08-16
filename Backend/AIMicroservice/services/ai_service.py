@@ -94,22 +94,36 @@ def _ai_cache_put(key: str, value: str) -> None:
 
 
 VERTEX_CHAT_MODEL = os.getenv("VERTEX_CHAT_MODEL", "vertex_ai/gemini-3-flash-preview")
+# Gemini 3 Flash is a global publisher model. VERTEX_AI_LOCATION stays
+# us-central1 for Imagen; chat must not inherit that or Vertex answers 404.
+VERTEX_CHAT_LOCATION = os.getenv("VERTEX_CHAT_LOCATION", "global")
 
 # The provider a request falls back to when the one the learner selected fails
 # for its whole retry budget (UC7 alternative flow 3a).
 _DEFAULT_PROVIDER_ID = "google-geminis"
 
 
+def _google_geminis_config() -> Dict[str, Any]:
+    config: Dict[str, Any] = {
+        "model": VERTEX_CHAT_MODEL,
+        "vertex_location": VERTEX_CHAT_LOCATION,
+    }
+    project = os.getenv("VERTEX_AI_PROJECT_ID") or os.getenv("VERTEXAI_PROJECT")
+    if project:
+        config["vertex_project"] = project
+    return config
+
+
 PROVIDER_CONFIG: Dict[str, Dict[str, Any]] = {
     "openai": {"model": "gpt-5.2"},
-    "google-geminis": {"model": VERTEX_CHAT_MODEL},
+    "google-geminis": _google_geminis_config(),
     "mistral": {"model": "mistral/mistral-large-latest"},
-    "claude": {"model": "anthropic/claude-haiku-4-5-20251001"},
+    "claude": {"model": "anthropic/claude-sonnet-4.6"},
     "deepseek": {
         "model": "deepseek/deepseek-chat",
         "api_base": "https://api.deepseek.com",
     },
-    "groq": {"model": "groq/llama-3.3-70b-versatile"},
+    "groq": {"model": "groq/openai/gpt-oss-120b"},
     "openrouter": {
         "model": os.getenv(
             "OPENROUTER_MODEL", "openrouter/anthropic/claude-sonnet-4.6"
@@ -140,7 +154,9 @@ class AI_Service:
             )
 
         model = provider_config["model"]
-        extra_params = {k: v for k, v in provider_config.items() if k != "model"}
+        extra_params = {
+            k: v for k, v in provider_config.items() if k != "model" and v is not None
+        }
         uses_adc = model.startswith("vertex_ai/")
         if api_key:
             extra_params["api_key"] = api_key

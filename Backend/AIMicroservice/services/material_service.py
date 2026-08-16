@@ -10,8 +10,9 @@ from fastapi import HTTPException
 from services.ai_service import AI_Service
 from services.user_service import UserService
 from utils.user_context import UserContext
-import json
 import logging
+from utils.json_response import parse_json_object
+from utils.task_quality import coerce_mc_answer
 from models.dtos.vector_db_dtos import TaskTemplate
 from models.dtos.material_dtos import (
     ProcessPdfResponse,
@@ -395,11 +396,7 @@ class MaterialService:
             analyzed_types: Union[List[Dict[str, Any]], List[Any]] = []
 
             try:
-                cleaned = response_json_str.strip()
-                if cleaned.startswith("```"):
-                    cleaned = cleaned.strip("`")
-                    cleaned = cleaned.lstrip("json").strip()
-                analyzed_data = json.loads(cleaned)
+                analyzed_data = parse_json_object(response_json_str)
 
                 if isinstance(analyzed_data, dict) and "exercises" in analyzed_data:
                     try:
@@ -658,10 +655,7 @@ class MaterialService:
             return None
 
         try:
-            cleaned = response_json_str.strip()
-            if cleaned.startswith("```"):
-                cleaned = cleaned.strip("`").lstrip("json").strip()
-            parsed = json.loads(cleaned)
+            parsed = parse_json_object(response_json_str)
             if isinstance(parsed, dict) and "exercises" in parsed:
                 return _document_map_from(parsed)
         except Exception as e:
@@ -936,10 +930,7 @@ class MaterialService:
                 system_prompt="You are an expert language-content author.",
                 user_context=user_context,
             )
-            cleaned = response_json_str.strip()
-            if cleaned.startswith("```"):
-                cleaned = cleaned.strip("`").lstrip("json").strip()
-            parsed = json.loads(cleaned)
+            parsed = parse_json_object(response_json_str)
             candidate = str(parsed.get("passage", "")).strip()
             if not candidate:
                 raise ValueError("Stimulus generation returned empty passage")
@@ -1015,7 +1006,7 @@ class MaterialService:
         its `type` field.
         """
         question_count = exercise.question_count or 4
-        question_count = max(2, min(question_count, 8))
+        question_count = max(1, min(question_count, 8))
         subtypes_clause = (
             f"Cover these question subtypes (use them as a checklist, "
             f"not a quota): {', '.join(exercise.question_subtypes)}."
@@ -1052,9 +1043,16 @@ class MaterialService:
 
         per_type_schemas = []
         if "multiple_choice" in allowed:
+            mc_question_shape = (
+                '"question":"... ____ ..."'
+                if not stimulus
+                else '"question":"..."'
+            )
             per_type_schemas.append(
-                'multiple_choice: {"type":"multiple_choice","question":"...",'
-                '"options":["A","B","C","D"],"correct_answer":"<one of options>",'
+                'multiple_choice: {"type":"multiple_choice",'
+                f'{mc_question_shape},'
+                '"options":["went","go","goes","gone"],'
+                '"correct_answer":"<verbatim option string, never A/B/C/D>",'
                 '"context_text":...}'
             )
         if "multi_select_mc" in allowed:
@@ -1098,6 +1096,14 @@ class MaterialService:
             )
         schema_block = "\n  - ".join(per_type_schemas)
 
+        standalone_mc_rule = ""
+        if not stimulus:
+            standalone_mc_rule = (
+                "- This is a standalone grammar/vocabulary item: every "
+                "`multiple_choice` question MUST be a single sentence "
+                "containing a ____ blank.\n        "
+            )
+
         prompt = f"""
         You are an expert language teacher writing questions for an
         exercise of type "{exercise.type}". Write the `type` field in
@@ -1127,6 +1133,8 @@ class MaterialService:
         - For passage-based items, the answer must be derivable
           purely from the passage above.
         - {context_clause}
+        {standalone_mc_rule}- For multiple_choice, `correct_answer` MUST be a verbatim copy
+          of one string in `options`. Never "A", "B", "C", "D", or an index.
         - For multi_select_mc, `correct_answers` MUST list ≥2 of the options verbatim.
         - For true_false, `correct_answer` MUST be the lowercase string "true" or "false".
         - For matching, every `right` value must be the correct counterpart of its `left`.
@@ -1138,72 +1146,104 @@ class MaterialService:
         - For matching, every `left` value must be unique and every
           `right` value must be unique.
         """
-        response_json_str = await self.ai_service.get_ai_response(
-            prompt=prompt,
-            response_format={"type": "json_object"},
-            system_prompt="You are an expert teacher creating practice questions.",
-            user_context=user_context,
-        )
-        cleaned = response_json_str.strip()
-        if cleaned.startswith("```"):
-            cleaned = cleaned.strip("`").lstrip("json").strip()
-        parsed = json.loads(cleaned)
-        raw_questions = parsed.get("questions") or []
-
-        usable: List[Dict[str, Any]] = []
-        for raw in raw_questions:
-            if not isinstance(raw, dict):
-                continue
-            if not _question_stem(raw):
+        attempt_prompt = prompt
+        out: List[QuizQuestion] = []
+        for attempt in range(_VERBATIM_RETRIES + 1):
+            response_json_str = await self.ai_service.get_ai_response(
+                prompt=attempt_prompt,
+                response_format={"type": "json_object"},
+                system_prompt="You are an expert teacher creating practice questions.",
+                user_context=user_context,
+            )
+            try:
+                parsed = parse_json_object(response_json_str)
+            except Exception as parse_err:
                 logger.warning(
-                    "Dropping %s question — the model returned no question text (keys: %s)",
-                    raw.get("type"),
-                    sorted(raw.keys()),
+                    "Question JSON parse failed on attempt %d: %s",
+                    attempt + 1,
+                    parse_err,
+                )
+                out = []
+                attempt_prompt = (
+                    "PREVIOUS ATTEMPT was not valid JSON. "
+                    "Reply with a single JSON object {\"questions\": [...]} and nothing else.\n\n"
+                    + prompt
                 )
                 continue
-            usable.append(raw)
+            raw_questions = parsed.get("questions") or []
 
-        out: List[QuizQuestion] = []
-        for raw in usable:
-            if raw.get("type") in ("multiple_choice", "multi_select_mc"):
-                deduped = _dedupe_preserve_order(raw.get("options") or [])
-                if len(deduped) < 2:
+            usable: List[Dict[str, Any]] = []
+            for raw in raw_questions:
+                if not isinstance(raw, dict):
+                    continue
+                if not _question_stem(raw):
                     logger.warning(
-                        "Dropping %s question — too few distinct options after dedupe (%s)",
+                        "Dropping %s question — the model returned no question text (keys: %s)",
                         raw.get("type"),
-                        raw.get("options"),
+                        sorted(raw.keys()),
                     )
                     continue
-                raw["options"] = deduped
-                if raw.get("type") == "multiple_choice":
-                    ca = str(raw.get("correct_answer") or "").strip().lower()
-                    options_normalized = [
-                        str(o).strip().lower() for o in raw["options"]
-                    ]
-                    if ca and ca not in options_normalized:
+                usable.append(raw)
+
+            out = []
+            for raw in usable:
+                if raw.get("type") in ("multiple_choice", "multi_select_mc"):
+                    deduped = _dedupe_preserve_order(raw.get("options") or [])
+                    if len(deduped) < 2:
                         logger.warning(
-                            "Dropping multiple_choice — correct_answer %r vanished after option dedupe",
-                            raw.get("correct_answer"),
+                            "Dropping %s question — too few distinct options after dedupe (%s)",
+                            raw.get("type"),
+                            raw.get("options"),
                         )
                         continue
-            elif raw.get("type") == "matching":
-                pairs = raw.get("pairs") or []
-                lefts = [str(p.get("left") or "").strip() for p in pairs]
-                rights = [str(p.get("right") or "").strip() for p in pairs]
-                if len(set(lefts)) != len(lefts) or len(set(rights)) != len(rights):
-                    logger.warning(
-                        "Dropping matching question — duplicate left/right values"
+                    raw["options"] = deduped
+                    if raw.get("type") == "multiple_choice":
+                        coerced = coerce_mc_answer(
+                            raw.get("correct_answer", raw.get("correctAnswer")),
+                            raw["options"],
+                        )
+                        raw["correct_answer"] = coerced
+                        ca = str(coerced or "").strip().lower()
+                        options_normalized = [
+                            str(o).strip().lower() for o in raw["options"]
+                        ]
+                        if ca and ca not in options_normalized:
+                            logger.warning(
+                                "Dropping multiple_choice — correct_answer %r vanished after option dedupe",
+                                coerced,
+                            )
+                            continue
+                elif raw.get("type") == "matching":
+                    pairs = raw.get("pairs") or []
+                    lefts = [str(p.get("left") or "").strip() for p in pairs]
+                    rights = [str(p.get("right") or "").strip() for p in pairs]
+                    if len(set(lefts)) != len(lefts) or len(set(rights)) != len(rights):
+                        logger.warning(
+                            "Dropping matching question — duplicate left/right values"
+                        )
+                        continue
+                try:
+                    out.append(QuizQuestionAdapter.validate_python(raw))
+                except Exception as item_err:
+                    logger.debug(
+                        "Skipping malformed question item (type=%s): %s",
+                        raw.get("type"),
+                        item_err,
                     )
                     continue
-            try:
-                out.append(QuizQuestionAdapter.validate_python(raw))
-            except Exception as item_err:
-                logger.debug(
-                    "Skipping malformed question item (type=%s): %s",
-                    raw.get("type"),
-                    item_err,
-                )
-                continue
+
+            if out:
+                break
+            logger.warning(
+                "Question generation attempt %d produced no usable items; retrying.",
+                attempt + 1,
+            )
+            attempt_prompt = (
+                "PREVIOUS ATTEMPT produced no usable questions. "
+                "correct_answer must be a verbatim option string, never a letter. "
+                "Every multiple_choice item needs a ____ blank when there is no passage.\n\n"
+                + prompt
+            )
 
         attach_shared_passage(out, stimulus)
         return out

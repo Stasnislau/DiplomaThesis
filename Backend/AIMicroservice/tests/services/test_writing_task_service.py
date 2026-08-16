@@ -40,9 +40,9 @@ async def test_generate_writing_multiple_choice_task(writing_service: WritingTas
     
     mock_ai_service.get_ai_response.return_value = """
     {
-        "question": "What is it?",
-        "options": ["A", "B"],
-        "correctAnswer": "A",
+        "question": "She ____ home yesterday.",
+        "options": ["went", "go", "goes", "going"],
+        "correctAnswer": "went",
         "description": "desc"
     }
     """
@@ -50,8 +50,8 @@ async def test_generate_writing_multiple_choice_task(writing_service: WritingTas
     task = await writing_service.generate_writing_multiple_choice_task("English", "A1")
     
     assert isinstance(task, MultipleChoiceTask)
-    assert task.question == "What is it?"
-    assert task.correct_answer == "A"
+    assert task.question == "She ____ home yesterday."
+    assert task.correct_answer == "went"
 
 @pytest.mark.asyncio
 async def test_generate_writing_fill_in_the_blank_task(writing_service: WritingTaskService, mock_vector_db: MagicMock, mock_ai_service: MagicMock) -> None:
@@ -99,3 +99,26 @@ async def test_generate_task_invalid_level(writing_service: WritingTaskService, 
     
     with pytest.raises(ValueError, match="Invalid level"):
         await writing_service.generate_writing_multiple_choice_task("English", "INVALID")
+
+
+@pytest.mark.asyncio
+async def test_generate_retries_when_the_first_payload_has_no_gap(
+    writing_service: WritingTaskService,
+    mock_vector_db: MagicMock,
+    mock_ai_service: MagicMock,
+) -> None:
+    mock_vector_db.get_level_context.return_value = SpecificSkillContext(
+        level="A1", skill_type="writing", description="desc"
+    )
+    mock_ai_service.get_ai_response.side_effect = [
+        '{"question": "What is the past of go?", "options": ["went", "go"], "correctAnswer": "went"}',
+        '{"question": "She ____ home yesterday.", "options": ["went", "go"], "correctAnswer": "went"}',
+    ]
+
+    task = await writing_service.generate_writing_multiple_choice_task("English", "A1")
+
+    assert task.question == "She ____ home yesterday."
+    assert mock_ai_service.get_ai_response.await_count == 2
+    retry_prompt = mock_ai_service.get_ai_response.call_args_list[1][0][0]
+    assert "PREVIOUS ATTEMPT REJECTED" in retry_prompt
+    assert "no gap" in retry_prompt

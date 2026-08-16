@@ -1,7 +1,7 @@
 import json
 import uuid
 import logging
-from typing import Union, Any, Dict, Type, TypeVar, Optional
+from typing import Union, Any, Dict, Type, TypeVar, Optional, Callable, List
 from services.vector_db_service import VectorDBService
 from services.ai_service import AI_Service
 from utils.user_context import UserContext
@@ -20,8 +20,13 @@ from models.dtos.vector_db_dtos import SpecificSkillContext, FullLevelContext
 from models.request.explain_answer_request import ExplainAnswerRequest
 from models.responses.explain_answer_response import ExplainAnswerResponse
 from pipelines.verification_pipeline import VerificationPipeline
-from models.dtos.verification_dtos import VerificationResult
 from pydantic import BaseModel
+from utils.json_response import parse_json_object
+from utils.task_quality import (
+    fill_in_the_blank_quality_issues,
+    multiple_choice_quality_issues,
+    sanitize_multiple_choice,
+)
 
 load_dotenv()
 
@@ -31,6 +36,7 @@ TaskModelType = TypeVar("TaskModelType", bound=BaseModel)
 
 _EXEMPLAR_LIMIT = 3
 _EXEMPLAR_MAX_CHARS = 400
+_QUALITY_ATTEMPTS = 3
 
 
 class WritingTaskService:
@@ -97,39 +103,33 @@ class WritingTaskService:
             session_key = user_context.user_id if user_context else "writing_mc_global"
             topic = variety_picker.pick_topic(effective_level, session_key=session_key)
 
-        seed = str(uuid.uuid4())
         exemplars = self._retrieve_exemplars(
             level=effective_level,
             skill="writing",
             task_type="multiple_choice",
             user_context=user_context,
         )
-        prompt = writing_multiple_choice_task_prompt(
-            language, level, level_context.model_dump(),
-            topic=topic, keywords=keywords, weaknesses=weaknesses, seed=seed,
-            ui_locale_label=user_context.ui_locale_label if user_context else None,
-            exemplars=exemplars,
+
+        def _prompt() -> str:
+            return writing_multiple_choice_task_prompt(
+                language, level, level_context.model_dump(),
+                topic=topic, keywords=keywords, weaknesses=weaknesses,
+                seed=str(uuid.uuid4()),
+                ui_locale_label=user_context.ui_locale_label if user_context else None,
+                exemplars=exemplars,
+            )
+
+        json_response = await self._sample_task_json(
+            make_prompt=_prompt,
+            user_context=user_context,
+            temperature=0.8,
+            issues_for=multiple_choice_quality_issues,
+            sanitize=sanitize_multiple_choice,
         )
-        response = await self.ai_service.get_ai_response(
-            prompt, user_context=user_context, temperature=0.8
-        )
-        json_response = await self._process_ai_response_and_validate(response)
         logger.debug("Multiple choice task generated successfully")
-
-        verification_result = VerificationResult(is_valid=True)
-
-        try:
-            if not verification_result.is_valid and verification_result.better_task:
-                json_response = verification_result.better_task.model_dump(exclude_unset=True)
-                logger.info("Using improved task from verification")
-            elif not verification_result.is_valid:
-                logger.warning(f"Task not valid: {verification_result.explanation}")
-
-            return self._finalize_task_generation(json_response, "multiple_choice", MultipleChoiceTask)
-
-        except Exception as e:
-            logger.error(f"Error during task generation/verification: {e}")
-            return self._finalize_task_generation(json_response, "multiple_choice", MultipleChoiceTask)
+        return self._finalize_task_generation(
+            json_response, "multiple_choice", MultipleChoiceTask
+        )
 
     async def generate_writing_fill_in_the_blank_task(
         self, language: str, level: str, user_context: Optional[UserContext] = None,
@@ -148,25 +148,31 @@ class WritingTaskService:
             session_key = user_context.user_id if user_context else "writing_fib_global"
             topic = variety_picker.pick_topic(effective_level, session_key=session_key)
 
-        seed = str(uuid.uuid4())
         exemplars = self._retrieve_exemplars(
             level=effective_level,
             skill="writing",
             task_type="fill_in_the_blank",
             user_context=user_context,
         )
-        prompt = writing_fill_in_the_blank_task_prompt(
-            language, level, level_context.model_dump(),
-            topic=topic, keywords=keywords, weaknesses=weaknesses, seed=seed,
-            ui_locale_label=user_context.ui_locale_label if user_context else None,
-            exemplars=exemplars,
-        )
-        response = await self.ai_service.get_ai_response(
-            prompt, user_context=user_context, temperature=0.8
-        )
-        json_response = await self._process_ai_response_and_validate(response, is_fill_in_blank=True)
 
-        return self._finalize_task_generation(json_response, "fill_in_the_blank", FillInTheBlankTask)
+        def _prompt() -> str:
+            return writing_fill_in_the_blank_task_prompt(
+                language, level, level_context.model_dump(),
+                topic=topic, keywords=keywords, weaknesses=weaknesses,
+                seed=str(uuid.uuid4()),
+                ui_locale_label=user_context.ui_locale_label if user_context else None,
+                exemplars=exemplars,
+            )
+
+        json_response = await self._sample_task_json(
+            make_prompt=_prompt,
+            user_context=user_context,
+            temperature=0.8,
+            issues_for=fill_in_the_blank_quality_issues,
+        )
+        return self._finalize_task_generation(
+            json_response, "fill_in_the_blank", FillInTheBlankTask
+        )
 
     async def generate_essay_task(
         self,
@@ -388,12 +394,73 @@ class WritingTaskService:
             "weaknesses": weaknesses,
         }
 
+    async def _sample_task_json(
+        self,
+        *,
+        make_prompt: Callable[[], str],
+        user_context: Optional[UserContext],
+        temperature: float,
+        issues_for: Callable[[Dict[str, Any]], List[str]],
+        sanitize: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
+        """Call the model until the payload passes cheap quality gates.
+
+        A rejected attempt is fed back into the next prompt so the model
+        can fix the listed issues. After `_QUALITY_ATTEMPTS` we return the
+        last parseable payload anyway — a slightly imperfect task is
+        better than a 500. Unparseable replies across every attempt still
+        raise, because there is nothing to show the learner.
+        """
+        last_json: Optional[Dict[str, Any]] = None
+        last_issues: list[str] = []
+        for attempt in range(_QUALITY_ATTEMPTS):
+            prompt = make_prompt()
+            if last_issues:
+                prompt = (
+                    "PREVIOUS ATTEMPT REJECTED: "
+                    + "; ".join(last_issues)
+                    + ". Fix every listed issue. Do not repeat the same sentence.\n\n"
+                    + prompt
+                )
+            response = await self.ai_service.get_ai_response(
+                prompt, user_context=user_context, temperature=temperature
+            )
+            try:
+                parsed = parse_json_object(response)
+            except (json.JSONDecodeError, ValueError):
+                last_issues = ["response was not valid JSON"]
+                logger.warning(
+                    "task generation attempt %d/%d: invalid JSON",
+                    attempt + 1,
+                    _QUALITY_ATTEMPTS,
+                )
+                continue
+            if sanitize is not None:
+                parsed = sanitize(parsed)
+            last_issues = issues_for(parsed)
+            last_json = parsed
+            if not last_issues:
+                return parsed
+            logger.warning(
+                "task generation attempt %d/%d rejected: %s",
+                attempt + 1,
+                _QUALITY_ATTEMPTS,
+                last_issues,
+            )
+        if last_json is None:
+            from utils.error_codes import AI_RESPONSE_PARSE_FAILED, raise_with_code
+            raise_with_code(
+                AI_RESPONSE_PARSE_FAILED,
+                500,
+                "Failed to parse AI response into expected JSON structure.",
+            )
+        return last_json
+
     async def _process_ai_response_and_validate(self, response_str: str, is_fill_in_blank: bool = False) -> Dict[str, Any]:
         from utils.error_codes import AI_RESPONSE_PARSE_FAILED, raise_with_code
         try:
-            json_data = json.loads(response_str)
-            return json_data  # type: ignore
-        except json.JSONDecodeError as e:
+            return parse_json_object(response_str)
+        except (json.JSONDecodeError, ValueError) as e:
             logger.error(f"Failed to parse AI response JSON: {e}")
             raise_with_code(
                 AI_RESPONSE_PARSE_FAILED,

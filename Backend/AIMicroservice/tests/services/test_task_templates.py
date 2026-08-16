@@ -465,7 +465,7 @@ async def test_generation_injects_retrieved_exemplars(
         TaskTemplate(template="Exercise type: gap_fill_grammar", user_id=OWNER_ID)
     ]
     mock_ai_service.get_ai_response.return_value = (
-        '{"question": "q", "options": ["A", "B"], "correctAnswer": "A"}'
+        '{"question": "She ____ home.", "options": ["went", "go"], "correctAnswer": "went"}'
     )
 
     await writing_service.generate_writing_multiple_choice_task(
@@ -490,14 +490,14 @@ async def test_generation_unaffected_when_store_is_empty(
     )
     mock_vector_db.search_task_templates.return_value = []
     mock_ai_service.get_ai_response.return_value = (
-        '{"question": "q", "options": ["A", "B"], "correctAnswer": "A"}'
+        '{"question": "She ____ home.", "options": ["went", "go"], "correctAnswer": "went"}'
     )
 
     task = await writing_service.generate_writing_multiple_choice_task(
         "English", "B1", user_context=user_context
     )
 
-    assert task.question == "q"
+    assert task.question == "She ____ home."
     assert "FORMAT REFERENCE" not in mock_ai_service.get_ai_response.call_args[0][0]
 
 

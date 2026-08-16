@@ -92,10 +92,12 @@ def writing_fill_in_the_blank_task_prompt(
            grammar, vocabulary, or sentence structure.
         2. Choose ONE word or phrase that is genuinely characteristic of {language} at {level}.
            Remove it; leave a blank ("____") in its place.
-        3. ANTI-DUPLICATION: the correct answer (and any of its forms) MUST NOT appear
-           anywhere else in the visible sentence. If you write "Это ____ самое…" with
-           answer "Это", that duplicates "Это" — the result reads "Это Это самое…" and
-           is invalid. Pick a sentence where the target word fits ONLY in the blank.
+        3. ANTI-DUPLICATION: the correct answer in the TARGET language MUST NOT appear
+           anywhere else in the visible sentence. The glossary hint in parentheses is
+           the UI-language translation and does NOT count as duplication. If you write
+           "I like to ____ at the market to buy vegetables. (buy)" with answer "buy",
+           that duplicates "buy" in the stem — the filled sentence is "buy … to buy"
+           and is invalid. Pick a sentence where the target word fits ONLY in the blank.
         4. NON-TRIVIAL: the blank must be a word the learner could plausibly get wrong.
            Forbidden trivial cases: demonstratives that are grammatically optional in
            the position (e.g. blanking "Это" before a nominative noun in Russian when
@@ -126,6 +128,8 @@ def writing_fill_in_the_blank_task_prompt(
         - Grammar:    "Она ____ в течение трех часов. (has been studying)"
         - BAD (do NOT generate): "Это ____ самое яркое воспоминание. (this)"
           → answer would be "Это" but "Это" already appears → trivially duplicates.
+        - BAD (do NOT generate): "I like to ____ at the market on Sundays to buy vegetables. (buy)"
+          → answer "buy" already sits in "to buy" → filled sentence is tautological.
         """
 
 
@@ -178,11 +182,18 @@ def writing_multiple_choice_task_prompt(
         4. The correct option must be unambiguous given the surrounding context.
         5. Use everyday level-appropriate contexts. Don't copy the example from the level
            context verbatim.
-        6. No instructions inside the sentence — just the sentence with a clear blank-or-pick.
+        6. The sentence MUST contain a blank marked ____. A bare interrogative
+           with no gap ("What is the past of go?") is invalid.
+        7. After substituting the correct option, the FULL sentence must be
+           grammatical in {language}: gender, number, case, tense, and agreement
+           must hold. If the filled sentence is ungrammatical, start over.
+        8. Exactly ONE option must produce a grammatical, natural sentence.
+           If two options both fit, rewrite the stem or the distractors.
+        9. No instructions inside the sentence — just the sentence with ____.
 
         Return JSON only:
         {{
-            "question": "The sentence/question for the user, no instructions",
+            "question": "The sentence with ____, no instructions",
             "options": ["Option A", "Option B", "Option C", "Option D"],
             "correctAnswer": "<verbatim string of the correct option>"
         }}
@@ -193,6 +204,13 @@ def writing_multiple_choice_task_prompt(
         ❌ "correctAnswer": 1                  // never an index
         ❌ "correctAnswer": "Option B"         // never a label
         The value MUST be a verbatim copy of one of the strings inside `options`.
+
+        BAD (do NOT generate):
+        - "Большинство друзей используют сети, чтобы быть в курсе блогов и ____ новостей."
+          with verb options like "читать"/"пишут" — the slot needs an adjective,
+          the filled sentence is nonsense.
+        - "Moja ulubiona wspomnienia to wakacje." — gender/number clash in Polish.
+        - A correctAnswer of "C" instead of the actual option text.
         """
 
 

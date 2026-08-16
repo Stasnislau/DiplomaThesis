@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import re
 
 import pytest
@@ -99,7 +100,14 @@ class TestGeneratedPolishIsGrammatical:
             f"Sentence: {sentence}"
         )
         raw = asyncio.run(
-            AI_Service().get_ai_response(prompt, ai_provider_id="groq")
+            AI_Service().get_ai_response(
+                prompt,
+                **(
+                    {"ai_provider_id": "groq"}
+                    if os.getenv("E2E_PROVIDER", "groq").strip().lower() != "system"
+                    else {}
+                ),
+            )
         )
         match = re.search(r'\{[^{}]*"correct"[^{}]*\}', raw)
         assert match, f"judge returned no verdict: {raw[:200]!r}"

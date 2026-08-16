@@ -16,6 +16,8 @@ from models.responses.listening_task_response import (
 )
 from services.ai_service import AI_Service
 from services.tts_service import TTSService
+from utils.json_response import parse_json_object
+from utils.task_quality import coerce_mc_answer
 from utils.user_context import UserContext
 
 logger = logging.getLogger(__name__)
@@ -87,7 +89,7 @@ class ListeningTaskService:
             prompt, user_context=user_context
         )
         try:
-            content_json = json.loads(response)
+            content_json = parse_json_object(response)
         except json.JSONDecodeError as e:
             logger.error("Listening AI response is not valid JSON: %s", e)
             raise ValueError("Failed to parse AI response for listening task")
@@ -102,6 +104,11 @@ class ListeningTaskService:
         for raw in raw_questions:
             if not isinstance(raw, dict):
                 continue
+            if raw.get("type") == "multiple_choice":
+                raw["correctAnswer"] = coerce_mc_answer(
+                    raw.get("correctAnswer", raw.get("correct_answer")),
+                    raw.get("options") or [],
+                )
             try:
                 questions.append(ListeningQuestionAdapter.validate_python(raw))
             except Exception as e:

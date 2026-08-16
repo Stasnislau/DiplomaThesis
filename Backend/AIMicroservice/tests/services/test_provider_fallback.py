@@ -178,7 +178,7 @@ class TestProviderFailover:
 
         async def flaky(**kwargs):
             seen.append(kwargs["model"])
-            if kwargs["model"].startswith("groq/"):
+            if kwargs["model"] == module.PROVIDER_CONFIG["groq"]["model"]:
                 raise Timeout("upstream timed out", "groq", "groq")
             return _Reply("from the default")
 
@@ -187,7 +187,8 @@ class TestProviderFailover:
         out = await ai.get_ai_response("prompt", user_context=LEARNER)
 
         assert out == "from the default"
-        assert seen.count("groq/llama-3.3-70b-versatile") == 3, "retry budget unused"
+        groq_model = module.PROVIDER_CONFIG["groq"]["model"]
+        assert seen.count(groq_model) == 3, "retry budget unused"
         assert seen[-1] == module.PROVIDER_CONFIG["google-geminis"]["model"]
 
     @pytest.mark.asyncio

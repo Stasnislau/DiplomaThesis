@@ -24,6 +24,9 @@ load_dotenv(
 )
 
 GROQ_KEY = os.getenv("GROQ_API_KEY", "")
+# groq: learner has a stored Groq key (the training-provider path).
+# system: no stored keys — the request must land on google-geminis / Vertex Flash.
+E2E_PROVIDER = os.getenv("E2E_PROVIDER", "groq").strip().lower() or "groq"
 
 RATE_LIMIT_PAUSE = 4
 RETRY_PAUSE = 12
@@ -81,24 +84,41 @@ def post_live(
 
 @pytest.fixture(autouse=True)
 def _env_and_throttle(monkeypatch: pytest.MonkeyPatch) -> None:
-    assert GROQ_KEY, "GROQ_API_KEY must be set: these tests call a real provider"
+    if E2E_PROVIDER == "groq":
+        assert GROQ_KEY, "GROQ_API_KEY must be set: these tests call a real provider"
     monkeypatch.setenv("PUBLIC_BASE_URL", "http://e2e.test")
+    # LiteLLM's Vertex client reads VERTEXAI_* , the app .env uses VERTEX_AI_*.
+    project = os.getenv("VERTEX_AI_PROJECT_ID") or os.getenv("VERTEXAI_PROJECT")
+    # Gemini 3 Flash is global; VERTEX_AI_LOCATION is for Imagen, not chat.
+    chat_location = os.getenv("VERTEX_CHAT_LOCATION") or "global"
+    if project:
+        monkeypatch.setenv("VERTEXAI_PROJECT", project)
+    monkeypatch.setenv("VERTEXAI_LOCATION", chat_location)
+    if E2E_PROVIDER == "system":
+        monkeypatch.delenv("GROQ_API_KEY", raising=False)
     time.sleep(RATE_LIMIT_PAUSE)
 
 
 @pytest.fixture
 def client() -> Iterable[TestClient]:
     """The application with only the neighbours mocked. Every model call is real."""
+    if E2E_PROVIDER == "groq":
+        token_patch = patch(
+            "services.user_service.UserService.get_default_ai_token",
+            new=AsyncMock(return_value={"aiProviderId": "groq", "token": GROQ_KEY}),
+        )
+    else:
+        token_patch = patch(
+            "services.user_service.UserService.get_default_ai_token",
+            new=AsyncMock(side_effect=Exception("No AI tokens configured for user")),
+        )
     with patch(
         "services.user_service.UserService.get_recent_history",
         new=AsyncMock(return_value=[]),
     ), patch(
         "services.user_service.UserService.log_task_history",
         new=AsyncMock(return_value=None),
-    ), patch(
-        "services.user_service.UserService.get_default_ai_token",
-        new=AsyncMock(return_value={"aiProviderId": "groq", "token": GROQ_KEY}),
-    ), patch(
+    ), token_patch, patch(
         "services.listening_task_service.os.makedirs",
     ), patch(
         "services.listening_task_service.aiofiles.open",
