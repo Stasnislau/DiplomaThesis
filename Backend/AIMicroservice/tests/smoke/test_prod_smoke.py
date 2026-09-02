@@ -1,23 +1,3 @@
-"""Production-grade smoke: hit every Phase 1+2+3 endpoint over real
-HTTP via FastAPI TestClient with realistic payloads, mocking only the
-external boundaries (AI provider, TTS, Whisper, Vector DB, User DB).
-
-The point isn't to cover business logic (unit tests do that) — it's
-to verify the WIRING:
-
-  - Routes are reachable at their expected paths.
-  - Auth / X-User-Id headers are honoured by extract_user_context.
-  - Request DTOs accept what the FE actually sends (snake_case +
-    camelCase aliases).
-  - Response payloads round-trip through BaseResponse + their own
-    Pydantic models without validation errors.
-  - Discriminated-union question shapes parse for every variant.
-
-A passing run here means a fresh deploy will at least not 500 on the
-happy path.  Use the local Python smoke for pre-deploy CI; use
-scripts/post_deploy_smoke.py for post-deploy verification of the live
-URL.
-"""
 
 from __future__ import annotations
 
@@ -39,7 +19,6 @@ _TEST_USER_ID = "smoke-user-00000000"
 
 
 def _make_smoke_token(user_id: str = _TEST_USER_ID) -> str:
-    """Mint the bearer token the gateway forwards on a learner request."""
     return jwt.encode(
         {"sub": user_id, "iat": int(time.time())},
         _TEST_JWT_SECRET,
@@ -60,13 +39,6 @@ def _auth_headers(user_id: str = _TEST_USER_ID, ui_locale: str = "en") -> dict:
 
 @pytest.fixture
 def smoke_client(monkeypatch: pytest.MonkeyPatch) -> Iterable[TestClient]:
-    """Build the real FastAPI app, then patch its hot-path boundaries:
-      - AI provider (litellm.acompletion → mocked AsyncMock)
-      - Whisper transcription (httpx call)
-      - TTS synth (Google Cloud client)
-      - User microservice HTTP (history reads/writes)
-      - Vector DB (in-process Mongo replacement)
-    Yields a TestClient that responds to all auth-required routes."""
     monkeypatch.setenv("PUBLIC_BASE_URL", "http://smoke.test")
 
     fake_user_svc_get = AsyncMock(return_value={"success": True, "payload": []})
@@ -182,7 +154,6 @@ def smoke_client(monkeypatch: pytest.MonkeyPatch) -> Iterable[TestClient]:
 
 
 def _payload(resp_json: dict) -> Any:
-    """Extract `payload` from BaseResponse, asserting `success`."""
     assert resp_json.get("success") is True, f"BaseResponse not success: {resp_json}"
     return resp_json["payload"]
 
@@ -199,8 +170,6 @@ def test_api_health_ok(smoke_client: TestClient) -> None:
 
 
 def test_protected_endpoint_rejects_no_auth(smoke_client: TestClient) -> None:
-    """A protected endpoint without auth must 401, not 500. This is
-    what catches a mis-applied middleware in CI."""
     r = smoke_client.post(
         "/api/tasks/listening",
         json={"language": "English", "level": "A1"},
@@ -211,8 +180,6 @@ def test_protected_endpoint_rejects_no_auth(smoke_client: TestClient) -> None:
 def test_protected_endpoint_rejects_a_missing_identity_header(
     smoke_client: TestClient,
 ) -> None:
-    """The identity comes from X-User-Id, which the gateway attaches after
-    Auth validates the token. A request without it must 401, not 500."""
     headers = _auth_headers()
     del headers["X-User-Id"]
     r = smoke_client.post(
@@ -224,8 +191,6 @@ def test_protected_endpoint_rejects_a_missing_identity_header(
 
 
 def _minimal_pdf_bytes() -> bytes:
-    """Real PDF the parser will accept, so process_pdf's pypdf reader
-    sees a clean text page."""
     from reportlab.pdfgen import canvas
     from reportlab.lib.pagesizes import letter
 
@@ -240,13 +205,6 @@ def _minimal_pdf_bytes() -> bytes:
 
 
 def test_phase1_upload_returns_document_map(smoke_client: TestClient) -> None:
-    """POST /materials/upload — happy path. The fixture's default AI
-    response is already a valid DocumentMap, so this exercises:
-      - file upload (multipart),
-      - pypdf parsing on a real PDF,
-      - classification AI call,
-      - DocumentMap parsing,
-      - BaseResponse wrapping."""
     pdf = _minimal_pdf_bytes()
 
     r = smoke_client.post(
@@ -264,8 +222,6 @@ def test_phase1_upload_returns_document_map(smoke_client: TestClient) -> None:
 def test_phase1_quiz_round_trips_document_map_and_parses_all_7_types(
     smoke_client: TestClient,
 ) -> None:
-    """POST /materials/quiz — given a DocumentMap, must produce a
-    QuizContent with each of the 7 discriminated-union variants."""
     smoke_client.fake_vector_db.search_materials = MagicMock(
         return_value=[
             type(
@@ -376,7 +332,6 @@ def test_phase1_quiz_round_trips_document_map_and_parses_all_7_types(
 
 
 def test_phase2_listening_default_mix(smoke_client: TestClient) -> None:
-    """Default request (no question_types) — historic MC + FIB shape."""
     smoke_client.fake_ai.return_value = json.dumps(
         {
             "transcript": "Once upon a time there was a fox.",
@@ -411,9 +366,6 @@ def test_phase2_listening_default_mix(smoke_client: TestClient) -> None:
 def test_phase2_listening_accepts_camelcase_question_types(
     smoke_client: TestClient,
 ) -> None:
-    """The DTO has alias_generator=to_camel + populate_by_name. The FE
-    sends `question_types` (snake_case) but a hand-coded curl call
-    might send `questionTypes` (camelCase) — both must work."""
     smoke_client.fake_ai.return_value = json.dumps(
         {
             "transcript": "Sample.",
@@ -443,8 +395,6 @@ def test_phase2_listening_accepts_camelcase_question_types(
 def test_phase2_listening_multi_speaker_routes_to_multispeaker_tts(
     smoke_client: TestClient,
 ) -> None:
-    """Transcript with [Speaker N]: tags must trigger
-    synthesize_multispeaker, and the speakers list must bubble up."""
     smoke_client.fake_tts_multispeaker.return_value = (
         b"multi-mp3",
         ["Speaker 1", "Speaker 2"],
@@ -496,8 +446,6 @@ def test_phase2_listening_multi_speaker_routes_to_multispeaker_tts(
 def test_phase2_listening_each_simple_type_round_trips(
     smoke_client: TestClient, qtype: str, ans_field: str, ans_value: str
 ) -> None:
-    """Each non-pair listening type must serialise + deserialise via
-    ListeningQuestionAdapter without dropping fields."""
     base = {"type": qtype, "question": "Q?"}
     if qtype == "multiple_choice":
         base["options"] = ["a", "b"]
@@ -530,8 +478,6 @@ def test_phase2_listening_each_simple_type_round_trips(
 def test_phase3_practice_prompt_per_format(
     smoke_client: TestClient, fmt: str, returned_field: str
 ) -> None:
-    """POST /speaking/practice-prompt must return a SpeakingPromptResponse
-    with the right durationSeconds + rubricHints for the format."""
     smoke_client.fake_ai.return_value = json.dumps(
         {returned_field: f"Smoke prompt for {fmt}", "translation": ""}
     )
@@ -551,7 +497,6 @@ def test_phase3_practice_prompt_per_format(
 def test_phase3_practice_prompt_repeat_after_me_includes_audio(
     smoke_client: TestClient,
 ) -> None:
-    """repeat_after_me wires TTSService.synthesize → audioUrl."""
     smoke_client.fake_ai.return_value = json.dumps(
         {
             "phrase": "Could I have a coffee, please?",
@@ -577,8 +522,6 @@ def test_phase3_practice_prompt_repeat_after_me_includes_audio(
 def test_phase3_grade_response_repeat_after_me_uses_wer(
     smoke_client: TestClient,
 ) -> None:
-    """repeat_after_me grading is deterministic WER vs target phrase
-    — the LLM should NOT be called for this format."""
     target = "She left for Madrid on Tuesday morning."
     fake_factory = smoke_client.fake_whisper_factory
     from main import speaking_service as speaking_singleton
@@ -609,7 +552,6 @@ def test_phase3_grade_response_repeat_after_me_uses_wer(
 def test_phase3_grade_response_timed_response_uses_llm_rubric(
     smoke_client: TestClient,
 ) -> None:
-    """Content-graded format → LLM is called once for rubric scoring."""
     smoke_client.fake_ai.return_value = json.dumps(
         {
             "overall_assessment": "Solid answer with concrete details.",
@@ -638,8 +580,6 @@ def test_phase3_grade_response_timed_response_uses_llm_rubric(
 def test_phase3_grade_response_rejects_unknown_format(
     smoke_client: TestClient,
 ) -> None:
-    """Defensive: an unknown format must surface a 400 with a known
-    error code, not 500 with a stack trace."""
     r = smoke_client.post(
         "/api/speaking/grade-response",
         files={"audio_file": ("x.webm", b"a", "audio/webm")},
@@ -656,8 +596,6 @@ def test_phase3_grade_response_rejects_unknown_format(
 def test_locale_header_drives_ui_language_in_prompt(
     smoke_client: TestClient,
 ) -> None:
-    """X-UI-Locale: pl must reach the AI prompt as a Polish hint.
-    We assert by inspecting the kwargs the AI mock receives."""
     smoke_client.fake_ai.return_value = json.dumps(
         {"question": "Co gotujesz najlepiej?", "translation": ""}
     )
@@ -678,11 +616,6 @@ def test_locale_header_drives_ui_language_in_prompt(
 def test_listening_result_endpoint_writes_history(
     smoke_client: TestClient,
 ) -> None:
-    """POST /tasks/listening/result must accept the FE's session
-    summary and call user_service.log_task_history with the metadata
-    fields derive_adaptive_focus reads (errorTypes / errorExamples /
-    weaknesses). Until this endpoint existed, listening sessions
-    never reached the history table at all."""
     from unittest.mock import AsyncMock, patch
 
     log_mock = AsyncMock(return_value=None)
@@ -723,10 +656,6 @@ def test_listening_result_endpoint_writes_history(
 def test_listening_result_high_score_omits_weaknesses(
     smoke_client: TestClient,
 ) -> None:
-    """If the user nailed the session (score>=60), we don't pollute
-    `weaknesses` with the generic 'listening comprehension' tag —
-    that would derail adaptive logic into drilling something the
-    user already mastered."""
     from unittest.mock import AsyncMock, patch
 
     log_mock = AsyncMock(return_value=None)
@@ -754,9 +683,6 @@ def test_listening_result_high_score_omits_weaknesses(
 def test_materials_result_endpoint_writes_history(
     smoke_client: TestClient,
 ) -> None:
-    """POST /materials/result fills the gap where /materials/quiz
-    logged the GENERATION (score=null) but never the actual
-    per-session score. Adaptive needs the latter."""
     from unittest.mock import AsyncMock, patch
 
     log_mock = AsyncMock(return_value=None)
@@ -797,9 +723,6 @@ def test_materials_result_endpoint_writes_history(
 def test_materials_result_truncates_long_error_text(
     smoke_client: TestClient,
 ) -> None:
-    """Defence: ridiculously long question text or suggestion must be
-    capped at 160 chars to keep adaptive prompts inside the LLM
-    context budget."""
     from unittest.mock import AsyncMock, patch
 
     log_mock = AsyncMock(return_value=None)
@@ -831,10 +754,6 @@ def test_materials_result_truncates_long_error_text(
 def test_structured_error_shape_for_bad_listening_request(
     smoke_client: TestClient,
 ) -> None:
-    """Validation error must produce a structured JSON body the FE
-    can parse — not an HTML stack trace. AI's custom validation
-    handler wraps Pydantic errors in BaseResponse with `success: false`
-    and `payload.errors[]`."""
     r = smoke_client.post(
         "/api/tasks/listening",
         json={"level": "A1"},

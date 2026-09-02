@@ -13,6 +13,8 @@ from models.responses.explain_answer_response import ExplainAnswerResponse
 from models.request.writing_task_request import WritingTaskRequest
 from models.base_response import BaseResponse
 from utils.user_context import extract_user_context
+from utils.error_codes import AI_RESPONSE_PARSE_FAILED, raise_with_code
+from utils.language_codes import to_iso_language
 
 
 class AdaptiveWritingRequest(BaseModel):
@@ -45,9 +47,6 @@ class WritingResultRequest(BaseModel):
 
 
 class TypedTaskRequest(BaseModel):
-    """Request a single Materials-style question of the chosen type
-    for the /quiz route — same discriminated-union catalog the
-    Materials surface uses, just standalone (no PDF context)."""
 
     language: str
     level: str
@@ -135,15 +134,10 @@ class WritingController:
         async def generate_adaptive_task(
             request: Request, body: AdaptiveWritingRequest
         ) -> BaseResponse[AdaptiveWritingResponse]:
-            """Generate a writing task biased toward the user's recent
-            weaknesses (placement misses, low-score topics, frequent
-            speaking errors). Falls back to the regular generator
-            when there's no history to learn from."""
             user_context = extract_user_context(request)
             history = await self.user_service.get_recent_history(
                 user_context, limit=20
             )
-            from utils.language_codes import to_iso_language
             recurring = []
             language_code = to_iso_language(body.language)
             if language_code:
@@ -214,13 +208,7 @@ class WritingController:
         async def log_writing_result(
             request: Request, body: WritingResultRequest
         ) -> BaseResponse[bool]:
-            """Record the outcome of a writing task (any flavour) so
-            the next /writing/adaptive call sees what was answered
-            correctly vs not. Without this the adaptive loop is open —
-            we send tasks but never learn whether the user actually
-            beat them."""
             user_context = extract_user_context(request)
-            from utils.language_codes import to_iso_language
 
             await self.user_service.log_task_history(
                 user_context,
@@ -253,22 +241,9 @@ class WritingController:
         async def generate_typed_task(
             request: Request, body: TypedTaskRequest
         ) -> BaseResponse[QuizQuestion]:
-            """Generate ONE question of the requested Materials-style
-            type (multi_select_mc, true_false, matching, cloze_passage,
-            etc.) with no PDF context. Used by the Quiz route to
-            surface the full type catalog beyond the legacy
-            MC/FIB-only mix.
-
-            Reuses MaterialService.generate_standalone_task — same
-            Stage 2 + Stage 3 pipeline + dedup safeguards as Materials,
-            so a quality fix in either path benefits both."""
             from services.material_service import MaterialService
             from services.vector_db_service import VectorDBService
             from services.ai_service import AI_Service
-            from utils.error_codes import (
-                AI_RESPONSE_PARSE_FAILED,
-                raise_with_code,
-            )
 
             user_context = extract_user_context(request)
             material_service = MaterialService(
@@ -277,7 +252,6 @@ class WritingController:
             history = await self.user_service.get_recent_history(
                 user_context, limit=20
             )
-            from utils.language_codes import to_iso_language
             recurring = []
             language_code = to_iso_language(body.language)
             if language_code:
@@ -310,9 +284,6 @@ class WritingController:
         async def generate_essay(
             request: Request, body: EssayGenerateRequest
         ) -> BaseResponse[EssayTask]:
-            """Produce an essay PROMPT (topic + scaffolding) for the
-            learner. The user then writes their essay client-side and
-            posts it to /essay/evaluate to get a score."""
             user_context = extract_user_context(request)
             task = await self.writing_task_service.generate_essay_task(
                 body.language,
@@ -331,10 +302,7 @@ class WritingController:
         async def evaluate_essay(
             request: Request, body: EssayEvaluateRequest
         ) -> BaseResponse[EssayEvaluation]:
-            """Grade a learner's essay 0-100 and log the outcome to
-            history so adaptive logic can pick up writing weaknesses."""
             user_context = extract_user_context(request)
-            from utils.language_codes import to_iso_language
 
             evaluation = await self.writing_task_service.evaluate_essay(
                 body.language,

@@ -10,6 +10,7 @@ from utils.user_context import extract_user_context
 
 from models.request.placement_task_request import PlacementTaskRequest
 from models.request.evaluate_placement_test_request import EvaluatePlacementTestRequest
+from utils.error_codes import INPUT_VALIDATION_FAILED, PLACEMENT_EVALUATION_FAILED, PLACEMENT_GENERATION_FAILED, raise_with_code
 
 
 class PlacementController:
@@ -30,11 +31,6 @@ class PlacementController:
             user_context = extract_user_context(request)
             language = task_request.language
 
-            from utils.error_codes import (
-                INPUT_VALIDATION_FAILED,
-                PLACEMENT_GENERATION_FAILED,
-                raise_with_code,
-            )
             if language.lower() not in [lang.lower() for lang in AVAILABLE_LANGUAGES]:
                 raise_with_code(
                     INPUT_VALIDATION_FAILED,
@@ -65,11 +61,6 @@ class PlacementController:
             user_context = extract_user_context(request)
             language = eval_request.language
 
-            from utils.error_codes import (
-                INPUT_VALIDATION_FAILED,
-                PLACEMENT_EVALUATION_FAILED,
-                raise_with_code,
-            )
             if language.lower() not in [lang.lower() for lang in AVAILABLE_LANGUAGES]:
                 raise_with_code(
                     INPUT_VALIDATION_FAILED,

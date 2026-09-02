@@ -1,8 +1,3 @@
-"""Integration test: synthetic TOEFL-style PDF flows through the real
-pypdf parser and the (mocked) AI pipeline end-to-end. The point is to
-exercise the wiring — DocumentMap round-trip, multi-stage quiz
-generation, multi-variant question parsing — on a realistic input,
-not to validate AI behaviour itself."""
 
 import json
 import pytest
@@ -57,17 +52,6 @@ async def test_full_pipeline_on_synthetic_toefl_pdf(
     mock_vector_db: MagicMock,
     mock_ai_service: MagicMock,
 ) -> None:
-    """End-to-end trace:
-
-    1. process_pdf runs the real pypdf parser on a multi-page TOEFL-
-       shaped PDF, extracts text, and feeds the (mocked) classifier.
-    2. The classifier returns a TOEFL_Reading DocumentMap with one
-       reading_comprehension exercise sized to ~720 words.
-    3. generate_quiz is then called with that map. Stage 2 generates
-       a fresh passage; Stage 3 returns five different question
-       variants. The parser must route every one to the right
-       discriminated-union subclass.
-    """
     pdf_bytes = write_toefl_reading_pdf()
     classification_response = json.dumps(
         {
@@ -220,9 +204,6 @@ async def test_pipeline_rejects_garbled_pdf_text(
     material_service: MaterialService,
     mock_ai_service: MagicMock,
 ) -> None:
-    """Heuristic guard at process_pdf level: if pypdf coughs up
-    high-bit nonsense (custom-font / encrypted PDFs), we should
-    refuse rather than feed the AI invalid input."""
     garbage = "\x03\x05\x07\x0b\x0c\x0e\x10\x12" * 50
     fake_pdf_bytes = write_toefl_reading_pdf()
     from unittest.mock import patch

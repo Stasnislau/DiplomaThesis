@@ -1,31 +1,3 @@
-"""Stable, machine-readable codes for every HTTPException AI raises.
-
-Why we have this:
-
-  Without structured codes, the frontend either had to keyword-match
-  free-form English (brittle) or show the raw English to a Polish /
-  Spanish user (ugly). With every failure carrying a `code` field the
-  frontend can branch on it, look up a localized string, and the
-  English `message` stays as a fallback for codes the UI doesn't know
-  yet.
-
-Wire format (since the structured-error refactor):
-
-    HTTPException(detail={"code": "<CODE>", "message": "<msg>"},
-                  status_code=<int>)
-
-FastAPI emits this verbatim as `{"detail": {"code": ..., "message": ...}}`
-so the frontend reads `detail.code` directly — no string parsing.
-
-Adding a new code:
-
-    1. Add a new constant below in the matching section.
-    2. Add a translation key `errors.codes.<CODE>` in
-       Frontend/src/config/i18n.ts under all locales.
-    3. Use raise_with_code() at the call site.
-
-Don't reuse codes for different conditions — readers grep for them.
-"""
 from typing import NoReturn
 
 from fastapi import HTTPException
@@ -78,13 +50,6 @@ USER_TOKENS_EMPTY = "USER_TOKENS_EMPTY"
 def raise_with_code(
     code: str, status_code: int, message: str
 ) -> NoReturn:
-    """Raise an HTTPException with a structured `{code, message}` body.
-
-    FastAPI surfaces this verbatim as `{"detail": {"code": ...,
-    "message": ...}}` — clients read `detail.code` directly, no string
-    parsing. The English `message` stays as a fallback for any code
-    the frontend hasn't translated yet.
-    """
     raise HTTPException(
         status_code=status_code,
         detail={"code": code, "message": message},

@@ -9,6 +9,7 @@ from services.listening_task_service import ListeningTaskService
 from services.user_service import UserService
 from services.writing_task_service import WritingTaskService
 from utils.user_context import extract_user_context
+from utils.language_codes import to_iso_language
 
 
 class AdaptiveListeningResponse(BaseModel):
@@ -18,11 +19,6 @@ class AdaptiveListeningResponse(BaseModel):
 
 
 class ListeningErrorExample(BaseModel):
-    """One wrong-answer trace from a finished listening task. The
-    `type` is the question subtype (e.g. "fill_in_the_blank"), `text`
-    is a 160-char preview of the question, `suggestion` is the
-    canonical correct answer. Fed to derive_adaptive_focus so the
-    next task can drill the same kind of miss."""
 
     type: Optional[str] = None
     text: Optional[str] = None
@@ -73,15 +69,10 @@ class ListeningController:
         async def create_adaptive_listening_task(
             request: Request, task_request: ListeningTaskRequest
         ) -> BaseResponse[AdaptiveListeningResponse]:
-            """Listening passage biased toward the user's recent
-            weaknesses — the same focus extractor as /writing/adaptive,
-            but the keywords get woven into the audio passage so the
-            user listens to vocabulary they just got wrong."""
             user_context = extract_user_context(request)
             history = await self.user_service.get_recent_history(
                 user_context, limit=20
             )
-            from utils.language_codes import to_iso_language
             recurring = []
             language_code = to_iso_language(task_request.language)
             if language_code:
@@ -115,13 +106,6 @@ class ListeningController:
         async def log_listening_result(
             request: Request, body: ListeningResultRequest
         ) -> BaseResponse[bool]:
-            """Persist the outcome of a finished listening practice
-            session so /tasks/listening/adaptive (and the speaking /
-            writing adaptive paths) can read what the user struggled
-            with. Until this existed, listening results were a black
-            hole — the platform generated tasks but never learned from
-            misses, so the adaptive loop was effectively writing-only."""
-            from utils.language_codes import to_iso_language
 
             user_context = extract_user_context(request)
             await self.user_service.log_task_history(

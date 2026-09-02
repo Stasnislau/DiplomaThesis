@@ -20,6 +20,7 @@ from typing import Optional, Union, Dict, Any, Tuple
 
 from services.user_service import UserService
 from utils.user_context import UserContext
+from utils.error_codes import AI_API_KEY_MISSING, AI_AUTH_FAILED, AI_BAD_GATEWAY, AI_EMPTY_RESPONSE, AI_PROVIDER_UNSUPPORTED, AI_RATE_LIMITED, AI_TIMEOUT, raise_with_code
 
 logger = logging.getLogger(__name__)
 
@@ -32,13 +33,6 @@ _AI_RETRY_MAX_DELAY_S = 8.0
 
 
 def _is_retryable(exc: BaseException) -> bool:
-    """Decide whether an AI provider error is worth retrying.
-
-    Retry: timeouts, rate-limits, capacity-exhausted (NotFound on free
-    tier endpoints), and generic upstream errors (5xx / network).
-    Never retry: auth failures (key won't change between attempts) and
-    BadRequest unless it's the capacity-style 'no endpoints' marker.
-    """
     if isinstance(exc, (Timeout, RateLimitError)):
         return True
     if isinstance(exc, NotFoundError):
@@ -94,12 +88,8 @@ def _ai_cache_put(key: str, value: str) -> None:
 
 
 VERTEX_CHAT_MODEL = os.getenv("VERTEX_CHAT_MODEL", "vertex_ai/gemini-3-flash-preview")
-# Gemini 3 Flash is a global publisher model. VERTEX_AI_LOCATION stays
-# us-central1 for Imagen; chat must not inherit that or Vertex answers 404.
 VERTEX_CHAT_LOCATION = os.getenv("VERTEX_CHAT_LOCATION", "global")
 
-# The provider a request falls back to when the one the learner selected fails
-# for its whole retry budget (UC7 alternative flow 3a).
 _DEFAULT_PROVIDER_ID = "google-geminis"
 
 
@@ -140,11 +130,6 @@ class AI_Service:
     def _resolve_provider_params(
         self, ai_provider_id: str, api_key: Optional[str], require_api_key: bool
     ) -> Tuple[str, Dict[str, Any]]:
-        from utils.error_codes import (
-            AI_PROVIDER_UNSUPPORTED,
-            AI_API_KEY_MISSING,
-            raise_with_code,
-        )
         provider_config = PROVIDER_CONFIG.get(ai_provider_id)
         if not provider_config:
             raise_with_code(
@@ -176,12 +161,6 @@ class AI_Service:
         response_format: Optional[Dict[str, str]],
         temperature: float,
     ) -> Tuple[Any, Optional[BaseException]]:
-        """Call one provider up to _AI_RETRY_MAX_ATTEMPTS times.
-
-        Returns the response and None on success, or None and the last
-        exception when every attempt failed. Errors raised by this service
-        itself keep propagating, because a retry cannot change them.
-        """
         last_exc: Optional[BaseException] = None
         for attempt in range(1, _AI_RETRY_MAX_ATTEMPTS + 1):
             try:
@@ -203,7 +182,7 @@ class AI_Service:
                 return chat_response, None
             except HTTPException:
                 raise
-            except BaseException as exc:
+            except Exception as exc:
                 last_exc = exc
                 if attempt >= _AI_RETRY_MAX_ATTEMPTS or not _is_retryable(exc):
                     break
@@ -242,10 +221,7 @@ class AI_Service:
                 token = await self.user_service.get_default_ai_token(
                     user_context, ai_provider_id=ai_provider_id
                 )
-            except Exception as exc:  # noqa: BLE001
-                # A learner who has stored no key of their own still gets a
-                # task: the call falls through to the system key below. Only
-                # a learner-supplied key that fails should surface an error.
+            except Exception as exc:
                 logger.info("no stored token for this learner, using the system key: %s", exc)
         if token:
             litellm_model, litellm_params = self._resolve_provider_params(
@@ -287,10 +263,6 @@ class AI_Service:
             litellm_model, litellm_params, messages, response_format, temperature
         )
 
-        # UC7 alternative flow 3a: a provider the learner selected can fail for
-        # the whole retry budget. The request then runs once more on the system
-        # default instead of failing, and only a second failure reaches the
-        # learner. A call already on the default has nowhere to fall back to.
         if chat_response is None and token:
             fallback_model, fallback_params = self._resolve_provider_params(
                 _DEFAULT_PROVIDER_ID, api_key=None, require_api_key=False
@@ -313,8 +285,6 @@ class AI_Service:
                 if fallback_response is not None:
                     chat_response = fallback_response
                     litellm_model = fallback_model
-                    # The cache key names the provider the learner asked for,
-                    # so an answer from the default must not be stored under it.
                     cache_key = None
                 else:
                     last_exc = fallback_exc or last_exc
@@ -322,7 +292,6 @@ class AI_Service:
         if chat_response is None:
             exc = last_exc
             if isinstance(exc, AuthenticationError):
-                from utils.error_codes import AI_AUTH_FAILED, raise_with_code
                 logger.error("Invalid API key for model %s", litellm_model)
                 raise_with_code(
                     AI_AUTH_FAILED,
@@ -330,7 +299,6 @@ class AI_Service:
                     "Invalid or expired API key for the selected AI provider",
                 )
             if isinstance(exc, RateLimitError):
-                from utils.error_codes import AI_RATE_LIMITED, raise_with_code
                 logger.warning("Rate limit hit for model %s", litellm_model)
                 raise_with_code(
                     AI_RATE_LIMITED,
@@ -338,14 +306,12 @@ class AI_Service:
                     "AI provider rate limit exceeded, please try again later",
                 )
             if isinstance(exc, Timeout):
-                from utils.error_codes import AI_TIMEOUT, raise_with_code
                 logger.warning("Timeout calling model %s", litellm_model)
                 raise_with_code(
                     AI_TIMEOUT,
                     status.HTTP_504_GATEWAY_TIMEOUT,
                     "AI provider did not respond in time",
                 )
-            from utils.error_codes import AI_BAD_GATEWAY, raise_with_code
             logger.exception(
                 "Unexpected error from AI provider after %d attempts: %s",
                 _AI_RETRY_MAX_ATTEMPTS,
@@ -359,7 +325,6 @@ class AI_Service:
 
         content: Optional[str] = chat_response.choices[0].message.content
         if content is None:
-            from utils.error_codes import AI_EMPTY_RESPONSE, raise_with_code
             raise_with_code(
                 AI_EMPTY_RESPONSE,
                 status.HTTP_502_BAD_GATEWAY,

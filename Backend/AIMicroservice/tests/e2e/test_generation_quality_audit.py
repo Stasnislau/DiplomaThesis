@@ -1,11 +1,3 @@
-"""Dump and score live tasks from the default training model (Groq GPT-OSS 120B).
-
-This is the audit the property suite does not do: it prints every payload
-so we can see *why* a task is nonsense, not only that a field exists.
-Run with:
-
-    pytest tests/e2e/test_generation_quality_audit.py -v -s
-"""
 
 from __future__ import annotations
 

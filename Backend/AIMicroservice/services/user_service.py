@@ -6,14 +6,12 @@ import httpx
 from fastapi import status
 
 from utils.user_context import UserContext
+from utils.error_codes import USER_SERVICE_BAD_REQUEST, USER_SERVICE_BAD_RESPONSE, USER_SERVICE_UNAUTHORIZED, USER_SERVICE_UNREACHABLE, USER_TOKENS_EMPTY, raise_with_code
 
 logger = logging.getLogger("ai_microservice")
 
 
 def _internal_key() -> str:
-    """Read INTERNAL_SERVICE_KEY at the call site so a fresh container
-    that forgot to set it gets a clear runtime error instead of silently
-    using a published default."""
     key = os.environ.get("INTERNAL_SERVICE_KEY")
     if not key:
         raise RuntimeError(
@@ -58,13 +56,6 @@ class UserService:
     async def _get(
         self, path: str, forward_headers: Dict[str, str]
     ) -> Dict[str, Any]:
-        from utils.error_codes import (
-            USER_SERVICE_UNREACHABLE,
-            USER_SERVICE_UNAUTHORIZED,
-            USER_SERVICE_BAD_RESPONSE,
-            USER_SERVICE_BAD_REQUEST,
-            raise_with_code,
-        )
         url = f"{self.base_url}{path}"
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
@@ -114,11 +105,6 @@ class UserService:
             )
 
     async def get_ai_tokens(self, ctx: UserContext) -> List[UserAIToken]:
-        from utils.error_codes import (
-            USER_SERVICE_BAD_REQUEST,
-            USER_SERVICE_BAD_RESPONSE,
-            raise_with_code,
-        )
         headers = ctx.to_forward_headers()
         headers["x-internal-service-key"] = _internal_key()
         data = await self._get("/ai-tokens", headers)
@@ -143,9 +129,6 @@ class UserService:
     async def log_task_history(
         self, ctx: UserContext, entry: TaskHistoryEntry
     ) -> None:
-        """Best-effort POST to /api/history. Never raises — history logging
-        must not block or fail the actual user-facing operation.
-        """
         try:
             url = f"{self.base_url}/history"
             headers = ctx.to_forward_headers()
@@ -159,17 +142,12 @@ class UserService:
                     response.status_code,
                     response.text[:200],
                 )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning("history log exception: %s", exc)
 
     async def record_user_error(
         self, ctx: UserContext, error: "UserErrorEntry"
     ) -> None:
-        """Best-effort POST to /api/user-errors. Records one recurring
-        error (FR6) with upsert semantics on the User side. Never raises —
-        error logging must not block or fail the grading response the user
-        is waiting on.
-        """
         try:
             url = f"{self.base_url}/user-errors"
             headers = ctx.to_forward_headers()
@@ -183,15 +161,12 @@ class UserService:
                     response.status_code,
                     response.text[:200],
                 )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning("record_user_error exception: %s", exc)
 
     async def post_achievement_progress(
         self, ctx: UserContext, achievement_name: str, increment_by: int = 1
     ) -> None:
-        """Best-effort POST to /api/achievements/progress. Never raises —
-        achievement updates must not block or fail the user-facing operation.
-        """
         try:
             url = f"{self.base_url}/achievements/progress"
             headers = ctx.to_forward_headers()
@@ -209,13 +184,10 @@ class UserService:
                     response.status_code,
                     response.text[:200],
                 )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning("post_achievement_progress exception: %s", exc)
 
     async def log_activity(self, ctx: UserContext, xp_gained: int) -> None:
-        """Best-effort POST to /api/me/activity. Never raises — XP/streak
-        updates must not block or fail the user-facing operation.
-        """
         try:
             url = f"{self.base_url}/me/activity"
             headers = ctx.to_forward_headers()
@@ -233,28 +205,12 @@ class UserService:
                     response.status_code,
                     response.text[:200],
                 )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning("log_activity exception: %s", exc)
 
     async def get_recent_history(
         self, ctx: UserContext, limit: int = 20, task_type: Optional[str] = None
     ) -> List[Dict[str, Any]]:
-        """Pull the user's recent task-history entries.
-
-        Drives /writing/adaptive: we read the user's recent placement
-        weaknesses, low scores and speaking-error counts to bias the
-        next AI-generated task toward what they're actually struggling
-        with, instead of asking them to re-pick a topic.
-
-        Returns [] on any failure — adaptive personalisation is a
-        nice-to-have, never a hard dependency on the user-service
-        being reachable.
-        """
-        from utils.error_codes import (
-            USER_SERVICE_BAD_REQUEST,
-            USER_SERVICE_BAD_RESPONSE,
-            raise_with_code,
-        )
         headers = ctx.to_forward_headers()
         headers["x-internal-service-key"] = _internal_key()
         path = f"/history?limit={int(limit)}"
@@ -262,7 +218,7 @@ class UserService:
             path += f"&type={task_type}"
         try:
             data = await self._get(path, headers)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning("get_recent_history failed: %s", exc)
             return []
 
@@ -277,24 +233,13 @@ class UserService:
     async def get_recurring_errors(
         self, ctx: UserContext, language_code: str
     ) -> List[Dict[str, Any]]:
-        """Pull the log of errors this learner keeps repeating (FR6).
-
-        Every graded speaking answer writes its faults here, and the User
-        service counts how often each one returns. The rows come back
-        ordered by that count, so the caller can take the worst few and
-        aim the next generated task at them.
-
-        Returns [] on any failure, for the same reason as the history
-        above: a generated task must still arrive when the log is
-        unreachable.
-        """
         try:
             headers = ctx.to_forward_headers()
             headers["x-internal-service-key"] = _internal_key()
             data = await self._get(
                 f"/user-errors?languageCode={language_code}", headers
             )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning("get_recurring_errors failed: %s", exc)
             return []
 
@@ -311,7 +256,6 @@ class UserService:
     ) -> UserAIToken:
         tokens = await self.get_ai_tokens(ctx)
         if not tokens:
-            from utils.error_codes import USER_TOKENS_EMPTY, raise_with_code
             raise_with_code(
                 USER_TOKENS_EMPTY,
                 status.HTTP_400_BAD_REQUEST,

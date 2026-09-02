@@ -1,9 +1,3 @@
-"""A reading lesson has to reach the learner as a passage plus questions.
-
-FR7 names reading as one of the four skills, and until this the quiz route
-offered every Materials type except the one that carries a passage: a learner
-could meet cloze and matching but never a comprehension question over a text.
-"""
 
 import pytest
 

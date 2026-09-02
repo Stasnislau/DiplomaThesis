@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1786215897067" clover="3.2.0">
-  <project timestamp="1786215897067" name="All files">
-    <metrics statements="334" coveredstatements="328" conditionals="112" coveredconditionals="99" methods="54" coveredmethods="53" elements="500" coveredelements="480" complexity="0" loc="334" ncloc="334" packages="9" files="17" classes="17"/>
+<coverage generated="1788300600525" clover="3.2.0">
+  <project timestamp="1788300600525" name="All files">
+    <metrics statements="333" coveredstatements="328" conditionals="112" coveredconditionals="99" methods="54" coveredmethods="53" elements="499" coveredelements="480" complexity="0" loc="333" ncloc="333" packages="8" files="16" classes="16"/>
     <package name="config">
       <metrics statements="1" coveredstatements="1" conditionals="14" coveredconditionals="14" methods="1" coveredmethods="1"/>
       <file name="configuration.ts" path="/Users/stanislauryzhkou/Programming/WUT/DiplomaThesis/Backend/AuthMicroservice/src/config/configuration.ts">
@@ -375,13 +375,6 @@
         <line num="15" count="2" type="cond" truecount="1" falsecount="0"/>
         <line num="16" count="1" type="stmt"/>
         <line num="22" count="1" type="stmt"/>
-      </file>
-    </package>
-    <package name="types.requests.ts">
-      <metrics statements="1" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
-      <file name="refreshRequest.ts" path="/Users/stanislauryzhkou/Programming/WUT/DiplomaThesis/Backend/AuthMicroservice/src/types/requests.ts/refreshRequest.ts">
-        <metrics statements="1" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
-        <line num="1" count="0" type="stmt"/>
       </file>
     </package>
     <package name="utils">

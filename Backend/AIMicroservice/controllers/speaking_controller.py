@@ -15,6 +15,8 @@ from models.responses.speaking_format_response import (
 )
 from utils.user_context import extract_user_context
 import logging
+from utils.error_codes import AI_RESPONSE_PARSE_FAILED, raise_with_code
+from utils.language_codes import to_iso_language
 
 logger = logging.getLogger("ai_microservice")
 
@@ -76,7 +78,6 @@ class SpeakingController:
                 ui_locale=ui_locale,
             )
 
-            from utils.language_codes import to_iso_language
 
             language_code = to_iso_language(language)
             if language_code:
@@ -102,14 +103,10 @@ class SpeakingController:
         async def get_practice_phrase(
             request: Request, body: PracticePhraseRequest
         ) -> BaseResponse[PracticePhraseResponse]:
-            """Generate one sentence for the user to read aloud,
-            biased toward their recent speaking weaknesses. Pair with
-            POST /speaking/analyze to score the recording."""
             user_context = extract_user_context(request)
             history = await self.user_service.get_recent_history(
                 user_context, limit=20
             )
-            from utils.language_codes import to_iso_language
             recurring = []
             language_code = to_iso_language(body.language)
             if language_code:
@@ -144,13 +141,10 @@ class SpeakingController:
         async def generate_speaking_prompt(
             request: Request, body: SpeakingPromptRequest
         ) -> BaseResponse[SpeakingPromptResponse]:
-            """Phase 3 — format-driven prompt generation. Returns the
-            text/audio the FE should display before the user records."""
             user_context = extract_user_context(request)
             history = await self.user_service.get_recent_history(
                 user_context, limit=20
             )
-            from utils.language_codes import to_iso_language
             recurring = []
             language_code = to_iso_language(body.language)
             if language_code:
@@ -192,15 +186,7 @@ class SpeakingController:
             target_phrase: str | None = Query(None, alias="targetPhrase"),
             ui_locale: str = Query("en", alias="uiLocale"),
         ) -> BaseResponse[SpeakingGradeResponse]:
-            """Phase 3 — grade a recorded response against a known
-            prompt. Defers to Whisper for transcription, then uses
-            either word-error-rate (repeat_after_me) or LLM-rubric
-            grading (everything else)."""
             if not is_known_format(format):
-                from utils.error_codes import (
-                    AI_RESPONSE_PARSE_FAILED,
-                    raise_with_code,
-                )
 
                 raise_with_code(
                     AI_RESPONSE_PARSE_FAILED,

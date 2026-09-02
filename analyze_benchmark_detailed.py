@@ -1,7 +1,3 @@
-"""
-Advanced Benchmark Data Analysis & Visualization
-Generates comprehensive report from benchmark results
-"""
 
 import pandas as pd
 import numpy as np
@@ -28,15 +24,14 @@ OUTPUT_DIR.mkdir(exist_ok=True)
 
 
 def load_data() -> tuple[pd.DataFrame, Dict[str, Any]]:
-    """Load CSV results and JSON detailed log"""
-    print("📊 Loading benchmark data...")
+    print("Loading benchmark data...")
     
     df = pd.read_csv(RESULTS_CSV)
     
     with open(DETAILED_LOG, 'r', encoding='utf-8') as f:
         detailed_log = json.load(f)
     
-    print(f"✅ Loaded {len(df)} records from {len(df['model'].unique())} models")
+    print(f"Loaded {len(df)} records from {len(df['model'].unique())} models")
     print(f"   Languages: {df['lang'].unique().tolist()}")
     print(f"   Levels: {df['level'].unique().tolist()}")
     print(f"   Task types: {df['task_type'].unique().tolist()}")
@@ -45,8 +40,7 @@ def load_data() -> tuple[pd.DataFrame, Dict[str, Any]]:
 
 
 def clean_and_process_data(df: pd.DataFrame) -> pd.DataFrame:
-    """Clean and add computed columns"""
-    print("\n🧹 Processing data...")
+    print("\n Processing data...")
     
     def safe_parse_json(x):
         if pd.isna(x) or x == '':
@@ -77,14 +71,13 @@ def clean_and_process_data(df: pd.DataFrame) -> pd.DataFrame:
         labels=['Fast (<2s)', 'Medium (2-5s)', 'Slow (5-10s)', 'Very Slow (>10s)']
     )
     
-    print(f"✅ Processed {len(df)} records with {df['is_success'].sum()} successful generations")
+    print(f"Processed {len(df)} records with {df['is_success'].sum()} successful generations")
     
     return df
 
 
 def generate_summary_statistics(df: pd.DataFrame) -> pd.DataFrame:
-    """Generate comprehensive summary statistics"""
-    print("\n📈 Generating summary statistics...")
+    print("\n Generating summary statistics...")
     
     summary = df.groupby(['model', 'lang', 'level']).agg({
         'score': ['mean', 'std', 'min', 'max', 'count'],
@@ -104,8 +97,7 @@ def generate_summary_statistics(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def plot_score_distribution_detailed(df: pd.DataFrame):
-    """Detailed score distribution analysis"""
-    print("\n📊 Creating score distribution plots...")
+    print("\n Creating score distribution plots...")
     
     fig, axes = plt.subplots(2, 2, figsize=(16, 12))
     
@@ -150,13 +142,12 @@ def plot_score_distribution_detailed(df: pd.DataFrame):
     
     plt.tight_layout()
     plt.savefig(OUTPUT_DIR / 'detailed_score_distribution.png', bbox_inches='tight')
-    print(f"   ✅ Saved: {OUTPUT_DIR / 'detailed_score_distribution.png'}")
+    print(f"Saved: {OUTPUT_DIR / 'detailed_score_distribution.png'}")
     plt.close()
 
 
 def plot_latency_analysis(df: pd.DataFrame):
-    """Comprehensive latency analysis"""
-    print("\n⚡ Creating latency analysis plots...")
+    print("\n Creating latency analysis plots...")
     
     fig, axes = plt.subplots(2, 2, figsize=(16, 12))
     
@@ -203,13 +194,12 @@ def plot_latency_analysis(df: pd.DataFrame):
     
     plt.tight_layout()
     plt.savefig(OUTPUT_DIR / 'latency_analysis.png', bbox_inches='tight')
-    print(f"   ✅ Saved: {OUTPUT_DIR / 'latency_analysis.png'}")
+    print(f"Saved: {OUTPUT_DIR / 'latency_analysis.png'}")
     plt.close()
 
 
-def plot_comprehensive_heatmap(df: pd.DataFrame):
-    """Advanced heatmap with multiple dimensions"""
-    print("\n🔥 Creating comprehensive heatmaps...")
+def plot_heatmaps(df: pd.DataFrame):
+    print("\nCreating heatmaps...")
     
     fig, axes = plt.subplots(2, 2, figsize=(18, 14))
     
@@ -268,14 +258,13 @@ def plot_comprehensive_heatmap(df: pd.DataFrame):
     ax4.set_ylabel('Model', fontsize=12)
     
     plt.tight_layout()
-    plt.savefig(OUTPUT_DIR / 'comprehensive_heatmaps.png', bbox_inches='tight')
-    print(f"   ✅ Saved: {OUTPUT_DIR / 'comprehensive_heatmaps.png'}")
+    plt.savefig(OUTPUT_DIR / 'heatmaps.png', bbox_inches='tight')
+    print(f"Saved: {OUTPUT_DIR / 'heatmaps.png'}")
     plt.close()
 
 
 def plot_model_comparison_radar(df: pd.DataFrame):
-    """Radar chart for multi-dimensional model comparison"""
-    print("\n🎯 Creating radar chart comparison...")
+    print("\n Creating radar chart comparison...")
     
     from math import pi
     
@@ -317,13 +306,12 @@ def plot_model_comparison_radar(df: pd.DataFrame):
     
     plt.tight_layout()
     plt.savefig(OUTPUT_DIR / 'model_radar_comparison.png', bbox_inches='tight')
-    print(f"   ✅ Saved: {OUTPUT_DIR / 'model_radar_comparison.png'}")
+    print(f"Saved: {OUTPUT_DIR / 'model_radar_comparison.png'}")
     plt.close()
 
 
 def create_detailed_questions_table(df: pd.DataFrame):
-    """Create filterable HTML table with all questions and scores"""
-    print("\n📋 Creating detailed questions table...")
+    print("\n Creating detailed questions table...")
     
     questions_df = df[[
         'model', 'lang', 'level', 'task_type', 'iteration',
@@ -391,10 +379,10 @@ def create_detailed_questions_table(df: pd.DataFrame):
     </style>
 </head>
 <body>
-    <h1>🔬 Benchmark Detailed Results: All Generated Questions & Evaluations</h1>
+    <h1> Benchmark Detailed Results: All Generated Questions & Evaluations</h1>
     
     <div class="stats">
-        <h2>📊 Summary Statistics</h2>
+        <h2> Summary Statistics</h2>
         <div class="stat-grid">
             <div class="stat-box">
                 <h3>{total_questions}</h3>
@@ -480,13 +468,12 @@ def create_detailed_questions_table(df: pd.DataFrame):
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write(html_output)
     
-    print(f"   ✅ Saved interactive table: {output_file}")
-    print(f"   📂 Open in browser to explore all {len(questions_df)} questions with filtering!")
+    print(f"Saved interactive table: {output_file}")
+    print(f"Open in browser to explore all {len(questions_df)} questions with filtering!")
 
 
 def export_latex_tables(summary: pd.DataFrame, df: pd.DataFrame):
-    """Export publication-ready LaTeX tables"""
-    print("\n📝 Exporting LaTeX tables for thesis...")
+    print("\n Exporting LaTeX tables for thesis...")
     
     ranking = summary.groupby('model').agg({
         'score_mean': 'mean',
@@ -522,16 +509,15 @@ def export_latex_tables(summary: pd.DataFrame, df: pd.DataFrame):
     with open(OUTPUT_DIR / 'table_language_performance.tex', 'w') as f:
         f.write(latex_lang)
     
-    print(f"   ✅ Saved LaTeX tables to {OUTPUT_DIR}")
+    print(f"Saved LaTeX tables to {OUTPUT_DIR}")
 
 
 def generate_markdown_report(summary: pd.DataFrame, df: pd.DataFrame):
-    """Generate comprehensive markdown report"""
-    print("\n📄 Generating markdown report...")
+    print("\nGenerating markdown report...")
     
     report = f"""# Benchmark Analysis Report - Detailed Results
 
-## Executive Summary
+## Overview
 
 - **Total Tests Conducted**: {len(df):,}
 - **Models Evaluated**: {len(df['model'].unique())}
@@ -539,7 +525,7 @@ def generate_markdown_report(summary: pd.DataFrame, df: pd.DataFrame):
 - **Proficiency Levels**: {', '.join(df['level'].unique())}
 - **Overall Success Rate**: {df['is_success'].mean() * 100:.1f}%
 
-## Key Findings
+## Results
 
 ### Top Performing Models (by Efficiency Score)
 
@@ -583,13 +569,12 @@ def generate_markdown_report(summary: pd.DataFrame, df: pd.DataFrame):
     with open(OUTPUT_DIR / 'detailed_analysis_report.md', 'w', encoding='utf-8') as f:
         f.write(report)
     
-    print(f"   ✅ Saved markdown report: {OUTPUT_DIR / 'detailed_analysis_report.md'}")
+    print(f"Saved markdown report: {OUTPUT_DIR / 'detailed_analysis_report.md'}")
 
 
 def main():
-    """Main execution pipeline"""
     print("=" * 60)
-    print("🚀 ADVANCED BENCHMARK ANALYSIS & VISUALIZATION")
+    print("Benchmark analysis")
     print("=" * 60)
     
     df, detailed_log = load_data()
@@ -600,7 +585,7 @@ def main():
     
     plot_score_distribution_detailed(df)
     plot_latency_analysis(df)
-    plot_comprehensive_heatmap(df)
+    plot_heatmaps(df)
     plot_model_comparison_radar(df)
     
     create_detailed_questions_table(df)
@@ -612,21 +597,21 @@ def main():
     df.to_csv(OUTPUT_DIR / 'processed_data.csv', index=False)
     
     print("\n" + "=" * 60)
-    print("✅ ANALYSIS COMPLETE!")
+    print("Analysis complete.")
     print("=" * 60)
-    print(f"\n📂 All outputs saved to: {OUTPUT_DIR.absolute()}")
-    print("\n📊 Generated files:")
+    print(f"\nOutputs written to: {OUTPUT_DIR.absolute()}")
+    print("\nGenerated files:")
     print("   - detailed_score_distribution.png")
     print("   - latency_analysis.png")
-    print("   - comprehensive_heatmaps.png")
+    print("   - heatmaps.png")
     print("   - model_radar_comparison.png")
-    print("   - detailed_questions_interactive.html  ⭐ Open this in browser!")
+    print("   - detailed_questions_interactive.html")
     print("   - table_model_ranking.tex")
     print("   - table_language_performance.tex")
     print("   - detailed_analysis_report.md")
     print("   - summary_statistics.csv")
     print("   - processed_data.csv")
-    print("\n💡 Next step: Open 'detailed_questions_interactive.html' to explore all questions!")
+    print("\n Next step: Open 'detailed_questions_interactive.html'to explore all questions!")
 
 
 if __name__ == "__main__":

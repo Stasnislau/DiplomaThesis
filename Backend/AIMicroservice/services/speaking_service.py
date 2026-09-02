@@ -30,6 +30,8 @@ from models.responses.speaking_format_response import (
     FORMAT_RUBRIC_HINTS,
 )
 from utils.convert_to_language_code import convert_to_language_code
+from utils.error_codes import AI_RESPONSE_PARSE_FAILED, SPEAKING_FEEDBACK_FAILED, SPEAKING_FEEDBACK_PARSE_FAILED, SPEAKING_GROQ_KEY_MISSING, SPEAKING_NO_AUDIO, SPEAKING_TRANSCRIBE_FAILED, SPEAKING_TRANSCRIBE_PROVIDER_ERROR, raise_with_code
+from utils.language_codes import to_iso_language
 
 load_dotenv()
 
@@ -62,15 +64,6 @@ class SpeakingService:
         focus_keywords: Optional[List[str]] = None,
         focus_weaknesses: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
-        """Hand the user a single sentence to read aloud, optionally
-        targeted at their recent speaking weaknesses. Designed to
-        chain into /speaking/analyze: the user records themselves
-        saying this sentence, then the analyzer scores it.
-
-        Returns `{phrase, focus, ipaHint?, translation?}`. Phrase is in
-        the target language; translation is in the UI language so the
-        learner can verify meaning at a glance.
-        """
         ui_locale = (
             user_context.ui_locale_label if user_context else "English"
         )
@@ -107,17 +100,11 @@ Respond with a single JSON object only, no prose, with these keys:
         raw = await self.ai_service.get_ai_response(
             prompt, user_context=user_context, temperature=0.6
         )
-        import json
-
         try:
             data = json.loads(raw)
-        except Exception:
+        except json.JSONDecodeError:
             data = {"phrase": raw.strip()[:200], "focus": "", "translation": ""}
         if not isinstance(data, dict) or not data.get("phrase"):
-            from utils.error_codes import (
-                AI_RESPONSE_PARSE_FAILED,
-                raise_with_code,
-            )
             raise_with_code(
                 AI_RESPONSE_PARSE_FAILED,
                 500,
@@ -157,18 +144,12 @@ Respond with a single JSON object only, no prose, with these keys:
         self._analyze_cache[key] = (time.time() + _SPEAKING_CACHE_TTL, value)
 
     async def _resolve_groq_key(self, ctx: Optional[UserContext]) -> Optional[str]:
-        """The learner's own Groq key if they stored one, else the system key.
-
-        Transcription used to read GROQ_API_KEY from the environment and
-        nothing else, so a learner who had configured Groq in the interface
-        still got a 500 whenever the host had no key of its own.
-        """
         if ctx is not None:
             try:
                 token = await self.user_service.get_default_ai_token(
                     ctx, ai_provider_id="groq"
                 )
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 logger.info("no stored Groq token for this learner: %s", exc)
             else:
                 if token.get("aiProviderId") == "groq" and token.get("token"):
@@ -184,7 +165,6 @@ Respond with a single JSON object only, no prose, with these keys:
     ) -> WhisperTranscriptionResult:
         api_key = await self._resolve_groq_key(user_context)
         if not api_key:
-            from utils.error_codes import SPEAKING_GROQ_KEY_MISSING, raise_with_code
             raise_with_code(
                 SPEAKING_GROQ_KEY_MISSING,
                 500,
@@ -220,7 +200,6 @@ Respond with a single JSON object only, no prose, with these keys:
                 logger.error(
                     f"Groq Whisper transcription failed ({response.status_code}): {response.text}"
                 )
-                from utils.error_codes import SPEAKING_TRANSCRIBE_PROVIDER_ERROR, raise_with_code
                 raise_with_code(
                     SPEAKING_TRANSCRIBE_PROVIDER_ERROR,
                     502,
@@ -262,7 +241,6 @@ Respond with a single JSON object only, no prose, with these keys:
         except HTTPException:
             raise
         except Exception as e:
-            from utils.error_codes import SPEAKING_TRANSCRIBE_FAILED, raise_with_code
             logger.error(f"Error during Groq Whisper transcription ({filename}): {e}")
             raise_with_code(
                 SPEAKING_TRANSCRIBE_FAILED,
@@ -273,9 +251,7 @@ Respond with a single JSON object only, no prose, with these keys:
     def _compute_pronunciation_metrics(
         self, transcription: WhisperTranscriptionResult
     ) -> PronunciationMetrics:
-        """Extract pronunciation quality metrics from Whisper's output."""
         segments = transcription.segments or []
-        words = transcription.words or []
 
         logprobs = [s.avg_logprob for s in segments if s.avg_logprob is not None]
         if logprobs:
@@ -285,19 +261,20 @@ Respond with a single JSON object only, no prose, with these keys:
             overall_confidence = 0.5
 
         words_per_minute: Optional[float] = None
-        if words and len(words) >= 2:
-            first_word = words[0]
-            last_word = words[-1]
-            if first_word.start is not None and last_word.end is not None:
-                duration_seconds = last_word.end - first_word.start
+        word_count = len(transcription.text.split())
+        if segments and word_count:
+            first_seg = segments[0]
+            last_seg = segments[-1]
+            if first_seg.start is not None and last_seg.end is not None:
+                duration_seconds = last_seg.end - first_seg.start
                 if duration_seconds > 0:
-                    words_per_minute = round((len(words) / duration_seconds) * 60, 1)
+                    words_per_minute = round((word_count / duration_seconds) * 60, 1)
 
         avg_pause: float = 0.0
         pauses: List[float] = []
-        for i in range(1, len(words)):
-            prev_end = words[i - 1].end
-            curr_start = words[i].start
+        for i in range(1, len(segments)):
+            prev_end = segments[i - 1].end
+            curr_start = segments[i].start
             if prev_end is not None and curr_start is not None:
                 gap = curr_start - prev_end
                 if gap > 0.05:
@@ -358,13 +335,6 @@ Respond with a single JSON object only, no prose, with these keys:
         ui_locale: Optional[str] = None,
         spoken_language: Optional[str] = None,
     ) -> dict:
-        """Get structured AI feedback on the transcription.
-
-        ui_locale: language to write the human-readable strings in (assessment,
-        explanations, suggestions). Defaults to English.
-        spoken_language: the language the user was speaking — analysis is
-        constrained to errors in THAT language, not against English defaults.
-        """
         locale_label_map = {
             "en": "English",
             "pl": "Polish",
@@ -433,7 +403,6 @@ Respond with a single JSON object only, no prose, with these keys:
             )
             return json.loads(ai_response_str)
         except json.JSONDecodeError as e:
-            from utils.error_codes import SPEAKING_FEEDBACK_PARSE_FAILED, raise_with_code
             logger.error(f"Failed to parse AI feedback JSON: {e}")
             raise_with_code(
                 SPEAKING_FEEDBACK_PARSE_FAILED,
@@ -443,7 +412,6 @@ Respond with a single JSON object only, no prose, with these keys:
         except HTTPException:
             raise
         except Exception as e:
-            from utils.error_codes import SPEAKING_FEEDBACK_FAILED, raise_with_code
             logger.error(f"Error getting AI feedback: {e}")
             raise_with_code(
                 SPEAKING_FEEDBACK_FAILED,
@@ -461,7 +429,6 @@ Respond with a single JSON object only, no prose, with these keys:
     ) -> SpeakingAnalysisResponse:
         logger.info(f"Received audio file of size: {len(audio_file_bytes)} bytes for analysis.")
         if not audio_file_bytes:
-            from utils.error_codes import SPEAKING_NO_AUDIO, raise_with_code
             raise_with_code(SPEAKING_NO_AUDIO, 400, "No audio file provided.")
 
         effective_filename = filename if filename else "recording.webm"
@@ -543,7 +510,6 @@ Respond with a single JSON object only, no prose, with these keys:
         )
 
         if user_context:
-            from utils.language_codes import to_iso_language
 
             from collections import Counter
 
@@ -598,13 +564,6 @@ Respond with a single JSON object only, no prose, with these keys:
         focus_weaknesses: Optional[List[str]] = None,
         tts_synthesizer: Optional[Any] = None,
     ) -> SpeakingPromptResponse:
-        """Per-format prompt generation.
-
-        `tts_synthesizer` is an optional callable `(text, language, level) -> bytes`.
-        Only used by `repeat_after_me` to render the target phrase as
-        audio. Injecting it keeps SpeakingService free of a hard
-        dependency on TTSService — swappable for tests.
-        """
         ui_locale = (
             user_context.ui_locale_label if user_context else "English"
         )
@@ -722,7 +681,6 @@ Respond with a single JSON object only, no prose, with these keys:
                 rubricHints=FORMAT_RUBRIC_HINTS["free_monologue"],
             )
 
-        from utils.error_codes import AI_RESPONSE_PARSE_FAILED, raise_with_code
 
         raise_with_code(
             AI_RESPONSE_PARSE_FAILED,
@@ -741,16 +699,7 @@ Respond with a single JSON object only, no prose, with these keys:
         user_context: Optional[UserContext] = None,
         ui_locale: Optional[str] = None,
     ) -> SpeakingGradeResponse:
-        """Format-aware grading.
-
-        Pipeline:
-          1. Whisper transcribes the recording (shared across formats).
-          2. Pronunciation metrics from segment-level confidence.
-          3. Per-format rubric: `repeat_after_me` does WER vs target;
-             everything else asks the LLM to grade against rubric hints.
-        """
         if not audio_file_bytes:
-            from utils.error_codes import SPEAKING_NO_AUDIO, raise_with_code
             raise_with_code(SPEAKING_NO_AUDIO, 400, "No audio file provided.")
 
         effective_filename = filename if filename else "recording.webm"
@@ -846,14 +795,9 @@ Respond with a single JSON object only, no prose, with these keys:
         format: str,
         response: SpeakingGradeResponse,
     ) -> None:
-        """Surface guided-practice attempts in the user's history page.
-        We use the same `taskType: "speaking"` bucket as the legacy
-        free-analyze flow so the History filters keep working — the
-        format itself goes into metadata for future drill-down."""
         if not user_context:
             return
         try:
-            from utils.language_codes import to_iso_language
 
             score: Optional[int] = None
             if response.matchPercent is not None:
@@ -936,18 +880,6 @@ Return JSON only: {{"question": "<question in {language}>",
         focus_clause: str,
         user_context: Optional[UserContext],
     ) -> Dict[str, str]:
-        """Generate a scene the learner will describe aloud.
-
-        Two outputs:
-          - `visual_prompt`: a concise English Stable-Diffusion-style
-            prompt fed to Pollinations.ai to render an actual image.
-            Always English so SD models render reliably regardless
-            of the learner's target language.
-          - `scene`: the same scene phrased as a 2-3 sentence caption
-            in the LEARNER'S target language, used as alt text and
-            rendered when image load fails.
-          - `translation`: optional UI-locale gloss for comprehension.
-        """
         prompt = f"""
 You are a speaking coach + image-prompt designer. Produce ONE concrete
 visual scene a {level} learner will describe aloud in about 60 seconds
@@ -1021,13 +953,9 @@ Return JSON only: {{"topic": "<topic in {language}, 1-2 sentences>",
         )
         try:
             data = json.loads(raw)
-        except Exception:
+        except json.JSONDecodeError:
             data = {fallback_key: raw.strip()[:300], "translation": ""}
         if not isinstance(data, dict) or not data.get(fallback_key):
-            from utils.error_codes import (
-                AI_RESPONSE_PARSE_FAILED,
-                raise_with_code,
-            )
             raise_with_code(
                 AI_RESPONSE_PARSE_FAILED,
                 500,
@@ -1112,9 +1040,6 @@ identified_errors length: 0 to 5. error_type stays in English. Output valid JSON
             }
 
     async def _persist_static_audio(self, audio_bytes: bytes) -> str:
-        """Write TTS bytes under static/audio/<uuid>.mp3 and return
-        the public URL. Mirrors the listening service path so the FE
-        plays the same way."""
         public_base = os.getenv("PUBLIC_BASE_URL", "")
         audio_dir = "static/audio"
         os.makedirs(audio_dir, exist_ok=True)
@@ -1137,14 +1062,6 @@ _POLLINATIONS_PARAMS = {
 
 
 def _build_pollinations_url(visual_prompt: str) -> str:
-    """Return a Pollinations.ai image URL for the given scene prompt.
-
-    URL-encodes the prompt with quote_plus (the path segment lives
-    after `/prompt/` and pollinations expects + for spaces). Trims
-    overly long prompts to ~600 chars — long URLs occasionally trip
-    a 414 from upstream proxies. Tags the request with `?nologo`
-    because we render the image inside our own UI; `enhance=true`
-    nudges the model toward higher detail."""
     import urllib.parse
 
     cleaned = re.sub(r"\s+", " ", (visual_prompt or "").strip())[:600]
@@ -1156,12 +1073,6 @@ def _build_pollinations_url(visual_prompt: str) -> str:
 
 
 def _dedupe_translation(scene: str, translation: str) -> str:
-    """Don't render a translation that's just the scene repeated.
-
-    The LLM occasionally fills `translation` with the same string as
-    the source language when UI locale matches the target language —
-    that produces the "same paragraph twice" UX the user complained
-    about in the picture-description screenshot."""
     if not translation:
         return ""
     if scene.strip().lower() == translation.strip().lower():
@@ -1177,13 +1088,6 @@ def _tokens(text: str) -> List[str]:
 
 
 def _word_error_rate(reference: str, hypothesis: str) -> float:
-    """Standard Levenshtein-distance-based word error rate.
-
-    Uses lower-cased word tokens (punctuation stripped) so capitalisation
-    and punctuation differences don't penalise pronunciation grading.
-    Returns 1.0 when the reference is empty (every hypothesis word is
-    "wrong" because there's nothing to be right against).
-    """
     ref = _tokens(reference)
     hyp = _tokens(hypothesis)
     if not ref:

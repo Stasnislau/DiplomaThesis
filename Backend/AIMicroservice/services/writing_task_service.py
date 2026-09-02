@@ -27,6 +27,7 @@ from utils.task_quality import (
     multiple_choice_quality_issues,
     sanitize_multiple_choice,
 )
+from utils.error_codes import AI_RESPONSE_PARSE_FAILED, TASK_VALIDATION_FAILED, raise_with_code
 
 load_dotenv()
 
@@ -52,21 +53,6 @@ class WritingTaskService:
         task_type: str,
         user_context: Optional[UserContext] = None,
     ) -> list[str]:
-        """Fetch task templates mined from the learner's own uploads to
-        use as few-shot format examples.
-
-        Entirely best-effort. An empty table, a fresh install, a vector-DB
-        error or a user who never uploaded anything all return [], and the
-        prompt builders drop the exemplar clause entirely in that case —
-        so generation behaves exactly as it did before exemplars existed.
-        A missing example must never cost the learner a task.
-
-        The query is prose rather than a hard filter on level/skill/type
-        because mined templates carry no CEFR level (the classification
-        pass never reports one). Matching semantically lets a template
-        rank on the signals it does have instead of being excluded by a
-        column that is empty for every row.
-        """
         if not user_context or not user_context.user_id:
             return []
 
@@ -122,7 +108,7 @@ class WritingTaskService:
         json_response = await self._sample_task_json(
             make_prompt=_prompt,
             user_context=user_context,
-            temperature=0.8,
+            temperature=0.7,
             issues_for=multiple_choice_quality_issues,
             sanitize=sanitize_multiple_choice,
         )
@@ -167,7 +153,7 @@ class WritingTaskService:
         json_response = await self._sample_task_json(
             make_prompt=_prompt,
             user_context=user_context,
-            temperature=0.8,
+            temperature=0.7,
             issues_for=fill_in_the_blank_quality_issues,
         )
         return self._finalize_task_generation(
@@ -182,12 +168,6 @@ class WritingTaskService:
         topic: Optional[str] = None,
         keywords: Optional[list[str]] = None,
     ) -> EssayTask:
-        """Generate an essay prompt + scaffolding for the learner.
-
-        `topic` here is the lesson topic / theme HINT (e.g. "Argumentative Essay",
-        "Psychology"), not the actual prompt the learner answers. The model fleshes
-        that hint into a real essay-worthy question.
-        """
         effective_level = "A1" if level.upper() == "A0" else level.upper()
         level_context: Union[SpecificSkillContext, FullLevelContext, None] = (
             self.vector_db_service.get_level_context(effective_level, "writing")
@@ -221,7 +201,6 @@ class WritingTaskService:
         word_count_target: int,
         user_context: Optional[UserContext] = None,
     ) -> EssayEvaluation:
-        """Grade a learner-submitted essay 0-100 with structured feedback."""
         effective_level = "A1" if level.upper() == "A0" else level.upper()
         level_context: Union[SpecificSkillContext, FullLevelContext, None] = (
             self.vector_db_service.get_level_context(effective_level, "writing")
@@ -256,7 +235,6 @@ class WritingTaskService:
         try:
             return EssayEvaluation(**json_response)
         except Exception as e:
-            from utils.error_codes import TASK_VALIDATION_FAILED, raise_with_code
             logger.error(f"EssayEvaluation validation failed: {e}")
             raise_with_code(
                 TASK_VALIDATION_FAILED,
@@ -294,34 +272,6 @@ class WritingTaskService:
         history_entries: list[Dict[str, Any]],
         recurring_errors: Optional[list[Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
-        """Extract a (topic, keywords, weaknesses) focus from the user's
-        recent history rows. Used by the /writing/adaptive endpoint to
-        bias the next generated task toward what the user is actually
-        struggling with.
-
-        Two sources feed it. `history_entries` carries what the learner
-        has just done, and `recurring_errors` carries the log of faults
-        that keep coming back (FR6), already ordered by how often each
-        one returned. The log speaks first, because an error seen nine
-        times matters more than one low score last Tuesday.
-
-        Heuristics:
-          - Recurring errors contribute their correction as a weakness
-            and their text as a keyword, worst first.
-          - Placement entries contribute their stored `weaknesses` claim
-            from metadata (the AI's structured assessment).
-          - Speaking entries with `errorCount >= 3` contribute the most
-            common error categories from `metadata.errorTypes` (when
-            present) and lower the topic level toward review.
-          - Low-score writing/listening entries contribute their
-            `metadata.topic` (if any) as a recurring topic to revisit.
-
-        Returns a dict suitable for handing to the standard task
-        generators: `{ topic: Optional[str], keywords: list[str],
-        weaknesses: list[str] }`. Empty fields are fine — the caller
-        falls back to the regular variety picker when nothing useful
-        is extracted.
-        """
         weaknesses: list[str] = []
         keywords: list[str] = []
         topics: list[str] = []
@@ -403,14 +353,6 @@ class WritingTaskService:
         issues_for: Callable[[Dict[str, Any]], List[str]],
         sanitize: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
-        """Call the model until the payload passes cheap quality gates.
-
-        A rejected attempt is fed back into the next prompt so the model
-        can fix the listed issues. After `_QUALITY_ATTEMPTS` we return the
-        last parseable payload anyway — a slightly imperfect task is
-        better than a 500. Unparseable replies across every attempt still
-        raise, because there is nothing to show the learner.
-        """
         last_json: Optional[Dict[str, Any]] = None
         last_issues: list[str] = []
         for attempt in range(_QUALITY_ATTEMPTS):
@@ -448,7 +390,6 @@ class WritingTaskService:
                 last_issues,
             )
         if last_json is None:
-            from utils.error_codes import AI_RESPONSE_PARSE_FAILED, raise_with_code
             raise_with_code(
                 AI_RESPONSE_PARSE_FAILED,
                 500,
@@ -457,7 +398,6 @@ class WritingTaskService:
         return last_json
 
     async def _process_ai_response_and_validate(self, response_str: str, is_fill_in_blank: bool = False) -> Dict[str, Any]:
-        from utils.error_codes import AI_RESPONSE_PARSE_FAILED, raise_with_code
         try:
             return parse_json_object(response_str)
         except (json.JSONDecodeError, ValueError) as e:
@@ -476,7 +416,6 @@ class WritingTaskService:
             )
 
     def _finalize_task_generation(self, json_response: Dict[str, Any], task_type: str, model_class: Type[TaskModelType]) -> TaskModelType:
-        from utils.error_codes import TASK_VALIDATION_FAILED, raise_with_code
         json_response["id"] = str(uuid.uuid4())
         json_response["type"] = task_type
         try:

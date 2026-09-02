@@ -2,40 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ================================
-   CSS Custom Properties (Light Mode)
-   ================================ */
 :root {
-  /* Background colors */
   --bg-primary: #ffffff;
   --bg-secondary: #f9fafb;
   --bg-tertiary: #f3f4f6;
 
-  /* Text colors */
   --text-primary: #111827;
   --text-secondary: #4b5563;
   --text-tertiary: #9ca3af;
 
-  /* Border colors */
   --border-primary: #e5e7eb;
   --border-secondary: #d1d5db;
 
-  /* Accent colors */
   --accent-primary: #3b82f6;
   --accent-primary-hover: #2563eb;
   --accent-success: #10b981;
   --accent-warning: #f59e0b;
   --accent-error: #ef4444;
 
-  /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
 }
 
-/* ================================
-   Dark Mode Variables
-   ================================ */
 .dark {
   --bg-primary: #111827;
   --bg-secondary: #1f2937;
@@ -53,16 +42,10 @@
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5);
 }
 
-/* ================================
-   Base Styles
-   ================================ */
 body {
   @apply bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200;
 }
 
-/* ================================
-   Scrollbar Styles
-   ================================ */
 ::-webkit-scrollbar {
   width: 10px;
 }
@@ -79,9 +62,6 @@ body {
   @apply bg-gray-500 dark:bg-gray-500;
 }
 
-/* ================================
-   Skeleton Animation
-   ================================ */
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
@@ -95,23 +75,14 @@ body {
   animation: shimmer 1.5s infinite linear;
 }
 
-/* ================================
-   Focus Visible Styles (Accessibility)
-   ================================ */
 :focus-visible {
   @apply outline-none ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900;
 }
 
-/* ================================
-   Skip to Content Link (Accessibility)
-   ================================ */
 .skip-to-content {
   @apply absolute -top-10 left-0 bg-blue-600 text-white px-4 py-2 z-50 focus:top-0 transition-all;
 }
 
-/* ================================
-   Reduced Motion Preference
-   ================================ */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -122,9 +93,6 @@ body {
   }
 }
 
-/* ================================
-   High Contrast Mode
-   ================================ */
 @media (prefers-contrast: high) {
   :root {
     --text-primary: #000000;

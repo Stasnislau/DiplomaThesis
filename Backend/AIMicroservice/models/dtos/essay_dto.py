@@ -4,7 +4,6 @@ from typing import List, Literal, Optional
 
 
 class EssayTask(BaseModel):
-    """A generated essay prompt — what the learner sees before they start writing."""
 
     id: str
     type: Literal["essay"] = "essay"
@@ -20,7 +19,6 @@ class EssayTask(BaseModel):
 
 
 class EssayEvaluation(BaseModel):
-    """The graded result returned after the learner submits their essay."""
 
     score: int
     passed: bool

@@ -652,16 +652,6 @@ BRF:1
 BRH:1
 end_of_record
 TN:
-SF:src/types/requests.ts/refreshRequest.ts
-FNF:0
-FNH:0
-DA:1,0
-LF:1
-LH:0
-BRF:0
-BRH:0
-end_of_record
-TN:
 SF:src/utils/errorCodes.ts
 FN:25,exceptionFor
 FN:48,throwWithCode

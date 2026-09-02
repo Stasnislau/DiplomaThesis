@@ -48,8 +48,6 @@ async def test_process_pdf_legacy_types_shape(
     mock_vector_db: MagicMock,
     mock_ai_service: MagicMock,
 ) -> None:
-    """Old `{types: [...]}` shape from a model that didn't follow the
-    new schema must still be accepted via the legacy fallback branch."""
     with patch("services.material_service.PdfReader") as MockPdfReader:
         mock_pdf = MockPdfReader.return_value
         page = MagicMock()
@@ -80,9 +78,6 @@ async def test_process_pdf_document_map_shape(
     mock_vector_db: MagicMock,
     mock_ai_service: MagicMock,
 ) -> None:
-    """The new prompt asks for `{document_kind, exercises}`. When the
-    model complies, we should populate ProcessPdfResponse.document_map
-    AND derive analyzed_types for FE backward-compat."""
     with patch("services.material_service.PdfReader") as MockPdfReader:
         mock_pdf = MockPdfReader.return_value
         page = MagicMock()
@@ -118,9 +113,6 @@ async def test_generate_quiz_with_passed_document_map(
     mock_vector_db: MagicMock,
     mock_ai_service: MagicMock,
 ) -> None:
-    """Caller supplies a ready DocumentMap (the FE round-tripping it
-    from /materials/upload). We skip classification and run Stage 2 +
-    Stage 3 per exercise."""
     mock_vector_db.search_materials.return_value = [
         MaterialChunk(text="topic anchor chunk", source="doc", chunk_index=0, vector=[0.1])
     ]
@@ -161,8 +153,6 @@ async def test_generate_quiz_skips_stimulus_for_grammar(
     mock_vector_db: MagicMock,
     mock_ai_service: MagicMock,
 ) -> None:
-    """Grammar gap-fill exercises don't have a stimulus passage —
-    Stage 2 should be skipped and only the questions call should fire."""
     mock_vector_db.search_materials.return_value = [
         MaterialChunk(text="grammar exercise", source="doc", chunk_index=0, vector=[0.1])
     ]
@@ -286,7 +276,6 @@ def test_adapter_routes_true_false() -> None:
 
 
 def test_adapter_rejects_invalid_true_false_value() -> None:
-    """`correct_answer` for true_false MUST be lowercase literal."""
     with pytest.raises(Exception):
         QuizQuestionAdapter.validate_python(
             {
@@ -327,8 +316,6 @@ def test_adapter_routes_multi_select_mc() -> None:
 
 
 def test_adapter_rejects_multi_select_with_one_answer() -> None:
-    """Schema enforces ≥2 correct answers — single-correct should be
-    multiple_choice instead."""
     with pytest.raises(Exception):
         QuizQuestionAdapter.validate_python(
             {
@@ -370,9 +357,6 @@ async def test_generate_quiz_multi_variant_pipeline(
     mock_vector_db: MagicMock,
     mock_ai_service: MagicMock,
 ) -> None:
-    """End-to-end: a TOEFL_Reading exercise that produces one
-    multiple_choice, one true_false, one matching item — the parser
-    must route each to the right discriminated-union variant."""
     mock_vector_db.search_materials.return_value = [
         MaterialChunk(text="passage about birds", source="doc", chunk_index=0, vector=[0.1])
     ]
@@ -415,8 +399,6 @@ async def test_generate_quiz_drops_malformed_items(
     mock_vector_db: MagicMock,
     mock_ai_service: MagicMock,
 ) -> None:
-    """One good item + one with an invalid type must yield 1
-    parsed question, not 0 and not a hard error."""
     mock_vector_db.search_materials.return_value = [
         MaterialChunk(text="x", source="doc", chunk_index=0, vector=[0.1])
     ]
@@ -447,9 +429,6 @@ async def test_stimulus_retries_on_verbatim_overlap(
     mock_vector_db: MagicMock,
     mock_ai_service: MagicMock,
 ) -> None:
-    """First stimulus draft copies a 12-word span from the retrieved
-    chunk. Service must retry once with a sharper warning, then pick
-    the second clean draft."""
     source_phrase = (
         "Migration is a complex behavior driven by seasonal changes "
         "and food availability across continents"
@@ -494,11 +473,6 @@ def test_dedupe_preserve_order_drops_exact_duplicates() -> None:
 
 
 def test_dedupe_preserve_order_treats_case_and_whitespace_as_dupes() -> None:
-    """The reproduction case from prod was a Russian MC where
-    Option A and Option D were identical strings — but more
-    insidious is the case where the model emits 'диагностировать ' vs
-    'диагностировать' (one trailing space) and the user picks the
-    'wrong' one and gets Correct! by accident."""
     out = _dedupe_preserve_order(
         ["диагностировать", "диагнозировать", "Диагностировать ", "диагностицировать"]
     )
@@ -506,11 +480,6 @@ def test_dedupe_preserve_order_treats_case_and_whitespace_as_dupes() -> None:
 
 
 def test_dedupe_preserve_order_unicode_normalisation() -> None:
-    """NFKC-fold so a precomposed character vs decomposed pair
-    don't sneak past as 'distinct' options. We construct both forms
-    via codepoint escapes (\u00e9 vs e+\u0301) — writing them as
-    bare literals would let an editor's auto-normalise collapse them
-    in source and the test would silently lose its purpose."""
     composed = "caf\u00e9"
     decomposed = "cafe\u0301"
     assert composed != decomposed
@@ -529,11 +498,6 @@ async def test_generate_questions_drops_mc_with_duplicate_options(
     mock_vector_db: MagicMock,
     mock_ai_service: MagicMock,
 ) -> None:
-    """End-to-end safety: when the LLM emits an MC with two
-    byte-identical options, we drop that question rather than ship a
-    broken one to the FE. Reproduction of the user-reported screenshot
-    where Option A and Option D were both 'диагностировать' and the
-    user picked the dup and got Correct!."""
     mock_vector_db.search_materials.return_value = [
         MaterialChunk(text="x", source="doc", chunk_index=0, vector=[0.1])
     ]
@@ -568,9 +532,6 @@ async def test_generate_questions_drops_matching_with_duplicate_lefts(
     mock_vector_db: MagicMock,
     mock_ai_service: MagicMock,
 ) -> None:
-    """Matching variant: the renderer pairs entries by the `left`
-    string, so two identical lefts silently overwrite each other in
-    the user's answer state. Drop such questions wholesale."""
     mock_vector_db.search_materials.return_value = [
         MaterialChunk(text="x", source="doc", chunk_index=0, vector=[0.1])
     ]

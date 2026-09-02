@@ -1,16 +1,3 @@
-"""DTOs for the format-driven speaking flow (Phase 3).
-
-Four practice formats sit on top of the existing speaking pipeline:
-
-  - read_aloud           — historic single-sentence pronunciation drill.
-  - timed_response       — LLM asks a question; user answers within ~30s.
-  - repeat_after_me      — TTS reads a phrase; user repeats it; we grade
-                           by word-error-rate against the canonical text.
-  - picture_description  — LLM gives a scene/situation; user describes
-                           it for 30-60s.
-  - free_monologue       — topic + ~60-120s monologue, focus on
-                           coherence and discourse markers.
-"""
 
 from typing import List, Literal, Optional, Union
 
@@ -40,20 +27,6 @@ class SpeakingPromptRequest(BaseModel):
 
 
 class SpeakingPromptResponse(BaseModel):
-    """What the FE renders so the user knows what to record.
-
-    Optional fields are populated per-format:
-      - `audioUrl` and `targetPhrase` only for `repeat_after_me`.
-      - `imageUrl` only for `picture_description` — the actual image
-        the learner is asked to describe (Pollinations.ai). The
-        scene `prompt` is kept too as an alt-text/caption fallback
-        when the image fails to load.
-      - `translation` populated when the prompt is in the target
-        language AND a UI-locale gloss is genuinely different from
-        the prompt (we avoid duplicating identical text).
-      - `rubricHints` populated for content-graded formats so the
-        learner knows what they're scored on before they speak.
-    """
 
     format: SpeakingFormat
     prompt: str
@@ -68,9 +41,6 @@ class SpeakingPromptResponse(BaseModel):
 
 
 class SpeakingGradeResponse(BaseModel):
-    """Grading verdict shape — superset of the legacy SpeakingAnalysisResponse
-    so existing consumers keep working, with format-specific scores
-    layered on top."""
 
     format: SpeakingFormat
     transcription: str
@@ -117,8 +87,6 @@ FORMAT_RUBRIC_HINTS: dict = {
 
 
 def is_known_format(value: str) -> bool:
-    """Lightweight runtime check used by controllers when the format
-    arrives as an arbitrary query string instead of a Literal."""
     return value in {
         "read_aloud",
         "timed_response",

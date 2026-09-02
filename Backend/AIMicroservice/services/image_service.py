@@ -16,15 +16,6 @@ _DEFAULT_MODEL = "imagen-3.0-generate-002"
 
 
 class ImageService:
-    """Generates images for speaking picture-description tasks via
-    Google Vertex AI Imagen 3.
-
-    Initialisation is best-effort: if the project ID isn't set or the
-    Vertex SDK fails to bind credentials at import time, the service
-    silently disables itself (`generate()` returns None). Callers can
-    then fall back to Pollinations or any other route — we never
-    crash the speaking flow because of an image hiccup.
-    """
 
     def __init__(
         self,
@@ -61,7 +52,7 @@ class ImageService:
                 self.location,
                 self.model_name,
             )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.error(
                 "ImageService init failed (%s) — Imagen disabled, fallback active.",
                 exc,
@@ -72,12 +63,6 @@ class ImageService:
         return self._enabled
 
     async def generate(self, visual_prompt: str) -> str | None:
-        """Render `visual_prompt` to a PNG, save it under
-        `static/images/<uuid>.png`, and return the public URL.
-
-        Returns None on any failure so the caller can route to a
-        fallback renderer instead of surfacing a 500.
-        """
         if not self._enabled or self._model is None:
             return None
 
@@ -93,7 +78,7 @@ class ImageService:
                 self._generate_blocking,
                 cleaned,
             )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.error("Imagen generation failed: %s", exc)
             return None
 
@@ -116,16 +101,6 @@ class ImageService:
         return f"{PUBLIC_BASE_URL}/static/images/{file_name}"
 
     def _generate_blocking(self, prompt: str) -> list:
-        """Synchronous Imagen call wrapped by `generate()` in an executor.
-
-        Aspect ratio 4:3 matches the FE picture-description card and is
-        what Pollinations was producing before (1024x768). `block_some`
-        is Google's middle-ground safety setting — enough to keep the
-        explicit content out of a language-learning app without
-        rejecting normal everyday scenes (which `block_most` does).
-        `allow_adult` lets people appear in the image, which we need
-        for "describe what this person is doing" prompts.
-        """
         return self._model.generate_images(  # type: ignore[union-attr]
             prompt=prompt,
             number_of_images=1,

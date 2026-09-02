@@ -1,13 +1,3 @@
-"""Smoke tests — fast, no-network checks that the app boots and the
-HTTP surface is intact.
-
-These tests are the diploma's safety net. They do NOT exercise real
-LLM/Whisper/TTS calls; they assert that the FastAPI app constructs,
-every router registers without import errors, every controller-level
-DTO can be instantiated, and `/health` responds.
-
-They run in well under a second and should never be skipped on CI.
-"""
 
 from __future__ import annotations
 
@@ -17,9 +7,6 @@ import pytest
 
 
 def test_main_app_imports_and_constructs() -> None:
-    """Every change to `main.py` or any imported controller risks
-    breaking app construction. This test catches that before the
-    container is even rebuilt."""
     main = importlib.import_module("main")
     assert main.app is not None
     assert len(main.app.routes) > 5
@@ -42,9 +29,6 @@ def test_main_app_imports_and_constructs() -> None:
     ],
 )
 def test_route_is_registered(expected_path: str) -> None:
-    """Every endpoint we care about must be reachable through the app
-    router table. Catches accidental router-include drops and prefix
-    typos that integration tests wouldn't notice until a 404 in prod."""
     main = importlib.import_module("main")
     paths = {getattr(r, "path", None) for r in main.app.routes}
     assert expected_path in paths, (
@@ -63,8 +47,6 @@ def test_route_is_registered(expected_path: str) -> None:
     ],
 )
 def test_controller_imports(module_name: str) -> None:
-    """Each controller must import cleanly. Catches circular imports
-    and missing dependency declarations."""
     module = importlib.import_module(module_name)
     assert module is not None
 
@@ -87,10 +69,6 @@ def test_service_class_is_importable(module_name: str, attr: str) -> None:
 
 
 def test_quiz_question_union_routes_every_known_type() -> None:
-    """Every Materials question type must be parseable by the
-    discriminated-union TypeAdapter. If a new type is added without
-    updating the union, this test catches it before the FE sees a
-    500 from a generated quiz."""
     from models.dtos.material_dtos import QuizQuestionAdapter
 
     samples = [
@@ -149,8 +127,6 @@ def test_listening_question_union_routes_every_known_type() -> None:
 
 
 def test_speaking_format_catalog_is_consistent() -> None:
-    """The four catalogs (formats, default durations, rubric hints,
-    is_known_format) must agree on the same set of format tokens."""
     from models.responses.speaking_format_response import (
         FORMAT_DEFAULT_DURATION,
         FORMAT_RUBRIC_HINTS,
@@ -165,8 +141,6 @@ def test_speaking_format_catalog_is_consistent() -> None:
 
 
 def test_health_endpoint_returns_200() -> None:
-    """Real HTTP-level smoke through the FastAPI test client. Catches
-    middleware misconfiguration that route-table inspection misses."""
     from fastapi.testclient import TestClient
     main = importlib.import_module("main")
     client = TestClient(main.app)

@@ -1,11 +1,3 @@
-"""Cheap, deterministic checks on generated language tasks.
-
-A live model will happily return a multiple-choice whose correct
-answer is the letter "C", a fill-in whose answer already sits in the
-stem, or a question with no gap at all. None of that needs a second
-LLM to catch — and catching it here lets the generator retry before
-the learner sees a broken exercise.
-"""
 
 from __future__ import annotations
 
@@ -35,12 +27,6 @@ def _as_answers(raw: Any) -> List[str]:
 
 
 def stem_without_blank_or_gloss(question: str) -> str:
-    """Visible sentence minus the gap and the UI-language gloss.
-
-    The glossary hint in parentheses is supposed to translate the
-    missing word, so it must not count as "the answer already appears
-    in the sentence". The gap itself is where the answer belongs.
-    """
     stripped = _GLOSS.sub(" ", question or "")
     stripped = BLANK_RE.sub(" ", stripped)
     return stripped
@@ -59,11 +45,6 @@ def answer_leaks_into_stem(question: str, answers: Sequence[str]) -> Optional[st
 def coerce_mc_answer(
     answer: Any, options: Sequence[Any]
 ) -> Any:
-    """Map a letter/index onto the option it names.
-
-    Exact option text wins, even when that text is "A" — otherwise a
-    legitimate vocab item "A" would be rewritten to options[0].
-    """
     option_texts = [str(item) for item in options]
     if isinstance(answer, bool) or answer is None:
         return answer

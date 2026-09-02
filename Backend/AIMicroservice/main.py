@@ -44,10 +44,6 @@ logger.addHandler(console_handler)
 
 
 async def _audio_janitor() -> None:
-    """Background task: every hour, delete stale files in static/audio
-    and static/images. Without this the listening-task generator and
-    Imagen renderer slowly fill the VM's disk — every task writes a
-    unique <uuid>.mp3/.png and nothing ever cleans them up."""
     import asyncio
     import time
 
@@ -73,14 +69,13 @@ async def _audio_janitor() -> None:
                         continue
                 if removed:
                     logger.info("Janitor removed %d expired files in %s", removed, directory)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning("Janitor sweep failed: %s", exc)
         await asyncio.sleep(sleep_seconds)
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-    """Initialise the database on startup and dispose of pools on shutdown."""
     import asyncio
 
     await init_db()

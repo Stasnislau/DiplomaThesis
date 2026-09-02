@@ -1,11 +1,3 @@
-"""Which key a call uses when the learner has configured little or nothing.
-
-Two failures sat here. Speech transcription read GROQ_API_KEY from the host
-environment and never looked at the key the learner had saved, so a learner
-with Groq configured still met a 500 whenever the host had no key. Separately,
-a learner with no stored key at all met a 400 instead of falling through to
-the system key, because the lookup raised before the fallback could run.
-"""
 
 import os
 from unittest.mock import AsyncMock
@@ -108,7 +100,6 @@ class TestGenerationKey:
 
 
 class TestTranscriptionWiring:
-    """The helper above is useless unless transcription actually calls it."""
 
     @pytest.mark.asyncio
     async def test_the_request_carries_the_learner_key(self, speaking, monkeypatch):
@@ -147,7 +138,6 @@ class TestTranscriptionWiring:
 
 
 class _Reply:
-    """Minimal stand-in for a litellm completion response."""
 
     def __init__(self, content: str) -> None:
         self.choices = [type("C", (), {"message": type("M", (), {"content": content})()})()]
@@ -158,9 +148,6 @@ async def _no_sleep(_seconds):
 
 
 class TestProviderFailover:
-    """UC7 alternative flow 3a: the provider a learner selected fails for its
-    whole retry budget, and the request runs once more on the system default.
-    Before this, a learner with a broken Groq key met a 504 and no task."""
 
     @pytest.mark.asyncio
     async def test_falls_back_to_the_default_when_the_learner_provider_fails(

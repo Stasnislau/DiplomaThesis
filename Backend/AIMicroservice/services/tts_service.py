@@ -119,14 +119,6 @@ class TTSService:
     def synthesize(
         self, text: str, language: str, level: str | None = None
     ) -> bytes:
-        """Synthesize speech for a listening exercise.
-
-        `level` is the CEFR level of the listener. Lower levels get a
-        slower speaking rate so beginners can actually parse the audio
-        — the previous fixed 1.0 rate produced ~180 wpm Polish, which
-        is unintelligible at A1/A2. Mapping is conservative; native-
-        speed listening only kicks in at C1+.
-        """
         language_key = language.lower()
         pool = LANGUAGE_VOICE_POOLS.get(language_key) or LANGUAGE_VOICE_POOLS[FALLBACK_LANGUAGE]
 
@@ -156,23 +148,6 @@ class TTSService:
     def synthesize_multispeaker(
         self, text: str, language: str, level: str | None = None
     ) -> Tuple[bytes, List[str]]:
-        """Synthesize a multi-speaker dialogue into a single MP3.
-
-        The transcript is expected to contain `[Speaker N]:` style
-        tags at the start of each turn. Each unique speaker label is
-        assigned a distinct voice from the language's pool and that
-        voice is reused for every line attributed to that speaker.
-
-        MP3 frames produced by Google TTS at identical config are
-        byte-concatenable; we exploit that to stitch the per-turn
-        clips into a single playable file. Tiny seam artefacts are
-        possible at frame boundaries but are inaudible at the
-        speaking rates we use for learners.
-
-        Returns (audio_bytes, speaker_labels_in_order_of_appearance).
-        Falls back to single-voice synthesis when the text contains
-        no speaker tags.
-        """
         segments = _split_by_speaker_tags(text)
         if not segments:
             return self.synthesize(text, language, level), []
@@ -221,11 +196,6 @@ class TTSService:
 
 
 def _split_by_speaker_tags(text: str) -> List[Tuple[str, str]]:
-    """Return [(speaker_label, line), ...] in transcript order.
-
-    Empty list when the text contains no `[Speaker N]:` style tags —
-    callers treat that as "monologue, use single-voice synthesis".
-    """
     matches = list(_SPEAKER_TAG_RE.finditer(text))
     if not matches:
         return []

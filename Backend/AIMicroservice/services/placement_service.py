@@ -15,6 +15,7 @@ from fastapi import HTTPException
 from models.dtos.task_dto import MultipleChoiceTask, FillInTheBlankTask
 from models.dtos.evaluate_test_dto import EvaluateTestDto
 from models.dtos.placement_dtos import PlacementAnswer, PlacementTestAnswer
+from utils.language_codes import to_iso_language
 
 
 LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"]
@@ -23,11 +24,6 @@ SESSION_TTL_SECONDS = 60 * 30
 
 @dataclass
 class _PlacementSession:
-    """Per-user placement state. The previous design lived on the service
-    instance, so two users testing in parallel would clobber each other's
-    `current_level` (race condition: writes from user A bumped user B's
-    difficulty). State now keyed by user_id with a soft TTL.
-    """
     current_level: str = "A1"
     recent: List[bool] = field(default_factory=list)
     last_touched: float = field(default_factory=time.time)
@@ -43,9 +39,6 @@ class PlacementService:
 
     @property
     def current_level(self) -> str:
-        """Backwards-compat shim for tests that read service.current_level
-        without a user context. Returns the most recently touched session,
-        or 'A1' if nothing yet."""
         if not self._sessions:
             return "A1"
         return max(self._sessions.values(), key=lambda s: s.last_touched).current_level
@@ -101,10 +94,6 @@ class PlacementService:
             raise Exception(f"Failed to generate placement task: {e}")
 
     def _adjust_for_session(self, sess: _PlacementSession, was_correct: bool) -> None:
-        """2-of-3 streak rule: bump up only after two correct in the last
-        three; drop one level on a single wrong answer (stay-conservative).
-        This produces far steadier convergence than +1/-1 per answer, which
-        could land any final-level depending on noise late in the test."""
         sess.recent.append(was_correct)
         if len(sess.recent) > 3:
             sess.recent = sess.recent[-3:]
@@ -121,8 +110,6 @@ class PlacementService:
             sess.recent = []
 
     def adjust_difficulty(self, was_correct: bool) -> None:
-        """Backwards-compat for unit tests that call the old method
-        directly on the service. Routes into the synthetic session."""
         sess = self._sessions.setdefault("__test__", _PlacementSession())
         sess.last_touched = time.time()
         self._adjust_for_session(sess, was_correct)
@@ -231,7 +218,6 @@ LOCALIZATION (HARD RULE):
             evaluation = EvaluateTestDto(**parsed_result)
 
             if user_context:
-                from utils.language_codes import to_iso_language
 
                 await self.user_service.log_task_history(
                     user_context,

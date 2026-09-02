@@ -1,19 +1,10 @@
 #!/usr/bin/env python3
-"""
-Parse k6 JSON summary output and produce a LaTeX-ready table
-for the diploma thesis.
-
-Usage:
-    k6 run --summary-export=results.json load-test.js
-    python3 generate-report.py results.json
-"""
 import json
 import sys
 from pathlib import Path
 
 
 def ms(val: float) -> str:
-    """Format microsecond value to milliseconds with 1 decimal."""
     return f"{val:.1f}"
 
 

@@ -1,14 +1,3 @@
-"""Endpoint that pings an AI provider with a tiny request to confirm a key works.
-
-Two call shapes:
-  - {tokenId}                      → look up the saved token via user-service
-                                      (uses INTERNAL_SERVICE_KEY to read raw value)
-  - {aiProviderId, token}          → verify a freshly-typed key before save
-
-Returned shape never throws on bad-key — we always return success=true and
-encode validity in `payload.valid`. That keeps the frontend free of
-exception-handling for an expected-no-result case.
-"""
 import logging
 from typing import Optional
 
@@ -26,6 +15,7 @@ from models.base_response import BaseResponse
 from services.ai_service import PROVIDER_CONFIG
 from services.user_service import UserService
 from utils.user_context import extract_user_context
+from utils.error_codes import INPUT_VALIDATION_FAILED, USER_SERVICE_BAD_RESPONSE, raise_with_code
 
 logger = logging.getLogger(__name__)
 
@@ -63,16 +53,10 @@ class AITokenVerifyController:
     async def _resolve_credentials(
         self, payload: VerifyAITokenRequest, request: Request
     ) -> tuple[str, str]:
-        """Return (aiProviderId, token) regardless of which input shape was used."""
         if payload.token and payload.token.strip() and payload.ai_provider_id:
             return payload.ai_provider_id, payload.token.strip()
 
         if payload.token_id:
-            from utils.error_codes import (
-                INPUT_VALIDATION_FAILED,
-                USER_SERVICE_BAD_RESPONSE,
-                raise_with_code,
-            )
             ctx = extract_user_context(request)
             tokens = await self.user_service.get_ai_tokens(ctx)
             for tok in tokens:
@@ -92,7 +76,6 @@ class AITokenVerifyController:
                 f"Token id {payload.token_id} not found for this user",
             )
 
-        from utils.error_codes import INPUT_VALIDATION_FAILED, raise_with_code
         raise_with_code(
             INPUT_VALIDATION_FAILED,
             400,

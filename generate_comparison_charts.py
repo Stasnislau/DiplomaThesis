@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-"""
-Generate additional comparison charts for thesis
-Focus on model-vs-model and language-specific analysis
-"""
 
 import pandas as pd
 import numpy as np
@@ -22,15 +18,13 @@ OUTPUT_DIR = ARCHIVE_DIR
 
 
 def load_data():
-    """Load processed data"""
     df = pd.read_csv(DATA_FILE)
-    print(f"✅ Loaded {len(df)} questions")
+    print(f"Loaded {len(df)} questions")
     return df
 
 
 def plot_model_vs_model_comparison(df):
-    """Head-to-head model comparison across all dimensions"""
-    print("\n🔬 Creating model vs model comparison...")
+    print("\n Creating model vs model comparison...")
     
     fig, axes = plt.subplots(2, 3, figsize=(18, 12))
     
@@ -104,13 +98,12 @@ def plot_model_vs_model_comparison(df):
     
     plt.tight_layout()
     plt.savefig(OUTPUT_DIR / 'model_comparison_6panel.png', bbox_inches='tight')
-    print(f"   ✅ Saved: {OUTPUT_DIR / 'model_comparison_6panel.png'}")
+    print(f"Saved: {OUTPUT_DIR / 'model_comparison_6panel.png'}")
     plt.close()
 
 
 def plot_language_deep_dive(df):
-    """Detailed analysis per language"""
-    print("\n🌍 Creating language-specific analysis...")
+    print("\n Creating language-specific analysis...")
     
     languages = df['lang'].unique()
     fig, axes = plt.subplots(len(languages), 3, figsize=(18, 6 * len(languages)))
@@ -151,13 +144,12 @@ def plot_language_deep_dive(df):
     
     plt.tight_layout()
     plt.savefig(OUTPUT_DIR / 'language_deep_dive.png', bbox_inches='tight')
-    print(f"   ✅ Saved: {OUTPUT_DIR / 'language_deep_dive.png'}")
+    print(f"Saved: {OUTPUT_DIR / 'language_deep_dive.png'}")
     plt.close()
 
 
 def plot_winner_matrix(df):
-    """Show which model wins in each category"""
-    print("\n🏆 Creating winner matrix...")
+    print("\n Creating winner matrix...")
     
     fig, ax = plt.subplots(figsize=(14, 8))
     
@@ -215,16 +207,15 @@ def plot_winner_matrix(df):
     
     plt.tight_layout()
     plt.savefig(OUTPUT_DIR / 'winner_matrix.png', bbox_inches='tight')
-    print(f"   ✅ Saved: {OUTPUT_DIR / 'winner_matrix.png'}")
+    print(f"Saved: {OUTPUT_DIR / 'winner_matrix.png'}")
     plt.close()
     
     summary_df.to_csv(OUTPUT_DIR / 'category_winners_detailed.csv', index=False)
-    print(f"   ✅ Saved: {OUTPUT_DIR / 'category_winners_detailed.csv'}")
+    print(f"Saved: {OUTPUT_DIR / 'category_winners_detailed.csv'}")
 
 
 def plot_score_evolution(df):
-    """Show how scores evolve across iterations (stability over time)"""
-    print("\n📈 Creating score evolution analysis...")
+    print("\n Creating score evolution analysis...")
     
     fig, axes = plt.subplots(2, 2, figsize=(16, 12))
     
@@ -272,13 +263,12 @@ def plot_score_evolution(df):
     
     plt.tight_layout()
     plt.savefig(OUTPUT_DIR / 'score_evolution.png', bbox_inches='tight')
-    print(f"   ✅ Saved: {OUTPUT_DIR / 'score_evolution.png'}")
+    print(f"Saved: {OUTPUT_DIR / 'score_evolution.png'}")
     plt.close()
 
 
 def generate_thesis_summary_table(df):
-    """Generate publication-ready summary table"""
-    print("\n📝 Generating thesis-ready summary...")
+    print("\n Generating thesis-ready summary...")
     
     summary = df.groupby('model').agg({
         'score': ['mean', 'std', 'min', 'max'],
@@ -295,29 +285,28 @@ def generate_thesis_summary_table(df):
     ).rank(ascending=False).astype(int)
     
     latex_table = summary.to_latex(
-        caption='Comprehensive Model Performance Summary',
-        label='tab:comprehensive_summary',
+        caption='Model Performance Summary',
+        label='tab:model_summary',
         column_format='l' + 'c' * len(summary.columns),
         float_format='%.2f',
         escape=False
     )
     
-    with open(OUTPUT_DIR / 'table_comprehensive_summary.tex', 'w') as f:
+    with open(OUTPUT_DIR / 'table_model_summary.tex', 'w') as f:
         f.write(latex_table)
     
-    print(f"   ✅ Saved: {OUTPUT_DIR / 'table_comprehensive_summary.tex'}")
+    print(f"Saved: {OUTPUT_DIR / 'table_model_summary.tex'}")
     
-    with open(OUTPUT_DIR / 'table_comprehensive_summary.md', 'w') as f:
-        f.write("# Comprehensive Model Performance Summary\n\n")
+    with open(OUTPUT_DIR / 'table_model_summary.md', 'w') as f:
+        f.write("# Model Performance Summary\n\n")
         f.write(summary.to_markdown())
     
-    print(f"   ✅ Saved: {OUTPUT_DIR / 'table_comprehensive_summary.md'}")
+    print(f"Saved: {OUTPUT_DIR / 'table_model_summary.md'}")
 
 
 def main():
-    """Main execution"""
     print("=" * 80)
-    print("🎨 GENERATING COMPARISON CHARTS FOR THESIS")
+    print("GENERATING COMPARISON CHARTS FOR THESIS")
     print("=" * 80)
     
     df = load_data()
@@ -329,18 +318,17 @@ def main():
     generate_thesis_summary_table(df)
     
     print("\n" + "=" * 80)
-    print("✅ ALL COMPARISON CHARTS GENERATED!")
+    print("ALL COMPARISON CHARTS GENERATED!")
     print("=" * 80)
-    print(f"\n📂 Output directory: {OUTPUT_DIR.absolute()}")
-    print("\n📊 New files:")
+    print(f"\nOutput directory: {OUTPUT_DIR.absolute()}")
+    print("\nNew files:")
     print("   - model_comparison_6panel.png")
     print("   - language_deep_dive.png")
     print("   - winner_matrix.png")
     print("   - score_evolution.png")
-    print("   - table_comprehensive_summary.tex")
-    print("   - table_comprehensive_summary.md")
+    print("   - table_model_summary.tex")
+    print("   - table_model_summary.md")
     print("   - category_winners_detailed.csv")
-    print("\n💡 These charts are ready to insert into your thesis!")
 
 
 if __name__ == "__main__":

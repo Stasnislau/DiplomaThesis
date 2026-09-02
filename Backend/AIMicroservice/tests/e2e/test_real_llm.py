@@ -1,16 +1,3 @@
-"""End-to-end tests with REAL model calls — no AI mocks.
-
-These call a live provider, so they are slow and spend tokens. Run explicitly:
-
-    pytest tests/e2e/ -v -s
-
-They check that the whole path works: prompt, provider, parse, response model.
-Only the user service and file writes are mocked, and every model call is real.
-
-Nothing here skips. A provider that answers 429 or 5xx is retried by
-`post_live` in conftest, and a reply the application refuses to parse fails the
-case, because that is the code under test.
-"""
 
 from __future__ import annotations
 

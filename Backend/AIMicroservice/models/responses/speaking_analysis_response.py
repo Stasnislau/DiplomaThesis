@@ -4,7 +4,6 @@ from typing import List, Optional
 
 
 class IdentifiedError(BaseModel):
-    """A single language error identified in the transcription."""
     error_type: str = Field(
         ..., description="Type of error: Grammar, Vocabulary, Phrasing, Fluency"
     )
@@ -25,7 +24,6 @@ class IdentifiedError(BaseModel):
 
 
 class PronunciationMetrics(BaseModel):
-    """Pronunciation quality metrics derived from Whisper confidence scores."""
     overall_confidence: float = Field(
         ..., description="Average transcription confidence (0-1). Higher = clearer pronunciation"
     )
@@ -50,7 +48,6 @@ class PronunciationMetrics(BaseModel):
 
 
 class SpeakingAnalysisResponse(BaseModel):
-    """Structured response for speaking analysis with transcription, errors, and pronunciation metrics."""
     transcription: str = Field(
         ..., description="Full transcribed text from the audio"
     )

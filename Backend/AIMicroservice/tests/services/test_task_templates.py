@@ -1,11 +1,3 @@
-"""Task templates as few-shot exemplars: mining them out of an uploaded
-PDF, scoping them to their owner, and injecting them into generation.
-
-The through-line of these tests is that the feature is additive — every
-failure mode (empty table, missing table, vector-DB error, anonymous
-caller) has to land on the exact prompt the generator produced before
-templates existed.
-"""
 
 import pandas as pd
 import pytest
@@ -62,12 +54,6 @@ def user_context() -> UserContext:
 
 
 def _stub_vector_db(table_exists: bool = True) -> VectorDBService:
-    """A VectorDBService with no __init__ run against it.
-
-    The real constructor opens LanceDB on disk and pulls down a
-    SentenceTransformer; neither is needed to test the where-clause
-    scoping, which is the part that actually carries a security promise.
-    """
     service = object.__new__(VectorDBService)
     service.db = MagicMock()
     service.model = MagicMock()
@@ -78,7 +64,6 @@ def _stub_vector_db(table_exists: bool = True) -> VectorDBService:
 
 
 def _stub_search_result(service: VectorDBService, rows: list) -> MagicMock:
-    """Wire table.search(...).limit(...).to_pandas() to return `rows`."""
     search = MagicMock()
     search.where.return_value = search
     search.limit.return_value.to_pandas.return_value = pd.DataFrame(rows)
@@ -87,9 +72,6 @@ def _stub_search_result(service: VectorDBService, rows: list) -> MagicMock:
 
 
 def test_search_task_templates_rejects_non_uuid_user_id() -> None:
-    """The _UUID_RE gate is what keeps user_id out of the where-clause as
-    an injectable fragment. A non-UUID must short-circuit to no results,
-    NOT fall through to an unscoped search."""
     service = _stub_vector_db()
     search = _stub_search_result(
         service, [{"id": "a", "template": "t", "user_id": OWNER_ID}]
@@ -114,9 +96,6 @@ def test_search_task_templates_scopes_where_clause_to_owner() -> None:
 
 
 def test_search_task_templates_post_filters_foreign_rows() -> None:
-    """If the where-clause can't be applied (older table schema), the
-    defensive post-filter still has to drop another user's templates —
-    otherwise user A's prompt gets shaped by user B's private upload."""
     service = _stub_vector_db()
     search = MagicMock()
     search.where.side_effect = Exception("no such column: user_id")
@@ -135,7 +114,6 @@ def test_search_task_templates_post_filters_foreign_rows() -> None:
 
 
 def test_search_task_templates_missing_table_returns_empty() -> None:
-    """Fresh install: the table has never been created."""
     service = _stub_vector_db(table_exists=False)
 
     assert service.search_task_templates("query", user_id=OWNER_ID) == []
@@ -149,9 +127,6 @@ def test_search_task_templates_swallows_errors() -> None:
 
 
 def test_save_task_templates_fills_missing_id_and_drops_distance() -> None:
-    """`distance` only exists on rows that came back out of a search, and
-    a null id would make LanceDB type the column as null. Neither may
-    reach the written row."""
     service = _stub_vector_db(table_exists=False)
     service.model.encode.return_value = [MagicMock(tolist=lambda: [0.1, 0.2])]
 
@@ -209,8 +184,6 @@ def test_build_task_templates_carries_owner_and_skill() -> None:
 
 
 def test_build_task_templates_leaves_level_empty() -> None:
-    """The classification pass never reports a CEFR level. Inventing one
-    would put a fabricated filter into retrieval."""
     document_map = DocumentMap(
         document_kind="TOEFL_Reading",
         exercises=[DocumentExercise(type="reading_comprehension")],
@@ -285,8 +258,6 @@ async def test_process_pdf_survives_template_save_failure(
     mock_vector_db: MagicMock,
     mock_ai_service: MagicMock,
 ) -> None:
-    """The user's chunks are already indexed by the time templates are
-    written, so a failing template write must not cost them the upload."""
     with patch("services.material_service.PdfReader") as MockPdfReader:
         page = MagicMock()
         page.extract_text.return_value = "Some text."
@@ -308,8 +279,6 @@ async def test_process_pdf_skips_templates_for_legacy_shape(
     mock_vector_db: MagicMock,
     mock_ai_service: MagicMock,
 ) -> None:
-    """The legacy `{types: [...]}` response yields no DocumentMap, so
-    there is nothing to mine — and nothing should be written."""
     with patch("services.material_service.PdfReader") as MockPdfReader:
         page = MagicMock()
         page.extract_text.return_value = "Some text."
@@ -407,13 +376,6 @@ def test_retrieve_exemplars_drops_blank_templates(
 
 @pytest.mark.parametrize("nothing_retrieved", [None, []])
 def test_exemplar_clause_contributes_literally_nothing(nothing_retrieved) -> None:
-    """The clause must be the empty string, not a short header.
-
-    The prompt builders interpolate it as `{lesson_hint}{clause}`, so
-    only "" collapses back to the exact pre-exemplar prompt. Asserting
-    the two builders merely agree with each other would pass even if the
-    clause always emitted a stub, which is why this checks the value.
-    """
     assert _exemplar_clause(nothing_retrieved) == ""
 
 
@@ -422,8 +384,6 @@ def test_exemplar_clause_contributes_literally_nothing(nothing_retrieved) -> Non
     [writing_multiple_choice_task_prompt, writing_fill_in_the_blank_task_prompt],
 )
 def test_empty_exemplars_leave_prompt_byte_identical(builder) -> None:
-    """The core fail-safe promise: no exemplars must mean the exact
-    prompt the generator produced before this feature existed."""
     args = ("English", "B1", {"description": "desc"})
     baseline = builder(*args, seed="abc")
 
@@ -483,8 +443,6 @@ async def test_generation_unaffected_when_store_is_empty(
     mock_ai_service: MagicMock,
     user_context: UserContext,
 ) -> None:
-    """Empty store degrades to the plain generator — the task still comes
-    back and the prompt carries no exemplar block."""
     mock_vector_db.get_level_context.return_value = SpecificSkillContext(
         level="B1", skill_type="writing", description="desc"
     )
@@ -508,7 +466,6 @@ async def test_generation_survives_retrieval_error(
     mock_ai_service: MagicMock,
     user_context: UserContext,
 ) -> None:
-    """A missing exemplar must never break a lesson."""
     mock_vector_db.get_level_context.return_value = SpecificSkillContext(
         level="B1", skill_type="writing", description="desc"
     )

@@ -1,6 +1,3 @@
-"""The AI service takes the caller identity from the headers the gateway
-attached. The gateway is the only service that publishes a port, so nothing
-outside can set them, and no second check happens here."""
 
 import pytest
 from fastapi import HTTPException

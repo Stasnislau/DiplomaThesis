@@ -71,8 +71,6 @@ def test_without_a_stimulus_no_question_carries_a_passage():
 
 
 def test_a_dropped_first_question_does_not_take_the_passage_with_it():
-    """The stem check runs before attachment, so the passage lands on the
-    first question that actually survives."""
     survivors = [{"type": "multiple_choice"}, {"type": "true_false"}]
 
     attach_shared_passage(survivors, PASSAGE)

@@ -1,11 +1,3 @@
-"""The log of recurring errors now steers the next generated task (FR6).
-
-Every graded speaking answer wrote its faults into that log, the User service
-counted how often each one returned, and nothing read it back. Adaptation ran
-on finished-task history instead, so a learner who kept missing the same case
-ending saw no sign of it in what came next. These cases cover the read path and
-the ordering rule that makes the log worth reading: the worst errors go first.
-"""
 
 from unittest.mock import AsyncMock
 
@@ -32,8 +24,6 @@ def _error(text, correction, error_type="grammar"):
 class TestReadingTheLog:
     @pytest.fixture(autouse=True)
     def _internal_key(self, monkeypatch):
-        """The call to User carries a shared key, which is read from the
-        environment at request time and absent in a test run."""
         monkeypatch.setenv("INTERNAL_SERVICE_KEY", "test-internal-key")
 
     @pytest.fixture
@@ -88,8 +78,6 @@ class TestTheLogSteersTheNextTask:
         assert "idzie do sklep" in focus["keywords"]
 
     def test_the_worst_errors_come_first(self):
-        """The User service orders by how often each error returned, so the
-        first row must survive the five-item cut that follows."""
         rows = [_error(f"wrong {i}", f"right {i}") for i in range(6)]
 
         focus = WritingTaskService.derive_adaptive_focus([], rows)

@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-"""
-Interactive Question Explorer
-Filter and examine benchmark questions by various criteria
-"""
 
 import pandas as pd
 import json
@@ -15,18 +11,16 @@ DATA_FILE = ARCHIVE_DIR / "processed_data.csv"
 
 
 def load_questions():
-    """Load processed benchmark data"""
     if not DATA_FILE.exists():
-        print("❌ Error: Run 'analyze_benchmark_detailed.py' first to generate data")
+        print("Error: Run 'analyze_benchmark_detailed.py' first to generate data")
         exit(1)
     
     df = pd.read_csv(DATA_FILE)
-    print(f"✅ Loaded {len(df)} questions from benchmark")
+    print(f"Loaded {len(df)} questions from benchmark")
     return df
 
 
 def filter_questions(df, **filters):
-    """Apply filters to dataset"""
     filtered = df.copy()
     
     if filters.get('model'):
@@ -54,46 +48,44 @@ def filter_questions(df, **filters):
 
 
 def display_question(row, index=None):
-    """Pretty print a single question"""
     print("\n" + "=" * 80)
     if index is not None:
         print(f"Question #{index + 1}")
     print("=" * 80)
-    print(f"🤖 Model:        {row['model']}")
-    print(f"🌍 Language:     {row['lang']}")
-    print(f"📊 Level:        {row['level']}")
-    print(f"📝 Task Type:    {row['task_type']}")
-    print(f"🔢 Iteration:    {row['iteration']}")
-    print(f"⭐ Score:        {row['score']}/10")
-    print(f"⚡ Latency:      {row['latency']:.2f}s")
-    print(f"✅ Success:      {'Yes' if row['is_success'] else 'No'}")
+    print(f"Model: {row['model']}")
+    print(f"Language: {row['lang']}")
+    print(f"Level: {row['level']}")
+    print(f"Task Type: {row['task_type']}")
+    print(f"Iteration: {row['iteration']}")
+    print(f"Score: {row['score']}/10")
+    print(f"Latency: {row['latency']:.2f}s")
+    print(f"Success: {'Yes' if row['is_success'] else 'No'}")
     print("-" * 80)
     
     try:
         content = json.loads(row['content'])
-        print("📋 Question:")
+        print("Question:")
         print(f"   {content.get('question', 'N/A')}")
         
         if 'options' in content:
-            print("\n📝 Options:")
+            print("\n Options:")
             for i, opt in enumerate(content['options'], 1):
                 print(f"   {i}. {opt}")
         
         if 'correctAnswer' in content:
-            print(f"\n✅ Correct Answer: {content['correctAnswer']}")
+            print(f"\n Correct Answer: {content['correctAnswer']}")
     except:
-        print(f"📋 Question Text: {row.get('question_text', 'N/A')}")
+        print(f"Question Text: {row.get('question_text', 'N/A')}")
     
-    print("\n💭 Judge's Evaluation:")
+    print("\n Judge's Evaluation:")
     print(f"   {row['reason']}")
     print("=" * 80)
 
 
 def export_filtered(df, output_file):
-    """Export filtered results to CSV/HTML"""
     if output_file.endswith('.csv'):
         df.to_csv(output_file, index=False)
-        print(f"✅ Exported {len(df)} questions to {output_file}")
+        print(f"Exported {len(df)} questions to {output_file}")
     elif output_file.endswith('.html'):
         html = df.to_html(index=False, escape=False)
         with open(output_file, 'w', encoding='utf-8') as f:
@@ -117,40 +109,38 @@ def export_filtered(df, output_file):
 </body>
 </html>
 """)
-        print(f"✅ Exported {len(df)} questions to {output_file}")
+        print(f"Exported {len(df)} questions to {output_file}")
     else:
-        print("❌ Unsupported format. Use .csv or .html")
+        print("Unsupported format. Use .csv or .html")
 
 
 def show_statistics(df):
-    """Show statistics for filtered dataset"""
-    print("\n📊 Statistics for filtered dataset:")
+    print("\n Statistics for filtered dataset:")
     print(f"   Total questions: {len(df)}")
     print(f"   Average score: {df['score'].mean():.2f}")
     print(f"   Score std dev: {df['score'].std():.2f}")
     print(f"   Average latency: {df['latency'].mean():.2f}s")
     print(f"   Success rate: {df['is_success'].mean() * 100:.1f}%")
     
-    print("\n🏆 Score distribution:")
+    print("\n Score distribution:")
     for category in ['Poor (0-4)', 'Fair (5-6)', 'Good (7-8)', 'Excellent (9-10)']:
         count = (df['score_category'] == category).sum()
         pct = (count / len(df)) * 100
         print(f"   {category}: {count} ({pct:.1f}%)")
     
-    print("\n🤖 Questions by model:")
+    print("\n Questions by model:")
     for model, count in df['model'].value_counts().items():
         print(f"   {model}: {count}")
 
 
 def interactive_mode():
-    """Interactive CLI for exploring questions"""
     df = load_questions()
     
     print("\n" + "=" * 80)
-    print("🔍 INTERACTIVE QUESTION EXPLORER")
+    print("INTERACTIVE QUESTION EXPLORER")
     print("=" * 80)
     
-    print("\n📋 Available filters (press Enter to skip):")
+    print("\n Available filters (press Enter to skip):")
     
     models = [''] + df['model'].unique().tolist()
     print(f"\nModels: {', '.join(models[1:])}")
@@ -185,7 +175,7 @@ def interactive_mode():
     
     filtered = filter_questions(df, **filters)
     
-    print(f"\n✅ Found {len(filtered)} questions matching your criteria")
+    print(f"\n Found {len(filtered)} questions matching your criteria")
     
     show_statistics(filtered)
     
@@ -230,11 +220,10 @@ def interactive_mode():
         export_filtered(filtered, filename)
     
     elif choice == '6':
-        print("👋 Goodbye!")
+        print("Goodbye!")
 
 
 def main():
-    """Main entry point with CLI arguments"""
     parser = argparse.ArgumentParser(description='Explore benchmark questions')
     parser.add_argument('--model', help='Filter by model name')
     parser.add_argument('--language', help='Filter by language')
@@ -269,7 +258,7 @@ def main():
     
     filtered = filter_questions(df, **filters)
     
-    print(f"\n✅ Found {len(filtered)} questions matching your criteria")
+    print(f"\n Found {len(filtered)} questions matching your criteria")
     
     if args.stats:
         show_statistics(filtered)

@@ -127,14 +127,6 @@ class VectorDBService:
         metadatas: List[ChunkMetadata],
         user_id: Optional[str] = None,
     ) -> None:
-        """
-        Saves text chunks and their metadata to the materials table.
-
-        user_id is stored alongside each chunk so that search_materials
-        can filter results to a single owner. Without it the previous
-        implementation pooled all users' uploads into one search index,
-        meaning user A's quiz could be generated from user B's PDF.
-        """
         try:
             embeddings = self.model.encode(chunks)
             data = []
@@ -168,14 +160,6 @@ class VectorDBService:
         limit: int = 5,
         user_id: Optional[str] = None,
     ) -> List[MaterialChunk]:
-        """
-        Searches for materials similar to the query.
-
-        If user_id is provided, results are restricted to chunks that
-        belong to that user. Pre-multitenant rows have user_id="" and
-        are NEVER returned in a scoped query — they're effectively
-        invisible until backfilled.
-        """
         try:
             if self.materials_table_name not in self.db.table_names():
                 return []
@@ -189,8 +173,8 @@ class VectorDBService:
                     return []
                 try:
                     search = search.where(f"user_id = '{user_id}'")
-                except Exception:  # noqa: BLE001
-                    pass
+                except Exception as exc:
+                    print(f"Owner filter unsupported by this table: {exc}")
             results_df = search.limit(limit).to_pandas()
 
             records = results_df.to_dict("records")
@@ -207,15 +191,6 @@ class VectorDBService:
             raise e
 
     def save_task_templates(self, templates: List[TaskTemplate]) -> None:
-        """
-        Saves extracted task templates.
-
-        Templates are mined from a user's own upload, so each row keeps
-        the owner's user_id and search_task_templates filters on it —
-        same contract as save_chunks/search_materials. A template leaks
-        the shape of someone's private material, so it gets the same
-        scoping as the material itself.
-        """
         if not templates:
             return
         try:
@@ -243,18 +218,6 @@ class VectorDBService:
         limit: int = 20,
         user_id: Optional[str] = None,
     ) -> List[TaskTemplate]:
-        """
-        Searches for stored task templates similar to the query.
-
-        If user_id is provided, results are restricted to templates mined
-        from that user's own uploads. Rows written before templates were
-        scoped have user_id="" and are NEVER returned in a scoped query,
-        exactly like pre-multitenant materials chunks.
-
-        Returns [] rather than raising on any failure — callers use these
-        as optional few-shot exemplars, and an empty store must degrade to
-        plain generation rather than break a lesson.
-        """
         try:
             if self.templates_table_name not in self.db.table_names():
                 return []
@@ -267,8 +230,8 @@ class VectorDBService:
                     return []
                 try:
                     search = search.where(f"user_id = '{user_id}'")
-                except Exception:  # noqa: BLE001
-                    pass
+                except Exception as exc:
+                    print(f"Owner filter unsupported by this table: {exc}")
             results = search.limit(limit).to_pandas()
 
             records = results.to_dict("records")
@@ -281,9 +244,6 @@ class VectorDBService:
             return []
 
     def get_task_template_by_id(self, template_id: str) -> Optional[TaskTemplate]:
-        """
-        Returns a template by its id.
-        """
         try:
             if self.templates_table_name not in self.db.table_names():
                 return None

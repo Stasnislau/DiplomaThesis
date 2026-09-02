@@ -8,6 +8,8 @@ import logging
 from models.base_response import BaseResponse
 from models.dtos.material_dtos import ProcessPdfResponse, GenerateQuizResponse, DocumentMap
 from utils.user_context import extract_user_context
+from utils.error_codes import FILE_NAME_REQUIRED, FILE_PROCESSING_FAILED, FILE_TYPE_PDF_ONLY, TASK_GENERATION_FAILED, raise_with_code
+from utils.language_codes import to_iso_language
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -28,9 +30,6 @@ class GenerateQuizRequest(BaseModel):
 
 
 class MaterialsErrorExample(BaseModel):
-    """Wrong-answer trace from a finished materials quiz session.
-    Same shape as ListeningErrorExample / speaking errorExamples so
-    `derive_adaptive_focus` can read all task types uniformly."""
 
     type: Optional[str] = None
     text: Optional[str] = None
@@ -51,13 +50,6 @@ class MaterialsResultRequest(BaseModel):
 
 @router.post("/upload", response_model=BaseResponse[ProcessPdfResponse])
 async def upload_pdf(request: Request, file: UploadFile = File(...), service: MaterialService = Depends(get_material_service)) -> BaseResponse[ProcessPdfResponse]:
-    from utils.error_codes import (
-        FILE_NAME_REQUIRED,
-        FILE_TYPE_PDF_ONLY,
-        FILE_PROCESSING_FAILED,
-        TASK_GENERATION_FAILED,
-        raise_with_code,
-    )
     user_context = extract_user_context(request)
     logger.info(f"Received file upload request: {file.filename}")
     if not file.filename:
@@ -86,7 +78,6 @@ async def generate_quiz(
     body: GenerateQuizRequest = Body(...),
     service: MaterialService = Depends(get_material_service)
 ) -> BaseResponse[GenerateQuizResponse]:
-    from utils.error_codes import TASK_GENERATION_FAILED, raise_with_code
     user_context = extract_user_context(request)
     logger.info(f"Received quiz generation request. Selected types: {body.selected_types}")
     try:
@@ -110,13 +101,7 @@ async def generate_quiz(
 async def log_materials_result(
     request: Request, body: MaterialsResultRequest
 ) -> BaseResponse[bool]:
-    """Persist the outcome of a finished materials-quiz session so
-    the adaptive loop can mine which question types / topics the user
-    is failing on. Without this, /materials/quiz logs only the
-    GENERATION (with score=null) and the user's actual performance
-    is invisible to derive_adaptive_focus."""
     from services.user_service import UserService
-    from utils.language_codes import to_iso_language
 
     user_context = extract_user_context(request)
     user_service = UserService()

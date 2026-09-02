@@ -1,7 +1,4 @@
 # syntax=docker/dockerfile:1.6
-# Gateway microservice: thin NestJS proxy.
-# Smallest of the four — tens of MB — but still benefits from the npm
-# cache mount (re-deploy ~5 s instead of ~30 s).
 
 FROM node:20-alpine AS builder
 WORKDIR /app
@@ -13,7 +10,6 @@ RUN --mount=type=cache,target=/root/.npm \
 COPY . .
 RUN npm run build
 
-# ── Production ──────────────────────────────────────────────────────────────
 FROM node:20-alpine AS production
 WORKDIR /app
 

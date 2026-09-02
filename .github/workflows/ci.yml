@@ -45,6 +45,22 @@ jobs:
       - run: npx prisma generate
       - run: npx jest
 
+  gateway:
+    name: Gateway microservice (jest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Backend/GatewayMicroservice
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: Backend/GatewayMicroservice/package-lock.json
+      - run: npm ci
+      - run: npx jest
+
   user:
     name: User microservice (jest)
     runs-on: ubuntu-latest
@@ -115,6 +131,4 @@ jobs:
       - run: poetry install --no-interaction --no-root
       - run: >
           poetry run pytest -q
-          --ignore=tests/services/test_learning_path_service.py
-          --ignore=tests/services/test_listening_task_service.py
           --ignore=tests/e2e/

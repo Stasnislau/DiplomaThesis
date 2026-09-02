@@ -1,12 +1,3 @@
-"""Tests for the Phase 3 format-driven speaking flow.
-
-Covers:
-  - Per-format prompt generation (timed_response, picture_description,
-    free_monologue, repeat_after_me, read_aloud).
-  - Format-aware grading: WER-based for repeat_after_me, LLM-rubric
-    for everything else.
-  - The _word_error_rate helper at the unit level.
-"""
 
 import json
 import pytest
@@ -42,7 +33,6 @@ def mock_ai_service() -> MagicMock:
 
 @pytest.fixture
 def mock_image_service() -> MagicMock:
-    """Keep the suite offline: the real ImageService reaches Vertex AI."""
     svc = MagicMock()
     svc.enabled = False
     svc.generate = AsyncMock(return_value=None)
@@ -137,13 +127,6 @@ async def test_generate_prompt_timed_response(
 async def test_generate_prompt_picture_description_includes_image_url(
     speaking_service: SpeakingService, mock_ai_service: MagicMock
 ) -> None:
-    """picture_description must return:
-      - the scene caption as `prompt` (for alt-text + fallback),
-      - an `imageUrl` pointing at Pollinations.ai so the FE can
-        render an actual photograph the learner describes.
-    The whole point of this format is "describe what you SEE", not
-    "describe this paragraph"; without imageUrl we'd be back to the
-    earlier broken UX."""
     mock_ai_service.get_ai_response.return_value = json.dumps(
         {
             "visual_prompt": "candid photo of a busy coffee shop on a rainy Saturday, photorealistic",
@@ -166,9 +149,6 @@ async def test_generate_prompt_picture_description_includes_image_url(
 async def test_generate_prompt_picture_description_falls_back_when_visual_prompt_missing(
     speaking_service: SpeakingService, mock_ai_service: MagicMock
 ) -> None:
-    """If the LLM forgets `visual_prompt`, we still render an image
-    by URL-encoding the scene caption. The URL must be valid and
-    non-empty either way."""
     mock_ai_service.get_ai_response.return_value = json.dumps(
         {
             "scene": "A family at a picnic in the park.",
@@ -183,8 +163,6 @@ async def test_generate_prompt_picture_description_falls_back_when_visual_prompt
 
 
 def test_pollinations_url_encodes_special_chars() -> None:
-    """Spaces, accents and quotes must be URL-encoded so the GET
-    reaches Pollinations intact instead of being truncated by a proxy."""
     url = _build_pollinations_url("a café & a baguette, Paris")
     assert url.startswith("https://image.pollinations.ai/prompt/")
     assert "%20" in url or "%" in url
@@ -193,8 +171,6 @@ def test_pollinations_url_encodes_special_chars() -> None:
 
 
 def test_pollinations_url_clamps_long_prompts() -> None:
-    """Pollinations rejects URLs above ~2KB. We cap the prompt at
-    600 chars so the encoded URL stays well inside that ceiling."""
     long_prompt = "lorem ipsum " * 200
     url = _build_pollinations_url(long_prompt)
     path_segment = url.split("/prompt/", 1)[1].split("?", 1)[0]
@@ -202,16 +178,11 @@ def test_pollinations_url_clamps_long_prompts() -> None:
 
 
 def test_pollinations_url_handles_empty_input() -> None:
-    """Defensive: empty or whitespace-only prompt must still produce
-    a working URL (with a placeholder)."""
     url = _build_pollinations_url("")
     assert url.startswith("https://image.pollinations.ai/prompt/")
 
 
 def test_dedupe_translation_drops_identical() -> None:
-    """When the LLM returns the same string in `prompt` and
-    `translation` (UI lang == target lang case), we hide the
-    translation so the FE doesn't render the same paragraph twice."""
     assert _dedupe_translation("Hello", "Hello") == ""
     assert _dedupe_translation("Hello", " hello ") == ""
 
@@ -269,8 +240,6 @@ async def test_generate_prompt_repeat_after_me_with_tts(
 async def test_generate_prompt_repeat_after_me_without_tts(
     speaking_service: SpeakingService, mock_ai_service: MagicMock
 ) -> None:
-    """When the synthesizer isn't injected, audioUrl falls back to None
-    but the prompt still works as a text-only practice."""
     mock_ai_service.get_ai_response.return_value = json.dumps(
         {"phrase": "Hello world.", "focus": "x", "translation": "y"}
     )
@@ -466,8 +435,6 @@ async def test_grade_rejects_empty_audio(
 async def test_grade_recovers_from_bad_llm_json(
     speaking_service: SpeakingService, mock_ai_service: MagicMock
 ) -> None:
-    """Garbage JSON from the LLM shouldn't crash the whole flow —
-    we still want pronunciation metrics + a friendly placeholder."""
     speaking_service._transcribe_audio_with_whisper = AsyncMock(
         return_value=_whisper_transcription("Some real transcript here.")
     )

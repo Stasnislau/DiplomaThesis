@@ -1,11 +1,3 @@
-"""Synthetic PDF fixtures for material-flow integration tests.
-
-We use reportlab to lay out plausibly TOEFL/Cambridge-shaped pages
-with a real reading passage of the right length plus a list of
-questions, so the classification step has something realistic to chew
-on. The contents below are synthetic and don't reproduce any
-copyrighted exam item.
-"""
 
 from __future__ import annotations
 
@@ -147,7 +139,6 @@ Questions 1 to 7 refer to the passage above.
 
 
 def write_toefl_reading_pdf() -> bytes:
-    """Build a TOEFL-style reading PDF in memory and return the bytes."""
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=letter, title="Synthetic TOEFL Reading")
     styles = getSampleStyleSheet()

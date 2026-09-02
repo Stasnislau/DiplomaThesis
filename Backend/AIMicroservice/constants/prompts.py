@@ -2,12 +2,6 @@ from typing import Dict, Any, Optional
 
 
 def _ui_lang_clause(ui_locale_label: Optional[str], fields: list[str]) -> str:
-    """Build a 'write the following fields in <UI language>' clause.
-
-    Empty / English UI returns no clause so the prompt stays unchanged for the
-    default case. Anything else gets a strict instruction listing which JSON
-    keys must be in the UI language.
-    """
     if not ui_locale_label or ui_locale_label.strip().lower() == "english":
         return ""
     field_list = ", ".join(f"`{f}`" for f in fields)
@@ -20,14 +14,6 @@ def _ui_lang_clause(ui_locale_label: Optional[str], fields: list[str]) -> str:
 
 
 def _exemplar_clause(exemplars: Optional[list[str]]) -> str:
-    """Render task templates mined from the learner's own uploads as
-    few-shot format examples.
-
-    Returns no clause at all when there are none, so an empty template
-    store (fresh install, user who never uploaded a PDF, retrieval error)
-    produces a byte-identical prompt to the pre-exemplar behaviour. Same
-    degrade-to-plain shape as `lesson_hint` when there's no topic.
-    """
     if not exemplars:
         return ""
     blocks = "\n".join(

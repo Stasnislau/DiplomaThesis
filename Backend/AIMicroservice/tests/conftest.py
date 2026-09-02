@@ -1,8 +1,3 @@
-"""
-Pytest configuration for AIMicroservice tests.
-This file ensures that the project root is in the Python path
-and stubs GCP credentials when they are absent (CI).
-"""
 import os
 import sys
 from pathlib import Path

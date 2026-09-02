@@ -5,12 +5,10 @@ from services.learning_path_service import LearningPathService
 
 @pytest.fixture
 def service() -> LearningPathService:
-    """Service with session_factory=None; DB calls are mocked per-test."""
     return LearningPathService(session_factory=None)
 
 
 class _FakeDB:
-    """Tiny in-memory stand-in for the lesson_completions table."""
 
     def __init__(self) -> None:
         self._store: dict[str, set[str]] = {}
@@ -32,7 +30,6 @@ def fake_db() -> _FakeDB:
 
 @pytest.fixture
 def patched_service(service: LearningPathService, fake_db: _FakeDB) -> LearningPathService:
-    """Service with DB calls redirected to in-memory fake."""
     service._get_user_completed = fake_db.get_user_completed  # type: ignore[assignment]
     service._mark_completed = fake_db.mark_completed  # type: ignore[assignment]
     return service

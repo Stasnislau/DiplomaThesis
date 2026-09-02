@@ -415,14 +415,11 @@ CURRICULUM: dict[str, list[dict]] = {
 }
 
 
-
-
 class LearningPathService:
     def __init__(self, session_factory: async_sessionmaker[AsyncSession] | None = None) -> None:
         self._session_factory = session_factory
 
     async def _get_user_completed(self, user_id: str) -> set[str]:
-        """Load completed lesson ids for a user from the database."""
         if self._session_factory is None:
             return set()
         async with self._session_factory() as session:
@@ -434,7 +431,6 @@ class LearningPathService:
             return {row[0] for row in rows.all()}
 
     async def _mark_completed(self, user_id: str, lesson_ids: list[str]) -> None:
-        """Insert lesson completions, skipping duplicates (ON CONFLICT DO NOTHING)."""
         if self._session_factory is None or not lesson_ids:
             return
         async with self._session_factory() as session:
@@ -445,7 +441,6 @@ class LearningPathService:
             await session.commit()
 
     async def complete_lesson(self, lesson_id: str, user_id: str) -> dict[str, Any]:
-        """Mark a lesson COMPLETED and unlock the next one in the same module."""
         await self._mark_completed(user_id, [lesson_id])
         completed = await self._get_user_completed(user_id)
 
@@ -474,11 +469,6 @@ class LearningPathService:
         }
 
     async def bulk_complete_levels(self, up_to_level: str, user_id: str) -> dict[str, Any]:
-        """
-        Mark every lesson in all levels BELOW up_to_level as completed.
-        Called right after placement test saves the user's level.
-        e.g. up_to_level="B1" → marks all A1 + A2 lessons as COMPLETED.
-        """
         levels = ["A1", "A2", "B1", "B2", "C1", "C2"]
         if up_to_level not in levels or up_to_level == "A1":
             return {"completed_lesson_ids": [], "levels_completed": []}

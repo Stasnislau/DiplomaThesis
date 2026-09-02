@@ -26,6 +26,7 @@ from models.dtos.material_dtos import (
     QuestionTypeExample,
     QUESTION_KEYS,
 )
+from utils.error_codes import PDF_AI_REJECTED, PDF_GARBLED_TEXT, PDF_NO_TEXT, raise_with_code
 
 
 def _document_map_from(parsed: Dict[str, Any]) -> DocumentMap:
@@ -35,7 +36,7 @@ def _document_map_from(parsed: Dict[str, Any]) -> DocumentMap:
             continue
         try:
             kept.append(DocumentExercise.model_validate(raw))
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning(
                 "Skipping exercise %d of the document map: %s", index, exc
             )
@@ -120,11 +121,6 @@ _EXERCISE_SKILL: Dict[str, str] = {
 
 
 def _word_ngrams(text: str, n: int) -> Set[Tuple[str, ...]]:
-    """Return the set of lowercase word n-grams in `text`. Punctuation
-    and whitespace differences don't count — we tokenize on word
-    characters only, so "Madrid." and "Madrid," produce the same
-    token. This makes the verbatim check robust against trivial
-    formatting changes the model uses to paper over copying."""
     words = re.findall(r"\w+", text.lower(), flags=re.UNICODE)
     if len(words) < n:
         return set()
@@ -132,16 +128,6 @@ def _word_ngrams(text: str, n: int) -> Set[Tuple[str, ...]]:
 
 
 def _dedupe_preserve_order(options: List[Any]) -> List[str]:
-    """Return options with case/whitespace-equal duplicates removed,
-    keeping the first occurrence's exact casing/spelling. Used to
-    sanitise MC option lists where the LLM occasionally produces a
-    near-identical entry as a "distractor" that's actually the same
-    string twice (visible bug: user picks dup, gets Correct! by
-    accident).
-
-    A duplicate is anything whose `.strip().lower()` matches one we
-    already kept. NFKC-fold for unicode safety so e.g. "ё" vs
-    composed "е + diaeresis" don't sneak past as distinct."""
     import unicodedata
 
     seen: set[str] = set()
@@ -162,9 +148,6 @@ def _has_verbatim_overlap(
     source_chunks: List[str],
     n: int = _VERBATIM_NGRAM_SIZE,
 ) -> bool:
-    """True if `candidate` shares any n-word contiguous slice with any
-    of the source chunks. With n=12 this almost never fires on
-    independently-written prose but reliably catches verbatim quotes."""
     cand_grams = _word_ngrams(candidate, n)
     if not cand_grams:
         return False
@@ -196,17 +179,15 @@ class MaterialService:
                 text += page.extract_text() + "\n"
 
             if not text.strip():
-                from utils.error_codes import PDF_NO_TEXT, raise_with_code
                 raise_with_code(
                     PDF_NO_TEXT,
                     400,
                     "No selectable text found. The PDF is likely a scan or has its text encoded with a custom font.",
                 )
 
-            import re as _re
             non_text = sum(
                 1 for c in text
-                if not _re.match(r"[\w\s.,;:!?\"'()\[\]{}\-—–‑/\\]", c, _re.UNICODE)
+                if not re.match(r"[\w\s.,;:!?\"'()\[\]{}\-—–‑/\\]", c, re.UNICODE)
             )
             non_text_share = non_text / max(len(text), 1)
             if non_text_share > 0.30:
@@ -215,7 +196,6 @@ class MaterialService:
                     non_text_share * 100,
                     filename,
                 )
-                from utils.error_codes import PDF_GARBLED_TEXT, raise_with_code
                 raise_with_code(
                     PDF_GARBLED_TEXT,
                     400,
@@ -383,7 +363,6 @@ class MaterialService:
                             user_context=user_context,
                         )
                     except HTTPException:
-                        from utils.error_codes import PDF_AI_REJECTED, raise_with_code
                         raise_with_code(
                             PDF_AI_REJECTED,
                             422,
@@ -429,7 +408,8 @@ class MaterialService:
                                         example=str(raw.get("example") or ""),
                                     )
                                 )
-                            except Exception:
+                            except (TypeError, ValueError) as exc:
+                                logger.warning("skipping unparsable exercise: %s", exc)
                                 continue
                         document_map = DocumentMap(
                             document_kind=str(
@@ -496,19 +476,6 @@ class MaterialService:
         target_language: Optional[str] = None,
         document_map: Optional[DocumentMap] = None,
     ) -> GenerateQuizResponse:
-        """Multi-stage quiz generation.
-
-        Stage 1 — derive (or accept) a DocumentMap describing what's in
-        the user's material.
-        Stage 2 — for every exercise that needs a stimulus passage,
-        generate a NEW passage of the right length and topic, NOT a
-        copy of the source.
-        Stage 3 — generate questions tied to that fresh stimulus, using
-        the exercise's question_subtypes catalog.
-
-        Stages 2+3 fan out per-exercise via asyncio.gather so a 4-exercise
-        document doesn't pay 4× sequential latency.
-        """
         try:
             logger.info(
                 "Generating quiz. selected_types=%s, has_doc_map=%s, target_lang=%s",
@@ -618,14 +585,6 @@ class MaterialService:
         user_context: Optional[object],
         owner_id: Optional[str],
     ) -> Optional[DocumentMap]:
-        """Stage 1 fallback when caller didn't round-trip the map.
-
-        Pulls a topic-agnostic spread of chunks (instead of biasing
-        toward "questions tasks" like the old retrieval did), feeds
-        them to the same classification prompt as process_pdf, and
-        returns the resulting DocumentMap. Best-effort: returns None
-        if classification fails.
-        """
         relevant_docs = self.vector_db_service.search_materials(
             "passage paragraph exercise question task",
             limit=12,
@@ -698,19 +657,6 @@ class MaterialService:
         source: str,
         owner_id: Optional[str],
     ) -> List[TaskTemplate]:
-        """Turn a DocumentMap's exercises into storable task templates.
-
-        Each template is a compact prose description of one exercise —
-        type, topic, subtypes, drilled grammar and a sample item. It is
-        prose rather than JSON because the text is what gets embedded,
-        and a sentence embeds far better than a serialised dict.
-
-        Note there is no CEFR level here. The classification pass reports
-        `document_kind` (TOEFL_Reading, Cambridge_FCE, ...), which implies
-        a level band but doesn't state one, and guessing a level we were
-        never told would poison retrieval with a fabricated filter. The
-        level stays empty and the retrieval side matches semantically.
-        """
         templates: List[TaskTemplate] = []
         for exercise in document_map.exercises:
             exercise_type = exercise.type.strip()
@@ -759,17 +705,6 @@ class MaterialService:
         focus_keywords: Optional[List[str]] = None,
         topic: Optional[str] = None,
     ) -> Optional[QuizQuestion]:
-        """Generate a SINGLE question of the requested type, no PDF
-        context. Used by the /writing/typed-task endpoint to power
-        the Quiz route — same renderer dispatcher and discriminated
-        union the Materials surface uses, just standalone.
-
-        Builds a synthetic DocumentExercise tagged with the requested
-        type (and the optional adaptive topic / keywords), runs it
-        through the same Stage 2 + Stage 3 pipeline, and returns the
-        first parsed question. Returns None on a complete miss so
-        callers can surface a friendly error.
-        """
         ui_lang = (
             getattr(user_context, "ui_locale_label", None) or "English"
         )
@@ -809,14 +744,6 @@ class MaterialService:
         target_language: Optional[str],
         user_context: Optional[object],
     ) -> List[QuizQuestion]:
-        """Stage 2 + Stage 3 for one exercise.
-
-        For exercises that have a stimulus (reading/listening/cloze),
-        generate the passage first, then ask Stage 3 to write questions
-        about that passage. For everything else (isolated grammar/vocab
-        gap-fill, standalone MCQ), Stage 2 is skipped and Stage 3
-        generates self-contained questions.
-        """
         stimulus: Optional[str] = None
         if self._needs_stimulus(exercise):
             try:
@@ -858,11 +785,6 @@ class MaterialService:
         target_language: Optional[str],
         user_context: Optional[object],
     ) -> str:
-        """Stage 2: write a NEW passage matching the exercise's
-        topic, length and register. Verbatim-checked against the
-        retrieved source chunks — if the model copy-pastes a 12-word
-        contiguous span, we retry once with a sharper warning before
-        accepting whatever comes back."""
         word_count = self._clamp_word_count(exercise.passage_word_count_estimate)
         topic_hint = (exercise.passage_topic_hint or "").strip()
         style_excerpt = (exercise.passage_excerpt_for_style or "").strip()
@@ -994,17 +916,6 @@ class MaterialService:
         target_language: Optional[str],
         user_context: Optional[object],
     ) -> List[QuizQuestion]:
-        """Stage 3: write questions for one exercise.
-
-        If `stimulus` is provided, every question is anchored to it
-        and `context_text` carries the passage. If not, the generator
-        creates self-contained items (typical for grammar gap-fill,
-        standalone MCQ, etc.).
-
-        Items are parsed through QuizQuestionAdapter, which routes
-        each item to the right discriminated-union variant based on
-        its `type` field.
-        """
         question_count = exercise.question_count or 4
         question_count = max(1, min(question_count, 8))
         subtypes_clause = (

@@ -60,10 +60,10 @@ line-length = 140
 
 [tool.ruff.lint]
 select = [
-    "E",  # pycodestyle errors
-    "F",  # pyflakes
-    "W",  # pycodestyle warnings
-    "ANN", # flake8-annotations
+    "E",
+    "F",
+    "W",
+    "ANN",
 ]
 
 
@@ -79,19 +79,18 @@ python_version = "3.10"
 explicit_package_bases = true
 mypy_path = "."
 
-warn_return_any = true         # Complaint if a function returns Any (implicitly)
-warn_unused_configs = true     # Complaint on unused sections in the mypy config
-warn_redundant_casts = true    # Complaint on unnecessary explicit type casts (cast)
-warn_unused_ignores = true     # Complaint on unnecessary # type: ignore
+warn_return_any = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
 
-disallow_untyped_defs = true   # Prohibit functions without annotations (similar to ANN)
-disallow_incomplete_defs = true # Prohibit incomplete annotations (e.g., only arguments without return)
-check_untyped_defs = true      # Check the body of functions without annotations (may give false positives)
-disallow_untyped_calls = true  # Prohibit calling functions without annotations from annotated code
-no_implicit_optional = true    # Prohibit implicit Optional (None without Union[..., None])
-strict_equality = true         # More strict type checking
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_calls = true
+no_implicit_optional = true
+strict_equality = true
 
-# --- Ignoring import issues (often needed for third-party libraries) ---
 ignore_missing_imports = true
 pretty = true        
 show_error_codes = true

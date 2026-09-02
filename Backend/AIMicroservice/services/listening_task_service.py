@@ -153,10 +153,6 @@ class ListeningTaskService:
 
     @staticmethod
     def _resolve_question_types(requested: Optional[List[str]]) -> List[str]:
-        """Filter the requested type list to canonical entries; fall
-        back to the historical default mix when nothing usable came
-        in. Preserves caller order so the prompt's emphasis matches
-        what the user asked for first."""
         if not requested:
             return list(_DEFAULT_TYPES)
         seen: set[str] = set()

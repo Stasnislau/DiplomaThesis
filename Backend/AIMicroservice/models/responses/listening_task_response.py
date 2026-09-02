@@ -19,26 +19,18 @@ class FillInTheBlankQuestion(_ListeningQuestionBase):
 
 
 class DictationQuestion(_ListeningQuestionBase):
-    """User listens to a short clip and types it back verbatim.
-    `correctAnswer` is the canonical written form; grading is
-    case-insensitive trim-tolerant."""
 
     type: Literal["dictation"] = "dictation"
     correctAnswer: str
 
 
 class TrueFalseNotGivenQuestion(_ListeningQuestionBase):
-    """IELTS-style. Statement is either confirmed by the audio,
-    contradicted by it, or never addressed (`not_given`)."""
 
     type: Literal["true_false_not_given"] = "true_false_not_given"
     correctAnswer: Literal["true", "false", "not_given"]
 
 
 class SentenceCompletionQuestion(_ListeningQuestionBase):
-    """TOEFL-style sentence completion. The `question` carries an
-    incomplete sentence with `___` marking the slot. `correctAnswer`
-    is the missing word/phrase or a list of accepted variants."""
 
     type: Literal["sentence_completion"] = "sentence_completion"
     correctAnswer: Union[str, List[str]]
@@ -52,9 +44,6 @@ class SpeakerStatement(BaseModel):
 
 
 class MultiSpeakerMatchingQuestion(_ListeningQuestionBase):
-    """Audio has multiple speakers (TTS uses different voices per
-    `[Speaker N]:` block). User must attribute each statement to its
-    speaker."""
 
     type: Literal["multi_speaker_matching"] = "multi_speaker_matching"
     speakers: List[str] = Field(min_length=2)

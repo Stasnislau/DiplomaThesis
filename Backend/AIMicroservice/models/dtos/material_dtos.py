@@ -20,13 +20,6 @@ class QuestionTypeExample(BaseModel):
 
 
 class DocumentExercise(BaseModel):
-    """One distinct exercise/activity detected in a source PDF.
-
-    Drives Stage 2 (stimulus generation) and Stage 3 (question
-    generation). Fields are optional because not every exercise has
-    a passage (e.g. isolated grammar gap-fills don't), and the LLM
-    may not always estimate every field.
-    """
 
     type: str = ""
     passage_word_count_estimate: Optional[int] = None
@@ -70,9 +63,6 @@ class DocumentExercise(BaseModel):
 
 
 class DocumentMap(BaseModel):
-    """Structured plan derived from a PDF — what's in it, how big the
-    passages are, what subtypes of questions to drill. Output of the
-    Stage 1 classification call; consumed by generate_quiz."""
 
     document_kind: str = "Mixed"
     exercises: List[DocumentExercise] = Field(default_factory=list)

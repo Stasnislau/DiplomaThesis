@@ -1,10 +1,3 @@
-"""Shared setup for the suites that call a real model.
-
-Everything here talks to a live provider. Nothing in this directory skips: a
-missing key fails the run, and a provider that answers 429 or 5xx is retried
-before the case is allowed to fail, because a rate limit is not a defect in the
-application.
-"""
 
 from __future__ import annotations
 
@@ -24,8 +17,6 @@ load_dotenv(
 )
 
 GROQ_KEY = os.getenv("GROQ_API_KEY", "")
-# groq: learner has a stored Groq key (the training-provider path).
-# system: no stored keys — the request must land on google-geminis / Vertex Flash.
 E2E_PROVIDER = os.getenv("E2E_PROVIDER", "groq").strip().lower() or "groq"
 
 RATE_LIMIT_PAUSE = 4
@@ -58,12 +49,6 @@ def post_live(
     body: dict,
     ui_locale: str = "en",
 ) -> dict:
-    """Call an endpoint that reaches a real model and return its payload.
-
-    A provider under load answers 429 or 5xx, which says nothing about the code
-    under test, so the call is repeated. When every attempt fails, the case
-    fails and names the last status.
-    """
     last: Any = None
     for attempt in range(1, MAX_ATTEMPTS + 1):
         last = client.post(path, json=body, headers=headers(ui_locale))
@@ -87,9 +72,7 @@ def _env_and_throttle(monkeypatch: pytest.MonkeyPatch) -> None:
     if E2E_PROVIDER == "groq":
         assert GROQ_KEY, "GROQ_API_KEY must be set: these tests call a real provider"
     monkeypatch.setenv("PUBLIC_BASE_URL", "http://e2e.test")
-    # LiteLLM's Vertex client reads VERTEXAI_* , the app .env uses VERTEX_AI_*.
     project = os.getenv("VERTEX_AI_PROJECT_ID") or os.getenv("VERTEXAI_PROJECT")
-    # Gemini 3 Flash is global; VERTEX_AI_LOCATION is for Imagen, not chat.
     chat_location = os.getenv("VERTEX_CHAT_LOCATION") or "global"
     if project:
         monkeypatch.setenv("VERTEXAI_PROJECT", project)
@@ -101,7 +84,6 @@ def _env_and_throttle(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.fixture
 def client() -> Iterable[TestClient]:
-    """The application with only the neighbours mocked. Every model call is real."""
     if E2E_PROVIDER == "groq":
         token_patch = patch(
             "services.user_service.UserService.get_default_ai_token",

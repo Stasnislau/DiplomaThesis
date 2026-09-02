@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Dict, Optional
 
 from fastapi import Request, status
+from utils.error_codes import AUTH_MISSING_USER, raise_with_code
 
 logger = logging.getLogger("ai_microservice")
 
@@ -27,12 +28,6 @@ class UserContext:
     ui_locale: str = "en"
 
     def to_forward_headers(self) -> Dict[str, str]:
-        """Identity the User microservice needs on an internal call.
-
-        The learner's own bearer token stays here: User resolves the caller
-        from these headers once the shared service key has opened the route,
-        so forwarding the token would spread a credential no one reads.
-        """
         headers: Dict[str, str] = {}
         if self.user_id:
             headers["x-user-id"] = self.user_id
@@ -44,20 +39,12 @@ class UserContext:
 
     @property
     def ui_locale_label(self) -> str:
-        """Human-readable language name for the UI locale (used in prompts)."""
         return LOCALE_TO_LABEL.get(
             (self.ui_locale or "en").split("-")[0].lower(), "English"
         )
 
 
 def extract_user_context(request: Request) -> UserContext:
-    """Read the caller identity the gateway attached to this request.
-
-    The gateway validates the token with Auth, attaches the identity, and
-    strips any incoming x-internal-service-key. It is the only service that
-    publishes a port, so these headers cannot be set from outside.
-    """
-    from utils.error_codes import AUTH_MISSING_USER, raise_with_code
 
     authorization = request.headers.get("authorization")
     user_id = request.headers.get("x-user-id")

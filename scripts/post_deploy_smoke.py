@@ -1,37 +1,4 @@
 #!/usr/bin/env python3
-"""Post-deploy smoke test runner.
-
-Pings the live deployment to confirm the wires are connected after a
-push. Exits 0 on success, 1 on first failure. Designed to run against
-either the production GCP VM, a staging box, or a local
-docker-compose — anywhere the gateway is reachable on a known URL.
-
-USAGE
------
-
-    # Local docker-compose
-    python scripts/post_deploy_smoke.py
-
-    # Staging / prod (set the gateway base URL)
-    SMOKE_API_URL=http://104.197.0.42:3001 python scripts/post_deploy_smoke.py
-
-    # CI: include critical user-flow checks (creates + tears down a
-    # throwaway test user via auth signup; needs network egress to
-    # the deployed environment)
-    SMOKE_API_URL=http://prod.example/api SMOKE_FULL=1 \\
-        python scripts/post_deploy_smoke.py
-
-ENV VARS
---------
-  SMOKE_API_URL          Gateway base URL. Default http://localhost:3001
-  SMOKE_FRONTEND_URL     Frontend base URL. Default http://localhost:3000
-  SMOKE_FULL             "1" to also run the throwaway-user flow tests
-  SMOKE_TIMEOUT_SEC      Per-request timeout. Default 15
-  SMOKE_VERBOSE          "1" to print full response bodies on failure
-
-The script avoids any external Python deps beyond stdlib so it can run
-on a bare CI image. urllib + json + sys = enough.
-"""
 
 from __future__ import annotations
 
@@ -116,7 +83,7 @@ _RESULTS: list[CheckResult] = []
 
 
 class SkipCheck(Exception):
-    """Raised by checks that legitimately don't apply (e.g. SMOKE_FULL=0)."""
+    pass
 
 
 def skip(reason: str) -> None:
@@ -152,8 +119,6 @@ def assert_status(resp: Response, expected: int, ctx: str = "") -> None:
 
 
 def assert_json_field(resp: Response, dotted_path: str, ctx: str = "") -> Any:
-    """Walk a dotted path through the JSON body. Raises if any segment
-    is missing — which is the entire point of the assertion."""
     if resp.json is None:
         raise AssertionError(f"{ctx} expected JSON body, got: {resp.body[:200]}")
     cursor: Any = resp.json
@@ -174,9 +139,6 @@ def _gateway_health() -> None:
 
 @check("Gateway forwards AI health (auth-required path returns 401, not 5xx)")
 def _ai_via_gateway_unauthed() -> None:
-    """An unauthenticated call to a protected gateway path must come
-    back as 401 from the auth check — not 502/503 from a misrouted
-    forward. Catches the AI-service-down scenario clearly."""
     r = get("/api/gateway/ai/listening/anything")
     assert r.status in (
         401,
@@ -338,14 +300,6 @@ def _full_listening_request() -> None:
 
 
 def _send_catalog_probe(path: str, payload: dict) -> Response:
-    """Catalog probes only care that the DTO accepts the token; the
-    downstream AI call may legitimately take 30s+ on a throttled key,
-    which would burn the smoke budget and obscure the actual signal.
-    We give each probe a short timeout: if the request gets past
-    validation (we see anything OTHER than a fast 422), it counts as
-    accepted. A timeout is also treated as "passed validation, AI is
-    just slow" because validation rejection happens synchronously in
-    well under a second."""
     return _request(
         "POST",
         f"{API_URL}{path}",
@@ -360,9 +314,6 @@ def _send_catalog_probe(path: str, payload: dict) -> Response:
 
 @check("[FULL] Listening — every Phase 2 question_type is accepted by the DTO")
 def _full_listening_question_type_catalog() -> None:
-    """Probe each of the six listening types separately. We assert
-    only on DTO acceptance (no fast 422), not on AI completion —
-    that path is unbounded by an external provider's latency."""
     if not FULL:
         skip("set SMOKE_FULL=1 to run")
     if not _TEST_USER_TOKEN:
@@ -385,7 +336,7 @@ def _full_listening_question_type_catalog() -> None:
                     "question_types": [qt],
                 },
             )
-        except (urllib.error.URLError, TimeoutError, Exception) as e:
+        except Exception as e:
             if "timed out" not in str(e).lower():
                 raise
             continue
@@ -413,7 +364,7 @@ def _full_speaking_format_catalog() -> None:
                 "/api/gateway/ai/speaking/practice-prompt",
                 {"language": "English", "level": "B1", "format": fmt},
             )
-        except (urllib.error.URLError, TimeoutError, Exception) as e:
+        except Exception as e:
             if "timed out" not in str(e).lower():
                 raise
             continue
@@ -424,9 +375,6 @@ def _full_speaking_format_catalog() -> None:
 
 @check("[FULL] Speaking grade-response — known formats accepted, unknown rejected")
 def _full_speaking_grade_known_unknown_split() -> None:
-    """Distinguishes routing/contract failure from upstream AI/Whisper
-    failure: an unknown format MUST 4xx fast (no Whisper call needed),
-    a known format MUST NOT 4xx with the validation message."""
     if not FULL:
         skip("set SMOKE_FULL=1 to run")
     if not _TEST_USER_TOKEN:

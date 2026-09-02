@@ -1,17 +1,3 @@
-"""Live-model tests that check the answer, not only that an answer arrived.
-
-The suite next door calls a real provider and accepts any reply the application
-can parse, so it proves the path is open and nothing more. These cases check
-properties that must hold whatever words the model picks: an exercise whose
-correct answer is missing from its own options is unanswerable however fluent it
-reads, and a generator that returns the same sentence twice is not a generator.
-
-They run outside the default job because they are slow and spend tokens:
-
-    pytest tests/e2e/test_live_model_properties.py -v -s
-
-Nothing here skips. Retries on a loaded provider live in `post_live`.
-"""
 
 from __future__ import annotations
 
@@ -27,8 +13,6 @@ from tests.e2e.conftest import post_live
 
 pytestmark = [pytest.mark.e2e]
 
-# A gap can be underscores, a run of dots, or an ellipsis. Accept any of them,
-# because the shape of the gap is the model's choice and not a property.
 _BLANK = re.compile(r"_{2,}|\.{3,}|…")
 
 
@@ -41,7 +25,6 @@ def _multiple_choice(client: TestClient, language: str, level: str) -> dict:
 
 
 class TestMultipleChoiceIsAnswerable:
-    """A learner must be able to answer the exercise the model just wrote."""
 
     def test_the_correct_answer_is_one_of_the_options(self, client: TestClient) -> None:
         task = _multiple_choice(client, "English", "B1")
@@ -66,7 +49,6 @@ class TestMultipleChoiceIsAnswerable:
 
 
 class TestGenerationVaries:
-    """Two learners asking for the same thing must not get the same sentence."""
 
     def test_two_calls_return_different_questions(self, client: TestClient) -> None:
         first = _multiple_choice(client, "English", "B1")
@@ -78,13 +60,6 @@ class TestGenerationVaries:
 
 
 class TestGeneratedPolishIsGrammatical:
-    """The defect this catches is real: a placement test served
-    `Moja ulubiona wspomnienia` and `Mój ulubiona pora roku`, both wrong in
-    gender or number. No structural check sees it, so a second model reads the
-    sentence and answers one question about it. Four tasks are graded and three
-    must pass, because a single verdict from a nondeterministic judge decides
-    nothing.
-    """
 
     _SAMPLE = 4
     _REQUIRED = 3

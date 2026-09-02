@@ -25,7 +25,6 @@ def speaking_service(mock_ai_service: MagicMock) -> SpeakingService:
 
 
 def _groq_response(payload: dict, status_code: int = 200) -> MagicMock:
-    """Build a mock httpx.Response-like object."""
     response = MagicMock()
     response.status_code = status_code
     response.json = MagicMock(return_value=payload)
@@ -34,7 +33,6 @@ def _groq_response(payload: dict, status_code: int = 200) -> MagicMock:
 
 
 def _patch_httpx(response: MagicMock) -> "patch":
-    """Patch httpx.AsyncClient so .post() yields the given response."""
     mock_client = MagicMock()
     mock_client.post = AsyncMock(return_value=response)
 
@@ -155,7 +153,6 @@ async def test_analyze_user_audio_missing_groq_key(
 def test_pronunciation_metrics_low_confidence_words(
     speaking_service: SpeakingService,
 ) -> None:
-    """avg_logprob below -0.7 in a segment should mark its words as low-confidence."""
     from models.dtos.speaking_analysis_dtos import (
         WhisperTranscriptionResult,
         WhisperSegment,

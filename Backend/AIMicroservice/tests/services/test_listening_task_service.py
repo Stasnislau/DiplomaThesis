@@ -30,8 +30,6 @@ def listening_service(mock_ai_service: MagicMock) -> ListeningTaskService:
 
 
 def _patch_audio_pipeline(audio_bytes: bytes = b"audio", speakers=None):
-    """Common patches: TTS returns canned bytes + speakers, file IO
-    is mocked out so tests don't touch the disk."""
     speakers = speakers or []
 
     def synth(*_args, **_kwargs):
@@ -110,7 +108,6 @@ def test_adapter_routes_multi_speaker_matching() -> None:
 
 
 def test_adapter_rejects_single_speaker_matching() -> None:
-    """min_length=2 — a "matching" with one speaker is not a matching."""
     with pytest.raises(Exception):
         ListeningQuestionAdapter.validate_python(
             {
@@ -152,7 +149,6 @@ async def test_create_listening_task_default_mix(
     listening_service: ListeningTaskService,
     mock_ai_service: MagicMock,
 ) -> None:
-    """Default request (no question_types) keeps historic MC + FIB shape."""
     mock_ai_service.get_ai_response.return_value = json.dumps(
         {
             "transcript": "Once upon a time, a fox crossed the road.",
@@ -228,8 +224,6 @@ async def test_create_listening_task_multi_speaker_synth(
     listening_service: ListeningTaskService,
     mock_ai_service: MagicMock,
 ) -> None:
-    """When the transcript carries [Speaker N]: tags, the multi-speaker
-    TTS path runs and the speakers list bubbles up to the response."""
     transcript = (
         "[Speaker 1]: Solar is the future of energy.\n"
         "[Speaker 2]: I disagree — wind is more reliable here.\n"
@@ -285,8 +279,6 @@ async def test_create_listening_task_drops_malformed_questions(
     listening_service: ListeningTaskService,
     mock_ai_service: MagicMock,
 ) -> None:
-    """One valid + one invalid question = 1 parsed; service doesn't
-    crash on a single bad item."""
     mock_ai_service.get_ai_response.return_value = json.dumps(
         {
             "transcript": "A short story.",
@@ -327,8 +319,6 @@ async def test_create_listening_task_unknown_types_fall_back(
     listening_service: ListeningTaskService,
     mock_ai_service: MagicMock,
 ) -> None:
-    """Unrecognised types in the request shouldn't break anything;
-    we silently fall back to the default mix."""
     mock_ai_service.get_ai_response.return_value = json.dumps(
         {
             "transcript": "A short story.",

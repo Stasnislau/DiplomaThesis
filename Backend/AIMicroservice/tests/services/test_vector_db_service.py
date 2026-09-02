@@ -1,11 +1,3 @@
-"""Writing chunks into a materials table that predates per-owner scoping.
-
-Uploads were pooled for every learner until each chunk started carrying the id
-of the owner who uploaded it. A table written before that change has no such
-column, and LanceDB refuses a row that carries one. Every upload against an
-existing database then failed with a server error, so the widening below is the
-part worth pinning.
-"""
 
 import lancedb
 import numpy as np
@@ -17,7 +9,6 @@ from services.vector_db_service import VectorDBService
 
 
 class _StubEncoder:
-    """Stands in for the sentence transformer, which is slow to load."""
 
     def encode(self, chunks):
         return np.zeros((len(chunks), 4), dtype=np.float32)
@@ -35,7 +26,6 @@ def service(tmp_path):
 
 
 def _legacy_table(service):
-    """A materials table as it looked before uploads were scoped to an owner."""
     service.db.create_table(
         service.materials_table_name,
         data=pd.DataFrame(
