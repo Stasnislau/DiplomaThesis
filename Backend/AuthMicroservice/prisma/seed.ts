@@ -17,7 +17,7 @@ const eventService = ClientProxyFactory.create({
     urls: [rabbitmqConfig.url],
     queue: rabbitmqConfig.queue,
     queueOptions: {
-      durable: false,
+      durable: true,
     },
   },
 });
@@ -81,6 +81,53 @@ async function main() {
     }
   } else {
     console.log("Admin user already exists");
+  }
+
+  const demoEmail = process.env.SEED_DEMO_EMAIL ?? "demo@a.ai";
+  const demoPassword = process.env.SEED_DEMO_PASSWORD ?? "Demo2026";
+
+  const existingDemo = await prisma.user.findUnique({
+    where: {
+      email: demoEmail,
+    },
+  });
+
+  if (!existingDemo) {
+    const hashedDemoPassword = await bcrypt.hash(demoPassword, 10);
+
+    try {
+      const demo = await prisma.user.create({
+        data: {
+          email: demoEmail,
+          role: "USER",
+          credentials: {
+            create: {
+              password: hashedDemoPassword,
+            },
+          },
+        },
+      });
+
+      console.log("Demo user created:", demo);
+
+      await eventService
+        .emit("user.created", {
+          id: demo.id,
+          email: demo.email,
+          name: "Demo",
+          surname: "User",
+          role: demo.role,
+          createdAt: demo.createdAt,
+        })
+        .toPromise();
+
+      console.log("Demo user event emitted successfully");
+    } catch (error) {
+      console.error("Error creating demo user or emitting event:", error);
+      throw error;
+    }
+  } else {
+    console.log("Demo user already exists");
   }
 }
 

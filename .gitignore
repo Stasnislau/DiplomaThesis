@@ -62,3 +62,8 @@ reviews
 example/
 docs/
 diplomaThesis.code-workspace
+terraform/tfplan
+
+*.coverage
+.coverage
+htmlcov/
