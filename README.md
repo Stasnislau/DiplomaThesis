@@ -54,16 +54,11 @@ Needs Node 20+, Python 3.11+, Docker (Postgres, RabbitMQ).
 
 `terraform/` is the VM, disk, static address, firewall. `terraform apply` builds that from an empty project. First boot installs Docker, then pulls the repository. `docker-compose.prod.yml` runs the stack behind Caddy. Caddy gets certificates from Let's Encrypt.
 
-## Model comparison
-
-`archive/results/` is the raw log used to pick the default provider. Five models, three languages, two CEFR levels, 30 samples per cell, 750 runs. `analyze_benchmark_detailed.py` builds the numbers. `generate_latex_assets.py` builds the thesis tables.
-
 ## Layout
 
 ```
 Backend/     four services
 Frontend/    React client
 terraform/   infrastructure
-archive/     leftover notes, plus the 750-run model log
 load-tests/  load test of the gateway (Grafana k6)
 ```
