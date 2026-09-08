@@ -54,6 +54,7 @@ terraform/.terraform.lock.hcl
 terraform/*.tfstate*
 terraform/terraform.tfvars
 terraform/infracost-report.*
+terraform/.infracost/
 .fallow
 podraza
 Backend/AIMicroservice/static/

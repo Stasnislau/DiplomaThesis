@@ -1,4 +1,5 @@
 .terraform/
+.infracost/
 *.tfstate
 *.tfstate.backup
 *.tfvars
