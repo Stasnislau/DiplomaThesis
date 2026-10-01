@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.6
 
-FROM node:20-alpine AS builder
+FROM node:26-alpine AS builder
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --no-cache openssl
 WORKDIR /app
@@ -16,7 +16,7 @@ RUN --mount=type=cache,target=/root/.cache/prisma \
 
 RUN npm run build
 
-FROM node:20-alpine AS production
+FROM node:26-alpine AS production
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --no-cache openssl
 RUN --mount=type=cache,target=/root/.npm \
