@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.6
 
-FROM node:20-alpine AS builder
+FROM node:26-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
@@ -10,7 +10,7 @@ RUN --mount=type=cache,target=/root/.npm \
 COPY . .
 RUN npm run build
 
-FROM node:20-alpine AS production
+FROM node:26-alpine AS production
 WORKDIR /app
 
 COPY --from=builder --chown=node:node /app/dist ./dist
